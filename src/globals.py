@@ -1,5 +1,17 @@
+########################################################################
+#
+#    OpenOffice.org - a multi-platform office productivity suite
+#
+#    Author:
+#      Kohei Yoshida  <kyoshida@novell.com>
+#
+#   The Contents of this file are made available subject to the terms
+#   of GNU Lesser General Public License Version 2.1 and any later
+#   version.
+#
+########################################################################
 
-import sys, struct, math
+import sys, struct, math, zipfile, xmlpp, StringIO
 
 class ByteConvertError(Exception): pass
 
@@ -230,6 +242,58 @@ def getUTF8FromUTF16 (bytes):
             code += bytes[i*2+1]
         if bytes[i*2] != '\x00':
             code += bytes[i*2]
-        text += unicode(code, 'utf-8')
+        try:    
+            text += unicode(code, 'utf-8')
+        except UnicodeDecodeError:
+            text += "<%d invalid chars>"%len(code)
     return text
 
+class StreamWrap(object):
+    def __init__ (self,printer):
+        self.printer = printer
+        self.buffer = ""
+    def write (self,string):
+        self.buffer += string
+    def flush (self):
+        for line in self.buffer.splitlines():
+            self.printer(line)
+
+def outputZipContent (bytes, printer, width=80):
+    printer("Zipped content:")
+    rawFile = StringIO.StringIO(bytes)
+    zipFile = zipfile.ZipFile(rawFile)
+    i = 0
+    # TODO: when 2.6/3.0 is in widespread use, change to infolist
+    # here, names might be ambiguous
+    for filename in zipFile.namelist():
+        if i > 0:
+            printer('-'*width)
+        i += 1
+        printer("")
+        printer(filename + ":")
+        printer('-'*width)
+
+        contents = zipFile.read(filename)
+        if filename.endswith(".xml") or contents.startswith("<?xml"):
+            wrapper = StreamWrap(printer)
+            xmlpp.pprint(contents,wrapper,1,80)
+            wrapper.flush()
+        else:
+            dumpBytes(contents)
+            
+    zipFile.close()
+
+def stringizeColorRef(colorRef, colorName="color"):
+    def split (packedColor):
+        return ((packedColor & 0xFF0000) // 0x10000, (packedColor & 0xFF00) / 0x100, (packedColor & 0xFF))
+    
+    colorValue = colorRef & 0xFFFFFF
+    if colorRef & 0xFE000000 == 0xFE000000 or colorRef & 0xFF000000 == 0:
+        colors = split(colorValue)
+        return "%s = (%d,%d,%d)"%(colorName, colors[0], colors[1], colors[2])
+    elif colorRef & 0x08000000 or colorRef & 0x10000000:
+        return "%s = schemecolor(%d)"%(colorName, colorValue)
+    elif colorRef & 0x04000000:
+        return "%s = colorschemecolor(%d)"%(colorName, colorValue)
+    else:
+        return "%s = <unidentified color>(%4.4Xh)"%(colorName, colorValue)
