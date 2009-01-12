@@ -2,7 +2,7 @@
 
 import sys, os.path, getopt
 sys.path.append(sys.path[0]+"/src")
-import ole, stream, globals
+import ole, xlsstream, globals
 
 from globals import error
 
@@ -32,7 +32,7 @@ class XLDumper(object):
     def dump (self):
         file = open(self.filepath, 'rb')
         strmData = globals.StreamData()
-        strm = stream.XLStream(file.read(), self.params, strmData)
+        strm = xlsstream.XLStream(file.read(), self.params, strmData)
         file.close()
         strm.printStreamInfo()
         strm.printHeader()
@@ -53,13 +53,13 @@ class XLDumper(object):
                     success = self.__readSubStream(dirstrm)
 
             elif dirname == "Revision Log":
-                dirstrm.type = stream.DirType.RevisionLog
+                dirstrm.type = xlsstream.DirType.RevisionLog
                 self.__readSubStream(dirstrm)
             elif dirname == '_SX_DB_CUR':
-                dirstrm.type = stream.DirType.PivotTableCache
+                dirstrm.type = xlsstream.DirType.PivotTableCache
                 self.__readSubStream(dirstrm)
             elif strmData.isPivotCacheStream(dirname):
-                dirstrm.type = stream.DirType.PivotTableCache
+                dirstrm.type = xlsstream.DirType.PivotTableCache
                 self.__readSubStream(dirstrm)
             else:
                 globals.dumpBytes(dirstrm.bytes, 512)
@@ -71,7 +71,7 @@ class XLDumper(object):
             while header != 0x000A:
                 header = strm.readRecord()
             return True
-        except stream.EndOfStream:
+        except xlsstream.EndOfStream:
             return False
 
 

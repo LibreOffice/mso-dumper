@@ -1,6 +1,6 @@
 
 import sys
-import stream, globals
+import globals
 from globals import getSignedInt
 # ----------------------------------------------------------------------------
 # Reference: The Microsoft Compound Document File Format by Daniel Rentz
