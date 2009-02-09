@@ -246,7 +246,7 @@ recData = {
     0x104E: ["CHFORMAT", "?"],
     0x104F: ["CHFRAMEPOS", "?"],
     0x1050: ["CHFORMATRUNS", "?"],
-    0x1051: ["CHSOURCELINK", "Data Source of A Chart"],
+    0x1051: ["CHSOURCELINK", "Data Source of A Chart", xlsrecord.CHSourceLink],
     0x105B: ["CHSERERRORBAR", "?"],
     0x105D: ["CHSERIESFORMAT", "?"],
     0x105F: ["CH3DDATAFORMAT", "?"],

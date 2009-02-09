@@ -1457,3 +1457,40 @@ class CHLine(BaseRecordHandler):
         self.appendLine("percent: %s"%self.getYesNo(percent))
         self.appendLine("shadow: %s"%self.getYesNo(shadow))
 
+
+class CHSourceLink(BaseRecordHandler):
+
+    destTypes = ['title', 'values', 'category', 'bubbles']
+    linkTypes = ['default', 'directly', 'worksheet']
+
+    DEST_TITLE    = 0;
+    DEST_VALUES   = 1;
+    DEST_CATEGORY = 2;
+    DEST_BUBBLES  = 3;
+
+    LINK_DEFAULT   = 0;
+    LINK_DIRECTLY  = 1;
+    LINK_WORKSHEET = 2;
+
+    def parseBytes (self):
+        destType = self.readUnsignedInt(1)
+        linkType = self.readUnsignedInt(1)
+        flags    = self.readUnsignedInt(2)
+        numFmt   = self.readUnsignedInt(2)
+        
+        destName = 'unknown'
+        if destType < len(CHSourceLink.destTypes):
+            destName = CHSourceLink.destTypes[destType]
+
+        linkName = 'unknown'
+        if linkType < len(CHSourceLink.linkTypes):
+            linkName = CHSourceLink.linkTypes[linkType]
+
+        self.appendLine("destination type: %s"%destName)
+        self.appendLine("link type: %s"%linkName)
+
+        if linkType == CHSourceLink.LINK_WORKSHEET:
+            # external reference.  Read the formula tokens.
+            lenToken = self.readUnsignedInt(2)
+            tokens = self.readBytes(lenToken)
+            self.appendLine("formula tokens: %s"%globals.getRawBytes(tokens,True,False))
