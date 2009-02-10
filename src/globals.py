@@ -21,6 +21,7 @@ class Params(object):
     def __init__ (self):
         self.debug = False
         self.showSectorChain = False
+        self.showStreamPos = False
 
 
 class StreamData(object):

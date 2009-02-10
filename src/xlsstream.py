@@ -413,7 +413,12 @@ class XLDirStream(object):
                 handler = recDataRev[header][2](header, size, bytes, self.strmData)
         else:
             print("%4.4Xh: [unknown record name] (%4.4Xh)"%(header, header))
-        print("%4.4Xh:   size = %d; pos = %d"%(header, size, pos))
+
+        if self.params.showStreamPos:
+            print("%4.4Xh:   size = %d; pos = %d"%(header, size, pos))
+        else:
+            print("%4.4Xh:   size = %d"%(header, size))
+
         self.__printSep('-', 61, "%4.4Xh: "%header)
         for i in xrange(0, size):
             if (i+1) % 16 == 1:
