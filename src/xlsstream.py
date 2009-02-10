@@ -64,7 +64,7 @@ recData = {
     0x0082: ["GRIDSET", "State Change of Gridlines Option"],
     0x0083: ["HCENTER", "Center Between Horizontal Margins"],
     0x0084: ["VCENTER", "Center Between Vertical Margins"],
-    0x0085: ["BOUNDSHEET", "Sheet Information"],
+    0x0085: ["BOUNDSHEET", "Sheet Information", xlsrecord.BoundSheet],
     0x0086: ["WRITEPROT", "Workbook Is Write-Protected"],
     0x0087: ["ADDIN", "Workbook Is an Add-in Macro"],
     0x0088: ["EDG", "Edition Globals"],

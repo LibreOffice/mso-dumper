@@ -143,6 +143,44 @@ class BOF(BaseRecordHandler):
         self.appendLine("earliest Excel version that can read all records: %d"%lowestExcelVer)
 
 
+class BoundSheet(BaseRecordHandler):
+
+    hiddenStates = {0x00: 'visible', 0x01: 'hidden', 0x02: 'very hidden'}
+
+    sheetTypes = {0x00: 'worksheet or dialog sheet',
+                  0x01: 'Excel 4.0 macro sheet',
+                  0x02: 'chart',
+                  0x06: 'Visual Basic module'}
+
+    @staticmethod
+    def getHiddenState (flag):
+        if BoundSheet.hiddenStates.has_key(flag):
+            return BoundSheet.hiddenStates[flag]
+        else:
+            return 'unknown'
+
+    @staticmethod
+    def getSheetType (flag):
+        if BoundSheet.sheetTypes.has_key(flag):
+            return BoundSheet.sheetTypes[flag]
+        else:
+            return 'unknown'
+
+    def parseBytes (self):
+        posBOF = self.readUnsignedInt(4)
+        flags = self.readUnsignedInt(2)
+        textLen = self.readUnsignedInt(1)
+        text, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
+        self.appendLine("BOF position in this stream: %d"%posBOF)
+        self.appendLine("sheet name: %s"%text)
+
+        hiddenState = (flags & 0x0003)
+        self.appendLine("hidden state: %s"%BoundSheet.getHiddenState(hiddenState))
+
+        sheetType = (flags & 0xFF00)
+        self.appendLine("sheet type: %s"%BoundSheet.getSheetType(sheetType))
+
+
 class Formula(BaseRecordHandler):
 
     def parseBytes (self):
