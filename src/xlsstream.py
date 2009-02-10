@@ -172,10 +172,10 @@ recData = {
     0x01BE: ["DV", "Data Validation Criteria"],
     0x01C0: ["EXCEL9FILE", "Excel 9 File"],
     0X01C1: ["RECALCID", "Recalc Information"],
-    0x0200: ["DIMENSIONS", "Cell Table Size"],
+    0x0200: ["DIMENSIONS", "Cell Table Size", xlsrecord.Dimensions],
     0x0201: ["BLANK", "Blank Cell", xlsrecord.Blank],
     0x0203: ["NUMBER", "Floating-Point Cell Value", xlsrecord.Number],
-    0x0204: ["LABEL", "Cell Value"],
+    0x0204: ["LABEL", "Cell Value", xlsrecord.Label],
     0x0205: ["BOOLERR", "Cell Value"],
     0x0207: ["STRING", "String Value of a Formula", xlsrecord.String],
     0x0208: ["ROW", "Describes a Row", xlsrecord.Row],
@@ -201,7 +201,7 @@ recData = {
     0x0868: ["RANGEPROTECTION", "Protected Range on Protected Sheet"],
     0x1001: ["CHUNITS", "?"],
     0x1002: ["CHCHART", "Chart Header Data", xlsrecord.CHChart],
-    0x1003: ["CHSERIES", "?"],
+    0x1003: ["CHSERIES", "Chart Series", xlsrecord.CHSeries],
     0x1006: ["CHDATAFORMAT", "?"],
     0x1007: ["CHLINEFORMAT", "Line or Border Formatting of A Chart"],
     0x1009: ["CHMARKERFORMAT", "?"],
@@ -252,6 +252,7 @@ recData = {
     0x105F: ["CH3DDATAFORMAT", "?"],
     0x1061: ["CHPIEEXT", "?"],
     0x1062: ["CHLABELRANGE2", "?"],
+    0x1065: ["CHSIINDEX*", "?"],
     0x1066: ["CHESCHERFORMAT", "?"]
 }
 

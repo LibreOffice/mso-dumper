@@ -38,6 +38,10 @@ append a line to be displayed.
         text = "%s: %s"%(name, self.getYesNo(value))
         self.appendLine(text)
 
+    def appendCellPosition (self, col, row):
+        text = "cell position: (col: %d; row: %d)"%(col, row)
+        self.appendLine(text)
+
     def readBytes (self, length):
         r = self.bytes[self.pos:self.pos+length]
         self.pos += length
@@ -181,6 +185,20 @@ class BoundSheet(BaseRecordHandler):
         self.appendLine("sheet type: %s"%BoundSheet.getSheetType(sheetType))
 
 
+class Dimensions(BaseRecordHandler):
+
+    def parseBytes (self):
+        rowMic = self.readUnsignedInt(4)
+        rowMac = self.readUnsignedInt(4)
+        colMic = self.readUnsignedInt(2)
+        colMac = self.readUnsignedInt(2)
+
+        self.appendLine("first defined row: %d"%rowMic)
+        self.appendLine("last defined row plus 1: %d"%rowMac)
+        self.appendLine("first defined column: %d"%colMic)
+        self.appendLine("last defined column plus 1: %d"%colMac)
+
+
 class Formula(BaseRecordHandler):
 
     def parseBytes (self):
@@ -199,7 +217,7 @@ class Formula(BaseRecordHandler):
         fparser.parse()
         ftext = fparser.getText()
 
-        self.appendLine("cell position: (col: %d; row: %d)"%(col, row))
+        self.appendCellPosition(col, row)
         self.appendLine("XF record ID: %d"%xf)
         self.appendLine("formula result: %g"%fval)
         self.appendLine("recalculate always: %d"%recalc)
@@ -209,6 +227,19 @@ class Formula(BaseRecordHandler):
         self.appendLine("tokens: "+ftext)
 
 
+class Label(BaseRecordHandler):
+
+    def parseBytes (self):
+        col = self.readUnsignedInt(2)
+        row = self.readUnsignedInt(2)
+        xfIdx = self.readUnsignedInt(2)
+        textLen = self.readUnsignedInt(2)
+        text, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
+        self.appendCellPosition(col, row)
+        self.appendLine("XF record ID: %d"%xfIdx)
+        self.appendLine("label text: %s"%text)
+
+
 class Number(BaseRecordHandler):
 
     def parseBytes (self):
@@ -216,7 +247,7 @@ class Number(BaseRecordHandler):
         col = globals.getSignedInt(self.bytes[2:4])
         xf  = globals.getSignedInt(self.bytes[4:6])
         fval = globals.getDouble(self.bytes[6:14])
-        self.appendLine("cell position: (col: %d; row: %d)"%(col, row))
+        self.appendCellPosition(col, row)
         self.appendLine("XF record ID: %d"%xf)
         self.appendLine("value: %g"%fval)
 
@@ -248,7 +279,7 @@ class RK(BaseRecordHandler):
         if multi100:
             realVal /= 100
 
-        self.appendLine("cell position: (col: %d; row: %d)"%(col, row))
+        self.appendCellPosition(col, row)
         self.appendLine("XF record ID: %d"%xf)
         self.appendLine("multiplied by 100: %d"%multi100)
         if signedInt:
@@ -273,7 +304,7 @@ class Blank(BaseRecordHandler):
         row = globals.getSignedInt(self.bytes[0:2])
         col = globals.getSignedInt(self.bytes[2:4])
         xf  = globals.getSignedInt(self.bytes[4:6])
-        self.appendLine("cell position: (col: %d; row: %d)"%(col, row))
+        self.appendCellPosition(col, row)
         self.appendLine("XF record ID: %d"%xf)
 
 
@@ -1362,6 +1393,38 @@ class CHChart(BaseRecordHandler):
         self.appendLine("size: (width, height) = (%d, %d)"%(w, h))
         
         
+class CHSeries(BaseRecordHandler):
+
+    DATE     = 0
+    NUMERIC  = 1
+    SEQUENCE = 2
+    TEXT     = 3
+
+    seriesTypes = ['date', 'numeric', 'sequence', 'text']
+
+    @staticmethod
+    def getSeriesType (idx):
+        r = 'unknown'
+        if idx < len(CHSeries.seriesTypes):
+            r = CHSeries.seriesTypes[idx]
+        return r
+
+    def parseBytes (self):
+        catType     = self.readUnsignedInt(2)
+        valType     = self.readUnsignedInt(2)
+        catCount    = self.readUnsignedInt(2)
+        valCount    = self.readUnsignedInt(2)
+        bubbleType  = self.readUnsignedInt(2)
+        bubbleCount = self.readUnsignedInt(2)
+
+        self.appendLine("category type: %s (count: %d)"%
+            (CHSeries.getSeriesType(catType), catCount))
+        self.appendLine("value type: %s (count: %d)"%
+            (CHSeries.getSeriesType(valType), valCount))
+        self.appendLine("bubble type: %s (count: %d)"%
+            (CHSeries.getSeriesType(bubbleType), bubbleCount))
+
+
 class CHAxis(BaseRecordHandler):
 
     axisTypeList = ['x-axis', 'y-axis', 'z-axis']
