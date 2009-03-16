@@ -164,7 +164,7 @@ class Property(BaseRecordHandler):
                 handler = propData[propType][1](propType, propValue, isComplex, isBlip, complexBytes, self.appendLine)
                 handler.output()
             else:
-                self.appendLine("%4.4Xh: [unknown property type: %4.4Xh, value: %8.8Xh, complex: %d, blip: %d]"%(propType, propValue, isComplex, isBlip))
+                self.appendLine("%4.4Xh: [unknown property type: %4.4Xh, value: %8.8Xh, complex: %d, blip: %d]"%(propType, propType, propValue, isComplex, isBlip))
 
 # -------------------------------------------------------------------
 # special record handler: document atom
@@ -466,8 +466,12 @@ class MsoArrayPropertyHandler(BasePropertyHandler):
             elementSize = self.readUnsignedInt(2)
             self.printer("%4.4Xh: %s: [\"%s\"]"%(self.propType, self.propEntry[0], self.propEntry[2]))
             for i in xrange(0, numElements):
-                currElem = self.readUnsignedInt(elementSize)
-                self.printer("%4.4Xh: %d = %Xh"%(i,currElem))
+                if elementSize > 4:
+                    bytes = self.readBytes(elementSize)
+                    self.printer("%4.4Xh: %d = [complex type]"%(self.propType,i))
+                else:
+                    currElem = self.readUnsignedInt(elementSize)
+                    self.printer("%4.4Xh: %d = %Xh"%(self.propType,i,currElem))
 
 class UniCharPropertyHandler(BasePropertyHandler):
     """unicode string property."""  
@@ -518,8 +522,11 @@ class ZipStoragePropertyHandler(BasePropertyHandler):
 
 # -------------------------------------------------------------------
 # special record handler: properties
-
-    # opcode: [canonical name, prop handler, comment]
+#
+# IDs and comments from OOo's svx/inc/svx/msdffdef.hxx
+# (slightly adapted)
+#
+# opcode: [canonical name, prop handler, comment]
 
 propData = {
 
@@ -810,8 +817,8 @@ propData = {
  902:  ["DFF_Prop_dxWrapDistRight",              LongPropertyHandler,              "Right wrapping distance from text (Word)"],
  903:  ["DFF_Prop_dyWrapDistBottom",             LongPropertyHandler,              "Bottom wrapping distance from text (Word)"],
  904:  ["DFF_Prop_lidRegroup",                   LongPropertyHandler,              "Regroup ID"],
- 927:  ["DFF_Prop_tableProperties",             LongPropertyHandler, ""],
- 928:  ["DFF_Prop_tableRowProperties",          LongPropertyHandler, ""],
+ 927:  ["DFF_Prop_tableProperties",             LongPropertyHandler, "Type of table: bit 1 plain, bit 2 placeholder, bit 3 rtl"],
+ 928:  ["DFF_Prop_tableRowProperties",          MsoArrayPropertyHandler, "Table row properties (row heights, actually)"],
  937:  ["DFF_Prop_xmlstuff",                     ZipStoragePropertyHandler, "Embedded ooxml"],
  953:  ["DFF_Prop_fEditedWrap",                  BoolPropertyHandler,              "Has the wrap polygon been edited?"],
  954:  ["DFF_Prop_fBehindDocument",              BoolPropertyHandler,              "Word-only (shape is behind text)"],

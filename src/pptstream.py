@@ -18,7 +18,9 @@ from globals import output
 
 class EndOfStream(Exception): pass
 
-    # opcode: [canonical name, handler (optional)]
+# IDs from OOo's svx/inc/svx/msdffdef.hxx (slightly adapted)
+#
+# opcode: [canonical name, handler (optional)]
 
 recData = {
 
