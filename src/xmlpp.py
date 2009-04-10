@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Pretty print an XML document.
 
 LICENCE:
