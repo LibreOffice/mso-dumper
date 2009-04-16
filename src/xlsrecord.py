@@ -308,6 +308,34 @@ class Blank(BaseRecordHandler):
         self.appendLine("XF record ID: %d"%xf)
 
 
+class DefColWidth(BaseRecordHandler):
+
+    def parseBytes (self):
+        w = self.readUnsignedInt(2)
+        self.appendLine("default column width (in characters): %d"%w)
+
+
+class ColInfo(BaseRecordHandler):
+
+    def parseBytes (self):
+        colFirst = self.readUnsignedInt(2)
+        colLast  = self.readUnsignedInt(2)
+        coldx    = self.readUnsignedInt(2)
+        ixfe     = self.readUnsignedInt(2)
+        flags    = self.readUnsignedInt(2)
+
+        isHidden = (flags & 0x0001)
+        outlineLevel = (flags & 0x0700)/4
+        isCollapsed = (flags & 0x1000)/4
+
+        self.appendLine("formatted columns: %d - %d"%(colFirst,colLast))
+        self.appendLine("column width (in 1/256s of a char): %d"%coldx)
+        self.appendLine("XF record index: %d"%ixfe)
+        self.appendLine("hidden: %s"%self.getYesNo(isHidden))
+        self.appendLine("outline level: %d"%outlineLevel)
+        self.appendLine("collapsed: %s"%self.getYesNo(isCollapsed))
+
+
 class Row(BaseRecordHandler):
 
     def parseBytes (self):
