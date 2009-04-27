@@ -232,10 +232,10 @@ class TextStyles(BaseRecordHandler):
     def parseBytes (self):
         # any shape text set? if not, no chance to calc run lengths
         if not "ShapeText" in self.streamProperties:
-            self.appendLine("no shape text given, skipping props")
-            return
-        
-        textLen = len(self.streamProperties["ShapeText"])
+            self.appendLine("no shape text given, assuming length of 1")
+            textLen = 1
+        else:    
+            textLen = len(self.streamProperties["ShapeText"])
 
         # 4 bytes: <count> characters of shape text this para run is meant for
         # <para attribs>
