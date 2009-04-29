@@ -219,7 +219,7 @@ recData = {
     0x100C: ["CHATTACHEDLABEL", "?"],
     0x100D: ["CHSTRING", "?"],
     0x1014: ["CHTYPEGROUP", "?"],
-    0x1015: ["CHLEGEND", "?"],
+    0x1015: ["CHLEGEND", "?", xlsrecord.CHLegend],
     0x1017: ["CHBAR, CHCOLUMN", "?", xlsrecord.CHBar],
     0x1018: ["CHLINE", "?", xlsrecord.CHLine],
     0x1019: ["CHPIE", "?"],

@@ -34,6 +34,20 @@ append a line to be displayed.
     def appendLine (self, line):
         self.lines.append(line)
 
+    def appendMultiLine (self, line):
+        charWidth = 61
+        singleLine = ''
+        testLine = ''
+        for word in line.split():
+            testLine += word + ' '
+            if len(testLine) > charWidth:
+                self.lines.append(singleLine)
+                testLine = word + ' '
+            singleLine = testLine
+
+        if len(singleLine) > 0:
+            self.lines.append(singleLine)
+
     def appendLineBoolean (self, name, value):
         text = "%s: %s"%(name, self.getYesNo(value))
         self.appendLine(text)
@@ -1521,6 +1535,54 @@ class CHLabelRange(BaseRecordHandler):
         self.appendLineBoolean("axis between categories", betweenCateg)
         self.appendLineBoolean("other axis crosses at maximum", maxCross)
         self.appendLineBoolean("axis reversed", reversed)
+
+
+class CHLegend(BaseRecordHandler):
+    
+    dockModeMap = {0: 'bottom', 1: 'corner', 2: 'top', 3: 'right', 4: 'left', 7: 'not docked'}
+    spacingMap = ['close', 'medium', 'open']
+
+    def getDockModeText (self, val):
+        if CHLegend.dockModeMap.has_key(val):
+            return CHLegend.dockModeMap[val]
+        else:
+            return '(unknown)'
+
+    def getSpacingText (self, val):
+        if val < len(CHLegend.spacingMap):
+            return CHLegend.spacingMap[val]
+        else:
+            return '(unknown)'
+
+    def parseBytes (self):
+        x = self.readSignedInt(4)
+        y = self.readSignedInt(4)
+        w = self.readSignedInt(4)
+        h = self.readSignedInt(4)
+        dockMode = self.readUnsignedInt(1)
+        spacing  = self.readUnsignedInt(1)
+        flags    = self.readUnsignedInt(2)
+
+        docked     = (flags & 0x0001)
+        autoSeries = (flags & 0x0002)
+        autoPosX   = (flags & 0x0004)
+        autoPosY   = (flags & 0x0008)
+        stacked    = (flags & 0x0010)
+        dataTable  = (flags & 0x0020)
+
+        self.appendLine("legend position: (x, y) = (%d, %d)"%(x,y))
+        self.appendLine("legend size: width = %d, height = %d"%(w,h))
+        self.appendLine("dock mode: %s"%self.getDockModeText(dockMode))
+        self.appendLine("spacing: %s"%self.getSpacingText(spacing))
+        self.appendLineBoolean("docked", docked)
+        self.appendLineBoolean("auto series", autoSeries)
+        self.appendLineBoolean("auto position x", autoPosX)
+        self.appendLineBoolean("auto position y", autoPosY)
+        self.appendLineBoolean("stacked", stacked)
+        self.appendLineBoolean("data table", dataTable)
+
+        self.appendLine("")
+        self.appendMultiLine("NOTE: Position and size are in units of 1/4000 of chart's width or height.")
 
 
 class CHValueRange(BaseRecordHandler):
