@@ -4,7 +4,7 @@
 #
 #    Author:
 #      Kohei Yoshida  <kyoshida@novell.com>
-#      Thorsten Behrens <tbehrens@novell.com>	   	
+#      Thorsten Behrens <tbehrens@novell.com>
 #
 #   The Contents of this file are made available subject to the terms
 #   of GNU Lesser General Public License Version 2.1 and any later
@@ -61,7 +61,7 @@ append a line to be displayed.
 
     def isEmpty (self):
         return len(self.bytes) <= self.pos
-    
+
     def readBytes (self, length):
         r = self.bytes[self.pos:self.pos+length]
         self.pos += length
@@ -159,12 +159,110 @@ class Property(BaseRecordHandler):
                 # eat propValue bytes from complexBytes
                 complexBytes = allComplexBytes[:propValue]
                 allComplexBytes = allComplexBytes[propValue:]
-                
+
             if propType in propData:
                 handler = propData[propType][1](propType, propValue, isComplex, isBlip, complexBytes, self.appendLine)
                 handler.output()
             else:
                 self.appendLine("%4.4Xh: [unknown property type: %4.4Xh, value: %8.8Xh, complex: %d, blip: %d]"%(propType, propType, propValue, isComplex, isBlip))
+
+# -------------------------------------------------------------------
+# special record handler: shape anchor rect
+
+class Rect(BaseRecordHandler):
+    """Rectangle."""
+
+    def parseBytes (self):
+        # seems there are 16bit and 32bit coordinate values in the
+        # wild
+        if self.size == 16:
+            left = self.readUnsignedInt(4)
+            top = self.readUnsignedInt(4)
+            right = self.readUnsignedInt(4)
+            bottom = self.readUnsignedInt(4)
+            self.appendLine("Anchor(long): (%d,%d)(%d,%d)"%(left,top,right,bottom))
+        elif self.size == 8:
+            top = self.readUnsignedInt(2)
+            left = self.readUnsignedInt(2)
+            right = self.readUnsignedInt(2)
+            bottom = self.readUnsignedInt(2)
+            self.appendLine("Anchor(short): (%d,%d)(%d,%d)"%(left,top,right,bottom))
+        else:
+            self.appendLine("%4.4Xh: [invalid anchor payload (size: %d)]"%(propType, self.size))
+
+
+# -------------------------------------------------------------------
+# special record handler: shape
+
+class Shape(BaseRecordHandler):
+    """PowerPoint Shape."""
+
+    def parseBytes (self):
+        # recordInstance gives shape type
+        theType = self.recordInstance
+
+        # 4 bytes shape id
+        shapeId = self.readUnsignedInt(4)
+        if theType in shapeTypes:
+            self.appendLine("Shape %s, id=%d"%(shapeTypes[theType][0], shapeId))
+        else:
+            self.appendLine("Unknown shape, id=%d"%shapeId)
+
+        # 4 bytes shape persist flags
+        flags = self.readUnsignedInt(4)
+
+        group = (flags & 0x00000001) != 0
+        child = (flags & 0x00000002) != 0
+        patriarch = (flags & 0x00000004) != 0
+        deleted = (flags & 0x00000008) != 0
+        oleshape = (flags & 0x00000010) != 0
+        haveMaster = (flags & 0x00000020) != 0
+        flipH = (flags & 0x00000040) != 0
+        flipV = (flags & 0x00000080) != 0
+        connector = (flags & 0x00000100) != 0
+        haveAnchor = (flags & 0x00000200) != 0
+        background = (flags & 0x00000400) != 0
+        haveTypeProp = (flags & 0x00000800) != 0
+
+        self.appendLine("flags:\n"
+                        "                group        = %d\n"
+                        "                child        = %d\n"
+                        "                patriarch    = %d\n"
+                        "                deleted      = %d\n"
+                        "                oleshape     = %d\n"
+                        "                haveMaster   = %d\n"
+                        "                flipH        = %d\n"
+                        "                flipV        = %d\n"
+                        "                connector    = %d\n"
+                        "                haveAnchor   = %d\n"
+                        "                background   = %d\n"
+                        "                haveTypeProp = %d"%(group,
+                                                             child,
+                                                             patriarch,
+                                                             deleted,
+                                                             oleshape,
+                                                             haveMaster,
+                                                             flipH,
+                                                             flipV,
+                                                             connector,
+                                                             haveAnchor,
+                                                             background,
+                                                             haveTypeProp))
+
+# -------------------------------------------------------------------
+# special record handler: TextHeader
+
+class TextHeader(BaseRecordHandler):
+    """TextHeaderAtom."""
+
+    def parseBytes (self):
+        # 4 bytes type
+        textType = self.readUnsignedInt(4)
+        if textType in textHeader:
+            self.appendLine("Text type: %s"%textHeader[textType][0])
+        else:
+            self.appendLine("Text type: unknown")
+
 
 # -------------------------------------------------------------------
 # special record handler: document atom
@@ -234,7 +332,7 @@ class TextStyles(BaseRecordHandler):
         if not "ShapeText" in self.streamProperties:
             self.appendLine("no shape text given, assuming length of 1")
             textLen = 1
-        else:    
+        else:
             textLen = len(self.streamProperties["ShapeText"])
 
         # 4 bytes: <count> characters of shape text this para run is meant for
@@ -248,7 +346,7 @@ class TextStyles(BaseRecordHandler):
             self.appendLine("para props for %d chars, indent: %d"%(runLen,indentLevel))
             self.parseParaStyle()
             self.appendLine("-"*61)
-            
+
         # 4 bytes: <count> characters of shape text this char run is meant for
         # <char attribs>
         # repeat until all shape text is consumed
@@ -259,7 +357,7 @@ class TextStyles(BaseRecordHandler):
             self.appendLine("char props for %d chars"%runLen)
             self.parseCharStyle()
             self.appendLine("-"*61)
-            
+
     def appendParaProp (self, text):
         self.appendLine("para prop given: "+text)
 
@@ -393,7 +491,7 @@ class MasterTextStyles(TextStyles):
         # level has one para and one char prop entry, the para prop
         # entry misses the indent specifier it has for StyleTextAtom.
         numLevels = self.readUnsignedInt(2)
-        
+
         for i in xrange(0, numLevels):
             self.appendLine("para props for indent level: %d"%i)
             self.parseParaStyle()
@@ -401,7 +499,7 @@ class MasterTextStyles(TextStyles):
             self.appendLine("char props for indent level: %d"%i)
             self.parseCharStyle()
             self.appendLine("-"*61)
-            
+
 
 # -------------------------------------------------------------------
 # special record handlers: property atoms
@@ -419,7 +517,7 @@ class BasePropertyHandler():
         self.printer = printer
         if self.propType in propData:
             self.propEntry = propData[self.propType]
-    
+
     def output (self):
         if self.propType in propData:
             self.printer("%4.4Xh: %s = %8.8Xh [\"%s\" - default handler]"%(self.propType, self.propEntry[0],
@@ -438,7 +536,7 @@ class BoolPropertyHandler(BasePropertyHandler):
                     self.printer("%4.4Xh: %s = %d [\"%s\"]"%(self.propType, propEntry[0], flagValue, propEntry[2]))
             bitMask *= 2
 
-            
+
 class LongPropertyHandler(BasePropertyHandler):
     """Long property."""
 
@@ -446,7 +544,7 @@ class LongPropertyHandler(BasePropertyHandler):
         if self.propType in propData:
             self.printer("%4.4Xh: %s = %d [\"%s\"]"%(self.propType, self.propEntry[0],
                                                      self.propValue, self.propEntry[2]))
-        
+
 class MsoArrayPropertyHandler(BasePropertyHandler):
     """MsoArray property."""
 
@@ -474,7 +572,7 @@ class MsoArrayPropertyHandler(BasePropertyHandler):
                     self.printer("%4.4Xh: %d = %Xh"%(self.propType,i,currElem))
 
 class UniCharPropertyHandler(BasePropertyHandler):
-    """unicode string property."""  
+    """unicode string property."""
 
     def output (self):
         if self.isComplex:
@@ -487,13 +585,13 @@ class FixedPointHandler(BasePropertyHandler):
     def output (self):
         value = self.propValue / 65536.0
         self.printer("%4.4Xh: %s = %f [\"%s\"]"%(self.propType, self.propEntry[0], value, self.propEntry[2]))
-    
+
 class ColorPropertyHandler(BasePropertyHandler):
-    """Color property."""   
+    """Color property."""
 
     def split (self, packedColor):
         return ((packedColor & 0xFF0000) // 0x10000, (packedColor & 0xFF00) / 0x100, (packedColor & 0xFF))
-    
+
     def output (self):
         propEntry = ["<color atom>", None, "undocumented color property"]
         if self.propType in propData:
@@ -504,7 +602,7 @@ class ColorPropertyHandler(BasePropertyHandler):
                                             propEntry[2]))
 
 class CharPropertyHandler(BasePropertyHandler):
-    """string property."""  
+    """string property."""
 
     def output (self):
         if self.isComplex:
@@ -512,10 +610,10 @@ class CharPropertyHandler(BasePropertyHandler):
             self.printer("%4.4Xh: %s = %s: [\"%s\"]"%(self.propType, self.propEntry[0], name, self.propEntry[2]))
 
 class HandlesPropertyHandler(BasePropertyHandler):
-    """handles property."""  
+    """handles property."""
 
 class ZipStoragePropertyHandler(BasePropertyHandler):
-    """zip storage."""  
+    """zip storage."""
 
     def output (self):
         globals.outputZipContent(self.bytes, self.printer, 61)
@@ -523,7 +621,7 @@ class ZipStoragePropertyHandler(BasePropertyHandler):
 # -------------------------------------------------------------------
 # special record handler: properties
 #
-# IDs and comments from OOo's svx/inc/svx/msdffdef.hxx
+# IDs, shape types and comments from OOo's svx/inc/svx/msdffdef.hxx
 # (slightly adapted)
 #
 # opcode: [canonical name, prop handler, comment]
@@ -540,7 +638,7 @@ propData = {
  125:  ["DFF_Prop_LockText",                     BoolPropertyHandler,              "Do not edit text"],
  126:  ["DFF_Prop_LockAdjustHandles",            BoolPropertyHandler,              "Do not adjust"],
  127:  ["DFF_Prop_LockAgainstGrouping",          BoolPropertyHandler,              "Do not group this shape"],
-      
+
  128:  ["DFF_Prop_lTxid",                        LongPropertyHandler,              "id for the text, value determined by the host"],
  129:  ["DFF_Prop_dxTextLeft",                   LongPropertyHandler,              "margins relative to shape's inscribed text rectangle (in EMUs)"],
  130:  ["DFF_Prop_dyTextTop",                    LongPropertyHandler, ""],
@@ -558,7 +656,7 @@ propData = {
  189:  ["DFF_Prop_RotateText",                   BoolPropertyHandler,              "Rotate text with shape"],
  190:  ["DFF_Prop_FitShapeToText",               BoolPropertyHandler,              "Size shape to fit text size"],
  191:  ["DFF_Prop_FitTextToShape",               BoolPropertyHandler,              "Size text to fit shape size"],
-      
+
  192:  ["DFF_Prop_gtextUNICODE",                 UniCharPropertyHandler,            "UNICODE text string"],
  193:  ["DFF_Prop_gtextRTF",                     CharPropertyHandler,             "RTF text string"],
  194:  ["DFF_Prop_gtextAlign",                   LongPropertyHandler,              "alignment on curve"],
@@ -581,7 +679,7 @@ propData = {
  253:  ["DFF_Prop_gtextFShadow",                 BoolPropertyHandler,              "Shadow font"],
  254:  ["DFF_Prop_gtextFSmallcaps",              BoolPropertyHandler,              "Small caps font"],
  255:  ["DFF_Prop_gtextFStrikethrough",          BoolPropertyHandler,              "Strike through font"],
-      
+
  256:  ["DFF_Prop_cropFromTop",                  FixedPointHandler,        "Fraction times total image height, as appropriate."],
  257:  ["DFF_Prop_cropFromBottom",               FixedPointHandler,        "Fraction times total image height, as appropriate."],
  258:  ["DFF_Prop_cropFromLeft",                 FixedPointHandler,        "Fraction times total image width, as appropriate."],
@@ -604,7 +702,7 @@ propData = {
  317:  ["DFF_Prop_pictureGray",                  BoolPropertyHandler,              "grayscale display"],
  318:  ["DFF_Prop_pictureBiLevel",               BoolPropertyHandler,              "bi-level display"],
  319:  ["DFF_Prop_pictureActive",                BoolPropertyHandler,              "Server is active (OLE objects only)"],
-      
+
  320:  ["DFF_Prop_geoLeft",                      LongPropertyHandler,              "Defines the G (geometry) coordinate space."],
  321:  ["DFF_Prop_geoTop",                       LongPropertyHandler, ""],
  322:  ["DFF_Prop_geoRight",                     LongPropertyHandler, ""],
@@ -635,7 +733,7 @@ propData = {
  381:  ["DFF_Prop_fGtextOK",                     BoolPropertyHandler,              "Text effect (FontWork) supported"],
  382:  ["DFF_Prop_fFillShadeShapeOK",            BoolPropertyHandler, ""],
  383:  ["DFF_Prop_fFillOK",                      BoolPropertyHandler,              "OK to fill the shape through the UI or VBA?"],
-      
+
  384:  ["DFF_Prop_fillType",                     LongPropertyHandler,              "MSO_FILLTYPE Type of fill"],
  385:  ["DFF_Prop_fillColor",                    ColorPropertyHandler,             "Foreground color"],
  386:  ["DFF_Prop_fillOpacity",                  FixedPointHandler,        "Fill Opacity"],
@@ -670,7 +768,7 @@ propData = {
  445:  ["DFF_Prop_fillShape",                    BoolPropertyHandler,              "Register pattern on shape"],
  446:  ["DFF_Prop_fillUseRect",                  BoolPropertyHandler,              "Use the large rect?"],
  447:  ["DFF_Prop_fNoFillHitTest",               BoolPropertyHandler,              "Hit test a shape as though filled"],
-      
+
  448:  ["DFF_Prop_lineColor",                    ColorPropertyHandler,             "Color of line"],
  449:  ["DFF_Prop_lineOpacity",                  LongPropertyHandler,              "Not implemented"],
  450:  ["DFF_Prop_lineBackColor",                ColorPropertyHandler,             "Background color"],
@@ -700,7 +798,7 @@ propData = {
  509:  ["DFF_Prop_fHitTestLine",                 BoolPropertyHandler,              "Should we hit test lines?"],
  510:  ["DFF_Prop_lineFillShape",                BoolPropertyHandler,              "Register pattern on shape"],
  511:  ["DFF_Prop_fNoLineDrawDash",              BoolPropertyHandler,              "Draw a dashed line if no line"],
-      
+
  512:  ["DFF_Prop_shadowType",                   LongPropertyHandler,              "Type of effect"],
  513:  ["DFF_Prop_shadowColor",                  ColorPropertyHandler,             "Foreground color"],
  514:  ["DFF_Prop_shadowHighlight",              ColorPropertyHandler,             "Embossed color"],
@@ -721,7 +819,7 @@ propData = {
  529:  ["DFF_Prop_shadowOriginY",                LongPropertyHandler, ""],
  574:  ["DFF_Prop_fShadow",                      BoolPropertyHandler,              "Any shadow?"],
  575:  ["DFF_Prop_fshadowObscured",              BoolPropertyHandler,              "Excel5-style shadow"],
-      
+
  576:  ["DFF_Prop_perspectiveType",              LongPropertyHandler,              "Where transform applies"],
  577:  ["DFF_Prop_perspectiveOffsetX",           LongPropertyHandler,              "The LONG values define a transformation matrix, effectively, each value is scaled by the perspectiveWeight parameter."],
  578:  ["DFF_Prop_perspectiveOffsetY",           LongPropertyHandler, ""],
@@ -735,7 +833,7 @@ propData = {
  586:  ["DFF_Prop_perspectiveOriginX",           LongPropertyHandler, ""],
  587:  ["DFF_Prop_perspectiveOriginY",           LongPropertyHandler, ""],
  639:  ["DFF_Prop_fPerspective",                 BoolPropertyHandler,              "On/off"],
-      
+
  640:  ["DFF_Prop_c3DSpecularAmt",               FixedPointHandler,        "Fixed-point 16.16"],
  641:  ["DFF_Prop_c3DDiffuseAmt",                FixedPointHandler,        "Fixed-point 16.16"],
  642:  ["DFF_Prop_c3DShininess",                 LongPropertyHandler,              "Default gives OK results"],
@@ -749,7 +847,7 @@ propData = {
  701:  ["DFF_Prop_fc3DMetallic",                 BoolPropertyHandler,              "Use metallic specularity?"],
  702:  ["DFF_Prop_fc3DUseExtrusionColor",        BoolPropertyHandler, ""],
  703:  ["DFF_Prop_fc3DLightFace",                BoolPropertyHandler, ""],
-      
+
  704:  ["DFF_Prop_c3DYRotationAngle",            FixedPointHandler,        "degrees (16.16) about y axis"],
  705:  ["DFF_Prop_c3DXRotationAngle",            FixedPointHandler,        "degrees (16.16) about x axis"],
  706:  ["DFF_Prop_c3DRotationAxisX",             LongPropertyHandler,              "These specify the rotation axis; only their relative magnitudes matter."],
@@ -782,7 +880,7 @@ propData = {
  765:  ["DFF_Prop_fc3DParallel",                 BoolPropertyHandler,              "Parallel projection?"],
  766:  ["DFF_Prop_fc3DKeyHarsh",                 BoolPropertyHandler,              "Is key lighting harsh?"],
  767:  ["DFF_Prop_fc3DFillHarsh",                BoolPropertyHandler,              "Is fill lighting harsh?"],
-      
+
  769:  ["DFF_Prop_hspMaster",                    LongPropertyHandler,              "master shape"],
  771:  ["DFF_Prop_cxstyle",                      LongPropertyHandler,              "Type of connector"],
  772:  ["DFF_Prop_bWMode",                       LongPropertyHandler,              "Settings for modifications to be made when in different forms of black-and-white mode."],
@@ -793,7 +891,7 @@ propData = {
  828:  ["DFF_Prop_fLockShapeType",               BoolPropertyHandler,              "Lock the shape type (don't allow Change Shape)"],
  830:  ["DFF_Prop_fDeleteAttachedObject",        BoolPropertyHandler, ""],
  831:  ["DFF_Prop_fBackground",                  BoolPropertyHandler,              "If TRUE, this is the background shape."],
-      
+
  832:  ["DFF_Prop_spcot",                        LongPropertyHandler,              "Callout type"],
  833:  ["DFF_Prop_dxyCalloutGap",                LongPropertyHandler,              "Distance from box to first point.(EMUs)"],
  834:  ["DFF_Prop_spcoa",                        LongPropertyHandler,              "Callout angle (any, 30,45,60,90,0)"],
@@ -807,7 +905,7 @@ propData = {
  893:  ["DFF_Prop_fCalloutMinusY",               BoolPropertyHandler, ""],
  894:  ["DFF_Prop_fCalloutDropAuto",             BoolPropertyHandler,              "If true, then we occasionally invert the drop distance"],
  895:  ["DFF_Prop_fCalloutLengthSpecified",      BoolPropertyHandler,              "if true, we look at dxyCalloutLengthSpecified"],
-      
+
  896:  ["DFF_Prop_wzName",                       UniCharPropertyHandler,            "Shape Name (present only if explicitly set)"],
  897:  ["DFF_Prop_wzDescription",                UniCharPropertyHandler,            "alternate text"],
  898:  ["DFF_Prop_pihlShape",                    LongPropertyHandler,              "The hyperlink in the shape."],
@@ -831,3 +929,220 @@ propData = {
 }
 
 
+shapeTypes = {
+   0:  ["mso_sptNotPrimitive"],
+   1:  ["mso_sptRectangle"],
+   2:  ["mso_sptRoundRectangle"],
+   3:  ["mso_sptEllipse"],
+   4:  ["mso_sptDiamond"],
+   5:  ["mso_sptIsocelesTriangle"],
+   6:  ["mso_sptRightTriangle"],
+   7:  ["mso_sptParallelogram"],
+   8:  ["mso_sptTrapezoid"],
+   9:  ["mso_sptHexagon"],
+   10:  ["mso_sptOctagon"],
+   11:  ["mso_sptPlus"],
+   12:  ["mso_sptStar"],
+   13:  ["mso_sptArrow"],
+   14:  ["mso_sptThickArrow"],
+   15:  ["mso_sptHomePlate"],
+   16:  ["mso_sptCube"],
+   17:  ["mso_sptBalloon"],
+   18:  ["mso_sptSeal"],
+   19:  ["mso_sptArc"],
+   20:  ["mso_sptLine"],
+   21:  ["mso_sptPlaque"],
+   22:  ["mso_sptCan"],
+   23:  ["mso_sptDonut"],
+   24:  ["mso_sptTextSimple"],
+   25:  ["mso_sptTextOctagon"],
+   26:  ["mso_sptTextHexagon"],
+   27:  ["mso_sptTextCurve"],
+   28:  ["mso_sptTextWave"],
+   29:  ["mso_sptTextRing"],
+   30:  ["mso_sptTextOnCurve"],
+   31:  ["mso_sptTextOnRing"],
+   32:  ["mso_sptStraightConnector1"],
+   33:  ["mso_sptBentConnector2"],
+   34:  ["mso_sptBentConnector3"],
+   35:  ["mso_sptBentConnector4"],
+   36:  ["mso_sptBentConnector5"],
+   37:  ["mso_sptCurvedConnector2"],
+   38:  ["mso_sptCurvedConnector3"],
+   39:  ["mso_sptCurvedConnector4"],
+   40:  ["mso_sptCurvedConnector5"],
+   41:  ["mso_sptCallout1"],
+   42:  ["mso_sptCallout2"],
+   43:  ["mso_sptCallout3"],
+   44:  ["mso_sptAccentCallout1"],
+   45:  ["mso_sptAccentCallout2"],
+   46:  ["mso_sptAccentCallout3"],
+   47:  ["mso_sptBorderCallout1"],
+   48:  ["mso_sptBorderCallout2"],
+   49:  ["mso_sptBorderCallout3"],
+   50:  ["mso_sptAccentBorderCallout1"],
+   51:  ["mso_sptAccentBorderCallout2"],
+   52:  ["mso_sptAccentBorderCallout3"],
+   53:  ["mso_sptRibbon"],
+   54:  ["mso_sptRibbon2"],
+   55:  ["mso_sptChevron"],
+   56:  ["mso_sptPentagon"],
+   57:  ["mso_sptNoSmoking"],
+   58:  ["mso_sptSeal8"],
+   59:  ["mso_sptSeal16"],
+   60:  ["mso_sptSeal32"],
+   61:  ["mso_sptWedgeRectCallout"],
+   62:  ["mso_sptWedgeRRectCallout"],
+   63:  ["mso_sptWedgeEllipseCallout"],
+   64:  ["mso_sptWave"],
+   65:  ["mso_sptFoldedCorner"],
+   66:  ["mso_sptLeftArrow"],
+   67:  ["mso_sptDownArrow"],
+   68:  ["mso_sptUpArrow"],
+   69:  ["mso_sptLeftRightArrow"],
+   70:  ["mso_sptUpDownArrow"],
+   71:  ["mso_sptIrregularSeal1"],
+   72:  ["mso_sptIrregularSeal2"],
+   73:  ["mso_sptLightningBolt"],
+   74:  ["mso_sptHeart"],
+   75:  ["mso_sptPictureFrame"],
+   76:  ["mso_sptQuadArrow"],
+   77:  ["mso_sptLeftArrowCallout"],
+   78:  ["mso_sptRightArrowCallout"],
+   79:  ["mso_sptUpArrowCallout"],
+   80:  ["mso_sptDownArrowCallout"],
+   81:  ["mso_sptLeftRightArrowCallout"],
+   82:  ["mso_sptUpDownArrowCallout"],
+   83:  ["mso_sptQuadArrowCallout"],
+   84:  ["mso_sptBevel"],
+   85:  ["mso_sptLeftBracket"],
+   86:  ["mso_sptRightBracket"],
+   87:  ["mso_sptLeftBrace"],
+   88:  ["mso_sptRightBrace"],
+   89:  ["mso_sptLeftUpArrow"],
+   90:  ["mso_sptBentUpArrow"],
+   91:  ["mso_sptBentArrow"],
+   92:  ["mso_sptSeal24"],
+   93:  ["mso_sptStripedRightArrow"],
+   94:  ["mso_sptNotchedRightArrow"],
+   95:  ["mso_sptBlockArc"],
+   96:  ["mso_sptSmileyFace"],
+   97:  ["mso_sptVerticalScroll"],
+   98:  ["mso_sptHorizontalScroll"],
+   99:  ["mso_sptCircularArrow"],
+   100:  ["mso_sptNotchedCircularArrow"],
+   101:  ["mso_sptUturnArrow"],
+   102:  ["mso_sptCurvedRightArrow"],
+   103:  ["mso_sptCurvedLeftArrow"],
+   104:  ["mso_sptCurvedUpArrow"],
+   105:  ["mso_sptCurvedDownArrow"],
+   106:  ["mso_sptCloudCallout"],
+   107:  ["mso_sptEllipseRibbon"],
+   108:  ["mso_sptEllipseRibbon2"],
+   109:  ["mso_sptFlowChartProcess"],
+   110:  ["mso_sptFlowChartDecision"],
+   111:  ["mso_sptFlowChartInputOutput"],
+   112:  ["mso_sptFlowChartPredefinedProcess"],
+   113:  ["mso_sptFlowChartInternalStorage"],
+   114:  ["mso_sptFlowChartDocument"],
+   115:  ["mso_sptFlowChartMultidocument"],
+   116:  ["mso_sptFlowChartTerminator"],
+   117:  ["mso_sptFlowChartPreparation"],
+   118:  ["mso_sptFlowChartManualInput"],
+   119:  ["mso_sptFlowChartManualOperation"],
+   120:  ["mso_sptFlowChartConnector"],
+   121:  ["mso_sptFlowChartPunchedCard"],
+   122:  ["mso_sptFlowChartPunchedTape"],
+   123:  ["mso_sptFlowChartSummingJunction"],
+   124:  ["mso_sptFlowChartOr"],
+   125:  ["mso_sptFlowChartCollate"],
+   126:  ["mso_sptFlowChartSort"],
+   127:  ["mso_sptFlowChartExtract"],
+   128:  ["mso_sptFlowChartMerge"],
+   129:  ["mso_sptFlowChartOfflineStorage"],
+   130:  ["mso_sptFlowChartOnlineStorage"],
+   131:  ["mso_sptFlowChartMagneticTape"],
+   132:  ["mso_sptFlowChartMagneticDisk"],
+   133:  ["mso_sptFlowChartMagneticDrum"],
+   134:  ["mso_sptFlowChartDisplay"],
+   135:  ["mso_sptFlowChartDelay"],
+   136:  ["mso_sptTextPlainText"],
+   137:  ["mso_sptTextStop"],
+   138:  ["mso_sptTextTriangle"],
+   139:  ["mso_sptTextTriangleInverted"],
+   140:  ["mso_sptTextChevron"],
+   141:  ["mso_sptTextChevronInverted"],
+   142:  ["mso_sptTextRingInside"],
+   143:  ["mso_sptTextRingOutside"],
+   144:  ["mso_sptTextArchUpCurve"],
+   145:  ["mso_sptTextArchDownCurve"],
+   146:  ["mso_sptTextCircleCurve"],
+   147:  ["mso_sptTextButtonCurve"],
+   148:  ["mso_sptTextArchUpPour"],
+   149:  ["mso_sptTextArchDownPour"],
+   150:  ["mso_sptTextCirclePour"],
+   151:  ["mso_sptTextButtonPour"],
+   152:  ["mso_sptTextCurveUp"],
+   153:  ["mso_sptTextCurveDown"],
+   154:  ["mso_sptTextCascadeUp"],
+   155:  ["mso_sptTextCascadeDown"],
+   156:  ["mso_sptTextWave1"],
+   157:  ["mso_sptTextWave2"],
+   158:  ["mso_sptTextWave3"],
+   159:  ["mso_sptTextWave4"],
+   160:  ["mso_sptTextInflate"],
+   161:  ["mso_sptTextDeflate"],
+   162:  ["mso_sptTextInflateBottom"],
+   163:  ["mso_sptTextDeflateBottom"],
+   164:  ["mso_sptTextInflateTop"],
+   165:  ["mso_sptTextDeflateTop"],
+   166:  ["mso_sptTextDeflateInflate"],
+   167:  ["mso_sptTextDeflateInflateDeflate"],
+   168:  ["mso_sptTextFadeRight"],
+   169:  ["mso_sptTextFadeLeft"],
+   170:  ["mso_sptTextFadeUp"],
+   171:  ["mso_sptTextFadeDown"],
+   172:  ["mso_sptTextSlantUp"],
+   173:  ["mso_sptTextSlantDown"],
+   174:  ["mso_sptTextCanUp"],
+   175:  ["mso_sptTextCanDown"],
+   176:  ["mso_sptFlowChartAlternateProcess"],
+   177:  ["mso_sptFlowChartOffpageConnector"],
+   178:  ["mso_sptCallout90"],
+   179:  ["mso_sptAccentCallout90"],
+   180:  ["mso_sptBorderCallout90"],
+   181:  ["mso_sptAccentBorderCallout90"],
+   182:  ["mso_sptLeftRightUpArrow"],
+   183:  ["mso_sptSun"],
+   184:  ["mso_sptMoon"],
+   185:  ["mso_sptBracketPair"],
+   186:  ["mso_sptBracePair"],
+   187:  ["mso_sptSeal4"],
+   188:  ["mso_sptDoubleWave"],
+   189:  ["mso_sptActionButtonBlank"],
+   190:  ["mso_sptActionButtonHome"],
+   191:  ["mso_sptActionButtonHelp"],
+   192:  ["mso_sptActionButtonInformation"],
+   193:  ["mso_sptActionButtonForwardNext"],
+   194:  ["mso_sptActionButtonBackPrevious"],
+   195:  ["mso_sptActionButtonEnd"],
+   196:  ["mso_sptActionButtonBeginning"],
+   197:  ["mso_sptActionButtonReturn"],
+   198:  ["mso_sptActionButtonDocument"],
+   199:  ["mso_sptActionButtonSound"],
+   200:  ["mso_sptActionButtonMovie"],
+   201:  ["mso_sptHostControl"],
+   202:  ["mso_sptTextBox"]
+}
+
+textHeader = {
+   0:  ["title"],
+   1:  ["body"],
+   2:  ["notes"],
+   3:  ["outline"],
+   4:  ["text in a shape"],
+   5:  ["subtitle in title slide"],
+   6:  ["title in title slide"],
+   7:  ["body in two-column slide"],
+   8:  ["body in four-column slide"]
+}

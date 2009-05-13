@@ -6,7 +6,7 @@
 #
 #    Author:
 #      Kohei Yoshida  <kyoshida@novell.com>
-#      Thorsten Behrens <tbehrens@novell.com>	   	
+#      Thorsten Behrens <tbehrens@novell.com>
 #
 #   The Contents of this file are made available subject to the terms
 #   of GNU Lesser General Public License Version 2.1 and any later
@@ -51,6 +51,7 @@ class PPTDumper(object):
         strm.printHeader()
         strm.printDirectory()
         dirnames = strm.getDirectoryNames()
+        result = True
         for dirname in dirnames:
             if len(dirname) == 0 or dirname == 'Root Entry':
                 continue
@@ -59,12 +60,13 @@ class PPTDumper(object):
             self.__printDirHeader(dirname, len(dirstrm.bytes))
             if  dirname == "PowerPoint Document":
                 if not self.__readSubStream(dirstrm):
-                    return False
+                    result = False
             elif  dirname == "Current User":
                 if not self.__readSubStream(dirstrm):
-                    return False
+                    result = False
             else:
                 globals.dumpBytes(dirstrm.bytes, 512)
+        return result
 
     def __readSubStream (self, strm):
         # read all records in substream
@@ -101,7 +103,7 @@ def main (args):
     dumper = PPTDumper(args[0], params)
     if not dumper.dump():
         error("FAILURE\n")
-        
+
 
 if __name__ == '__main__':
     main(sys.argv)
