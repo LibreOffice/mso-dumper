@@ -84,12 +84,6 @@ append a line to be displayed.
         else:
             return 'no'
 
-    def getTrueFalse (self, boolVal):
-        if boolVal:
-            return 'true'
-        else:
-            return 'false'
-
     def readUnsignedInt (self, length):
         bytes = self.readBytes(length)
         return globals.getUnsignedInt(bytes)
@@ -526,14 +520,20 @@ class BasePropertyHandler():
 class BoolPropertyHandler(BasePropertyHandler):
     """Bool properties."""
 
+    def getTrueFalse (self, boolVal):
+        if boolVal:
+            return 'true'
+        else:
+            return 'false'
+
     def output (self):
         bitMask = 1
-        for i in xrange(self.propType, self.propType-32):
+        for i in xrange(self.propType, self.propType-32, -1):
             if i in propData:
                 propEntry = propData[i]
-                if type(propEntry[1]) == type(BoolPropertyHandler):
+                if propEntry[1] == BoolPropertyHandler:
                     flagValue = self.getTrueFalse(self.propValue & bitMask)
-                    self.printer("%4.4Xh: %s = %d [\"%s\"]"%(self.propType, propEntry[0], flagValue, propEntry[2]))
+                    self.printer("%4.4Xh: %s = %s [\"%s\"]"%(i, propEntry[0], flagValue, propEntry[2]))
             bitMask *= 2
 
 
@@ -627,8 +627,19 @@ class ZipStoragePropertyHandler(BasePropertyHandler):
 # opcode: [canonical name, prop handler, comment]
 
 propData = {
-
+# Transform group
+   0:  ["DFF_Prop_Left",                         LongPropertyHandler,      "left pos of unrotated shape in emu"],
+   1:  ["DFF_Prop_Top",                          LongPropertyHandler,      "top pos of unrotated shape in emu"],
+   2:  ["DFF_Prop_Right",                        LongPropertyHandler,      "right pos of unrotated shape in emu"],
+   3:  ["DFF_Prop_Bottom",                       LongPropertyHandler,      "bottom pos of unrotated shape in emu"],
    4:  ["DFF_Prop_Rotation",                     FixedPointHandler,        "degrees"],
+   5:  ["DFF_Prop_gvPage",                       LongPropertyHandler,      "no idea, MSOGV"],
+   61: ["DFF_Prop_fChangePage",                  BoolPropertyHandler,      "no idea"],
+   62: ["DFF_Prop_fFlipV",                       BoolPropertyHandler,      "vertical flip"],
+   63: ["DFF_Prop_fFlipH",                       BoolPropertyHandler,      "horiz flip"],
+
+# Protection group
+ 118:  ["DFF_Prop_LockAgainstUngrouping",        BoolPropertyHandler,              "Do not ungroup this shape"],
  119:  ["DFF_Prop_LockRotation",                 BoolPropertyHandler,              "No rotation"],
  120:  ["DFF_Prop_LockAspectRatio",              BoolPropertyHandler,              "Don't allow changes in aspect ratio"],
  121:  ["DFF_Prop_LockPosition",                 BoolPropertyHandler,              "Don't allow the shape to be moved"],
@@ -639,6 +650,7 @@ propData = {
  126:  ["DFF_Prop_LockAdjustHandles",            BoolPropertyHandler,              "Do not adjust"],
  127:  ["DFF_Prop_LockAgainstGrouping",          BoolPropertyHandler,              "Do not group this shape"],
 
+# Text group
  128:  ["DFF_Prop_lTxid",                        LongPropertyHandler,              "id for the text, value determined by the host"],
  129:  ["DFF_Prop_dxTextLeft",                   LongPropertyHandler,              "margins relative to shape's inscribed text rectangle (in EMUs)"],
  130:  ["DFF_Prop_dyTextTop",                    LongPropertyHandler, ""],
@@ -651,18 +663,22 @@ propData = {
  137:  ["DFF_Prop_cdirFont",                     LongPropertyHandler,              "Font rotation in 90 degree steps"],
  138:  ["DFF_Prop_hspNext",                      LongPropertyHandler,              "ID of the next shape (used by Word for linked textboxes)"],
  139:  ["DFF_Prop_txdir",                        LongPropertyHandler,              "Bi-Di Text direction"],
+ 140:  ["DFF_Prop_ccol",                         LongPropertyHandler,              "Column count"],
+ 141:  ["DFF_Prop_dzColMargin",                  LongPropertyHandler,              "Column margin on both sides, in emu"],
  187:  ["DFF_Prop_SelectText",                   BoolPropertyHandler,              "TRUE if single click selects text, FALSE if two clicks"],
  188:  ["DFF_Prop_AutoTextMargin",               BoolPropertyHandler,              "use host's margin calculations"],
  189:  ["DFF_Prop_RotateText",                   BoolPropertyHandler,              "Rotate text with shape"],
  190:  ["DFF_Prop_FitShapeToText",               BoolPropertyHandler,              "Size shape to fit text size"],
  191:  ["DFF_Prop_FitTextToShape",               BoolPropertyHandler,              "Size text to fit shape size"],
 
+# GeoText group
  192:  ["DFF_Prop_gtextUNICODE",                 UniCharPropertyHandler,            "UNICODE text string"],
  193:  ["DFF_Prop_gtextRTF",                     CharPropertyHandler,             "RTF text string"],
  194:  ["DFF_Prop_gtextAlign",                   LongPropertyHandler,              "alignment on curve"],
  195:  ["DFF_Prop_gtextSize",                    LongPropertyHandler,              "default point size"],
  196:  ["DFF_Prop_gtextSpacing",                 LongPropertyHandler,              "fixed point 16.16"],
  197:  ["DFF_Prop_gtextFont",                    UniCharPropertyHandler,            "font family name"],
+ 198:  ["DFF_Prop_gtextCSSFont",                 UniCharPropertyHandler,            "css font family name, preserves css font selectors"],
  240:  ["DFF_Prop_gtextFReverseRows",            BoolPropertyHandler,              "Reverse row order"],
  241:  ["DFF_Prop_fGtext",                       BoolPropertyHandler,              "Has text effect"],
  242:  ["DFF_Prop_gtextFVertical",               BoolPropertyHandler,              "Rotate characters"],
@@ -680,6 +696,7 @@ propData = {
  254:  ["DFF_Prop_gtextFSmallcaps",              BoolPropertyHandler,              "Small caps font"],
  255:  ["DFF_Prop_gtextFStrikethrough",          BoolPropertyHandler,              "Strike through font"],
 
+# Blip group
  256:  ["DFF_Prop_cropFromTop",                  FixedPointHandler,        "Fraction times total image height, as appropriate."],
  257:  ["DFF_Prop_cropFromBottom",               FixedPointHandler,        "Fraction times total image height, as appropriate."],
  258:  ["DFF_Prop_cropFromLeft",                 FixedPointHandler,        "Fraction times total image width, as appropriate."],
@@ -698,11 +715,17 @@ propData = {
  271:  ["DFF_Prop_pibPrint",                     LongPropertyHandler,              "Blip ID to display when printing"],
  272:  ["DFF_Prop_pibPrintName",                 UniCharPropertyHandler,            "Blip file name"],
  273:  ["DFF_Prop_pibPrintFlags",                LongPropertyHandler,              "Blip flags"],
+ 274:  ["DFF_Prop_movie",                        LongPropertyHandler,              "movie data"],
+ 282:  ["DFF_Prop_pictureRecolor",               ColorPropertyHandler,             "Recolor pic to this color"],
+ 313:  ["DFF_Prop_picturePreserveGrays",         BoolPropertyHandler,              "leave grays when doing color manipulation"],
+ 314:  ["DFF_Prop_fRewind",                      BoolPropertyHandler,              "rewind movie when done"],
+ 315:  ["DFF_Prop_fLooping",                     BoolPropertyHandler,              "Is movie looping"],
  316:  ["DFF_Prop_fNoHitTestPicture",            BoolPropertyHandler,              "Do not hit test the picture"],
  317:  ["DFF_Prop_pictureGray",                  BoolPropertyHandler,              "grayscale display"],
  318:  ["DFF_Prop_pictureBiLevel",               BoolPropertyHandler,              "bi-level display"],
  319:  ["DFF_Prop_pictureActive",                BoolPropertyHandler,              "Server is active (OLE objects only)"],
 
+# Geometry group
  320:  ["DFF_Prop_geoLeft",                      LongPropertyHandler,              "Defines the G (geometry) coordinate space."],
  321:  ["DFF_Prop_geoTop",                       LongPropertyHandler, ""],
  322:  ["DFF_Prop_geoRight",                     LongPropertyHandler, ""],
@@ -727,6 +750,8 @@ propData = {
  342:  ["DFF_Prop_pFormulas",                   LongPropertyHandler, ""],
  343:  ["DFF_Prop_textRectangles",              LongPropertyHandler, ""],
  344:  ["DFF_Prop_connectorType",               LongPropertyHandler,               "0=none, 1=segments, 2=custom, 3=rect"],
+ 345:  ["DFF_Prop_pFragments",                  MsoArrayPropertyHandler,           "Array of fragment ids"],
+ 377:  ["DFF_Prop_fColumnLine",                  BoolPropertyHandler,              "Column style may be set"],
  378:  ["DFF_Prop_fShadowOK",                    BoolPropertyHandler,              "Shadow may be set"],
  379:  ["DFF_Prop_f3DOK",                        BoolPropertyHandler,              "3D may be set"],
  380:  ["DFF_Prop_fLineOK",                      BoolPropertyHandler,              "Line style may be set"],
@@ -734,6 +759,7 @@ propData = {
  382:  ["DFF_Prop_fFillShadeShapeOK",            BoolPropertyHandler, ""],
  383:  ["DFF_Prop_fFillOK",                      BoolPropertyHandler,              "OK to fill the shape through the UI or VBA?"],
 
+# Fill group
  384:  ["DFF_Prop_fillType",                     LongPropertyHandler,              "MSO_FILLTYPE Type of fill"],
  385:  ["DFF_Prop_fillColor",                    ColorPropertyHandler,             "Foreground color"],
  386:  ["DFF_Prop_fillOpacity",                  FixedPointHandler,        "Fill Opacity"],
@@ -763,12 +789,15 @@ propData = {
  410:  ["DFF_Prop_fillShapeOriginX",             LongPropertyHandler, ""],
  411:  ["DFF_Prop_fillShapeOriginY",             LongPropertyHandler, ""],
  412:  ["DFF_Prop_fillShadeType",                LongPropertyHandler,              "Type of shading, if a shaded (gradient) fill."],
+ 441:  ["DFF_Prop_fRecolorFillAsPicture",        BoolPropertyHandler,              "Recolor pic according to pic recolor props from pic prop set"],
+ 442:  ["DFF_Prop_fUseShapeAnchor",              BoolPropertyHandler,              "Fit fill to shape anchor, not bounds"],
  443:  ["DFF_Prop_fFilled",                      BoolPropertyHandler,              "Is shape filled?"],
  444:  ["DFF_Prop_fHitTestFill",                 BoolPropertyHandler,              "Should we hit test fill?"],
  445:  ["DFF_Prop_fillShape",                    BoolPropertyHandler,              "Register pattern on shape"],
  446:  ["DFF_Prop_fillUseRect",                  BoolPropertyHandler,              "Use the large rect?"],
  447:  ["DFF_Prop_fNoFillHitTest",               BoolPropertyHandler,              "Hit test a shape as though filled"],
 
+# Line group
  448:  ["DFF_Prop_lineColor",                    ColorPropertyHandler,             "Color of line"],
  449:  ["DFF_Prop_lineOpacity",                  LongPropertyHandler,              "Not implemented"],
  450:  ["DFF_Prop_lineBackColor",                ColorPropertyHandler,             "Background color"],
@@ -793,12 +822,15 @@ propData = {
  469:  ["DFF_Prop_lineEndArrowLength",           LongPropertyHandler,              "Arrow at end"],
  470:  ["DFF_Prop_lineJoinStyle",                LongPropertyHandler,              "How to join lines"],
  471:  ["DFF_Prop_lineEndCapStyle",              LongPropertyHandler,              "How to end lines"],
+ 505:  ["DFF_Prop_fInsetPen",                    BoolPropertyHandler,              "Draw line inside the shape"],
+ 506:  ["DFF_Prop_fInsetPenOK",                  BoolPropertyHandler,              "Enable inset pen property on this shape"],
  507:  ["DFF_Prop_fArrowheadsOK",                BoolPropertyHandler,              "Allow arrowheads if prop. is set"],
  508:  ["DFF_Prop_fLine",                        BoolPropertyHandler,              "Any line?"],
  509:  ["DFF_Prop_fHitTestLine",                 BoolPropertyHandler,              "Should we hit test lines?"],
  510:  ["DFF_Prop_lineFillShape",                BoolPropertyHandler,              "Register pattern on shape"],
  511:  ["DFF_Prop_fNoLineDrawDash",              BoolPropertyHandler,              "Draw a dashed line if no line"],
 
+# Shadow group
  512:  ["DFF_Prop_shadowType",                   LongPropertyHandler,              "Type of effect"],
  513:  ["DFF_Prop_shadowColor",                  ColorPropertyHandler,             "Foreground color"],
  514:  ["DFF_Prop_shadowHighlight",              ColorPropertyHandler,             "Embossed color"],
@@ -820,6 +852,7 @@ propData = {
  574:  ["DFF_Prop_fShadow",                      BoolPropertyHandler,              "Any shadow?"],
  575:  ["DFF_Prop_fshadowObscured",              BoolPropertyHandler,              "Excel5-style shadow"],
 
+# Perspective group
  576:  ["DFF_Prop_perspectiveType",              LongPropertyHandler,              "Where transform applies"],
  577:  ["DFF_Prop_perspectiveOffsetX",           LongPropertyHandler,              "The LONG values define a transformation matrix, effectively, each value is scaled by the perspectiveWeight parameter."],
  578:  ["DFF_Prop_perspectiveOffsetY",           LongPropertyHandler, ""],
@@ -834,6 +867,7 @@ propData = {
  587:  ["DFF_Prop_perspectiveOriginY",           LongPropertyHandler, ""],
  639:  ["DFF_Prop_fPerspective",                 BoolPropertyHandler,              "On/off"],
 
+# 3d object group
  640:  ["DFF_Prop_c3DSpecularAmt",               FixedPointHandler,        "Fixed-point 16.16"],
  641:  ["DFF_Prop_c3DDiffuseAmt",                FixedPointHandler,        "Fixed-point 16.16"],
  642:  ["DFF_Prop_c3DShininess",                 LongPropertyHandler,              "Default gives OK results"],
@@ -848,6 +882,7 @@ propData = {
  702:  ["DFF_Prop_fc3DUseExtrusionColor",        BoolPropertyHandler, ""],
  703:  ["DFF_Prop_fc3DLightFace",                BoolPropertyHandler, ""],
 
+# 3d style group
  704:  ["DFF_Prop_c3DYRotationAngle",            FixedPointHandler,        "degrees (16.16) about y axis"],
  705:  ["DFF_Prop_c3DXRotationAngle",            FixedPointHandler,        "degrees (16.16) about x axis"],
  706:  ["DFF_Prop_c3DRotationAxisX",             LongPropertyHandler,              "These specify the rotation axis; only their relative magnitudes matter."],
@@ -881,6 +916,7 @@ propData = {
  766:  ["DFF_Prop_fc3DKeyHarsh",                 BoolPropertyHandler,              "Is key lighting harsh?"],
  767:  ["DFF_Prop_fc3DFillHarsh",                BoolPropertyHandler,              "Is fill lighting harsh?"],
 
+# shape group
  769:  ["DFF_Prop_hspMaster",                    LongPropertyHandler,              "master shape"],
  771:  ["DFF_Prop_cxstyle",                      LongPropertyHandler,              "Type of connector"],
  772:  ["DFF_Prop_bWMode",                       LongPropertyHandler,              "Settings for modifications to be made when in different forms of black-and-white mode."],
@@ -892,6 +928,7 @@ propData = {
  830:  ["DFF_Prop_fDeleteAttachedObject",        BoolPropertyHandler, ""],
  831:  ["DFF_Prop_fBackground",                  BoolPropertyHandler,              "If TRUE, this is the background shape."],
 
+# callout group
  832:  ["DFF_Prop_spcot",                        LongPropertyHandler,              "Callout type"],
  833:  ["DFF_Prop_dxyCalloutGap",                LongPropertyHandler,              "Distance from box to first point.(EMUs)"],
  834:  ["DFF_Prop_spcoa",                        LongPropertyHandler,              "Callout angle (any, 30,45,60,90,0)"],
@@ -906,6 +943,7 @@ propData = {
  894:  ["DFF_Prop_fCalloutDropAuto",             BoolPropertyHandler,              "If true, then we occasionally invert the drop distance"],
  895:  ["DFF_Prop_fCalloutLengthSpecified",      BoolPropertyHandler,              "if true, we look at dxyCalloutLengthSpecified"],
 
+# group shape group
  896:  ["DFF_Prop_wzName",                       UniCharPropertyHandler,            "Shape Name (present only if explicitly set)"],
  897:  ["DFF_Prop_wzDescription",                UniCharPropertyHandler,            "alternate text"],
  898:  ["DFF_Prop_pihlShape",                    LongPropertyHandler,              "The hyperlink in the shape."],
@@ -915,16 +953,60 @@ propData = {
  902:  ["DFF_Prop_dxWrapDistRight",              LongPropertyHandler,              "Right wrapping distance from text (Word)"],
  903:  ["DFF_Prop_dyWrapDistBottom",             LongPropertyHandler,              "Bottom wrapping distance from text (Word)"],
  904:  ["DFF_Prop_lidRegroup",                   LongPropertyHandler,              "Regroup ID"],
- 927:  ["DFF_Prop_tableProperties",             LongPropertyHandler, "Type of table: bit 1 plain, bit 2 placeholder, bit 3 rtl"],
- 928:  ["DFF_Prop_tableRowProperties",          MsoArrayPropertyHandler, "Table row properties (row heights, actually)"],
- 937:  ["DFF_Prop_xmlstuff",                     ZipStoragePropertyHandler, "Embedded ooxml"],
+ 905:  ["DFF_Prop_groupLeft",                    LongPropertyHandler,              "group left pos"],
+ 906:  ["DFF_Prop_groupTop",                     LongPropertyHandler,              "group top pos"],
+ 907:  ["DFF_Prop_groupRight",                   LongPropertyHandler,              "group right pos"],
+ 908:  ["DFF_Prop_groupBottom",                  LongPropertyHandler,              "group bottom pos"],
+ 909:  ["DFF_Prop_wzTooltip",                    UniCharPropertyHandler,           "hyperlink tooltip"],
+ 910:  ["DFF_Prop_wzScript",                     UniCharPropertyHandler,           "javascript, vbscript of shape"],
+ 911:  ["DFF_Prop_xAlign",                       LongPropertyHandler,              "X pos cm from left"],
+ 912:  ["DFF_Prop_xRelTo",                       LongPropertyHandler,              "X relative to column"],
+ 913:  ["DFF_Prop_yAlign",                       LongPropertyHandler,              "Y pos cm below"],
+ 914:  ["DFF_Prop_yRelTo",                       LongPropertyHandler,              "Y relative to paragraph"],
+ 915:  ["DFF_Prop_pctHR",                        LongPropertyHandler,              "Percentage width for horizontal rule"],
+ 916:  ["DFF_Prop_alignHR",                      LongPropertyHandler,              "alignment for horiz rule: left=0, center=1, right=2"],
+ 917:  ["DFF_Prop_dxHeightHR",                   LongPropertyHandler,              "height for HR"],
+ 918:  ["DFF_Prop_dxWidthHR",                    LongPropertyHandler,              "width for HR"],
+ 919:  ["DFF_Prop_wzScriptEx",                   UniCharPropertyHandler,           "extended script attrs"],
+ 920:  ["DFF_Prop_scriptLang",                   LongPropertyHandler,              "script language"],
+ 921:  ["DFF_Prop_wzScriptIdAttr",               UniCharPropertyHandler,           "Id script attr"],
+ 922:  ["DFF_Prop_wzScriptLangAttr",             UniCharPropertyHandler,           "Id script lang attr"],
+ 923:  ["DFF_Prop_borderTopColor",               ColorPropertyHandler,              "top border color (word)"],
+ 924:  ["DFF_Prop_borderLeftColor",              ColorPropertyHandler,              "left border color (word)"],
+ 925:  ["DFF_Prop_borderBottomColor",            ColorPropertyHandler,              "bottom border color (word)"],
+ 926:  ["DFF_Prop_borderRightColor",             ColorPropertyHandler,              "right border color (word)"],
+ 927:  ["DFF_Prop_tableProperties",              LongPropertyHandler, "Type of table: bit 1 plain, bit 2 placeholder, bit 3 rtl"],
+ 928:  ["DFF_Prop_tableRowProperties",           MsoArrayPropertyHandler, "Table row properties (row heights, actually)"],
+ 929:  ["DFF_Prop_scriptHtmlLocation",           LongPropertyHandler,              "script html location"],
+ 930:  ["DFF_Prop_wzApplet",                     UniCharPropertyHandler,           "applet body"],
+ 934:  ["DFF_Prop_wzAppletArg",                  UniCharPropertyHandler,           "applet arg"],
+ 937:  ["DFF_Prop_metroBlob",                    ZipStoragePropertyHandler,        "Embedded ooxml"],
+ 938:  ["DFF_Prop_dght",                         LongPropertyHandler,              "shape's z order. smaller means further away"],
+ 944:  ["DFF_Prop_fLayoutInCell",                BoolPropertyHandler,              "layout inside nested table when true"],
+ 945:  ["DFF_Prop_fIsBullet",                    BoolPropertyHandler,              "is shape picture bullet"],
+ 946:  ["DFF_Prop_fStandardHR",                  BoolPropertyHandler,              "true iff not graphical HR"],
+ 947:  ["DFF_Prop_fNoshadeHR",                   BoolPropertyHandler,              "true iff HR with NOSHADE set"],
+ 948:  ["DFF_Prop_fHorizRule",                   BoolPropertyHandler,              "true if horiz rule"],
+ 949:  ["DFF_Prop_fUserDrawn",                   BoolPropertyHandler,              "user drawn shape on ppt master"],
+ 950:  ["DFF_Prop_fAllowOverlap",                BoolPropertyHandler,              "overlap with other shapes permitted in web view"],
+ 951:  ["DFF_Prop_fReallyHidden",                BoolPropertyHandler,              "when hidden flag really set by user"],
+ 952:  ["DFF_Prop_fScriptAnchor",                BoolPropertyHandler,              "show visual clue that this shape has script block"],
+
+# dunno group
  953:  ["DFF_Prop_fEditedWrap",                  BoolPropertyHandler,              "Has the wrap polygon been edited?"],
  954:  ["DFF_Prop_fBehindDocument",              BoolPropertyHandler,              "Word-only (shape is behind text)"],
  955:  ["DFF_Prop_fOnDblClickNotify",            BoolPropertyHandler,              "Notify client on a double click"],
  956:  ["DFF_Prop_fIsButton",                    BoolPropertyHandler,              "A button shape (i.e., clicking performs an action). Set for shapes with attached hyperlinks or macros."],
  957:  ["DFF_Prop_fOneD",                        BoolPropertyHandler,              "1D adjustment"],
  958:  ["DFF_Prop_fHidden",                      BoolPropertyHandler,              "Do not display"],
- 959:  ["DFF_Prop_fPrint",                       BoolPropertyHandler,              "Print this shape"]
+ 959:  ["DFF_Prop_fPrint",                       BoolPropertyHandler,              "Print this shape"],
+
+# clip group
+ 1728: ["DFF_Prop_pVerticesClip",                MsoArrayPropertyHandler,          "vertices of clip path"],
+ 1729: ["DFF_Prop_pSegmentInfoClip",             MsoArrayPropertyHandler,          "segment info of clip path"],
+ 1730: ["DFF_Prop_shapePathClip",                LongPropertyHandler,              "type of clipping path"],
+ 1790: ["DFF_Prop_fClipToWrap",                  BoolPropertyHandler,              "clip shape to text tight wrap polygon"],
+ 1791: ["DFF_Prop_fClippedOk",                   BoolPropertyHandler,              "enable additional clipping"]
 
 }
 

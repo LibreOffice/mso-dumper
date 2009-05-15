@@ -212,6 +212,8 @@ recData = {
 0xF008: ["DFF_msofbtDg"],
 0xF118: ["DFF_msofbtRegroupItems"],
 0xF120: ["DFF_msofbtColorScheme"],
+0xF121: ["DFF_msofbtSecondaryOpt"],
+0xF122: ["DFF_msofbtTertiaryOpt"],
 0xF003: ["DFF_msofbtSpgrContainer"],
 0xF004: ["DFF_msofbtSpContainer"],
 0xF009: ["DFF_msofbtSpgr", pptrecord.Rect],
