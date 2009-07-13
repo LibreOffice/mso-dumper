@@ -635,6 +635,23 @@ class RefreshAll(BaseRecordHandler):
         self.appendLine("refresh all external data ranges and pivot tables: %s"%strVal)
 
 
+class Hyperlink(BaseRecordHandler):
+
+    def parseBytes (self):
+        rowFirst = self.readUnsignedInt(2)
+        rowLast = self.readUnsignedInt(2)
+        colFirst = self.readUnsignedInt(2)
+        colLast = self.readUnsignedInt(2)
+        # Rest of the stream stores undocumented hyperlink stream.  Refer to 
+        # page 128 of MS Excel binary format spec.
+        self.appendLine("rows: %d - %d"%(rowFirst, rowLast))
+        self.appendLine("columns: %d - %d"%(colFirst, colLast))
+        msg  = "NOTE: The stream after the first 8 bytes stores undocumented hyperlink stream.  "
+        msg += "Refer to page 128 of the MS Excel binary format spec."
+        self.appendLine('')
+        self.appendMultiLine(msg)
+
+
 # -------------------------------------------------------------------
 # SX - Pivot Table
 

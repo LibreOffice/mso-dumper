@@ -166,7 +166,7 @@ recData = {
     0x01B5: ["DCONBIN", "Data Consolidation Information"],
     0x01B6: ["TXO", "Text Object"],
     0x01B7: ["REFRESHALL", "Refresh Flag", xlsrecord.RefreshAll],
-    0x01B8: ["HLINK", "Hyperlink"],
+    0x01B8: ["HLINK", "Hyperlink", xlsrecord.Hyperlink],
     0x01BB: ["SXFDBTYPE", "SQL Datatype Identifier"],
     0x01BC: ["PROT4REVPASS", "Shared Workbook Protection Password"],
     0x01BE: ["DV", "Data Validation Criteria"],
