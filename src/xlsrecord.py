@@ -242,6 +242,37 @@ class Formula(BaseRecordHandler):
         self.appendLine("tokens: "+ftext)
 
 
+class Array(BaseRecordHandler):
+
+    def parseBytes (self):
+        row1 = self.readUnsignedInt(2)
+        row2 = self.readUnsignedInt(2)
+        col1 = self.readUnsignedInt(1)
+        col2 = self.readUnsignedInt(1)
+
+        flags = self.readUnsignedInt(2)
+        alwaysCalc = (0x01 & flags)
+        calcOnLoad = (0x02 & flags)
+
+        # Ignore these bits when reading a BIFF file.  When a BIFF file is 
+        # being written, chn must be 00000000.
+        chn = self.readUnsignedInt(4)
+
+        fmlLen = self.readUnsignedInt(2)
+        tokens = self.readBytes(fmlLen)
+
+        fparser = formula.FormulaParser(self.header, tokens)
+        fparser.parse()
+        ftext = fparser.getText()
+
+        self.appendLine("rows: %d - %d"%(row1, row2))
+        self.appendLine("columns: %d - %d"%(col1, col2))
+        self.appendLine("always calculate formula: " + self.getTrueFalse(alwaysCalc))
+        self.appendLine("calculate formula on file load: " + self.getTrueFalse(calcOnLoad))
+        self.appendLine("formula bytes: %s"%globals.getRawBytes(tokens, True, False))
+        self.appendLine("tokens: " + ftext)
+
+
 class Label(BaseRecordHandler):
 
     def parseBytes (self):

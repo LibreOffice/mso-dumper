@@ -8,7 +8,7 @@ class EndOfStream(Exception): pass
     # opcode: [canonical name, description, handler (optional)]
 
 recData = {
-    0x0006: ["FORMULA", "Formula Token Array and Result", xlsrecord.Formula],
+    0x0006: ["FORMULA", "Cell Formula", xlsrecord.Formula],
     0x000A: ["EOF", "End of File"],
     0x000C: ["CALCCOUNT", "Iteration Count"],
     0x000D: ["CALCMODE", "Calculation Mode"],
@@ -24,6 +24,7 @@ recData = {
     0x0017: ["EXTERNSHEET", "External Reference", xlsrecord.ExternSheet],
     0x0018: ["NAME", "Internal Defined Name", xlsrecord.Name],
     0x0019: ["WINDOWPROTECT", "Windows Are Protected"],
+    0x0021: ["ARRAY", "Array-Entered Formula", xlsrecord.Array], # undocumented, but identical to 0x0221 ?
     0x001A: ["VERTICALPAGEBREAKS", "Explicit Column Page Breaks"],
     0x001B: ["HORIZONTALPAGEBREAKS", "Explicit Row Page Breaks"],
     0x001C: ["NOTE", "Comment Associated with a Cell"],
@@ -181,7 +182,7 @@ recData = {
     0x0208: ["ROW", "Describes a Row", xlsrecord.Row],
     0x020B: ["INDEX", "Index Record"],
     0x0218: ["NAME", "Defined Name"],
-    0x0221: ["ARRAY", "Array-Entered Formula"],
+    0x0221: ["ARRAY", "Array-Entered Formula", xlsrecord.Array],
     0x0223: ["EXTERNNAME", "Externally Referenced Name"],
     0x0225: ["DEFAULTROWHEIGHT", "Default Row Height"],
     0x0231: ["FONT", "Font Description"],
