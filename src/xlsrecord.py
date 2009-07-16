@@ -113,6 +113,7 @@ class BOF(BaseRecordHandler):
     # TODO: Add more build identifiers.
     buildId = {
         0x0DBB: 'Excel 97',
+        0x0EDE: 'Excel 97',
         0x2775: 'Excel XP'
     }
 
