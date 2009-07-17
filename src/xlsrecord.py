@@ -272,6 +272,42 @@ class Array(BaseRecordHandler):
         self.appendLine("formula bytes: %s"%globals.getRawBytes(tokens, True, False))
         self.appendLine("tokens: " + ftext)
 
+        if self.getCurrentPos() >= len(self.bytes):
+            return
+
+        # cached values
+        cols = self.readUnsignedInt(1) + 1
+        rows = self.readUnsignedInt(2) + 1
+        self.appendLine("array size: cols=%d, rows=%d"%(cols, rows))
+        for row in xrange(0, rows):
+            for col in xrange(0, cols):
+                msg = "(row=%d, col=%d): "%(row, col)
+                valtype = self.readUnsignedInt(1)
+                if valtype == 0x00:
+                    # empty - ignore 8 bytes.
+                    self.readUnsignedInt(8)
+                    msg += "empty"
+                elif valtype == 0x01:
+                    # double
+                    val = self.readDouble()
+                    msg += "double: %g"%val
+                elif valtype == 0x02:
+                    # string
+                    strLen = self.readUnsignedInt(2) + 1
+                    text, strLen = globals.getRichText(self.readBytes(strLen), strLen)
+                    msg += "text: '%s'"%text
+                elif valtype == 0x04:
+                    # bool
+                    val = self.readUnsignedInt(1)
+                    msg += "bool: " + self.getTrueFalse(val)
+                elif valtype == 0x10:
+                    # error
+                    val = self.readUnsignedInt(1)
+                    msg += "error: %d"%val
+                self.appendLine(msg)
+
+        return
+
 
 class Label(BaseRecordHandler):
 
