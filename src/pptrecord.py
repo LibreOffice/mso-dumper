@@ -128,6 +128,17 @@ class ZipRecord(BaseRecordHandler):
     def parseBytes (self):
         globals.outputZipContent(self.readRemainingBytes(), self.appendLine, 61)
 
+class FontEntity(BaseRecordHandler):
+    """Font entity."""
+
+    def parseBytes (self):
+        faceName       = globals.getUTF8FromUTF16(globals.getTextBytes(self.readBytes(64)))
+        charSet        = self.readUnsignedInt(1)
+        flags          = self.readUnsignedInt(1)
+        fontType       = self.readUnsignedInt(1)
+        pitchAndFamily = self.readUnsignedInt(1)
+        self.appendLine("Font: name=%s charset=%d flags=0x%x type=%d family=%d"%(faceName, charSet, flags, fontType, pitchAndFamily))
+
 # -------------------------------------------------------------------
 # special record handler: properties
 
