@@ -329,6 +329,71 @@ class ColorScheme(BaseRecordHandler):
 # -------------------------------------------------------------------
 # special record handlers: text style properties
 
+class AnimationInfo(BaseRecordHandler):
+    """Animation properties."""
+
+    def parseBytes (self):
+        self.appendLine(globals.stringizeColorRef(self.readUnsignedInt(4),
+                                                  "DimColor"))
+        flags = self.readUnsignedInt(4)
+        self.appendLine("reverse: %d"%((flags & 0x00000001)!=0))
+        self.appendLine("automatic: %d"%((flags & 0x00000002)!=0))
+        self.appendLine("sound: %d"%((flags & 0x00000004)!=0))
+        self.appendLine("stopsound: %d"%((flags & 0x00000008)!=0))
+        self.appendLine("play: %d"%((flags & 0x00000010)!=0))
+        self.appendLine("synchronous: %d"%((flags & 0x00000020)!=0))
+        self.appendLine("hide: %d"%((flags & 0x00000040)!=0))
+        self.appendLine("animateBackground: %d"%((flags & 0x00000080)!=0))
+
+        self.appendLine("sound reference ID: %Xh"%self.readUnsignedInt(4))
+        self.appendLine("delay time: %d"%self.readUnsignedInt(4))
+        orderID = self.readSignedInt(2)
+        if orderID == -2:
+            self.appendLine("order: follow master slide")
+        else:    
+            self.appendLine("order: ID %4.4Xh"%orderID)
+
+        self.appendLine("num slides to play object: %d"%self.readUnsignedInt(2))
+
+        buildDesc = ["no build","all at once","by text level 1","by text level 2",
+                     "by text level 3","by text level 4","by text level 5",
+                     "graph by series","graph by category","element in series",
+                     "element in category"]
+        buildType = self.readUnsignedInt(1)
+        self.appendLine("build type: %s"%buildDesc[buildType])
+
+        flyDesc = ["none","random","blinds","checker","cover","dissolve",
+                   "fade","pull","random bar","strips","wipe","zoom","fly",
+                   "split","flash","(unused)","(unused)","diamond","plus",
+                   "wedge","push","comb","newsflash","alphafade","blur",
+                   "pushelem","wheel","circle"]
+        flyMethod = self.readUnsignedInt(1)
+        self.appendLine("fly method: %s"%flyDesc[flyMethod])
+
+        flyDirectionDesc = ["left","up","right","down","leftUp","rightUp",
+                            "leftDown","rightDown","fromLeftEdge","fromBottomEdge",
+                            "fromRightEdge","fromTopEdge","leftSlow","upSlow",
+                            "rightSlow","downSlow","zoomIn","zoomInSlightly",
+                            "zoomOut","zoomOutSlightly","zoomCenter","zoomBottom",
+                            "stretchAcross","stretchLeft","stretchUp","stretchRight",
+                            "stretchDown","rotate","spiral"]
+        flyDirection = self.readUnsignedInt(1)
+        self.appendLine("fly direction: %s"%flyDirectionDesc[flyDirection])
+
+        afterEffectDesc = ["none","dim","hide","hideImmediately"]
+        afterEffect = self.readUnsignedInt(1)
+        self.appendLine("after effect: %s"%afterEffectDesc[afterEffect])
+
+        subEffectDesc = ["none","build by word","build by letter"]
+        subEffect = self.readUnsignedInt(1)
+        self.appendLine("sub effect: %s"%subEffectDesc[subEffect])
+
+        self.appendLine("OLE verb: %4.4Xh"%self.readUnsignedInt(1))
+
+
+# -------------------------------------------------------------------
+# special record handlers: text style properties
+
 class TextStyles(BaseRecordHandler):
     """Text style properties."""
 
@@ -599,9 +664,6 @@ class FixedPointHandler(BasePropertyHandler):
 
 class ColorPropertyHandler(BasePropertyHandler):
     """Color property."""
-
-    def split (self, packedColor):
-        return ((packedColor & 0xFF0000) // 0x10000, (packedColor & 0xFF00) / 0x100, (packedColor & 0xFF))
 
     def output (self):
         propEntry = ["<color atom>", None, "undocumented color property"]
