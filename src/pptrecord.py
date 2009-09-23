@@ -303,6 +303,16 @@ class MediaAtom(BaseRecordHandler):
 
 
 # -------------------------------------------------------------------
+# special record handler: object ref atom
+
+class ObjectRefAtom(BaseRecordHandler):
+    """Object reference atom."""
+
+    def parseBytes (self):
+        self.appendLine("external object id: %Xh"%self.readUnsignedInt(4))
+
+
+# -------------------------------------------------------------------
 # special record handler: document atom
 
 class DocAtom(BaseRecordHandler):

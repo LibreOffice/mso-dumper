@@ -270,7 +270,7 @@ recData = {
  2031:  ["DFF_PST_Int4ArrayAtom"],
  2032:  ["DFF_PST_ColorSchemeAtom", pptrecord.ColorScheme],
  3008:  ["DFF_PST_OEShape"],
- 3009:  ["DFF_PST_ExObjRefAtom"],
+ 3009:  ["DFF_PST_ExObjRefAtom", pptrecord.ObjectRefAtom],
  3011:  ["DFF_PST_OEPlaceholderAtom"],
  3020:  ["DFF_PST_GrColor"],
  3025:  ["DFF_PST_GrectAtom"],
