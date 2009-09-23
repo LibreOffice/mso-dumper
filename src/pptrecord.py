@@ -122,6 +122,10 @@ def ShapeUniString (*args):
     args += "ShapeText",
     return UniString(*args)
 
+def CString (*args):
+    args += "CString",
+    return UniString(*args)
+
 class ZipRecord(BaseRecordHandler):
     """Zipped content."""
 
