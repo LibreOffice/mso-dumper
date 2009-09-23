@@ -37,7 +37,7 @@ recData = {
     0x0029: ["BOTTOMMARGIN", "Bottom Margin Measurement"],
     0x002A: ["PRINTHEADERS", "Print Row/Column Labels"],
     0x002B: ["PRINTGRIDLINES", "Print Gridlines Flag"],
-    0x002F: ["FILEPASS", "File Is Password-Protected"],
+    0x002F: ["FILEPASS", "File Is Password-Protected", xlsrecord.FilePass],
     0x0031: ["FONT", "Font and Character Formatting"],
     0x003C: ["CONTINUE", "Continues Long Records"],
     0x003D: ["WINDOW1", "Window Information"],
@@ -408,7 +408,7 @@ class XLDirStream(object):
         # record handler that parses the raw bytes and displays more 
         # meaningful information.
         handler = None 
-
+        
         print("")
         self.__printSep('=', 61, "%4.4Xh: "%header)
         if recData.has_key(header):
@@ -439,8 +439,14 @@ class XLDirStream(object):
         if size > 0:
             print("")
 
-        if handler != None:
-            # record handler exists.  Parse the record and display more info.
+        if handler != None and not self.strmData.encrypted:
+            # record handler exists.  Parse the record and display more info 
+            # unless the stream is encrypted.
             handler.output()
+
+        if recData.has_key(header) and recData[header][0] == "FILEPASS":
+            # presence of FILEPASS record indicates that the stream is 
+            # encrypted.
+            self.strmData.encrypted = True
 
         return header

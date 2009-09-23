@@ -214,6 +214,31 @@ class Dimensions(BaseRecordHandler):
         self.appendLine("last defined column plus 1: %d"%colMac)
 
 
+class FilePass(BaseRecordHandler):
+
+    def parseBytes (self):
+        mode = self.readUnsignedInt(2)    # mode: 0 = BIFF5  1 = BIFF8
+        self.readUnsignedInt(2)           # ignore 2 bytes.
+        subMode = self.readUnsignedInt(2) # submode: 1 = standard encryption  2 = strong encryption
+
+        modeName = 'unknown'
+        if mode == 0:
+            modeName = 'BIFF5'
+        elif mode == 1:
+            modeName = 'BIFF8'
+
+        encType = 'unknown'
+        if subMode == 1:
+            encType = 'standard'
+        elif subMode == 2:
+            encType = 'strong'
+        
+        self.appendLine("mode: %s"%modeName)
+        self.appendLine("encryption type: %s"%encType)
+        self.appendLine("")
+        self.appendMultiLine("NOTE: Since this document appears to be encrypted, the dumper will not parse the record contents from this point forward.")
+
+
 class Formula(BaseRecordHandler):
 
     def parseBytes (self):
