@@ -331,7 +331,7 @@ class ColorScheme(BaseRecordHandler):
                                                   "Accent and followed hyperlink"))
 
 # -------------------------------------------------------------------
-# special record handlers: text style properties
+# special record handlers: ppt97 animation info
 
 class AnimationInfo(BaseRecordHandler):
     """Animation properties."""
@@ -393,6 +393,119 @@ class AnimationInfo(BaseRecordHandler):
         self.appendLine("sub effect: %s"%subEffectDesc[subEffect])
 
         self.appendLine("OLE verb: %4.4Xh"%self.readUnsignedInt(1))
+
+
+# -------------------------------------------------------------------
+# special record handlers: SMIL animation
+
+class AnimNode(BaseRecordHandler):
+    """Animation node."""
+
+    restartDesc=["default","always","whenNotActive","never"]
+    groupTypeDesc=["parallel","sequential","node","media"]
+    fillDesc=["unknown","always","whenOff","never"]
+    nodeActivationDesc=["unknown","onClick","withPrevious","afterPrevious",
+                        "mainSequence","interactiveSequence","timingRoot"]
+
+    def parseBytes (self):
+        self.readUnsignedInt(4)
+        self.appendLine("restart: %s"%self.restartDesc[self.readUnsignedInt(4)])
+        self.appendLine("groupType: %s"%self.groupTypeDesc[self.readUnsignedInt(4)])
+        self.appendLine("fill: %s"%self.fillDesc[self.readUnsignedInt(4)])
+        self.readUnsignedInt(4)
+        self.readUnsignedInt(4)
+        self.appendLine("duration: %f secs"%(self.readSignedInt(4)/1000.0))
+        nodeKind = self.readUnsignedInt(4)
+        if nodeKind == 25:
+            self.appendLine("nodeKind: animation")
+        elif nodeKind == 24:
+            self.appendLine("nodeKind: transitionFilter")
+        else:    
+            self.appendLine("nodeKind: unknown/ignore")
+
+
+class AnimAttributeValue(BaseRecordHandler):
+    """Animation attribute values."""
+
+    def handleByte (self):
+        self.appendLine("byte value: %2.2Xh"%self.readUnsignedInt(1))
+        
+    def handleLong (self):
+        self.appendLine("long value: %d"%self.readUnsignedInt(4))
+        
+    def handleFloat (self):
+        self.appendLine("float value: %f"%globals.getFloat(self.readBytes(4)))
+        
+    def handleString (self):
+        value = globals.getUTF8FromUTF16(globals.getTextBytes(self.readRemainingBytes()))
+        self.appendLine("text value: '%s'"%value)
+    
+    valueHandlers=[handleByte,handleLong,handleFloat,handleString]
+
+    def parseBytes (self):
+        valueType = self.readUnsignedInt(1)
+        self.valueHandlers[valueType](self)
+
+
+class AnimateData(BaseRecordHandler):
+    """Animate data values."""
+
+    calcModeDesc=["discrete","linear","formula"]
+    valueTypeDesc=["string","number","color"]
+    def parseBytes (self):
+        self.appendLine("calc mode: %s"%self.calcModeDesc[self.readUnsignedInt(4)])
+        self.appendLine("flags: %4.4Xh"%self.readUnsignedInt(4))
+        self.appendLine("value type: %s"%self.valueTypeDesc[self.readUnsignedInt(4)])
+
+
+class AnimKeyTime(BaseRecordHandler):
+    """Animate key times."""
+
+    def parseBytes (self):
+        self.appendLine("time: %f"%(self.readSignedInt(4)/1000.0))
+
+
+class AnimTrigger(BaseRecordHandler):
+    """Animation trigger."""
+
+    triggerDesc=["none","onBegin","onEnd","beginEvent","endEvent","onClick",
+                 "onDoubleClick","onMouseEnter","onMouseLeave","onNext",
+                 "onPrev","onStopAudio"]
+    def parseBytes (self):
+        self.readUnsignedInt(4)
+        self.appendLine("trigger: %s"%self.triggerDesc[self.readUnsignedInt(4)])
+        self.readUnsignedInt(4)
+        self.appendLine("begin time: %f"%(self.readSignedInt(4)/1000.0))
+
+
+class AnimKeyTime(BaseRecordHandler):
+    """Animate key times."""
+
+    def parseBytes (self):
+        self.appendLine("time: %f"%(self.readSignedInt(4)/1000.0))
+
+
+class AnimValue(BaseRecordHandler):
+    """Animate values."""
+
+    def handleRepeat (self):
+        self.appendLine("repeat count: %f"%globals.getFloat(self.readBytes(4)))
+
+    def handleAccelerate (self):
+        self.appendLine("accelerate amount: %f"%globals.getFloat(self.readBytes(4)))
+
+    def handleDecelerate (self):
+        self.appendLine("decelerate amount: %f"%globals.getFloat(self.readBytes(4)))
+
+    def handleAutoReverse (self):
+        if self.readUnsignedInt(4) != 0:
+            self.appendLine("autoReverse is on")
+    
+    valueHandlers=[handleRepeat,None,None,handleAccelerate,handleDecelerate,handleAutoReverse]
+
+    def parseBytes (self):
+        valueType = self.readUnsignedInt(4)
+        self.valueHandlers[valueType](self)
 
 
 # -------------------------------------------------------------------
