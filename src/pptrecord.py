@@ -139,12 +139,13 @@ class FontEntity(BaseRecordHandler):
     """Font entity."""
 
     def parseBytes (self):
-        faceName       = globals.getUTF8FromUTF16(globals.getTextBytes(self.readBytes(64)))
+        faceName       = globals.getUTF8FromUTF16(
+            globals.getTextBytes(self.readBytes(64)))
         charSet        = self.readUnsignedInt(1)
         flags          = self.readUnsignedInt(1)
         fontType       = self.readUnsignedInt(1)
         pitchAndFamily = self.readUnsignedInt(1)
-        self.appendLine("Font: name=%s charset=%d flags=0x%x type=%d family=%d"%(faceName, charSet, flags, fontType, pitchAndFamily))
+        self.appendLine("Font: name=\"%s\" charset=%d flags=0x%x type=%d family=%d"%(faceName, charSet, flags, fontType, pitchAndFamily))
 
 # -------------------------------------------------------------------
 # special record handler: properties
@@ -274,6 +275,31 @@ class TextHeader(BaseRecordHandler):
             self.appendLine("Text type: %s"%textHeader[textType][0])
         else:
             self.appendLine("Text type: unknown")
+
+
+# -------------------------------------------------------------------
+# special record handler: embedded wav atom
+
+class EmbeddedWav(BaseRecordHandler):
+    """Wav atom."""
+
+    def parseBytes (self):
+        self.appendLine("sound id: %Xh"%self.readUnsignedInt(4))
+        self.appendLine("sound len: %d bytes"%self.readUnsignedInt(4))
+
+
+# -------------------------------------------------------------------
+# special record handler: media atom
+
+class MediaAtom(BaseRecordHandler):
+    """Media atom."""
+
+    def parseBytes (self):
+        self.appendLine("id: %Xh"%self.readUnsignedInt(4))
+        flags = self.readUnsignedInt(2)
+        self.appendLine("loop: %s"%((flags & 0x0001)!=0))
+        self.appendLine("rewind: %s"%((flags & 0x0002)!=0))
+        self.appendLine("is narration: %s"%((flags & 0x0004)!=0))
 
 
 # -------------------------------------------------------------------
@@ -512,6 +538,48 @@ class AnimValue(BaseRecordHandler):
     def parseBytes (self):
         valueType = self.readUnsignedInt(4)
         self.valueHandlers[valueType](self)
+
+
+class AnimReference(BaseRecordHandler):
+    """Animation reference object."""
+
+    def handleDefault (self,type,mode):
+        self.appendLine("unknown ref kind: %Xh (mode %Xh)"%(type,mode))
+
+    def handleShapeAsWhole (self,type,mode):
+        self.appendLine("whole shape animation: shape ID %d"%self.readUnsignedInt(4))
+
+    def handleShapeOnePara (self,type,mode):
+        self.appendLine("one paragraph of shape: shape ID %d"%self.readUnsignedInt(4))
+        self.appendLine("begin character: %d"%self.readSignedInt(4))
+        self.appendLine("end character: %d"%self.readSignedInt(4))
+
+    def handleShapeOnlyBackground (self,type,mode):
+        self.appendLine("only background of shape: shape ID %d"%self.readUnsignedInt(4))
+
+    def handleShapeOnlyText (self,type,mode):
+        self.appendLine("only text content of shape: shape ID %d"%self.readUnsignedInt(4))
+
+    shapeRefModeHandler=[handleShapeAsWhole,handleDefault,handleShapeOnePara,
+                         handleDefault,handleDefault,handleDefault,
+                         handleShapeOnlyBackground,handleDefault,handleShapeOnlyText]
+    def handleShape (self,type,mode):
+        self.shapeRefModeHandler[mode](self,type,mode)
+
+    def handleSound (self,type,mode):
+        self.appendLine("sound object: ID %d"%self.readUnsignedInt(4))
+
+    def handleAudio (self,type,mode):
+        self.appendLine("audio shape: shape ID %d"%self.readUnsignedInt(4))
+
+    def handleVideo (self,type,mode):
+        self.appendLine("video shape: shape ID %d"%self.readUnsignedInt(4))
+
+    refTypeHandler=[handleDefault,handleShape,handleSound,handleAudio,handleVideo]
+    def parseBytes (self):
+        refMode = self.readUnsignedInt(4)
+        refType = self.readUnsignedInt(4)
+        self.refTypeHandler[refType](self,refType,refMode)
 
 
 # -------------------------------------------------------------------

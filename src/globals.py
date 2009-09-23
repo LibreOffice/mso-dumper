@@ -239,9 +239,14 @@ def getUTF8FromUTF16 (bytes):
     text = ''
     for i in xrange(0, loopCount):
         code = ''
-        if bytes[i*2+1] != '\x00':
+        lsbZero = bytes[i*2] == '\x00'
+        msbZero = bytes[i*2+1] == '\x00'
+        if msbZero and lsbZero:
+            return text
+        
+        if not msbZero:
             code += bytes[i*2+1]
-        if bytes[i*2] != '\x00':
+        if not lsbZero:
             code += bytes[i*2]
         try:    
             text += unicode(code, 'utf-8')
