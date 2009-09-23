@@ -40,7 +40,10 @@ append a line to be displayed.
         pass
 
     def __print (self, text):
-        print(self.prefix + text)
+        try:    
+            print(self.prefix + text)
+        except UnicodeEncodeError:
+            print(self.prefix + "<%d invalid chars>"%len(text))
 
     def output (self):
         self.parseBytes()
@@ -402,7 +405,7 @@ class AnimNode(BaseRecordHandler):
     """Animation node."""
 
     restartDesc=["default","always","whenNotActive","never"]
-    groupTypeDesc=["parallel","sequential","node","media"]
+    groupTypeDesc=["parallel","sequential","node","media","unknown"]
     fillDesc=["unknown","always","whenOff","never"]
     nodeActivationDesc=["unknown","onClick","withPrevious","afterPrevious",
                         "mainSequence","interactiveSequence","timingRoot"]
@@ -488,6 +491,9 @@ class AnimKeyTime(BaseRecordHandler):
 class AnimValue(BaseRecordHandler):
     """Animate values."""
 
+    def handleDefault (self):
+        self.appendLine("unknown value: %Xh"%self.readUnsignedInt(4))
+
     def handleRepeat (self):
         self.appendLine("repeat count: %f"%globals.getFloat(self.readBytes(4)))
 
@@ -501,7 +507,7 @@ class AnimValue(BaseRecordHandler):
         if self.readUnsignedInt(4) != 0:
             self.appendLine("autoReverse is on")
     
-    valueHandlers=[handleRepeat,None,None,handleAccelerate,handleDecelerate,handleAutoReverse]
+    valueHandlers=[handleRepeat,handleDefault,handleDefault,handleAccelerate,handleDecelerate,handleAutoReverse]
 
     def parseBytes (self):
         valueType = self.readUnsignedInt(4)
@@ -757,12 +763,12 @@ class MsoArrayPropertyHandler(BasePropertyHandler):
             elementSize = self.readUnsignedInt(2)
             self.printer("%4.4Xh: %s: [\"%s\"]"%(self.propType, self.propEntry[0], self.propEntry[2]))
             for i in xrange(0, numElements):
-                if elementSize > 4:
-                    bytes = self.readBytes(elementSize)
-                    self.printer("%4.4Xh: %d = [complex type]"%(self.propType,i))
-                else:
+                if elementSize in [0,1,2,4]:
                     currElem = self.readUnsignedInt(elementSize)
                     self.printer("%4.4Xh: %d = %Xh"%(self.propType,i,currElem))
+                else:
+                    bytes = self.readBytes(elementSize)
+                    self.printer("%4.4Xh: %d = [complex type]"%(self.propType,i))
 
 class UniCharPropertyHandler(BasePropertyHandler):
     """unicode string property."""

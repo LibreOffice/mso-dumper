@@ -164,11 +164,11 @@ class PPTDirStream(object):
             subSubStrm = PPTDirStream(bytes, self.params, self.prefix+" ", recordInfo)
             subSubStrm.readRecords()
         elif (recordInfo is not None
-              and recordInfo[1] == "magic"
-              and self.isPPT10SpecialData()):
-            # what a mess. PPT10 binary data is just another embedded
-            # stream
-            self.handlePPT10BinaryTags(bytes,recordInfo)
+              and recordInfo[1] == "magic"):
+            if self.isPPT10SpecialData():
+                # what a mess. PPT10 binary data is just another embedded
+                # stream
+                self.handlePPT10BinaryTags(bytes,recordInfo)
         elif recordInfo is not None:
             handler = recordInfo[1](recordType, recordInstance, size, bytes, self.properties, self.prefix)
             print("")
