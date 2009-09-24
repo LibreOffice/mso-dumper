@@ -337,7 +337,7 @@ recData = {
  4080:  ["DFF_PST_SlideListWithText"],
  4081:  ["DFF_PST_AnimationInfoAtom", pptrecord.AnimationInfo],
  4082:  ["DFF_PST_InteractiveInfo"],
- 4083:  ["DFF_PST_InteractiveInfoAtom"],
+ 4083:  ["DFF_PST_InteractiveInfoAtom", pptrecord.InteractiveInfoAtom],
  4084:  ["DFF_PST_SlideList"],
  4085:  ["DFF_PST_UserEditAtom"],
  4086:  ["DFF_PST_CurrentUserAtom"],

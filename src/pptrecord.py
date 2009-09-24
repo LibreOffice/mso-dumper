@@ -313,6 +313,27 @@ class ObjectRefAtom(BaseRecordHandler):
 
 
 # -------------------------------------------------------------------
+# special record handler: object ref atom
+
+class InteractiveInfoAtom(BaseRecordHandler):
+    """Interaction info atom."""
+
+    actionDesc=["noAction","macroAction","runProgramAction","jumpAction","hyperlinkAction",
+                "oleAction","mediaAction","customShowAction"]
+    def parseBytes (self):
+        self.appendLine("sound object id: %Xh"%self.readUnsignedInt(4))
+        self.appendLine("external hyperlink id: %Xh"%self.readUnsignedInt(4))
+        self.appendLine("action: %s"%self.actionDesc[self.readUnsignedInt(1)])
+        self.appendLine("ole verb id: %d"%self.readUnsignedInt(1))
+        flags = self.readUnsignedInt(1)
+        self.appendLine("animated button: %s"%((flags & 0x01)!=0))
+        self.appendLine("stop sound: %s"%((flags & 0x02)!=0))
+        self.appendLine("custom show return: %s"%((flags & 0x04)!=0))
+        self.appendLine("interaction visited: %s"%((flags & 0x08)!=0))
+        self.appendLine("hyperlink type: %d"%self.readUnsignedInt(1))
+
+
+# -------------------------------------------------------------------
 # special record handler: document atom
 
 class DocAtom(BaseRecordHandler):
@@ -387,6 +408,7 @@ class AnimationInfo(BaseRecordHandler):
         self.appendLine("synchronous: %d"%((flags & 0x00000020)!=0))
         self.appendLine("hide: %d"%((flags & 0x00000040)!=0))
         self.appendLine("animateBackground: %d"%((flags & 0x00000080)!=0))
+        self.appendLine("associated shape: %d"%((flags & 0x00004000)!=0))
 
         self.appendLine("sound reference ID: %Xh"%self.readUnsignedInt(4))
         self.appendLine("delay time: %d"%self.readUnsignedInt(4))
