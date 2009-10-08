@@ -745,6 +745,57 @@ class Hyperlink(BaseRecordHandler):
         self.appendMultiLine(msg)
 
 
+class PhoneticInfo(BaseRecordHandler):
+
+    phoneticType = [
+        'narrow Katakana', # 0x00
+        'wide Katakana',   # 0x01
+        'Hiragana',        # 0x02
+        'any type'         # 0x03
+    ]
+
+    @staticmethod
+    def getPhoneticType (flag):
+        if flag < len(PhoneticInfo.phoneticType):
+            return PhoneticInfo.phoneticType[flag]
+        return '(unknown)'
+
+    alignType = [
+        'general alignment',    # 0x00
+        'left aligned',         # 0x01
+        'center aligned',       # 0x02
+        'distributed alignment' # 0x03
+    ]
+
+    @staticmethod
+    def getAlignType (flag):
+        if flag < len(PhoneticInfo.alignType):
+            return PhoneticInfo.alignType[flag]
+        return '(unknown)'
+
+    def parseBytes (self):
+        fontIdx = self.readUnsignedInt(2)
+        self.appendLine("font ID: %d"%fontIdx)
+        flags = self.readUnsignedInt(1)
+
+        # flags: 0 0 0 0 0 0 0 0
+        #       | A | B | unused|
+
+        flags /= 16 # shift 4 bits to the right
+        # flags: 0 0 0 0 0 0 0 0
+        #       |unused | A | B |
+        phType = (flags/4) & 0x03
+        alignType = flags  & 0x03
+
+        self.appendLine("phonetic type: %s"%PhoneticInfo.getPhoneticType(phType))
+        self.appendLine("alignment: %s"%PhoneticInfo.getAlignType(alignType))
+
+        self.readUnsignedInt(1) # unused byte
+        
+        # TODO: read cell ranges.
+
+        return
+
 # -------------------------------------------------------------------
 # SX - Pivot Table
 
