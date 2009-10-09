@@ -72,6 +72,9 @@ append a line to be displayed.
     def setCurrentPos (self, pos):
         self.pos = pos
 
+    def isEndOfRecord (self):
+        return (self.pos == self.size)
+
     def getYesNo (self, boolVal):
         if boolVal:
             return 'yes'
@@ -417,6 +420,19 @@ class String(BaseRecordHandler):
         self.appendLine("string value: '%s'"%name)
 
 
+class SST(BaseRecordHandler):
+
+    def parseBytes (self):
+        refCount = self.readSignedInt(4) # total number of references in workbook
+        strCount = self.readSignedInt(4) # total number of unique strings.
+        self.appendLine("total number of references: %d"%refCount)
+        self.appendLine("total number of unique strings: %d"%strCount)
+        for i in xrange(0, strCount):
+            extText, bytesRead = globals.getUnicodeRichExtText(self.bytes[self.getCurrentPos():])
+            self.readBytes(bytesRead) # advance current position.
+        return
+
+
 class Blank(BaseRecordHandler):
 
     def parseBytes (self):
@@ -425,6 +441,17 @@ class Blank(BaseRecordHandler):
         xf  = globals.getSignedInt(self.bytes[4:6])
         self.appendCellPosition(col, row)
         self.appendLine("XF record ID: %d"%xf)
+
+
+class DBCell(BaseRecordHandler):
+
+    def parseBytes (self):
+        rowRecOffset = self.readUnsignedInt(4)
+        self.appendLine("offset to first ROW record: %d"%rowRecOffset)
+        while not self.isEndOfRecord():
+            cellOffset = self.readUnsignedInt(2)
+            self.appendLine("offset to CELL record: %d"%cellOffset)
+        return
 
 
 class DefColWidth(BaseRecordHandler):

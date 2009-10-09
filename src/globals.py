@@ -39,6 +39,46 @@ class StreamData(object):
         return self.pivotCacheIDs.has_key(name)
 
 
+class ByteStream(object):
+
+    def __init__ (self, bytes):
+        self.bytes = bytes
+        self.pos = 0
+        self.size = len(bytes)
+
+    def readBytes (self, length):
+        r = self.bytes[self.pos:self.pos+length]
+        self.pos += length
+        return r
+
+    def readRemainingBytes (self):
+        r = self.bytes[self.pos:]
+        self.pos = self.size
+        return r
+
+    def getCurrentPos (self):
+        return self.pos
+
+    def setCurrentPos (self, pos):
+        self.pos = pos
+
+    def isEndOfRecord (self):
+        return (self.pos == self.size)
+
+    def readUnsignedInt (self, length):
+        bytes = self.readBytes(length)
+        return getUnsignedInt(bytes)
+
+    def readSignedInt (self, length):
+        bytes = self.readBytes(length)
+        return getSignedInt(bytes)
+
+    def readDouble (self):
+        # double is always 8 bytes.
+        bytes = self.readBytes(8)
+        return getDouble(bytes)
+
+
 def output (msg):
     sys.stdout.write(msg)
 
@@ -61,6 +101,53 @@ def decodeName (name):
             newname += name[i]
 
     return newname
+
+
+class UnicodeRichExtText(object):
+    def __init__ (self):
+        self.baseText = ''
+        self.phoneticBytes = []
+
+
+def getUnicodeRichExtText (bytes):
+    ret = UnicodeRichExtText()
+    strm = ByteStream(bytes)
+    textLen = strm.readUnsignedInt(2)
+    flags = strm.readUnsignedInt(1)
+    #  0 0 0 0 0 0 0 0
+    # |-------|D|C|B|A|
+    isDoubleByte = (flags     & 0x01) == 1 # A
+    ignored      = ((flags/2) & 0x01) == 1 # B
+    hasPhonetic  = ((flags/4) & 0x01) == 1 # C
+    isRichStr    = ((flags/8) & 0x01) == 1 # D
+
+    numElem = 0
+    if isRichStr:
+        numElem = strm.readUnsignedInt(2)
+
+    phoneticBytes = 0
+    if hasPhonetic:
+        phoneticBytes = strm.readUnsignedInt(4)
+        
+    if isDoubleByte:
+        # double-byte string (UTF-16)
+        text = ''
+        for i in xrange(0, textLen):
+            text += toTextBytes(strm.readBytes(2)).decode('utf-16')
+        ret.baseText = text
+    else:
+        # single-byte string
+        ret.baseText = toTextBytes(strm.readBytes(textLen))
+
+    if isRichStr:
+        for i in xrange(0, numElem):
+            posChar = strm.readUnsignedInt(2)
+            fontIdx = strm.readUnsignedInt(2)
+
+    if hasPhonetic:
+        ret.phoneticBytes = strm.readBytes(phoneticBytes)
+
+    return ret, strm.getCurrentPos()
 
 
 def getRichText (bytes, textLen=None):
