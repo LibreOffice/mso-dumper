@@ -147,7 +147,7 @@ recData = {
     0x00F9: ["SXFMLA", "PivotTable Parsed Expression"],
     0x00FB: ["SXFORMAT", "PivotTable Format Record"],
     0x00FC: ["SST", "Shared String Table"],
-    0x00FD: ["LABELSST", "Cell Value"],
+    0x00FD: ["LABELSST", "Cell Value", xlsrecord.LabelSST],
     0x00FF: ["EXTSST", "Extended Shared String Table"],
     0x0100: ["SXVDEX", "Extended PivotTable View Fields", xlsrecord.SXViewFieldsEx],
     0x0103: ["SXFORMULA", "PivotTable Formula Record"],

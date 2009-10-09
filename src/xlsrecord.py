@@ -347,6 +347,18 @@ class Label(BaseRecordHandler):
         self.appendLine("label text: %s"%text)
 
 
+class LabelSST(BaseRecordHandler):
+
+    def parseBytes (self):
+        col = self.readUnsignedInt(2)
+        row = self.readUnsignedInt(2)
+        xfIdx = self.readUnsignedInt(2)
+        strId = self.readUnsignedInt(4)
+        self.appendCellPosition(col, row)
+        self.appendLine("XF record ID: %d"%xfIdx)
+        self.appendLine("string ID in SST: %d"%strId)
+
+
 class Number(BaseRecordHandler):
 
     def parseBytes (self):
