@@ -818,13 +818,10 @@ class PhoneticInfo(BaseRecordHandler):
         flags = self.readUnsignedInt(1)
 
         # flags: 0 0 0 0 0 0 0 0
-        #       | A | B | unused|
+        #       | unused| B | A |
 
-        flags /= 16 # shift 4 bits to the right
-        # flags: 0 0 0 0 0 0 0 0
-        #       |unused | A | B |
-        phType = (flags/4) & 0x03
-        alignType = flags  & 0x03
+        phType    = (flags)   & 0x03
+        alignType = (flags/4) & 0x03
 
         self.appendLine("phonetic type: %s"%PhoneticInfo.getPhoneticType(phType))
         self.appendLine("alignment: %s"%PhoneticInfo.getAlignType(alignType))
