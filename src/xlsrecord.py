@@ -5,6 +5,19 @@ import globals, formula
 # -------------------------------------------------------------------
 # record handler classes
 
+def getValueOrUnknown (list, idx):
+    listType = type(list)
+    if listType == type([]):
+        # list
+        if idx < len(list):
+            return list[idx]
+    elif listType == type({}):
+        # dictionary
+        if list.has_key(idx):
+            return list[idx]
+
+    return '(unknown)'
+
 class BaseRecordHandler(globals.ByteStream):
 
     def __init__ (self, header, size, bytes, strmData):
@@ -759,9 +772,7 @@ class PhoneticInfo(BaseRecordHandler):
 
     @staticmethod
     def getPhoneticType (flag):
-        if flag < len(PhoneticInfo.phoneticType):
-            return PhoneticInfo.phoneticType[flag]
-        return '(unknown)'
+        return getValueOrUnknown(PhoneticInfo.phoneticType, flag)
 
     alignType = [
         'general alignment',    # 0x00
@@ -772,9 +783,7 @@ class PhoneticInfo(BaseRecordHandler):
 
     @staticmethod
     def getAlignType (flag):
-        if flag < len(PhoneticInfo.alignType):
-            return PhoneticInfo.alignType[flag]
-        return '(unknown)'
+        return getValueOrUnknown(PhoneticInfo.alignType, flag)
 
     def parseBytes (self):
         fontIdx = self.readUnsignedInt(2)
@@ -795,6 +804,109 @@ class PhoneticInfo(BaseRecordHandler):
         # TODO: read cell ranges.
 
         return
+
+
+class Font(BaseRecordHandler):
+
+    fontFamilyNames = [
+        'not applicable', # 0x00
+        'roman',          # 0x01
+        'swiss',          # 0x02
+        'modern',         # 0x03
+        'script',         # 0x04
+        'decorative'      # 0x05
+    ]
+
+    @staticmethod
+    def getFontFamily (code):
+        return getValueOrUnknown(Font.fontFamilyNames, code)
+
+    scriptNames = [
+        'normal script',
+        'superscript',
+        'subscript'
+    ]
+
+    @staticmethod
+    def getScriptName (code):
+        return getValueOrUnknown(Font.scriptNames, code)
+
+
+    underlineTypes = {
+        0x00: 'no underline',
+        0x01: 'single underline',
+        0x02: 'double underline',
+        0x21: 'single accounting',
+        0x22: 'double accounting'
+    }
+
+    @staticmethod
+    def getUnderlineStyleName (val):
+        return getValueOrUnknown(Font.underlineTypes, val)
+
+    charSetNames = {
+        0x00: 'ANSI_CHARSET',
+        0x01: 'DEFAULT_CHARSET',
+        0x02: 'SYMBOL_CHARSET',
+        0x4D: 'MAC_CHARSET',
+        0x80: 'SHIFTJIS_CHARSET',
+        0x81: 'HANGEUL_CHARSET',
+        0x81: 'HANGUL_CHARSET',
+        0x82: 'JOHAB_CHARSET',
+        0x86: 'GB2312_CHARSET',
+        0x88: 'CHINESEBIG5_CHARSET',
+        0xA1: 'GREEK_CHARSET',
+        0xA2: 'TURKISH_CHARSET',
+        0xA3: 'VIETNAMESE_CHARSET',
+        0xB1: 'HEBREW_CHARSET',
+        0xB2: 'ARABIC_CHARSET',
+        0xBA: 'BALTIC_CHARSET',
+        0xCC: 'RUSSIAN_CHARSET',
+        0xDD: 'THAI_CHARSET',
+        0xEE: 'EASTEUROPE_CHARSET'
+    }
+
+    @staticmethod
+    def getCharSetName (code):
+        return getValueOrUnknown(Font.charSetNames, code)
+
+    def parseBytes (self):
+        height     = self.readUnsignedInt(2)
+        flags      = self.readUnsignedInt(2)
+        colorId    = self.readUnsignedInt(2)
+
+        boldStyle  = self.readUnsignedInt(2)
+        boldStyleName = '(unknown)'
+        if boldStyle == 400:
+            boldStyleName = 'normal'
+        elif boldStyle == 700:
+            boldStyleName = 'bold'
+
+        superSub   = self.readUnsignedInt(2)
+        ulStyle    = self.readUnsignedInt(1)
+        fontFamily = self.readUnsignedInt(1)
+        charSet    = self.readUnsignedInt(1)
+        reserved   = self.readUnsignedInt(1)
+        nameLen    = self.readUnsignedInt(1)
+        fontName, nameLen = globals.getRichText(self.readRemainingBytes(), nameLen)
+        self.appendLine("font height: %d"%height)
+        self.appendLine("color ID: %d"%colorId)
+        self.appendLine("bold style: %s (%d)"%(boldStyleName, boldStyle))
+        self.appendLine("script type: %s"%Font.getScriptName(superSub))
+        self.appendLine("underline type: %s"%Font.getUnderlineStyleName(ulStyle))
+        self.appendLine("character set: %s"%Font.getCharSetName(charSet))
+        self.appendLine("font family: %s"%Font.getFontFamily(fontFamily))
+        self.appendLine("font name: %s (%d)"%(fontName, nameLen))
+
+
+class XF(BaseRecordHandler):
+
+    def parseBytes (self):
+        fontId = self.readUnsignedInt(2)
+        numId = self.readUnsignedInt(2)
+        self.appendLine("font ID: %d"%fontId)
+        self.appendLine("number format ID: %d"%numId)
+
 
 # -------------------------------------------------------------------
 # SX - Pivot Table

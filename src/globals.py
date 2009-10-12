@@ -153,34 +153,32 @@ def getUnicodeRichExtText (bytes):
 def getRichText (bytes, textLen=None):
     """parse a string of the rich-text format that Excel uses."""
 
-    flags = bytes[0]
+    strm = ByteStream(bytes)
+    flags = strm.readUnsignedInt(1)
     if type(flags) == type('c'):
         flags = ord(flags)
     is16Bit   = (flags & 0x01)
     isFarEast = (flags & 0x04)
     isRich    = (flags & 0x08)
 
-    i = 1
     formatRuns = 0
     if isRich:
-        formatRuns = getSignedInt(bytes[i:i+2])
-        i += 2
+        formatRuns = strm.readUnsignedInt(2)
 
     extInfo = 0
     if isFarEast:
-        extInfo = getSignedInt(bytes[i:i+4])
-        i += 4
+        extInfo = strm.readUnsignedInt(4)
 
     extraBytes = 0
     if textLen == None:
         extraBytes = formatRuns*4 + extInfo
         textLen = len(bytes) - extraBytes - i
 
-    totalByteLen = i + textLen + extraBytes
+    totalByteLen = strm.getCurrentPos() + textLen + extraBytes
     if is16Bit:
         return ("<16-bit strings not supported yet>", totalByteLen)
 
-    text = toTextBytes(bytes[i:i+textLen])
+    text = toTextBytes(strm.readBytes(textLen))
     return (text, totalByteLen)
 
 
