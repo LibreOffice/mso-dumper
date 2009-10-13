@@ -206,6 +206,7 @@ recData = {
     0x0892: ["STYLEEXT", "Named Cell Style Extension"],
     0x0896: ["THEME", "Theme"],
     0x089A: ["MTRSETTINGS", "Multi-threaded Calculation Settings"],
+    0x089C: ["HEADERFOOTER", "Header Footer"],
     0x089B: ["COMPRESSPICTURES", "Automatic Picture Compression Mode"],
     0x08A3: ["FORCEFULLCALCULATION", "Force Full Calculation Mode"],
     0x1001: ["CHUNITS", "?"],
