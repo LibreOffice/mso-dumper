@@ -198,7 +198,7 @@ recData = {
     0x0862: ["SHEETLAYOUT", "Tab Color below Sheet Name"],
     0x0863: ["BOOKEXT", "Extra Book Info"],
     0x0864: ["SXADDL", "Pivot Table Additional Info", xlsrecord.SXAddlInfo],
-    0x0867: ["SHEETPROTECTION", "Sheet Protection Options"],
+    0x0867: ["FEATHEADR", "Shared Feature Header", xlsrecord.FeatureHeader],
     0x0868: ["RANGEPROTECTION", "Protected Range on Protected Sheet"],
     0x087D: ["XFEXT", "XF Extension"],
     0x088C: ["COMPAT12", "Compatibility Checker 12"],

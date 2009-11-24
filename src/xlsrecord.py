@@ -78,6 +78,12 @@ append a line to be displayed.
         else:
             return 'false'
 
+    def getEnabledDisabled (self, boolVal):
+        if boolVal:
+            return 'enabled'
+        else:
+            return 'disabled'
+
 
 class BOF(BaseRecordHandler):
 
@@ -907,6 +913,66 @@ class XF(BaseRecordHandler):
         self.appendLine("font ID: %d"%fontId)
         self.appendLine("number format ID: %d"%numId)
 
+
+class FeatureHeader(BaseRecordHandler):
+
+    def parseBytes (self):
+        recordType = self.readUnsignedInt(2)
+        frtFlag = self.readUnsignedInt(2) # currently 0
+        self.readBytes(8) # reserved (currently all 0)
+        featureTypeId = self.readUnsignedInt(2)
+        featureTypeText = 'unknown'
+        if featureTypeId == 2:
+            featureTypeText = 'enhanced protection'
+        elif featureTypeId == 4:
+            featureTypeText = 'smart tag'
+        featureHdr = self.readUnsignedInt(1) # must be 1
+        sizeHdrData = self.readSignedInt(4)
+        sizeHdrDataText = 'byte size'
+        if sizeHdrData == -1:
+            sizeHdrDataText = 'size depends on feature type'
+
+        self.appendLine("record type: 0x%4.4X (must match the header)"%recordType)
+        self.appendLine("feature type: %d (%s)"%(featureTypeId, featureTypeText))
+        self.appendLine("size of header data: %d (%s)"%(sizeHdrData, sizeHdrDataText))
+
+        if featureTypeId == 2 and sizeHdrData == -1:
+            # enhanced protection optionsss
+            flags = self.readUnsignedInt(4)
+            self.appendLine("enhanced protection flag: 0x%8.8X"%flags)
+
+            optEditObj             = (flags & 0x00000001)
+            optEditScenario        = (flags & 0x00000002)
+            optFormatCells         = (flags & 0x00000004)
+            optFormatColumns       = (flags & 0x00000008)
+            optFormatRows          = (flags & 0x00000010)
+            optInsertColumns       = (flags & 0x00000020)
+            optInsertRows          = (flags & 0x00000040)
+            optInsertLinks         = (flags & 0x00000080)
+            optDeleteColumns       = (flags & 0x00000100)
+            optDeleteRows          = (flags & 0x00000200)
+            optSelectLockedCells   = (flags & 0x00000400)
+            optSort                = (flags & 0x00000800)
+            optUseAutofilter       = (flags & 0x00001000)
+            optUsePivotReports     = (flags & 0x00002000)
+            optSelectUnlockedCells = (flags & 0x00004000)
+            self.appendLine("  edit object:             %s"%self.getEnabledDisabled(optEditObj))
+            self.appendLine("  edit scenario:           %s"%self.getEnabledDisabled(optEditScenario))
+            self.appendLine("  format cells:            %s"%self.getEnabledDisabled(optFormatCells))
+            self.appendLine("  format columns:          %s"%self.getEnabledDisabled(optFormatColumns))
+            self.appendLine("  format rows:             %s"%self.getEnabledDisabled(optFormatRows))
+            self.appendLine("  insert columns:          %s"%self.getEnabledDisabled(optInsertColumns))
+            self.appendLine("  insert rows:             %s"%self.getEnabledDisabled(optInsertRows))
+            self.appendLine("  insert hyperlinks:       %s"%self.getEnabledDisabled(optInsertLinks))
+            self.appendLine("  delete columns:          %s"%self.getEnabledDisabled(optDeleteColumns))
+            self.appendLine("  delete rows:             %s"%self.getEnabledDisabled(optDeleteRows))
+            self.appendLine("  select locked cells:     %s"%self.getEnabledDisabled(optSelectLockedCells))
+            self.appendLine("  sort:                    %s"%self.getEnabledDisabled(optSort))
+            self.appendLine("  use autofilter:          %s"%self.getEnabledDisabled(optUseAutofilter))
+            self.appendLine("  use pivot table reports: %s"%self.getEnabledDisabled(optUsePivotReports))
+            self.appendLine("  select unlocked cells:   %s"%self.getEnabledDisabled(optSelectUnlockedCells))
+
+        return
 
 # -------------------------------------------------------------------
 # SX - Pivot Table
