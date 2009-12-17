@@ -2158,11 +2158,46 @@ class MSODrawing(BaseRecordHandler):
         rh.recLen  = self.readUnsignedInt(4)
         return rh
 
+    dgContainer     = 0xF002
+    spContainer     = 0xF004
+    solverContainer = 0xF005
+
+    containerTypeNames = {
+        dgContainer:      'OfficeArtDgContainer',
+        spContainer:      'OfficeArtSpContainer',
+        solverContainer:  'OfficeArtSolverContainer'
+    }
+
+    @staticmethod
+    def getRecTypeName (rh):
+        if rh.recVer == 0xF:
+            if MSODrawing.containerTypeNames.has_key(rh.recType):
+                return MSODrawing.containerTypeNames[rh.recType]
+        return 'unknown'
+
     def parseBytes (self):
         rh = self.readRecordHeader()
-        self.appendLine("recVer: 0x%1.1X"%rh.recVer)
-        self.appendLine("recInstance: 0x%3.3X"%rh.recInstance)
-        self.appendLine("recType: 0x%4.4X"%rh.recType)
-        self.appendLine("recLen: %d"%rh.recLen)
+        self.appendLine("record header:")
+        self.appendLine("  recVer: 0x%1.1X"%rh.recVer)
+        self.appendLine("  recInstance: 0x%3.3X"%rh.recInstance)
+        self.appendLine("  recType: 0x%4.4X (%s)"%(rh.recType, MSODrawing.getRecTypeName(rh)))
+        self.appendLine("  recLen: %d"%rh.recLen)
 
+        if rh.recVer == 0xF:
+            if rh.recType == MSODrawing.dgContainer:
+                self.parseDgContainer()
+            elif rh.recType == MSODrawing.spContainer:
+                self.parseSpContainer()
+            elif rh.recType == MSODrawing.solverContainer:
+                self.parseSolverContainer()
+
+    def parseDgContainer (self):
+        # drawingData (16 bytes)
+
+        return
+
+    def parseSpContainer (self):
+        return
+
+    def parseSolverContainer (self):
         return
