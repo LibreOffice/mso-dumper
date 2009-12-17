@@ -582,11 +582,11 @@ class ColInfo(BaseRecordHandler):
 class Row(BaseRecordHandler):
 
     def parseBytes (self):
-        row  = self.readSignedInt(2)
-        col1 = self.readSignedInt(2)
-        col2 = self.readSignedInt(2)
+        row  = self.readUnsignedInt(2)
+        col1 = self.readUnsignedInt(2)
+        col2 = self.readUnsignedInt(2)
 
-        rowHeightBits = self.readSignedInt(2)
+        rowHeightBits = self.readUnsignedInt(2)
         rowHeight     = (rowHeightBits & 0x7FFF)
         defaultHeight = ((rowHeightBits & 0x8000) == 1)
 
