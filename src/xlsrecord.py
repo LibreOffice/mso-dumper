@@ -361,24 +361,24 @@ class Obj(BaseRecordHandler):
 
     ftEnd      = 0x00 # End of OBJ record
                       # 0x01 - 0x03 (reserved)
-    ftMacro    = 0x04 # Fmla-style macro                                 
-    ftButton   = 0x05 # Command button                                   
-    ftGmo      = 0x06 # Group marker                                     
-    ftCf       = 0x07 # Clipboard format                                 
-    ftPioGrbit = 0x08 # Picture option flags                             
-    ftPictFmla = 0x09 # Picture fmla-style macro                         
-    ftCbls     = 0x0A # Check box link                                   
-    ftRbo      = 0x0B # Radio button                                     
-    ftSbs      = 0x0C # Scroll bar                                       
-    ftNts      = 0x0D # Note structure                                   
-    ftSbsFmla  = 0x0E # Scroll bar fmla-style macro                      
-    ftGboData  = 0x0F # Group box data                                   
-    ftEdoData  = 0x10 # Edit control data                                
-    ftRboData  = 0x11 # Radio button data                                
-    ftCblsData = 0x12 # Check box data                                   
-    ftLbsData  = 0x13 # List box data                                    
-    ftCblsFmla = 0x14 # Check box link fmla-style macro                  
-    ftCmo      = 0x15 # Common object data                               
+    ftMacro    = 0x04 # Fmla-style macro
+    ftButton   = 0x05 # Command button
+    ftGmo      = 0x06 # Group marker
+    ftCf       = 0x07 # Clipboard format
+    ftPioGrbit = 0x08 # Picture option flags
+    ftPictFmla = 0x09 # Picture fmla-style macro
+    ftCbls     = 0x0A # Check box link
+    ftRbo      = 0x0B # Radio button
+    ftSbs      = 0x0C # Scroll bar
+    ftNts      = 0x0D # Note structure
+    ftSbsFmla  = 0x0E # Scroll bar fmla-style macro
+    ftGboData  = 0x0F # Group box data
+    ftEdoData  = 0x10 # Edit control data
+    ftRboData  = 0x11 # Radio button data
+    ftCblsData = 0x12 # Check box data
+    ftLbsData  = 0x13 # List box data
+    ftCblsFmla = 0x14 # Check box link fmla-style macro
+    ftCmo      = 0x15 # Common object data
 
     class Cmo:
         Types = [
@@ -461,7 +461,7 @@ class Obj(BaseRecordHandler):
         # 14   4000h fAutoLine  =1 if the object uses automatic line style
         # 15   8000h (Reserved) Reserved; must be 0 (zero)
 
-        locked = (flag & 0x0001)      
+        locked    = (flag & 0x0001)
         printable = (flag & 0x0010)
         autoFill  = (flag & 0x2000)
         autoLine  = (flag & 0x4000)
