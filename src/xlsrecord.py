@@ -2138,3 +2138,31 @@ class CHSourceLink(BaseRecordHandler):
             lenToken = self.readUnsignedInt(2)
             tokens = self.readBytes(lenToken)
             self.appendLine("formula tokens: %s"%globals.getRawBytes(tokens,True,False))
+
+
+class MSODrawing(BaseRecordHandler):
+
+    class RecordHeader:
+        def __init__ (self):
+            self.recVer = 0
+            self.recInstance = 0
+            self.recType = 0
+            self.recLen = 0
+
+    def readRecordHeader (self):
+        rh = MSODrawing.RecordHeader()
+        mixed = self.readUnsignedInt(2)
+        rh.recVer = (mixed & 0x000F)
+        rh.recInstance = (mixed & 0xFFF0) / 16
+        rh.recType = self.readUnsignedInt(2)
+        rh.recLen  = self.readUnsignedInt(4)
+        return rh
+
+    def parseBytes (self):
+        rh = self.readRecordHeader()
+        self.appendLine("recVer: 0x%1.1X"%rh.recVer)
+        self.appendLine("recInstance: 0x%3.3X"%rh.recInstance)
+        self.appendLine("recType: 0x%4.4X"%rh.recType)
+        self.appendLine("recLen: %d"%rh.recLen)
+
+        return
