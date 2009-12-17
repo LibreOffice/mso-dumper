@@ -357,6 +357,120 @@ class Number(BaseRecordHandler):
         self.appendLine("value: %g"%fval)
 
 
+class Obj(BaseRecordHandler):
+
+    ftEnd      = 0x00 # End of OBJ record
+                      # 0x01 - 0x03 (reserved)
+    ftMacro    = 0x04 # Fmla-style macro                                 
+    ftButton   = 0x05 # Command button                                   
+    ftGmo      = 0x06 # Group marker                                     
+    ftCf       = 0x07 # Clipboard format                                 
+    ftPioGrbit = 0x08 # Picture option flags                             
+    ftPictFmla = 0x09 # Picture fmla-style macro                         
+    ftCbls     = 0x0A # Check box link                                   
+    ftRbo      = 0x0B # Radio button                                     
+    ftSbs      = 0x0C # Scroll bar                                       
+    ftNts      = 0x0D # Note structure                                   
+    ftSbsFmla  = 0x0E # Scroll bar fmla-style macro                      
+    ftGboData  = 0x0F # Group box data                                   
+    ftEdoData  = 0x10 # Edit control data                                
+    ftRboData  = 0x11 # Radio button data                                
+    ftCblsData = 0x12 # Check box data                                   
+    ftLbsData  = 0x13 # List box data                                    
+    ftCblsFmla = 0x14 # Check box link fmla-style macro                  
+    ftCmo      = 0x15 # Common object data                               
+
+    class Cmo:
+        Types = [
+            'Group',                   # 0x00
+            'Line',                    # 0x01
+            'Rectangle',               # 0x02
+            'Oval',                    # 0x03
+            'Arc',                     # 0x04
+            'Chart',                   # 0x05
+            'Text',                    # 0x06
+            'Button',                  # 0x07
+            'Picture',                 # 0x08
+            'Polygon',                 # 0x09
+            '(Reserved)',              # 0x0A
+            'Check box',               # 0x0B
+            'Option button',           # 0x0C
+            'Edit box',                # 0x0D
+            'Label',                   # 0x0E
+            'Dialog box',              # 0x0F
+            'Spinner',                 # 0x10
+            'Scroll bar',              # 0x11
+            'List box',                # 0x12
+            'Group box',               # 0x13
+            'Combo box',               # 0x14
+            '(Reserved)',              # 0x15
+            '(Reserved)',              # 0x16
+            '(Reserved)',              # 0x17
+            '(Reserved)',              # 0x18
+            'Comment',                 # 0x19
+            '(Reserved)',              # 0x1A
+            '(Reserved)',              # 0x1B
+            '(Reserved)',              # 0x1C
+            '(Reserved)',              # 0x1D
+            'Microsoft Office drawing' # 0x1E
+        ]
+
+        @staticmethod
+        def getType (typeID):
+            if len(Obj.Cmo.Types) > typeID:
+                return Obj.Cmo.Types[typeID]
+            return "(unknown) (0x%2.2X)"%typeID
+
+    def parseBytes (self):
+        while not self.isEndOfRecord():
+            fieldType = self.readUnsignedInt(2)
+            fieldSize = self.readUnsignedInt(2)
+            if fieldType == Obj.ftEnd:
+                # reached the end of OBJ record.
+                return
+
+            if fieldType == Obj.ftCmo:
+                self.parseCmo(fieldSize)
+            else:
+                fieldBytes = self.readBytes(fieldSize)
+                self.appendLine("field 0x%2.2X: %s"%(fieldType, globals.getRawBytes(fieldBytes, True, False)))
+
+    def parseCmo (self, size):
+        if size != 18:
+            # size of Cmo must be 18.  Something is wrong here.
+            self.readBytes(size)
+            globals.error("parsing of common object field in OBJ failed due to invalid size.")
+            return
+
+        objType = self.readUnsignedInt(2)
+        objID  = self.readUnsignedInt(2)
+        flag   = self.readUnsignedInt(2)
+
+        # the rest of the bytes are reserved & should be all zero.
+        self.readBytes(12)
+
+        self.appendLine("common object: ")
+        self.appendLine("  type: %s"%Obj.Cmo.getType(objType))
+        self.appendLine("  object ID: %d"%objID)
+
+        # 0    0001h fLocked    =1 if the object is locked when the sheet is protected
+        # 3-1  000Eh (Reserved) Reserved; must be 0 (zero)
+        # 4    0010h fPrint     =1 if the object is printable
+        # 12-5 1FE0h (Reserved) Reserved; must be 0 (zero)
+        # 13   2000h fAutoFill  =1 if the object uses automatic fill style
+        # 14   4000h fAutoLine  =1 if the object uses automatic line style
+        # 15   8000h (Reserved) Reserved; must be 0 (zero)
+
+        locked = (flag & 0x0001)      
+        printable = (flag & 0x0010)
+        autoFill  = (flag & 0x2000)
+        autoLine  = (flag & 0x4000)
+        self.appendLineBoolean("  locked", locked)
+        self.appendLineBoolean("  printable", printable)
+        self.appendLineBoolean("  automatic fill style", autoFill)
+        self.appendLineBoolean("  automatic line style", autoLine)
+
+
 class RK(BaseRecordHandler):
     """Cell with encoded integer or floating-point value"""
 

@@ -53,7 +53,7 @@ recData = {
     0x005A: ["CRN", "Nonresident Operands", xlsrecord.Crn],
     0x005B: ["FILESHARING", "File-Sharing Information"],
     0x005C: ["WRITEACCESS", "Write Access User Name"],
-    0x005D: ["OBJ", "Describes a Graphic Object"],
+    0x005D: ["OBJ", "Describes a Graphic Object", xlsrecord.Obj],
     0x005E: ["UNCALCED", "Recalculation Status"],
     0x005F: ["SAVERECALC", "Recalculate Before Save"],
     0x0060: ["TEMPLATE", "Workbook Is a Template"],
