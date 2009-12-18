@@ -2149,28 +2149,131 @@ class MSODrawing(BaseRecordHandler):
             self.recType = None
             self.recLen = None
 
+    def printRecordHeader (self, rh, level=0):
+        unitIndent = ' '*2
+        indent = unitIndent*level
+        self.appendLine(indent + "record header:")
+        self.appendLine(indent + unitIndent + "recVer: 0x%1.1X"%rh.recVer)
+        self.appendLine(indent + unitIndent + "recInstance: 0x%3.3X"%rh.recInstance)
+        self.appendLine(indent + unitIndent + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawing.getRecTypeName(rh)))
+        self.appendLine(indent + unitIndent + "recLen: %d"%rh.recLen)
+
     class FDG:
         def __init__ (self):
             self.shapeCount = None
             self.lastShapeID = -1
 
-    class FOPT:
-        def __init__ (self):
-            self.properties = None
+        def appendLines (self, recHdl, rh):
+            recHdl.appendLine("FDG content (drawing data):")
+            recHdl.appendLine("  ID of this shape: %d"%rh.recInstance)
+            recHdl.appendLine("  shape count: %d"%self.shapeCount)
+            recHdl.appendLine("  last shape ID: %d"%self.lastShapeID)
 
-    class FRITContainer:
+    def readFDG (self):
+        fdg = MSODrawing.FDG()
+        fdg.shapeCount  = self.readUnsignedInt(4)
+        fdg.lastShapeID = self.readUnsignedInt(4)
+        return fdg
+
+    class FOPT:
+        """property table for a shape instance"""
+
+        class E:
+            """single property entry in a property table"""
+            def __init__ (self):
+                self.ID          = None
+                self.flagBid     = False
+                self.flagComplex = False
+                self.value       = None
+                self.extra       = None
+
         def __init__ (self):
-            self.frits = [] # array of FRIT objects
+            self.properties = []
+
+        def appendLines (self, recHdl, rh):
+            recHdl.appendLine("FOPT content (property table):")
+            recHdl.appendLine("  property count: %d"%rh.recInstance)
+            for i in xrange(0, rh.recInstance):
+                recHdl.appendLine("    "+"-"*57)
+                prop = self.properties[i]
+                recHdl.appendLine("    property ID: %d"%prop.ID)
+                if prop.flagComplex:
+                    recHdl.appendLine("    complex property: %s"%globals.getRawBytes(prop.extra, True, False))
+                elif prop.flagBid:
+                    recHdl.appendLine("    blip ID: %d"%prop.value)
+                else:
+                    # regular property value
+                    recHdl.appendLine("    property value: %d"%prop.value)
+
+    def readFOPT (self, rh):
+        fopt = MSODrawing.FOPT()
+        strm = globals.ByteStream(self.readBytes(rh.recLen))
+        while not strm.isEndOfRecord():
+            entry = MSODrawing.FOPT.E()
+            val = strm.readUnsignedInt(2)
+            entry.ID          = (val & 0x3FFF)
+            entry.flagBid     = (val & 0x4000) # if true, the value is a blip ID.
+            entry.flagComplex = (val & 0x8000) # if true, the value stores the size of the extra bytes.
+            entry.value = strm.readSignedInt(4)
+            if entry.flagComplex:
+                entry.extra = strm.readBytes(entry.value)
+            fopt.properties.append(entry)
+
+        return fopt
 
     class FRIT:
         def __init__ (self):
             self.lastGroupID = None
             self.secondLastGroupID = None
 
+        def appendLines (self, recHdl, rh):
+            pass
+
+    def readFRIT (self):
+        frit = MSODrawing.FRIT()
+        frit.lastGroupID = self.readUnsignedInt(2)
+        frit.secondLastGroupID = self.readUnsignedInt(2)
+        return frit
+
     class FSP:
         def __init__ (self):
             self.spid = None
             self.flag = None
+
+        def appendLines (self, recHdl, rh):
+            recHdl.appendLine("FSP content (instance of a shape):")
+            recHdl.appendLine("  ID of this shape: %d"%self.spid)
+            groupShape     = (self.flag & 0x0001) != 0
+            childShape     = (self.flag & 0x0002) != 0
+            topMostInGroup = (self.flag & 0x0004) != 0
+            deleted        = (self.flag & 0x0008) != 0
+            oleObject      = (self.flag & 0x0010) != 0
+            haveMaster     = (self.flag & 0x0020) != 0
+            flipHorizontal = (self.flag & 0x0040) != 0
+            flipVertical   = (self.flag & 0x0080) != 0
+            isConnector    = (self.flag & 0x0100) != 0
+            haveAnchor     = (self.flag & 0x0200) != 0
+            background     = (self.flag & 0x0400) != 0
+            haveProperties = (self.flag & 0x0800) != 0
+            recHdl.appendLineBoolean("  group shape", groupShape)
+            recHdl.appendLineBoolean("  child shape", childShape)
+            recHdl.appendLineBoolean("  topmost in group", topMostInGroup)
+            recHdl.appendLineBoolean("  deleted", deleted)
+            recHdl.appendLineBoolean("  OLE object shape", oleObject)
+            recHdl.appendLineBoolean("  have valid master", haveMaster)
+            recHdl.appendLineBoolean("  horizontally flipped", flipHorizontal)
+            recHdl.appendLineBoolean("  vertically flipped", flipVertical)
+            recHdl.appendLineBoolean("  connector shape", isConnector)
+            recHdl.appendLineBoolean("  have anchor", haveAnchor)
+            recHdl.appendLineBoolean("  background shape", background)
+            recHdl.appendLineBoolean("  have shape type property", haveProperties)
+
+    def readFSP (self):
+        fsp = MSODrawing.FSP()
+        fsp.spid = self.readUnsignedInt(4)
+        fsp.flag = self.readUnsignedInt(4)
+        return fsp
+
 
     class FSPGR:
         def __init__ (self):
@@ -2178,6 +2281,22 @@ class MSODrawing(BaseRecordHandler):
             self.top    = None
             self.right  = None
             self.bottom = None
+
+        def appendLines (self, recHdl, rh):
+            recHdl.appendLine("FSPGR content (coordinate system of group shape):")
+            recHdl.appendLine("  left boundary: %d"%self.left)
+            recHdl.appendLine("  top boundary: %d"%self.top)
+            recHdl.appendLine("  right boundary: %d"%self.right)
+            recHdl.appendLine("  bottom boundary: %d"%self.bottom)
+
+    def readFSPGR (self):
+        fspgr = MSODrawing.FSPGR()
+        fspgr.left   = self.readSignedInt(4)
+        fspgr.top    = self.readSignedInt(4)
+        fspgr.right  = self.readSignedInt(4)
+        fspgr.bottom = self.readSignedInt(4)
+        return fspgr
+
 
     class FConnectorRule:
         def __init__ (self):
@@ -2188,13 +2307,24 @@ class MSODrawing(BaseRecordHandler):
             self.conSiteIDA = None
             self.conSiteIDB = None
 
-    class SpgrContainer:
-        def __init__ (self):
-            self.fileblock = 0x0000
+        def appendLines (self, recHdl, rh):
+            recHdl.appendLine("FConnectorRule content:")
+            recHdl.appendLine("  rule ID: %d"%self.ruleID)
+            recHdl.appendLine("  ID of the shape where the connector starts: %d"%self.spIDA)
+            recHdl.appendLine("  ID of the shape where the connector ends: %d"%self.spIDB)
+            recHdl.appendLine("  ID of the connector shape: %d"%self.spIDB)
+            recHdl.appendLine("  ID of the connection site in the begin shape: %d"%self.conSiteIDA)
+            recHdl.appendLine("  ID of the connection site in the end shape: %d"%self.conSiteIDB)
 
-    class SpContainer:
-        def __init__ (self):
-            pass
+    def readFConnectorRule (self):
+        fcon = MSODrawing.FConnectorRule()
+        fcon.ruleID = self.readUnsignedInt(4)
+        fcon.spIDA = self.readUnsignedInt(4)
+        fcon.spIDB = self.readUnsignedInt(4)
+        fcon.spIDC = self.readUnsignedInt(4)
+        fcon.conSiteIDA = self.readUnsignedInt(4)
+        fcon.conSiteIDB = self.readUnsignedInt(4)
+        return fcon
 
 
     def readRecordHeader (self):
@@ -2236,7 +2366,12 @@ class MSODrawing(BaseRecordHandler):
         return 'unknown'
 
     def parseBytes (self):
+        firstRec = True
         while not self.isEndOfRecord():
+            if firstRec:
+                firstRec = False
+            else:
+                self.appendLine("-"*61)
             rh = self.readRecordHeader()
             self.printRecordHeader(rh)
             # if rh.recType == MSODrawing.Type.dgContainer:
@@ -2245,115 +2380,21 @@ class MSODrawing(BaseRecordHandler):
                 pass
             elif rh.recType == MSODrawing.Type.FDG:
                 fdg = self.readFDG()
+                fdg.appendLines(self, rh)
             elif rh.recType == MSODrawing.Type.FOPT:
                 fopt = self.readFOPT(rh)
+                fopt.appendLines(self, rh)
             elif rh.recType == MSODrawing.Type.FSPGR:
                 fspgr = self.readFSPGR()
+                fspgr.appendLines(self, rh)
             elif rh.recType == MSODrawing.Type.FSP:
                 fspgr = self.readFSP()
+                fspgr.appendLines(self, rh)
             elif rh.recType == MSODrawing.Type.FConnectorRule:
                 fcon = self.readFConnectorRule()
+                fcon.appendLines(self, rh)
             else:
                 # unknown object
                 self.readBytes(rh.recLen)
 
-    def readFConnectorRule (self):
-        fcon = MSODrawing.FConnectorRule()
-        fcon.ruleID = self.readUnsignedInt(4)
-        fcon.spIDA = self.readUnsignedInt(4)
-        fcon.spIDB = self.readUnsignedInt(4)
-        fcon.spIDC = self.readUnsignedInt(4)
-        fcon.conSiteIDA = self.readUnsignedInt(4)
-        fcon.conSiteIDB = self.readUnsignedInt(4)
-        return fcon
 
-    def readFDG (self):
-        fdg = MSODrawing.FDG()
-        fdg.shapeCount  = self.readUnsignedInt(4)
-        fdg.lastShapeID = self.readUnsignedInt(4)
-        return fdg
-
-    def readFOPT (self, rh):
-        fopt = MSODrawing.FOPT()
-        fopt.properties = self.readBytes(rh.recLen)
-        return fopt
-
-    def readFSP (self):
-        fsp = MSODrawing.FSP()
-        fsp.spid = self.readUnsignedInt(4)
-        fsp.flag = self.readUnsignedInt(4)
-        return fsp
-
-    def readFSPGR (self):
-        fspgr = MSODrawing.FSPGR()
-        fspgr.left   = self.readSignedInt(4)
-        fspgr.top    = self.readSignedInt(4)
-        fspgr.right  = self.readSignedInt(4)
-        fspgr.bottom = self.readSignedInt(4)
-        return fspgr
-
-    def readFRIT (self):
-        frit = MSODrawing.FRIT()
-        frit.lastGroupID = self.readUnsignedInt(2)
-        frit.secondLastGroupID = self.readUnsignedInt(2)
-        return frit
-
-#   def readFRITContainer (self):
-#       frits = MSODrawing.FRITContainer()
-#       frits.rh = self.readRecordHeader()
-#       fritCount = frits.rh.recInstance
-#       for i in xrange(0, fritCount):
-#           frits.frits.append(self.readFRIT())
-#       return frits
-#
-#   def readSpgrContainer (self):
-#       spgr = MSODrawing.SpgrContainer()
-#       spgr.rh = self.readRecordHeader()
-#       spgr.fileblock = self.readBytes(spgr.rh.recLen)
-#       return spgr
-#
-#   def readSpContainer (self):
-#       sp = MSODrawing.SpContainer()
-#       sp.rh = self.readRecordHeader()
-#       return sp
-
-    def printRecordHeader (self, rh, level=0):
-        unitIndent = ' '*2
-        indent = unitIndent*level
-        self.appendLine(indent + "record header:")
-        self.appendLine(indent + unitIndent + "recVer: 0x%1.1X"%rh.recVer)
-        self.appendLine(indent + unitIndent + "recInstance: 0x%3.3X"%rh.recInstance)
-        self.appendLine(indent + unitIndent + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawing.getRecTypeName(rh)))
-        self.appendLine(indent + unitIndent + "recLen: %d"%rh.recLen)
-
-#   def readDgContainer (self):
-#
-#       # drawingData (16 bytes)
-#       self.appendLine("DgContainer content:")
-#       self.appendLine("== Drawing Data (%d) =="%self.getCurrentPos())
-#       fdg = self.readFDG()
-#       self.printRecordHeader(fdg.rh, 1)
-#       self.appendLine("  ID of this drawing: %d"%fdg.rh.recInstance)
-#       self.appendLine("  ID of last drawing: %d"%fdg.lastShapeID)
-#       self.appendLine("  shape count: %d"%fdg.shapeCount)
-#
-#       # regroupItems (variable)
-#       self.appendLine("== Regroup Items (%d) =="%self.getCurrentPos())
-#       frits = self.readFRITContainer()
-#       self.printRecordHeader(frits.rh, 1)
-#       self.appendLine("  FRIT record count: %d"%frits.rh.recInstance)
-#       self.appendLine("  FRIT record bytes: %d"%frits.rh.recLen)
-#
-#       # groupShape (variable)
-#       self.appendLine("== Group Shape (%d) =="%self.getCurrentPos())
-#       spgr = self.readSpgrContainer()
-#       self.printRecordHeader(spgr.rh, 1)
-#       # self.appendLine("  fileblock bytes: %s"%globals.getRawBytes(spgr.fileblock, True, False))
-#
-#       # shape (variable)
-#       self.appendLine("== Shape (%d) =="%self.getCurrentPos())
-#       sp = self.readSpContainer()
-#       self.printRecordHeader(sp.rh, 1)
-#
-#       return
-#
