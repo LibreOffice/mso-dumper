@@ -5,7 +5,7 @@ import globals, formula
 # -------------------------------------------------------------------
 # record handler classes
 
-def getValueOrUnknown (list, idx):
+def getValueOrUnknown (list, idx, errmsg='(unknown)'):
     listType = type(list)
     if listType == type([]):
         # list
@@ -16,7 +16,7 @@ def getValueOrUnknown (list, idx):
         if list.has_key(idx):
             return list[idx]
 
-    return '(unknown)'
+    return errmsg
 
 class BaseRecordHandler(globals.ByteStream):
 
@@ -2209,9 +2209,22 @@ together.
                 recHdl.appendLineBoolean(indent + "use auto text margin",  I)
                 recHdl.appendLineBoolean(indent + "use select text",       J)
 
+        class CXStyle:
+            style = [
+                'straight connector',     # 0x00000000
+                'elbow-shaped connector', # 0x00000001
+                'curved connector',       # 0x00000002
+                'no connector'            # 0x00000003
+            ]
+
+            def appendLines (self, recHdl, prop, level):
+                indent = MSODrawing.singleIndent*level
+                styleName = getValueOrUnknown(MSODrawing.FOPT.CXStyle.style, prop.value)
+                recHdl.appendLine(indent + "connector style: %s (0x%8.8X)"%(styleName, prop.value))
 
         propTable = {
-            0x00BF: ['Text Boolean Properties', TextBoolean]
+            0x00BF: ['Text Boolean Properties', TextBoolean],
+            0x0303: ['Connector Shape Style (cxstyle)', CXStyle]
         }
 
         class E:
