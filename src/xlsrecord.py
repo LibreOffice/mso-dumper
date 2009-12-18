@@ -2141,6 +2141,16 @@ class CHSourceLink(BaseRecordHandler):
 
 
 class MSODrawing(BaseRecordHandler):
+    """Handler for the MSODRAWING record
+
+This record consists of BIFF-like sub-records, with their own headers and 
+contents.  The structure of this record is specified in [MS-ODRAW].pdf found 
+somewhere in the MSDN website.  In case of multiple MSODRAWING records in a 
+single worksheet stream, they need to be treated as if they are lumped 
+together.
+"""
+
+    singleIndent = ' '*2
 
     class RecordHeader:
         def __init__ (self):
@@ -2150,13 +2160,12 @@ class MSODrawing(BaseRecordHandler):
             self.recLen = None
 
     def printRecordHeader (self, rh, level=0):
-        unitIndent = ' '*2
-        indent = unitIndent*level
+        indent = MSODrawing.singleIndent*level
         self.appendLine(indent + "record header:")
-        self.appendLine(indent + unitIndent + "recVer: 0x%1.1X"%rh.recVer)
-        self.appendLine(indent + unitIndent + "recInstance: 0x%3.3X"%rh.recInstance)
-        self.appendLine(indent + unitIndent + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawing.getRecTypeName(rh)))
-        self.appendLine(indent + unitIndent + "recLen: %d"%rh.recLen)
+        self.appendLine(indent + MSODrawing.singleIndent + "recVer: 0x%1.1X"%rh.recVer)
+        self.appendLine(indent + MSODrawing.singleIndent + "recInstance: 0x%3.3X"%rh.recInstance)
+        self.appendLine(indent + MSODrawing.singleIndent + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawing.getRecTypeName(rh)))
+        self.appendLine(indent + MSODrawing.singleIndent + "recLen: %d"%rh.recLen)
 
     class FDG:
         def __init__ (self):
@@ -2178,6 +2187,33 @@ class MSODrawing(BaseRecordHandler):
     class FOPT:
         """property table for a shape instance"""
 
+        class TextBoolean:
+
+            def appendLines (self, recHdl, prop, level):
+                indent = MSODrawing.singleIndent*level
+#               recHdl.appendLine(indent + "flag: 0x%8.8X"%prop.value)
+                A = (prop.value & 0x00000001) != 0
+                B = (prop.value & 0x00000002) != 0
+                C = (prop.value & 0x00000004) != 0
+                D = (prop.value & 0x00000008) != 0
+                E = (prop.value & 0x00000010) != 0
+                F = (prop.value & 0x00010000) != 0
+                G = (prop.value & 0x00020000) != 0
+                H = (prop.value & 0x00040000) != 0
+                I = (prop.value & 0x00080000) != 0
+                J = (prop.value & 0x00100000) != 0
+                recHdl.appendLineBoolean(indent + "fit shape to text",     B)
+                recHdl.appendLineBoolean(indent + "auto text margin",      D)
+                recHdl.appendLineBoolean(indent + "select text",           E)
+                recHdl.appendLineBoolean(indent + "use fit shape to text", G)
+                recHdl.appendLineBoolean(indent + "use auto text margin",  I)
+                recHdl.appendLineBoolean(indent + "use select text",       J)
+
+
+        propTable = {
+            0x00BF: ['Text Boolean Properties', TextBoolean]
+        }
+
         class E:
             """single property entry in a property table"""
             def __init__ (self):
@@ -2196,14 +2232,21 @@ class MSODrawing(BaseRecordHandler):
             for i in xrange(0, rh.recInstance):
                 recHdl.appendLine("    "+"-"*57)
                 prop = self.properties[i]
-                recHdl.appendLine("    property ID: %d"%prop.ID)
-                if prop.flagComplex:
-                    recHdl.appendLine("    complex property: %s"%globals.getRawBytes(prop.extra, True, False))
-                elif prop.flagBid:
-                    recHdl.appendLine("    blip ID: %d"%prop.value)
+                if MSODrawing.FOPT.propTable.has_key(prop.ID):
+                    # We have a handler for this property.
+                    # propData is expected to have two elements: name (0) and handler (1).
+                    propHdl = MSODrawing.FOPT.propTable[prop.ID]
+                    recHdl.appendLine("    property name: %s (0x%4.4X)"%(propHdl[0], prop.ID))
+                    propHdl[1]().appendLines(recHdl, prop, 2)
                 else:
-                    # regular property value
-                    recHdl.appendLine("    property value: %d"%prop.value)
+                    recHdl.appendLine("    property ID: 0x%4.4X"%prop.ID)
+                    if prop.flagComplex:
+                        recHdl.appendLine("    complex property: %s"%globals.getRawBytes(prop.extra, True, False))
+                    elif prop.flagBid:
+                        recHdl.appendLine("    blip ID: %d"%prop.value)
+                    else:
+                        # regular property value
+                        recHdl.appendLine("    property value: 0x%8.8X"%prop.value)
 
     def readFOPT (self, rh):
         fopt = MSODrawing.FOPT()
