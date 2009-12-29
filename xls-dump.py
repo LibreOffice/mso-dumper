@@ -1,20 +1,10 @@
 #!/usr/bin/env python
 
-import sys, os.path, getopt
+import sys, os.path, optparse
 sys.path.append(sys.path[0]+"/src")
 import ole, xlsstream, globals
 
 from globals import error
-
-def usage (exname):
-    exname = os.path.basename(exname)
-    msg = """Usage: %s [options] [xls file]
-
-Options:
-  --help        displays this help message.
-"""%exname
-    print msg
-
 
 class XLDumper(object):
 
@@ -75,35 +65,26 @@ class XLDumper(object):
             return False
 
 
-def main (args):
-    exname, args = args[0], args[1:]
-    if len(args) < 1:
-        print("takes at least one argument")
-        usage(exname)
-        return
-
+def main ():
+    parser = optparse.OptionParser()
+    parser.add_option("-d", "--debug", action="store_true", dest="debug", default=False,
+        help="turn on debug mode")
+    parser.add_option("--show-sector-chain", action="store_true", dest="show_sector_chain", default=False,
+        help="show sector chain information at the start of the output.")
+    parser.add_option("--show-stream-pos", action="store_true", dest="show_stream_pos", default=False,
+        help="show the position of each record relative to the stream.")
+    options, args = parser.parse_args()
     params = globals.Params()
-    try:
-        opts, args = getopt.getopt(args, "h", ["help", "debug", "show-sector-chain"])
-        for opt, arg in opts:
-            if opt in ['-h', '--help']:
-                usage(exname)
-                return
-            elif opt in ['--debug']:
-                params.debug = True
-            elif opt in ['--show-sector-chain']:
-                params.showSectorChain = True
-            else:
-                error("unknown option %s\n"%opt)
-                usage()
-
-    except getopt.GetoptError:
-        error("error parsing input options\n")
-        usage(exname)
+    params.debug = options.debug
+    params.showSectorChain = options.show_sector_chain
+    params.showStreamPos = options.show_stream_pos
+    if len(args) < 1:
+        globals.error("takes at least one argument\n")
+        parser.print_help()
         return
 
     dumper = XLDumper(args[0], params)
     dumper.dump()
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
