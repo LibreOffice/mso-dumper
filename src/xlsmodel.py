@@ -45,10 +45,10 @@ class Workbook(ModelBase):
             return
 
         wbglobal = self.__sheets[0]
-        nd.appendChild(wbglobal.createDOM())
+        nd.appendChild(wbglobal.createDOM(self))
         for i in xrange(1, n):
             sheet = self.__sheets[i]
-            sheetNode = sheet.createDOM()
+            sheetNode = sheet.createDOM(self)
             nd.appendChild(sheetNode)
             if i > 0:
                 data = wbglobal.getSheetData(i-1)
@@ -68,7 +68,7 @@ class SheetBase(object):
         self.modelType = modelType
         self.version = None
 
-    def createDOM (self):
+    def createDOM (self, wb):
         nd = node.Element('sheet')
         return nd
 
@@ -83,13 +83,22 @@ class WorkbookGlobal(SheetBase):
         SheetBase.__init__(self, SheetModelType.WorkbookGlobal)
 
         self.__sheetData = []
+        self.__sharedStrings = []
 
-    def createDOM (self):
+    def createDOM (self, wb):
         nd = node.Element('workbook-global')
         return nd
 
     def appendSheetData (self, data):
         self.__sheetData.append(data)
+
+    def appendSharedString (self, sst):
+        self.__sharedStrings.append(sst)
+
+    def getSharedString (self, strID):
+        if len(self.__sharedStrings) <= strID:
+            return None
+        return self.__sharedStrings[strID]
 
     def getSheetData (self, i):
         return self.__sheetData[i]
@@ -107,7 +116,7 @@ class Worksheet(SheetBase):
 
         self.rows[row][col] = cell
 
-    def createDOM (self):
+    def createDOM (self, wb):
         nd = node.Element('worksheet')
         nd.setAttr('version', self.version)
         rows = self.rows.keys()
@@ -118,7 +127,7 @@ class Worksheet(SheetBase):
             cols = self.rows[row].keys()
             for col in cols:
                 cell = self.rows[row][col]
-                cellNode = cell.createDOM()
+                cellNode = cell.createDOM(wb)
                 rowNode.appendChild(cellNode)
                 cellNode.setAttr('col', col)
         return nd
@@ -138,9 +147,14 @@ class CellBase(object):
 class LabelCell(CellBase):
     def __init__ (self):
         CellBase.__init__(self, CellModelType.Label)
+        self.strID = None
 
-    def createDOM (self):
+    def createDOM (self, wb):
         nd = node.Element('label-cell')
+        if self.strID != None:
+            sst = wb.getWorkbookGlobal().getSharedString(self.strID)
+            if sst != None:
+                nd.setAttr('value', sst.baseText)
         return nd
 
 class NumberCell(CellBase):
@@ -148,7 +162,7 @@ class NumberCell(CellBase):
         CellBase.__init__(self, CellModelType.Number)
         self.value = value
 
-    def createDOM (self):
+    def createDOM (self, wb):
         nd = node.Element('number-cell')
         nd.setAttr('value', self.value)
         return nd

@@ -404,6 +404,7 @@ class LabelSST(BaseRecordHandler):
         self.__parseBytes()
         sheet = model.getCurrentSheet()
         cell = xlsmodel.LabelCell()
+        cell.strID = self.strId
         sheet.setCell(self.col, self.row, cell)
 
 
@@ -604,15 +605,29 @@ class String(BaseRecordHandler):
 
 class SST(BaseRecordHandler):
 
-    def parseBytes (self):
-        refCount = self.readSignedInt(4) # total number of references in workbook
-        strCount = self.readSignedInt(4) # total number of unique strings.
-        self.appendLine("total number of references: %d"%refCount)
-        self.appendLine("total number of unique strings: %d"%strCount)
-        for i in xrange(0, strCount):
+    def __parseBytes (self):
+        self.refCount = self.readSignedInt(4) # total number of references in workbook
+        self.strCount = self.readSignedInt(4) # total number of unique strings.
+        self.sharedStrings = []
+        for i in xrange(0, self.strCount):
             extText, bytesRead = globals.getUnicodeRichExtText(self.bytes[self.getCurrentPos():])
             self.readBytes(bytesRead) # advance current position.
-        return
+            self.sharedStrings.append(extText)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("total number of references: %d"%self.refCount)
+        self.appendLine("total number of unique strings: %d"%self.strCount)
+        i = 0
+        for s in self.sharedStrings:
+            self.appendLine("s%d: %s"%(i, s.baseText))
+            i += 1
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        wbg = model.getWorkbookGlobal()
+        for sst in self.sharedStrings:
+            wbg.appendSharedString(sst)
 
 
 class Blank(BaseRecordHandler):
