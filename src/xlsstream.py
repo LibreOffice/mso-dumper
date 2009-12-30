@@ -305,8 +305,7 @@ class XLStream(object):
         print('')
 
     def printHeader (self):
-        self.header = ole.Header(self.chars, self.params)
-        self.pos = self.header.parse()
+        self.__parseHeader()
         self.header.output()
         self.MSAT = self.header.getMSAT()
 
@@ -323,8 +322,13 @@ class XLStream(object):
             return
         obj.output()
 
+    def __parseHeader (self):
+        if self.header == None:
+            self.header = ole.Header(self.chars, self.params)
+            self.pos = self.header.parse()
 
     def __getDirectoryObj (self):
+        self.__parseHeader()
         obj = self.header.getDirectory()
         if obj == None:
             return None

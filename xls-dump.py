@@ -11,6 +11,8 @@ class XLDumper(object):
     def __init__ (self, filepath, params):
         self.filepath = filepath
         self.params = params
+        self.strm = None
+        self.strmData = None
 
     def __printDirHeader (self, dirname, byteLen):
         dirname = globals.decodeName(dirname)
@@ -19,23 +21,32 @@ class XLDumper(object):
         print("%s (size: %d bytes)"%(dirname, byteLen))
         print("-"*68)
 
-    def dump (self):
+    def __parseFile (self):
         file = open(self.filepath, 'rb')
-        strmData = globals.StreamData()
-        strm = xlsstream.XLStream(file.read(), self.params, strmData)
+        self.strmData = globals.StreamData()
+        self.strm = xlsstream.XLStream(file.read(), self.params, self.strmData)
         file.close()
-        strm.printStreamInfo()
-        strm.printHeader()
-        strm.printMSAT()
-        strm.printSAT()
-        strm.printSSAT()
-        strm.printDirectory()
-        dirnames = strm.getDirectoryNames()
+
+    def dumpXML (self):
+        self.__parseFile()
+        dirnames = self.strm.getDirectoryNames()
+        for dirname in dirnames:
+            print (dirname)
+
+    def dump (self):
+        self.__parseFile()
+        self.strm.printStreamInfo()
+        self.strm.printHeader()
+        self.strm.printMSAT()
+        self.strm.printSAT()
+        self.strm.printSSAT()
+        self.strm.printDirectory()
+        dirnames = self.strm.getDirectoryNames()
         for dirname in dirnames:
             if len(dirname) == 0 or dirname == 'Root Entry':
                 continue
 
-            dirstrm = strm.getDirectoryStreamByName(dirname)
+            dirstrm = self.strm.getDirectoryStreamByName(dirname)
             self.__printDirHeader(dirname, len(dirstrm.bytes))
             if dirname == "Workbook":
                 success = True
@@ -48,7 +59,7 @@ class XLDumper(object):
             elif dirname == '_SX_DB_CUR':
                 dirstrm.type = xlsstream.DirType.PivotTableCache
                 self.__readSubStream(dirstrm)
-            elif strmData.isPivotCacheStream(dirname):
+            elif self.strmData.isPivotCacheStream(dirname):
                 dirstrm.type = xlsstream.DirType.PivotTableCache
                 self.__readSubStream(dirstrm)
             else:
@@ -73,18 +84,24 @@ def main ():
         help="show sector chain information at the start of the output.")
     parser.add_option("--show-stream-pos", action="store_true", dest="show_stream_pos", default=False,
         help="show the position of each record relative to the stream.")
+    parser.add_option("--dump-xml", action="store_true", dest="dump_xml", default=False,
+        help="dump content in XML format.")
     options, args = parser.parse_args()
     params = globals.Params()
     params.debug = options.debug
     params.showSectorChain = options.show_sector_chain
     params.showStreamPos = options.show_stream_pos
+
     if len(args) < 1:
         globals.error("takes at least one argument\n")
         parser.print_help()
         return
 
     dumper = XLDumper(args[0], params)
-    dumper.dump()
+    if options.dump_xml:
+        dumper.dumpXML()
+    else:
+        dumper.dump()
 
 if __name__ == '__main__':
     main()
