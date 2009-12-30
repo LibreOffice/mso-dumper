@@ -45,7 +45,7 @@ class Workbook(ModelBase):
             return
 
         wbglobal = self.__sheets[0]
-        nd.appendChild(wbglobal.createDOM(self))
+#       nd.appendChild(wbglobal.createDOM(self))
         for i in xrange(1, n):
             sheet = self.__sheets[i]
             sheetNode = sheet.createDOM(self)
@@ -134,8 +134,9 @@ class Worksheet(SheetBase):
 
 
 class CellModelType:
-    Label = 0
-    Number = 1
+    Label   = 0
+    Number  = 1
+    Formula = 2
     Unknown = 999
 
 
@@ -157,6 +158,7 @@ class LabelCell(CellBase):
                 nd.setAttr('value', sst.baseText)
         return nd
 
+
 class NumberCell(CellBase):
     def __init__ (self, value):
         CellBase.__init__(self, CellModelType.Number)
@@ -167,3 +169,15 @@ class NumberCell(CellBase):
         nd.setAttr('value', self.value)
         return nd
 
+
+class FormulaCell(CellBase):
+    def __init__ (self):
+        CellBase.__init__(self, CellModelType.Formula)
+        self.tokens = None
+
+    def createDOM (self, wb):
+        nd = node.Element('formula-cell')
+        if self.tokens != None:
+            s = globals.getRawBytes(self.tokens, True, False)
+            nd.setAttr('token-bytes', s)
+        return nd

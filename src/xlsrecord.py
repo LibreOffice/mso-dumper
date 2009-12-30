@@ -277,30 +277,39 @@ class FilePass(BaseRecordHandler):
 
 class Formula(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.row = self.readUnsignedInt(2)
+        self.col = self.readUnsignedInt(2)
+        self.xf = self.readUnsignedInt(2)
+        self.fval = self.readDouble()
+
+        flags = self.readUnsignedInt(2)
+        self.recalc         = (flags & 0x0001) != 0
+        self.calcOnOpen     = (flags & 0x0002) != 0
+        self.sharedFormula  = (flags & 0x0008) != 0
+        self.tokens = self.readRemainingBytes()
+
     def parseBytes (self):
-        row  = globals.getSignedInt(self.bytes[0:2])
-        col  = globals.getSignedInt(self.bytes[2:4])
-        xf   = globals.getSignedInt(self.bytes[4:6])
-        fval = globals.getDouble(self.bytes[6:14])
-
-        flags          = globals.getSignedInt(self.bytes[14:16])
-        recalc         = (flags & 0x0001) != 0
-        calcOnOpen     = (flags & 0x0002) != 0
-        sharedFormula  = (flags & 0x0008) != 0
-
-        tokens = self.bytes[20:]
-        fparser = formula.FormulaParser(self.header, tokens)
+        self.__parseBytes()
+        fparser = formula.FormulaParser(self.header, self.tokens)
         fparser.parse()
         ftext = fparser.getText()
 
-        self.appendCellPosition(col, row)
-        self.appendLine("XF record ID: %d"%xf)
-        self.appendLine("formula result: %g"%fval)
-        self.appendLine("recalculate always: %d"%recalc)
-        self.appendLine("calculate on open: %d"%calcOnOpen)
-        self.appendLine("shared formula: %d"%sharedFormula)
-        self.appendLine("formula bytes: %s"%globals.getRawBytes(tokens, True, False))
+        self.appendCellPosition(self.col, self.row)
+        self.appendLine("XF record ID: %d"%self.xf)
+        self.appendLine("formula result: %g"%self.fval)
+        self.appendLine("recalculate always: %d"%self.recalc)
+        self.appendLine("calculate on open: %d"%self.calcOnOpen)
+        self.appendLine("shared formula: %d"%self.sharedFormula)
+        self.appendLine("formula bytes: %s"%globals.getRawBytes(self.tokens, True, False))
         self.appendLine("tokens: "+ftext)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        sheet = model.getCurrentSheet()
+        cell = xlsmodel.FormulaCell()
+        cell.tokens = self.tokens
+        sheet.setCell(self.col, self.row, cell)
 
 
 class Array(BaseRecordHandler):
