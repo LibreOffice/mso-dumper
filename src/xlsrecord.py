@@ -35,6 +35,12 @@ append a line to be displayed.
 """
         pass
 
+    def fillModel (self, model):
+        """Parse the original bytes and populate the workbook model.
+
+Like parseBytes(), the derived classes must overwrite this method."""
+        pass
+
     def output (self):
         self.parseBytes()
         print("%4.4Xh: %s"%(self.header, "-"*61))

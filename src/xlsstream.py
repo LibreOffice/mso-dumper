@@ -399,7 +399,7 @@ class XLDirStream(object):
     def __printSep (self, c='-', w=68, prefix=''):
         print(prefix + c*w)
 
-    def readRecord (self):
+    def __readRecordBytes (self):
         if self.size - self.pos < 4:
             raise EndOfStream
 
@@ -409,6 +409,45 @@ class XLDirStream(object):
             raise EndOfStream
         size = self.readRaw(2)
         bytes = self.readByteArray(size)
+        return pos, header, size, bytes
+
+    def __getRecordHandler (self, header, size, bytes):
+        # record handler that parses the raw bytes and displays more 
+        # meaningful information.
+        handler = None 
+        if recData.has_key(header) and len(recData[header]) >= 3:
+            handler = recData[header][2](header, size, bytes, self.strmData)
+
+        if handler != None and self.strmData.encrypted:
+            # record handler exists.  Parse the record and display more info 
+            # unless the stream is encrypted.
+            handler = None
+
+        return handler
+
+    def __postReadRecord (self, header):
+        if recData.has_key(header) and recData[header][0] == "FILEPASS":
+            # presence of FILEPASS record indicates that the stream is 
+            # encrypted.
+            self.strmData.encrypted = True
+
+    def fillModel (self, model):
+        pos, header, size, bytes = self.__readRecordBytes()
+        handler = self.__getRecordHandler(header, size, bytes)
+        if handler != None:
+            handler.fillModel(model)
+        self.__postReadRecord(header)
+
+
+    def readRecordXML (self):
+        pos, header, size, bytes = self.__readRecordBytes()
+        handler = self.__getRecordHandler(header, size, bytes)
+        print (recData[header][1])
+        self.__postReadRecord(header)
+        return header
+
+    def readRecord (self):
+        pos, header, size, bytes = self.__readRecordBytes()
 
         # record handler that parses the raw bytes and displays more 
         # meaningful information.
@@ -449,9 +488,5 @@ class XLDirStream(object):
             # unless the stream is encrypted.
             handler.output()
 
-        if recData.has_key(header) and recData[header][0] == "FILEPASS":
-            # presence of FILEPASS record indicates that the stream is 
-            # encrypted.
-            self.strmData.encrypted = True
-
+        self.__postReadRecord(header)
         return header
