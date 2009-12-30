@@ -51,8 +51,9 @@ class XLDumper(object):
 
             dirstrm = self.strm.getDirectoryStreamByName(dirname)
             wbmodel = self.__buildWorkbookModel(dirstrm)
+            wbmodel.encrypted = self.strmData.encrypted
             root.appendChild(wbmodel.createDOM())
-
+        
         node.prettyPrint(sys.stdout, docroot)
 
     def dump (self):

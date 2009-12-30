@@ -1,6 +1,6 @@
 
 import struct
-import globals, formula
+import globals, formula, xlsmodel
 
 # -------------------------------------------------------------------
 # record handler classes
@@ -153,6 +153,18 @@ class BOF(BaseRecordHandler):
         lowestExcelVer = self.readSignedInt(4)
         self.appendLine("earliest Excel version that can read all records: %d"%lowestExcelVer)
 
+    def fillModel (self, model):
+        if model.modelType != xlsmodel.ModelType.Workbook:
+            return
+
+        sheet = model.appendSheet()
+        ver = self.readUnsignedInt(2)
+        s = 'not BIFF8'
+        if ver == 0x0600:
+            s = 'BIFF8'
+        sheet.version = s
+
+
 
 class BoundSheet(BaseRecordHandler):
 
@@ -177,19 +189,28 @@ class BoundSheet(BaseRecordHandler):
         else:
             return 'unknown'
 
-    def parseBytes (self):
-        posBOF = self.readUnsignedInt(4)
+    def __parseBytes (self):
+        self.posBOF = self.readUnsignedInt(4)
         flags = self.readUnsignedInt(2)
         textLen = self.readUnsignedInt(1)
-        text, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
-        self.appendLine("BOF position in this stream: %d"%posBOF)
-        self.appendLine("sheet name: %s"%text)
+        self.name, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
+        self.hiddenState = (flags & 0x0003)
+        self.sheetType = (flags & 0xFF00)
 
-        hiddenState = (flags & 0x0003)
-        self.appendLine("hidden state: %s"%BoundSheet.getHiddenState(hiddenState))
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("BOF position in this stream: %d"%self.posBOF)
+        self.appendLine("sheet name: %s"%self.name)
+        self.appendLine("hidden state: %s"%BoundSheet.getHiddenState(self.hiddenState))
+        self.appendLine("sheet type: %s"%BoundSheet.getSheetType(self.sheetType))
 
-        sheetType = (flags & 0xFF00)
-        self.appendLine("sheet type: %s"%BoundSheet.getSheetType(sheetType))
+    def fillModel (self, model):
+        self.__parseBytes()
+        wbglobal = model.getWorkbookGlobal()
+        data = xlsmodel.WorkbookGlobal.SheetData()
+        data.name = self.name
+        data.visible = not self.hiddenState
+        wbglobal.appendSheetData(data)
 
 
 class Dimensions(BaseRecordHandler):
@@ -328,27 +349,39 @@ class Array(BaseRecordHandler):
 
 class Label(BaseRecordHandler):
 
-    def parseBytes (self):
-        col = self.readUnsignedInt(2)
-        row = self.readUnsignedInt(2)
-        xfIdx = self.readUnsignedInt(2)
+    def __parseBytes (self):
+        self.col = self.readUnsignedInt(2)
+        self.row = self.readUnsignedInt(2)
+        self.xfIdx = self.readUnsignedInt(2)
         textLen = self.readUnsignedInt(2)
-        text, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
-        self.appendCellPosition(col, row)
-        self.appendLine("XF record ID: %d"%xfIdx)
-        self.appendLine("label text: %s"%text)
+        self.text, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendCellPosition(self.col, self.row)
+        self.appendLine("XF record ID: %d"%self.xfIdx)
+        self.appendLine("label text: %s"%self.text)
 
 
 class LabelSST(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.row = self.readUnsignedInt(2)
+        self.col = self.readUnsignedInt(2)
+        self.xfIdx = self.readUnsignedInt(2)
+        self.strId = self.readUnsignedInt(4)
+
     def parseBytes (self):
-        col = self.readUnsignedInt(2)
-        row = self.readUnsignedInt(2)
-        xfIdx = self.readUnsignedInt(2)
-        strId = self.readUnsignedInt(4)
-        self.appendCellPosition(col, row)
-        self.appendLine("XF record ID: %d"%xfIdx)
-        self.appendLine("string ID in SST: %d"%strId)
+        self.__parseBytes()
+        self.appendCellPosition(self.col, self.row)
+        self.appendLine("XF record ID: %d"%self.xfIdx)
+        self.appendLine("string ID in SST: %d"%self.strId)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        sheet = model.getCurrentSheet()
+        cell = xlsmodel.LabelCell()
+        sheet.setCell(self.col, self.row, cell)
 
 
 class Number(BaseRecordHandler):

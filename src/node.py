@@ -120,6 +120,16 @@ def encodeString (sin):
 
     return sout
 
+def convertAttrValue (val):
+    if type(val) == type(True):
+        if val:
+            val = "true"
+        else:
+            val = "false"
+    elif type(val) == type(0):
+        val = "%d"%val
+
+    return val
 
 def prettyPrint (fd, node):
     printNode(fd, node, 0)
@@ -141,7 +151,12 @@ def printNode (fd, node, level):
             keys = node.attrs.keys()
             keys.sort()
             for key in keys:
-                line += " " + key + '="' + encodeString(node.attrs[key]) + '"'
+                val = node.attrs[key]
+                if val == None:
+                    continue
+                val = convertAttrValue(val)
+                line += " " + key + '="' + encodeString(val) + '"'
+
         if hasChildren:
             line = "<%s>\n"%line
             fd.write (indent + line)
