@@ -46,6 +46,9 @@ class ByteStream(object):
         self.pos = 0
         self.size = len(bytes)
 
+    def getSize (self):
+        return self.size
+
     def readBytes (self, length):
         r = self.bytes[self.pos:self.pos+length]
         self.pos += length

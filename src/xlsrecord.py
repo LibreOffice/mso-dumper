@@ -18,6 +18,29 @@ def getValueOrUnknown (list, idx, errmsg='(unknown)'):
 
     return errmsg
 
+
+def decodeRK (rkval):
+    multi100  = ((rkval & 0x00000001) != 0)
+    signedInt = ((rkval & 0x00000002) != 0)
+    realVal   = (rkval & 0xFFFFFFFC)
+
+    if signedInt:
+        # for integer, perform right-shift by 2 bits.
+        realVal = realVal/4
+    else:
+        # for floating-point, convert the value back to the bytes,
+        # pad the bytes to make it 8-byte long, and convert it back
+        # to the numeric value.
+        tmpBytes = struct.pack('<L', realVal)
+        tmpBytes = struct.pack('xxxx') + tmpBytes
+        realVal = struct.unpack('<d', tmpBytes)[0]
+
+    if multi100:
+        realVal /= 100
+
+    return realVal
+
+
 class BaseRecordHandler(globals.ByteStream):
 
     def __init__ (self, header, size, bytes, strmData):
@@ -384,6 +407,45 @@ class LabelSST(BaseRecordHandler):
         sheet.setCell(self.col, self.row, cell)
 
 
+class MulRK(BaseRecordHandler):
+    class RKRec(object):
+        def __init__ (self):
+            self.xfIdx = None    # XF record index
+            self.number = None   # RK number
+
+    def __parseBytes (self):
+        self.row = self.readUnsignedInt(2)
+        self.col1 = self.readUnsignedInt(2)
+        self.rkrecs = []
+        rkCount = (self.getSize() - self.getCurrentPos() - 2) / 6
+        for i in xrange(0, rkCount):
+            rec = MulRK.RKRec()
+            rec.xfIdx = self.readUnsignedInt(2)
+            rec.number = self.readUnsignedInt(4)
+            self.rkrecs.append(rec)
+
+        self.col2 = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("row: %d"%self.row)
+        self.appendLine("columns: %d - %d"%(self.col1, self.col2))
+        for rkrec in self.rkrecs:
+            self.appendLine("XF record ID: %d"%rkrec.xfIdx)
+            self.appendLine("RK number: %g"%decodeRK(rkrec.number))
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        sheet = model.getCurrentSheet()
+        n = len(self.rkrecs)
+        for i in xrange(0, n):
+            rkrec = self.rkrecs[i]
+            col = self.col1 + i
+            cell = xlsmodel.NumberCell(decodeRK(rkrec.number))
+            sheet.setCell(col, self.row, cell)
+
+
+
 class Number(BaseRecordHandler):
 
     def parseBytes (self):
@@ -519,23 +581,7 @@ class RK(BaseRecordHandler):
         xf  = globals.getSignedInt(self.bytes[4:6])
 
         rkval = globals.getSignedInt(self.bytes[6:10])
-        multi100  = ((rkval & 0x00000001) != 0)
-        signedInt = ((rkval & 0x00000002) != 0)
-        realVal   = (rkval & 0xFFFFFFFC)
-
-        if signedInt:
-            # for integer, perform right-shift by 2 bits.
-            realVal = realVal/4
-        else:
-            # for floating-point, convert the value back to the bytes,
-            # pad the bytes to make it 8-byte long, and convert it back
-            # to the numeric value.
-            tmpBytes = struct.pack('<L', realVal)
-            tmpBytes = struct.pack('xxxx') + tmpBytes
-            realVal = struct.unpack('<d', tmpBytes)[0]
-
-        if multi100:
-            realVal /= 100
+        realVal = decodeRK(rkval)
 
         self.appendCellPosition(col, row)
         self.appendLine("XF record ID: %d"%xf)

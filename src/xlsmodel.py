@@ -115,11 +115,18 @@ class Worksheet(SheetBase):
         for row in rows:
             rowNode = nd.appendElement('row')
             rowNode.setAttr('id', row)
+            cols = self.rows[row].keys()
+            for col in cols:
+                cell = self.rows[row][col]
+                cellNode = cell.createDOM()
+                rowNode.appendChild(cellNode)
+                cellNode.setAttr('col', col)
         return nd
 
 
 class CellModelType:
     Label = 0
+    Number = 1
     Unknown = 999
 
 
@@ -127,7 +134,22 @@ class CellBase(object):
     def __init__ (self, modelType):
         self.modelType = modelType
 
+
 class LabelCell(CellBase):
     def __init__ (self):
         CellBase.__init__(self, CellModelType.Label)
+
+    def createDOM (self):
+        nd = node.Element('label-cell')
+        return nd
+
+class NumberCell(CellBase):
+    def __init__ (self, value):
+        CellBase.__init__(self, CellModelType.Number)
+        self.value = value
+
+    def createDOM (self):
+        nd = node.Element('number-cell')
+        nd.setAttr('value', self.value)
+        return nd
 

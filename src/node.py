@@ -128,6 +128,8 @@ def convertAttrValue (val):
             val = "false"
     elif type(val) == type(0):
         val = "%d"%val
+    elif type(val) == type(0.0):
+        val = "%g"%val
 
     return val
 

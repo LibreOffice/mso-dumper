@@ -100,7 +100,7 @@ recData = {
     0x00B8: ["DOCROUTE", "Routing Slip Information"],
     0x00B9: ["RECIPNAME", "Recipient Name"],
     0x00BC: ["SHRFMLA", "Shared Formula"],
-    0x00BD: ["MULRK", "Multiple RK Cells"],
+    0x00BD: ["MULRK", "Multiple RK Cells", xlsrecord.MulRK],
     0x00BE: ["MULBLANK", "Multiple Blank Cells"],
     0x00C1: ["MMS", "ADDMENU/DELMENU Record Group Count"],
     0x00C2: ["ADDMENU", "Menu Addition"],
