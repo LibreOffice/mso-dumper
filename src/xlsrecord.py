@@ -927,30 +927,19 @@ class Row(BaseRecordHandler):
 class Name(BaseRecordHandler):
     """internal defined name"""
 
-    def __getInt (self, offset, size):
-        return globals.getSignedInt(self.bytes[offset:offset+size])
-
-    def __parseOptionFlags (self, flags):
+    def __writeOptionFlags (self):
         self.appendLine("option flags:")
-        isHidden       = (flags & 0x0001) != 0
-        isFuncMacro    = (flags & 0x0002) != 0
-        isVBMacro      = (flags & 0x0004) != 0
-        isMacroName    = (flags & 0x0008) != 0
-        isComplFormula = (flags & 0x0010) != 0
-        isBuiltinName  = (flags & 0x0020) != 0
-        funcGrp        = (flags & 0x0FC0) / 64
-        isBinary       = (flags & 0x1000) != 0
 
-        if isHidden:
+        if self.isHidden:
             self.appendLine("  hidden")
         else:
             self.appendLine("  visible")
 
-        if isMacroName:
+        if self.isMacroName:
             self.appendLine("  macro name")
-            if isFuncMacro:
+            if self.isFuncMacro:
                 self.appendLine("  function macro")
-                self.appendLine("  function group: %d"%funcGrp)
+                self.appendLine("  function group: %d"%self.funcGrp)
             else:
                 self.appendLine("  command macro")
             if isVBMacro:
@@ -960,51 +949,71 @@ class Name(BaseRecordHandler):
         else:
             self.appendLine("  standard name")
 
-        if isComplFormula:
+        if self.isComplFormula:
             self.appendLine("  complex formula")
         else:
             self.appendLine("  simple formula")
-        if isBuiltinName:
+        if self.isBuiltinName:
             self.appendLine("  built-in name")
         else:
             self.appendLine("  user-defined name")
-        if isBinary:
+        if self.isBinary:
             self.appendLine("  binary data")
         else:
             self.appendLine("  formula definition")
 
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(2)
+        self.isHidden       = (flag & 0x0001) != 0
+        self.isFuncMacro    = (flag & 0x0002) != 0
+        self.isVBMacro      = (flag & 0x0004) != 0
+        self.isMacroName    = (flag & 0x0008) != 0
+        self.isComplFormula = (flag & 0x0010) != 0
+        self.isBuiltinName  = (flag & 0x0020) != 0
+        self.funcGrp        = (flag & 0x0FC0) / 64
+        self.isBinary       = (flag & 0x1000) != 0
 
-    def parseBytes (self):
-        optionFlags = self.__getInt(0, 2)
-
-        keyShortCut = self.__getInt(2, 1)
-        nameLen     = self.__getInt(3, 1)
-        formulaLen  = self.__getInt(4, 2)
-        sheetId     = self.__getInt(8, 2)
+        self.keyShortCut      = self.readUnsignedInt(1)
+        nameLen               = self.readUnsignedInt(1)
+        self.formulaLen       = self.readUnsignedInt(2)
+        self.localNameSheetId = self.readUnsignedInt(2)
+        # 1-based index into the sheets in the current book, where the list is
+        # arranged by the visible order of the tabs.
+        self.sheetId          = self.readUnsignedInt(2) 
 
         # these optional texts may come after the formula token bytes.
-        menuTextLen = self.__getInt(10, 1)
-        descTextLen = self.__getInt(11, 1)
-        helpTextLen = self.__getInt(12, 1)
-        statTextLen = self.__getInt(13, 1)
+        self.menuTextLen = self.readUnsignedInt(1)
+        self.descTextLen = self.readUnsignedInt(1)
+        self.helpTextLen = self.readUnsignedInt(1)
+        self.statTextLen = self.readUnsignedInt(1)
+        pos = self.getCurrentPos()
+        self.name, byteLen = globals.getRichText(self.bytes[pos:], nameLen)
+        self.readBytes(byteLen)
+        self.name = globals.encodeName(self.name)
+        self.tokenBytes = self.readBytes(self.formulaLen)
 
-        name, byteLen = globals.getRichText(self.bytes[14:], nameLen)
-        name = globals.decodeName(name)
-        tokenPos = 14 + byteLen
-        tokenText = globals.getRawBytes(self.bytes[tokenPos:tokenPos+formulaLen], True, False)
-        o = formula.FormulaParser(self.header, self.bytes[tokenPos:tokenPos+formulaLen], False)
+    def parseBytes (self):
+        self.__parseBytes()
+
+        tokenText = globals.getRawBytes(self.tokenBytes, True, False)
+        o = formula.FormulaParser(self.header, self.tokenBytes, False)
         o.parse()
-        self.appendLine("name: %s"%name)
-        self.__parseOptionFlags(optionFlags)
+        formulaText = o.getText()
+        self.appendLine("name: %s"%self.name)
+        self.__writeOptionFlags()
 
-        self.appendLine("sheet ID: %d"%sheetId)
-        self.appendLine("menu text length: %d"%menuTextLen)
-        self.appendLine("description length: %d"%descTextLen)
-        self.appendLine("help tip text length: %d"%helpTextLen)
-        self.appendLine("status bar text length: %d"%statTextLen)
-        self.appendLine("formula length: %d"%formulaLen)
+        self.appendLine("sheet ID: %d"%self.sheetId)
+        self.appendLine("menu text length: %d"%self.menuTextLen)
+        self.appendLine("description length: %d"%self.descTextLen)
+        self.appendLine("help tip text length: %d"%self.helpTextLen)
+        self.appendLine("status bar text length: %d"%self.statTextLen)
+        self.appendLine("formula length: %d"%self.formulaLen)
         self.appendLine("formula bytes: " + tokenText)
-        self.appendLine("formula: " + o.getText())
+        self.appendLine("formula: " + formulaText)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        
 
 
 
@@ -1043,7 +1052,7 @@ class SupBook(BaseRecordHandler):
             flags = globals.getSignedInt(self.bytes[i:i+1])
             i += 1
             name = globals.getTextBytes(self.bytes[i:i+nameLen])
-            name = globals.decodeName(name)
+            name = globals.encodeName(name)
             i += nameLen
             if isFirst:
                 isFirst = False
@@ -1147,7 +1156,7 @@ class Crn(BaseRecordHandler):
                 # string
                 text, length = globals.getRichText(self.bytes[i:])
                 i += length
-                text = globals.decodeName(text)
+                text = globals.encodeName(text)
                 self.appendLine("* string value (%s)"%text)
             elif typeId == 0x04:
                 # boolean

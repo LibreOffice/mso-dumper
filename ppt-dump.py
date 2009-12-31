@@ -37,7 +37,7 @@ class PPTDumper(object):
         self.params = params
 
     def __printDirHeader (self, dirname, byteLen):
-        dirname = globals.decodeName(dirname)
+        dirname = globals.encodeName(dirname)
         print("")
         print("="*68)
         print("%s (size: %d bytes)"%(dirname, byteLen))

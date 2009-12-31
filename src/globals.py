@@ -89,8 +89,8 @@ def error (msg):
     sys.stderr.write("Error: " + msg)
 
 
-def decodeName (name):
-    """decode name that contains unprintable characters."""
+def encodeName (name):
+    """Encode name that contains unprintable characters."""
 
     n = len(name)
     if n == 0:
@@ -99,7 +99,7 @@ def decodeName (name):
     newname = ''
     for i in xrange(0, n):
         if ord(name[i]) <= 20:
-            newname += "<%2.2Xh>"%ord(name[i])
+            newname += "\\x%2.2X"%ord(name[i])
         else:
             newname += name[i]
 
@@ -154,7 +154,16 @@ def getUnicodeRichExtText (bytes):
 
 
 def getRichText (bytes, textLen=None):
-    """parse a string of the rich-text format that Excel uses."""
+    """parse a string of the rich-text format that Excel uses.
+
+Note the following:
+
+  * The 1st byte always contains flag.
+  * The actual number of bytes read may differ depending on the values of the 
+    flags, so the client code should pass an open-ended stream of bytes and 
+    always query for the actual bytes read to adjust for the new stream 
+    position when this function returns.
+"""
 
     strm = ByteStream(bytes)
     flags = strm.readUnsignedInt(1)
