@@ -84,6 +84,7 @@ class WorkbookGlobal(SheetBase):
 
         self.__sheetData = []
         self.__sharedStrings = []
+        self.__supbooks = []
 
     def createDOM (self, wb):
         nd = node.Element('workbook-global')

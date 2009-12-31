@@ -81,6 +81,16 @@ class ByteStream(object):
         bytes = self.readBytes(8)
         return getDouble(bytes)
 
+    def moveBack (self, byteCount):
+        self.pos -= byteCount
+        if self.pos < 0:
+            self.pos = 0
+
+    def moveForward (self, byteCount):
+        self.pos += byteCount
+        if self.pos > self.size:
+            self.pos = self.size
+
 
 def output (msg):
     sys.stdout.write(msg)
@@ -119,10 +129,10 @@ def getUnicodeRichExtText (bytes):
     flags = strm.readUnsignedInt(1)
     #  0 0 0 0 0 0 0 0
     # |-------|D|C|B|A|
-    isDoubleByte = (flags     & 0x01) == 1 # A
-    ignored      = ((flags/2) & 0x01) == 1 # B
-    hasPhonetic  = ((flags/4) & 0x01) == 1 # C
-    isRichStr    = ((flags/8) & 0x01) == 1 # D
+    isDoubleByte = (flags & 0x01) > 0 # A
+    ignored      = (flags & 0x02) > 0 # B
+    hasPhonetic  = (flags & 0x04) > 0 # C
+    isRichStr    = (flags & 0x08) > 0 # D
 
     numElem = 0
     if isRichStr:

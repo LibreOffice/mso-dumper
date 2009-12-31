@@ -395,10 +395,12 @@ nested classes will be without the leading underscore (_)."""
     def parse (self):
         while not self.strm.isEndOfRecord():
             b = self.strm.readUnsignedInt(1)
-            if FormulaParser2.tokenMap.has_key(b):
-                token = FormulaParser2.tokenMap[b](self.strm, b)
-                token.parse()
-                self.tokens.append(token)
+            if not FormulaParser2.tokenMap.has_key(b):
+                return
+
+            token = FormulaParser2.tokenMap[b](self.strm, b)
+            token.parse()
+            self.tokens.append(token)
 
     def getText (self):
         s = ''

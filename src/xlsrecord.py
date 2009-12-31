@@ -1070,45 +1070,49 @@ class Name(BaseRecordHandler):
 class SupBook(BaseRecordHandler):
     """Supporting workbook"""
 
-    def __parseSpecial (self):
-        if self.bytes[2:4] == [0x01, 0x04]:
-            # internal reference
-            num = globals.getSignedInt(self.bytes[0:2])
-            self.appendLine("sheet name count: %d (internal reference)"%num)
-        elif self.bytes[0:4] == [0x00, 0x01, 0x01, 0x3A]:
-            # add-in function
-            self.appendLine("add-in function name stored in the following EXERNNAME record.")
+    class SBType:
+        Self  = 0x0401
+        AddIn = 0x3A01
 
-    def __parseDDE (self):
-        # not implemented yet.
-        pass
+    def __parseBytes (self):
+        self.ctab = self.readUnsignedInt(2)
+        self.sbType = self.readUnsignedInt(2)
+
+        if self.sbType > 0x00FF or self.sbType == 0x0000:
+            return
+
+        self.names = []
+        isFirst = True
+        self.moveBack(2)
+        pos = self.getCurrentPos()
+        while pos < self.size:
+            ret, bytesLen = globals.getUnicodeRichExtText(self.bytes[pos:])
+            name = ret.baseText
+            self.moveForward(bytesLen)
+            self.names.append(name)
+            pos = self.getCurrentPos()
 
     def parseBytes (self):
-        if self.size == 4:
-            self.__parseSpecial()
+        self.__parseBytes()
+        if self.sbType == SupBook.SBType.Self:
+            # self-referencing supbook
+            self.appendLine("type: self-referencing")
+            self.appendLine("sheet name count: %d"%self.ctab)
             return
 
-        if self.bytes[0:2] == [0x00, 0x00]:
-            self.__parseDDE()
+        if self.sbType == SupBook.SBType.AddIn:
+            self.appendLine("type: add-in referencing")
+            self.appendMultiLine("Add-in function name stored in the following EXTERNNAME record.")
             return
 
-        num = globals.getSignedInt(self.bytes[0:2])
-        self.appendLine("sheet name count: %d"%num)
-        i = 2
-        isFirst = True
-        while i < self.size:
-            nameLen = globals.getSignedInt(self.bytes[i:i+2])
-            i += 2
-            flags = globals.getSignedInt(self.bytes[i:i+1])
-            i += 1
-            name = globals.getTextBytes(self.bytes[i:i+nameLen])
+        self.appendLine("sheet name count: %d"%self.ctab)
+        if len(self.names) == 0:
+            return
+
+        self.appendLine("document URL: %s"%globals.encodeName(self.names[0]))
+        for name in self.names[1:]:
             name = globals.encodeName(name)
-            i += nameLen
-            if isFirst:
-                isFirst = False
-                self.appendLine("document URL: %s"%name)
-            else:
-                self.appendLine("sheet name: %s"%name)
+            self.appendLine("sheet name: %s"%name)
 
 
 class ExternSheet(BaseRecordHandler):
