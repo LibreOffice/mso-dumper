@@ -1070,7 +1070,7 @@ class Name(BaseRecordHandler):
 class SupBook(BaseRecordHandler):
     """Supporting workbook"""
 
-    class SBType:
+    class Type:
         Self  = 0x0401
         AddIn = 0x3A01
 
@@ -1094,13 +1094,13 @@ class SupBook(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
-        if self.sbType == SupBook.SBType.Self:
+        if self.sbType == SupBook.Type.Self:
             # self-referencing supbook
             self.appendLine("type: self-referencing")
             self.appendLine("sheet name count: %d"%self.ctab)
             return
 
-        if self.sbType == SupBook.SBType.AddIn:
+        if self.sbType == SupBook.Type.AddIn:
             self.appendLine("type: add-in referencing")
             self.appendMultiLine("Add-in function name stored in the following EXTERNNAME record.")
             return
@@ -1113,6 +1113,17 @@ class SupBook(BaseRecordHandler):
         for name in self.names[1:]:
             name = globals.encodeName(name)
             self.appendLine("sheet name: %s"%name)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        wbg = model.getWorkbookGlobal()
+        if self.sbType == SupBook.Type.Self:
+            sb = xlsmodel.SupbookSelf(self.ctab)
+            wbg.appendSupbook(sb)
+        else:
+            # generic supbook instance just to keep the indices in sync.
+            wbg.appendSupbook(xlsmodel.Supbook())
+
 
 
 class ExternSheet(BaseRecordHandler):

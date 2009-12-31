@@ -73,6 +73,33 @@ class SheetBase(object):
         return nd
 
 
+class Supbook(object):
+    class Type:
+        Self     = 0
+        AddIn    = 1
+        External = 2
+        DDE      = 3
+        OLE      = 4
+        Unused   = 5
+
+    def __init__ (self, sbType=None):
+        self.sbType = sbType
+
+    def getType (self):
+        return self.sbType
+
+
+class SupbookSelf(Supbook):
+    def __init__ (self, sheetCount):
+        Supbook.__init__(self, Supbook.Type.Self)
+        self.sheetCount = sheetCount
+
+
+class SupbookExternal(Supbook):
+    def __init__ (self):
+        Supbook.__init__(self, Supbook.Type.External)
+
+
 class WorkbookGlobal(SheetBase):
     class SheetData:
         def __init__ (self):
@@ -93,6 +120,9 @@ class WorkbookGlobal(SheetBase):
     def appendSheetData (self, data):
         self.__sheetData.append(data)
 
+    def getSheetData (self, i):
+        return self.__sheetData[i]
+
     def appendSharedString (self, sst):
         self.__sharedStrings.append(sst)
 
@@ -101,8 +131,13 @@ class WorkbookGlobal(SheetBase):
             return None
         return self.__sharedStrings[strID]
 
-    def getSheetData (self, i):
-        return self.__sheetData[i]
+    def appendSupbook (self, sb):
+        self.__supbooks.append(sb)
+
+    def getSupbook (self, sbID):
+        if len(self.__supbooks) <= sbID:
+            return None
+        return self.__supbooks[sbID]
 
 
 class Worksheet(SheetBase):
