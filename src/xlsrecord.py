@@ -113,6 +113,201 @@ Like parseBytes(), the derived classes must overwrite this method."""
         else:
             return 'disabled'
 
+    def getBoolVal (self, boolVal, trueStr, falseStr):
+        if boolVal:
+            return trueStr
+        else:
+            return falseStr
+
+
+class AutofilterInfo(BaseRecordHandler):
+
+    def parseBytes (self):
+        arrowCount = self.readUnsignedInt(2)
+        self.appendLine("number of autofilter arrows: %d"%arrowCount)
+
+
+class Autofilter(BaseRecordHandler):
+
+    class DoperType:
+        FilterNotUsed     = 0x00  # filter condition not used
+        RKNumber          = 0x02
+        Number            = 0x04  # IEEE floating point nubmer
+        String            = 0x06
+        BooleanOrError    = 0x08
+        MatchAllBlanks    = 0x0C
+        MatchAllNonBlanks = 0x0E
+
+    compareCodes = [
+        '< ', # 01
+        '= ', # 02
+        '<=', # 03
+        '> ', # 04
+        '<>', # 05
+        '>='  # 06
+    ]
+
+    errorCodes = {
+        0x00: '#NULL! ',
+        0x07: '#DIV/0!', 
+        0x0F: '#VALUE!', 
+        0x17: '#REF!  ', 
+        0x1D: '#NAME? ', 
+        0x24: '#NUM!  ', 
+        0x2A: '#N/A   '
+    }
+
+    class Doper(object):
+        def __init__ (self, dataType=None):
+            self.dataType = dataType
+            self.sign = None
+
+        def appendLines (self, hdl):
+            # data type
+            s = '(unknown)'
+            if self.dataType == Autofilter.DoperType.RKNumber:
+                s = "RK number"
+            elif self.dataType == Autofilter.DoperType.Number:
+                s = "number"
+            elif self.dataType == Autofilter.DoperType.String:
+                s = "string"
+            elif self.dataType == Autofilter.DoperType.BooleanOrError:
+                s = "boolean or error"
+            elif self.dataType == Autofilter.DoperType.MatchAllBlanks:
+                s = "match all blanks"
+            elif self.dataType == Autofilter.DoperType.MatchAllNonBlanks:
+                s = "match all non-blanks"
+            hdl.appendLine("  data type: %s"%s)
+
+            # comparison code
+            if self.sign != None:
+                s = getValueOrUnknown(Autofilter.compareCodes, self.sign)
+                hdl.appendLine("  comparison code: %s (%d)"%(s, self.sign))
+
+
+    class DoperRK(Doper):
+        def __init__ (self):
+            Autofilter.Doper.__init__(self, Autofilter.DoperType.RK)
+            self.rkval = None
+
+        def appendLines (self, hdl):
+            Autofilter.Doper.appendLines(self, hdl)
+            hdl.appendLine("  value: %g"%decodeRK(self.rkval))
+
+    class DoperNumber(Doper):
+        def __init__ (self):
+            Autofilter.Doper.__init__(self, Autofilter.DoperType.Number)
+            self.number = None
+
+        def appendLines (self, hdl):
+            Autofilter.Doper.appendLines(self, hdl)
+            hdl.appendLine("  value: %g"%self.number)
+
+    class DoperString(Doper):
+        def __init__ (self):
+            Autofilter.Doper.__init__(self, Autofilter.DoperType.String)
+            self.strLen = None
+
+        def appendLines (self, hdl):
+            Autofilter.Doper.appendLines(self, hdl)
+            if self.strLen != None:
+                hdl.appendLine("  string length: %d"%self.strLen)
+
+
+    class DoperBoolean(Doper):
+        def __init__ (self):
+            Autofilter.Doper.__init__(self, Autofilter.DoperType.Boolean)
+            self.flag = None
+            self.value = None
+
+        def appendLines (self, hdl):
+            Autofilter.Doper.appendLines(self, hdl)
+            hdl.appendLine("  boolean or error: %s"%hdl.getBoolVal(self.flag, "error", "boolean"))
+            if self.flag:
+                # error value
+                hdl.appendLine("  error value: %s (0x%2.2X)"%
+                    (getValueOrUnknown(Autofilter.errorCodes, self.value), self.value))
+            else:
+                # boolean value
+                hd.appendLine("  boolean value: %s"%hdl.getTrueFalse(self.value))
+
+
+    def __readDoper (self):
+        vt = self.readUnsignedInt(1)
+        if vt == Autofilter.DoperType.RKNumber:
+            doper = Autofilter.DoperRK()
+            doper.sign = self.readUnsignedInt(1)
+            doper.rkval = self.readUnsignedInt(4)
+            self.readBytes(4) # ignore 4 bytes
+        elif vt == Autofilter.DoperType.Number:
+            doper = Autofilter.DoperNumber()
+            doper.sign = self.readUnsignedInt(1)
+            doper.number = self.readDouble()
+        elif vt == Autofilter.DoperType.String:
+            doper = Autofilter.DoperString()
+            doper.sign = self.readUnsignedInt(1)
+            self.readBytes(4) # ignore 4 bytes
+            doper.strLen = self.readUnsignedInt(1)
+            self.readBytes(3) # ignore 3 bytes
+        elif vt == Autofilter.DoperType.BooleanOrError:
+            doper = Autofilter.DoperBoolean()
+            doper.sign = self.readUnsignedInt(1)
+            doper.flag = self.readUnsignedInt(1)
+            doper.value = self.readUnsignedInt(1)
+            self.readBytes(6) # ignore 6 bytes
+        else:
+            doper = Autofilter.Doper()
+            self.readBytes(10) # ignore the entire 10 bytes
+        return doper
+
+    def __parseBytes (self):
+        self.filterIndex = self.readUnsignedInt(2)
+        flag = self.readUnsignedInt(2)
+        self.join    = (flag & 0x0003) # 1 = ANDed  0 = ORed
+        self.simple1 = (flag & 0x0004) # 1st condition is simple equality (for optimization)
+        self.simple2 = (flag & 0x0008) # 2nd condition is simple equality (for optimization)
+        self.top10   = (flag & 0x0010) # top 10 autofilter
+        self.top     = (flag & 0x0020) # 1 = top 10 filter shows the top item, 0 = shows the bottom item
+        self.percent = (flag & 0x0040) # 1 = top 10 shows percentage, 0 = shows items
+        self.itemCount = (flag & 0xFF80) / (2*7)
+        self.doper1 = self.__readDoper()
+        self.doper2 = self.__readDoper()
+
+        # pick up string(s)
+        self.string1 = None
+        if self.doper1.dataType == Autofilter.DoperType.String:
+            self.string1 = globals.getTextBytes(self.readBytes(self.doper1.strLen))
+
+        self.string2 = None
+        if self.doper2.dataType == Autofilter.DoperType.String:
+            self.string2 = globals.getTextBytes(self.readBytes(self.doper2.strLen))
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("autofilter ID: %d"%self.filterIndex)
+        self.appendLine("joining: %s"%self.getBoolVal(self.join, "AND", "OR"))
+        self.appendLineBoolean("1st condition is simple equality", self.simple1)
+        self.appendLineBoolean("2nd condition is simple equality", self.simple2)
+        self.appendLineBoolean("top 10 autofilter", self.top10)
+        if self.top10:
+            self.appendLine("top 10 shows: %s"%self.getBoolVal(self.top, "top item", "bottom item"))
+            self.appendLine("top 10 shows: %s"%self.getBoolVal(self.percent, "percentage", "items"))
+            self.appendLine("top 10 item count: %d"%self.itemCount)
+
+        self.appendLine("1st condition:")
+        self.doper1.appendLines(self)
+        self.appendLine("2nd condition:")
+        self.doper2.appendLines(self)
+
+        if self.string1 != None:
+            self.appendLine("string for 1st condition: %s"%self.string1)
+
+        if self.string2 != None:
+            self.appendLine("string for 2nd condition: %s"%self.string2)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+
 
 class BOF(BaseRecordHandler):
 

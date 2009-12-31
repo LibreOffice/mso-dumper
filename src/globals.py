@@ -175,7 +175,7 @@ def getRichText (bytes, textLen=None):
     extraBytes = 0
     if textLen == None:
         extraBytes = formatRuns*4 + extInfo
-        textLen = len(bytes) - extraBytes - i
+        textLen = len(bytes) - extraBytes
 
     totalByteLen = strm.getCurrentPos() + textLen + extraBytes
     if is16Bit:
