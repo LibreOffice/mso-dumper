@@ -1,5 +1,5 @@
 
-import struct
+import struct, sys
 import globals, formula, xlsmodel
 
 # -------------------------------------------------------------------
@@ -925,7 +925,52 @@ class Row(BaseRecordHandler):
 
 
 class Name(BaseRecordHandler):
-    """internal defined name"""
+    """Internal defined name (aka Lbl)"""
+
+    builtInNames = [
+        "Consolidate_Area",  # 0x00
+        "Auto_Open       ",  # 0x01
+        "Auto_Close      ",  # 0x02
+        "Extract         ",  # 0x03
+        "Database        ",  # 0x04
+        "Criteria        ",  # 0x05
+        "Print_Area      ",  # 0x06
+        "Print_Titles    ",  # 0x07
+        "Recorder        ",  # 0x08
+        "Data_Form       ",  # 0x09
+        "Auto_Activate   ",  # 0x0A
+        "Auto_Deactivate ",  # 0x0B
+        "Sheet_Title     ",  # 0x0C
+        "_FilterDatabase "   # 0x0D
+    ]
+
+    funcCategories = [
+        'All',              # 00
+        'Financial',        # 01
+        'DateTime',         # 02
+        'MathTrigonometry', # 03
+        'Statistical',      # 04
+        'Lookup',           # 05
+        'Database',         # 06
+        'Text',             # 07
+        'Logical',          # 08
+        'Info',             # 09
+        'Commands',         # 10
+        'Customize',        # 11
+        'MacroControl',     # 12
+        'DDEExternal',      # 13
+        'UserDefined',      # 14
+        'Engineering',      # 15
+        'Cube'              # 16
+    ]
+
+    @staticmethod
+    def getBuiltInName (name):
+        return getValueOrUnknown(Name.builtInNames, ord(name[0]))
+
+    @staticmethod
+    def getFuncCategory (val):
+        return getValueOrUnknown(Name.funcCategories, val)
 
     def __writeOptionFlags (self):
         self.appendLine("option flags:")
@@ -982,14 +1027,15 @@ class Name(BaseRecordHandler):
         self.sheetId          = self.readUnsignedInt(2) 
 
         # these optional texts may come after the formula token bytes.
+        # NOTE: [MS-XLS] spec says these bytes are reserved and to be ignored.
         self.menuTextLen = self.readUnsignedInt(1)
         self.descTextLen = self.readUnsignedInt(1)
         self.helpTextLen = self.readUnsignedInt(1)
         self.statTextLen = self.readUnsignedInt(1)
+
         pos = self.getCurrentPos()
         self.name, byteLen = globals.getRichText(self.bytes[pos:], nameLen)
         self.readBytes(byteLen)
-        self.name = globals.encodeName(self.name)
         self.tokenBytes = self.readBytes(self.formulaLen)
 
     def parseBytes (self):
@@ -999,14 +1045,18 @@ class Name(BaseRecordHandler):
         o = formula.FormulaParser(self.header, self.tokenBytes, False)
         o.parse()
         formulaText = o.getText()
-        self.appendLine("name: %s"%self.name)
+        self.appendLine("name: %s"%globals.encodeName(self.name))
+        if self.isBuiltinName:
+            self.appendLine("built-in name: %s"%Name.getBuiltInName(self.name))
+
+        self.appendLine("function category: %s (%d)"%(Name.getFuncCategory(self.funcGrp), self.funcGrp))
         self.__writeOptionFlags()
 
         self.appendLine("sheet ID: %d"%self.sheetId)
-        self.appendLine("menu text length: %d"%self.menuTextLen)
-        self.appendLine("description length: %d"%self.descTextLen)
-        self.appendLine("help tip text length: %d"%self.helpTextLen)
-        self.appendLine("status bar text length: %d"%self.statTextLen)
+#       self.appendLine("menu text length: %d"%self.menuTextLen)
+#       self.appendLine("description length: %d"%self.descTextLen)
+#       self.appendLine("help tip text length: %d"%self.helpTextLen)
+#       self.appendLine("status bar text length: %d"%self.statTextLen)
         self.appendLine("formula length: %d"%self.formulaLen)
         self.appendLine("formula bytes: " + tokenText)
         self.appendLine("formula: " + formulaText)
