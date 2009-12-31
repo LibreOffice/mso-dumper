@@ -81,7 +81,7 @@ recData = {
     0x0098: ["LPR", "Sheet Was Printed Using LINE.PRINT()"],
     0x0099: ["STANDARDWIDTH", "Standard Column Width"],
     0x009A: ["FNGROUPNAME", "Function Group Name"],
-    0x009B: ["FILTERMODE", "Sheet Contains Filtered List"],
+    0x009B: ["FILTERMODE", "Sheet Contains Filtered List", xlsrecord.FilterMode],
     0x009C: ["FNGROUPCOUNT", "Built-in Function Group Count"],
     0x009D: ["AUTOFILTERINFO", "Drop-Down Arrow Count", xlsrecord.AutofilterInfo],
     0x009E: ["AUTOFILTER", "AutoFilter Data", xlsrecord.Autofilter],

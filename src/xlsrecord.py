@@ -261,7 +261,7 @@ class Autofilter(BaseRecordHandler):
         return doper
 
     def __parseBytes (self):
-        self.filterIndex = self.readUnsignedInt(2)
+        self.filterIndex = self.readUnsignedInt(2)  # column ID?
         flag = self.readUnsignedInt(2)
         self.join    = (flag & 0x0003) # 1 = ANDed  0 = ORed
         self.simple1 = (flag & 0x0004) # 1st condition is simple equality (for optimization)
@@ -284,7 +284,7 @@ class Autofilter(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
-        self.appendLine("autofilter ID: %d"%self.filterIndex)
+        self.appendLine("filter index (= column ID): %d"%self.filterIndex)
         self.appendLine("joining: %s"%self.getBoolVal(self.join, "AND", "OR"))
         self.appendLineBoolean("1st condition is simple equality", self.simple1)
         self.appendLineBoolean("2nd condition is simple equality", self.simple2)
@@ -468,6 +468,12 @@ class FilePass(BaseRecordHandler):
         self.appendLine("encryption type: %s"%encType)
         self.appendLine("")
         self.appendMultiLine("NOTE: Since this document appears to be encrypted, the dumper will not parse the record contents from this point forward.")
+
+
+class FilterMode(BaseRecordHandler):
+
+    def parseBytes (self):
+        self.appendMultiLine("NOTE: The presence of this record indicates that the sheet has a filtered list.")
 
 
 class Formula(BaseRecordHandler):
