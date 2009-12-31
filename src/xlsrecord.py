@@ -1042,7 +1042,7 @@ class Name(BaseRecordHandler):
         self.__parseBytes()
 
         tokenText = globals.getRawBytes(self.tokenBytes, True, False)
-        o = formula.FormulaParser(self.header, self.tokenBytes, False)
+        o = formula.FormulaParser2(self.header, self.tokenBytes, False)
         o.parse()
         formulaText = o.getText()
         self.appendLine("name: %s"%globals.encodeName(self.name))

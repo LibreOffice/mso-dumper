@@ -305,20 +305,21 @@ which is usually the first 2 bytes.
 """
     def __init__ (self, header, tokens, sizeField=True):
         self.header = header
-        self.tokens = tokens
+        self.strm = globals.ByteStream(tokens)
         self.text = ''
         self.sizeField = sizeField
 
     def parse (self):
-        ftokens = self.tokens
-        length = len(ftokens)
+        length = self.strm.getSize()
         if self.sizeField:
             # first 2-bytes contain the length of the formula tokens
-            length = globals.getSignedInt(self.tokens[0:2])
+            length = self.strm.readUnsignedInt(2)
             if length <= 0:
                 return
-            ftokens = self.tokens[2:2+length]
+            ftokens = self.strm.readBytes(length)
             length = len(ftokens)
+        else:
+            ftokens = self.strm.readRemainingBytes()
 
         i = 0
         while i < length:
@@ -343,3 +344,64 @@ which is usually the first 2 bytes.
 
     def getText (self):
         return self.text
+
+class FormulaParser2(object):
+    """This is a new formula parser that will eventually replace the old one.
+
+Once replaced, I'll change the name to FormulaParser and the names of the 
+nested classes will be without the leading underscore (_)."""
+
+    class _TokenBase(object):
+        def __init__ (self, strm, opcode1, opcode2=None):
+            self.opcode1 = opcode1
+            self.opcode2 = opcode2
+            self.strm = strm
+
+        def parse (self):
+            self.parseBytes()
+            self.strm = None # no need to hold reference to the stream.
+
+        def parseBytes (self):
+            # derived class should overwrite this method.
+            pass
+
+        def getText (self):
+            return ''
+
+    class _Area3d(_TokenBase):
+        def parseBytes (self):
+            self.xti = self.strm.readUnsignedInt(2)
+            self.cellRange = parseCellRangeAddress(self.strm.readBytes(8))
+
+        def getText (self):
+            return "(xti=%d,"%self.xti + self.cellRange.getName() + ")"
+
+    tokenMap = {
+        0x3B: _Area3d,
+        0x5B: _Area3d,
+        0x7B: _Area3d
+    }
+
+    def __init__ (self, header, bytes, sizeField=True):
+        self.header = header
+        self.tokens = []
+        if sizeField:
+            # first 2-bytes contain the length of the formula bytes.
+            length = globals.getUnsignedInt(bytes[:2])
+            self.strm = globals.ByteStream(bytes[2:2+length])
+        else:
+            self.strm = globals.ByteStream(bytes)
+
+    def parse (self):
+        while not self.strm.isEndOfRecord():
+            b = self.strm.readUnsignedInt(1)
+            if FormulaParser2.tokenMap.has_key(b):
+                token = FormulaParser2.tokenMap[b](self.strm, b)
+                token.parse()
+                self.tokens.append(token)
+
+    def getText (self):
+        s = ''
+        for tk in self.tokens:
+            s += tk.getText()
+        return s
