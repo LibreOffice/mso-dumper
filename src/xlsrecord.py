@@ -1128,14 +1128,22 @@ class SupBook(BaseRecordHandler):
 
 class ExternSheet(BaseRecordHandler):
 
-    def parseBytes (self):
-        num = globals.getSignedInt(self.bytes[0:2])
+    def __parseBytes (self):
+        self.sheets = []
+        num = self.readUnsignedInt(2)
         for i in xrange(0, num):
-            offset = 2 + i*6
-            book = globals.getSignedInt(self.bytes[offset:offset+2])
-            firstSheet = globals.getSignedInt(self.bytes[offset+2:offset+4])
-            lastSheet  = globals.getSignedInt(self.bytes[offset+4:offset+6])
-            self.appendLine("SUPBOOK record ID: %d  (sheet ID range: %d - %d)"%(book, firstSheet, lastSheet))
+            book = self.readUnsignedInt(2)
+            sheet1 = self.readUnsignedInt(2)
+            sheet2 = self.readUnsignedInt(2)
+            self.sheets.append((book, sheet1, sheet2))
+
+    def parseBytes (self):
+        self.__parseBytes()
+        for sh in self.sheets:
+            self.appendLine("SUPBOOK record ID: %d  (sheet ID range: %d - %d)"%(sh[0], sh[1], sh[2]))
+
+    def fillModel (self, model):
+        self.__parseBytes()
 
 
 class ExternName(BaseRecordHandler):
