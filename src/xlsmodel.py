@@ -58,12 +58,12 @@ class Workbook(ModelBase):
         return nd
 
 
-class SheetModelType:
-    WorkbookGlobal = 0
-    Worksheet = 1
-
-
 class SheetBase(object):
+
+    class Type:
+        WorkbookGlobal = 0
+        Worksheet = 1
+
     def __init__ (self, modelType):
         self.modelType = modelType
         self.version = None
@@ -107,7 +107,7 @@ class WorkbookGlobal(SheetBase):
             self.visible = True
 
     def __init__ (self):
-        SheetBase.__init__(self, SheetModelType.WorkbookGlobal)
+        SheetBase.__init__(self, SheetBase.Type.WorkbookGlobal)
 
         self.__sheetData = []
         self.__sharedStrings = []
@@ -143,7 +143,7 @@ class WorkbookGlobal(SheetBase):
 class Worksheet(SheetBase):
 
     def __init__ (self):
-        SheetBase.__init__(self, SheetModelType.Worksheet)
+        SheetBase.__init__(self, SheetBase.Type.Worksheet)
         self.rows = {}
 
     def setCell (self, col, row, cell):
@@ -169,21 +169,21 @@ class Worksheet(SheetBase):
         return nd
 
 
-class CellModelType:
-    Label   = 0
-    Number  = 1
-    Formula = 2
-    Unknown = 999
-
-
 class CellBase(object):
+
+    class Type:
+        Label   = 0
+        Number  = 1
+        Formula = 2
+        Unknown = 999
+
     def __init__ (self, modelType):
         self.modelType = modelType
 
 
 class LabelCell(CellBase):
     def __init__ (self):
-        CellBase.__init__(self, CellModelType.Label)
+        CellBase.__init__(self, CellBase.Type.Label)
         self.strID = None
 
     def createDOM (self, wb):
@@ -197,7 +197,7 @@ class LabelCell(CellBase):
 
 class NumberCell(CellBase):
     def __init__ (self, value):
-        CellBase.__init__(self, CellModelType.Number)
+        CellBase.__init__(self, CellBase.Type.Number)
         self.value = value
 
     def createDOM (self, wb):
@@ -208,7 +208,7 @@ class NumberCell(CellBase):
 
 class FormulaCell(CellBase):
     def __init__ (self):
-        CellBase.__init__(self, CellModelType.Formula)
+        CellBase.__init__(self, CellBase.Type.Formula)
         self.tokens = None
 
     def createDOM (self, wb):
