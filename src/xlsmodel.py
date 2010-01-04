@@ -176,6 +176,9 @@ class Worksheet(SheetBase):
         # Swap with the new and empty list.
         self.__autoFilterArrows = arrows
 
+    def setAutoFilterArrow (self, filterID, obj):
+        self.__autoFilterArrows[filterID] = obj
+
     def setCell (self, col, row, cell):
         if not self.__rows.has_key(row):
             self.__rows[row] = {}
@@ -206,6 +209,7 @@ class Worksheet(SheetBase):
 
     def __appendAutoFilterNode (self, wb, baseNode):
         if len(self.__autoFilterArrows) <= 0:
+            # No autofilter in this sheet.
             return
 
         wbg = wb.getWorkbookGlobal()
@@ -214,8 +218,9 @@ class Worksheet(SheetBase):
         parser.parse()
         tokens = parser.getTokens()
         if len(tokens) != 1 or tokens[0].tokenType != formula.TokenType.Area3d:
+            # We assume that the database range only has one range token, otherwise
+            # we bail out.
             return
-
 
         tk = tokens[0]
         cellRange = tk.cellRange
@@ -223,10 +228,14 @@ class Worksheet(SheetBase):
         elem = baseNode.appendElement('autofilter')
         elem.setAttr('range', "(col=%d,row=%d)-(col=%d,row=%d)"%(cellRange.firstCol, cellRange.firstRow, cellRange.lastCol, cellRange.lastRow))
 
-        for col in xrange(cellRange.firstCol, cellRange.lastCol+1):
-            arrow = elem.appendElement('arrow')
-            arrow.setAttr('col', col)
-            arrow.setAttr('row', cellRange.firstRow)
+        for i in xrange(0, len(self.__autoFilterArrows)):
+            arrowObj = self.__autoFilterArrows[i]
+            if arrowObj == None:
+                arrow = elem.appendElement('arrow')
+                arrow.setAttr('pos', "(col=%d,row=%d)"%(cellRange.firstCol+i,cellRange.firstRow))
+            else:
+                elem.appendChild(arrowObj.createDOM(wb, cellRange))
+
 
 class CellBase(object):
 
@@ -275,4 +284,27 @@ class FormulaCell(CellBase):
         if self.tokens != None:
             s = globals.getRawBytes(self.tokens, True, False)
             nd.setAttr('token-bytes', s)
+        return nd
+
+
+class AutoFilterArrow(object):
+
+    def __init__ (self, filterID):
+        self.filterID = filterID
+        self.isActive = False
+        self.equalString1 = None
+        self.equalString2 = None
+
+    def createDOM (self, wb, filterRange):
+        nd = node.Element('arrow')
+        col = self.filterID + filterRange.firstCol
+        row = filterRange.firstRow
+        nd.setAttr('pos', "(col=%d,row=%d)"%(col,row))
+        nd.setAttr('active', self.isActive)
+        eqStr = ''
+        if self.equalString1 != None:
+            eqStr = self.equalString1
+        if self.equalString2 != None:
+            eqStr += ',' + self.equalString2
+        nd.setAttr('equals', eqStr)
         return nd

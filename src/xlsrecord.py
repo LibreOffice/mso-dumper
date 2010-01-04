@@ -316,6 +316,15 @@ class Autofilter(BaseRecordHandler):
 
     def fillModel (self, model):
         self.__parseBytes()
+        sh = model.getCurrentSheet()
+        obj = xlsmodel.AutoFilterArrow(self.filterIndex)
+        obj.isActive = True
+        if self.simple1:
+            obj.equalString1 = self.string1
+
+        if self.simple2:
+            obj.equalString1 = self.string2
+        sh.setAutoFilterArrow(self.filterIndex, obj)
 
 
 class BOF(BaseRecordHandler):
