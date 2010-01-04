@@ -325,6 +325,7 @@ class Autofilter(BaseRecordHandler):
         if self.simple2:
             obj.equalString1 = self.string2
         sh.setAutoFilterArrow(self.filterIndex, obj)
+        # TODO: Pick up more complex states as we need them.
 
 
 class BOF(BaseRecordHandler):
