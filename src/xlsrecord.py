@@ -2,6 +2,8 @@
 import struct, sys
 import globals, formula, xlsmodel
 
+from globals import debug
+
 # -------------------------------------------------------------------
 # record handler classes
 
@@ -36,7 +38,7 @@ def decodeRK (rkval):
         realVal = struct.unpack('<d', tmpBytes)[0]
 
     if multi100:
-        realVal /= 100
+        realVal /= 100.0
 
     return realVal
 

@@ -98,6 +98,9 @@ def output (msg):
 def error (msg):
     sys.stderr.write("Error: " + msg)
 
+def debug (msg):
+    sys.stderr.write("DEBUG: %s\n"%msg)
+
 
 def encodeName (name):
     """Encode name that contains unprintable characters."""
