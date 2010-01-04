@@ -122,9 +122,18 @@ Like parseBytes(), the derived classes must overwrite this method."""
 
 class AutofilterInfo(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.arrowCount = self.readUnsignedInt(2)
+
     def parseBytes (self):
-        arrowCount = self.readUnsignedInt(2)
-        self.appendLine("number of autofilter arrows: %d"%arrowCount)
+        self.__parseBytes()
+        self.appendLine("number of autofilter arrows: %d"%self.arrowCount)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        sh = model.getCurrentSheet()
+        sh.setAutoFilterArrowSize(self.arrowCount)
+
 
 
 class Autofilter(BaseRecordHandler):
@@ -1063,8 +1072,11 @@ class Name(BaseRecordHandler):
 
     def fillModel (self, model):
         self.__parseBytes()
-        
 
+        wbg = model.getWorkbookGlobal()
+        if self.isBuiltinName and len(self.name) == 1 and ord(self.name[0]) == 0x0D:
+            # Pick up a database range for autofilter.
+            wbg.setFilterRange(self.sheetId-1, self.tokenBytes)
 
 
 class SupBook(BaseRecordHandler):
@@ -1144,6 +1156,9 @@ class ExternSheet(BaseRecordHandler):
 
     def fillModel (self, model):
         self.__parseBytes()
+        wbg = model.getWorkbookGlobal()
+        for sh in self.sheets:
+            wbg.appendExternSheet(sh[0], sh[1], sh[2])
 
 
 class ExternName(BaseRecordHandler):

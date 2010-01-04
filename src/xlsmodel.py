@@ -1,5 +1,5 @@
 
-import globals, node
+import globals, node, formula
 
 
 class ModelType:
@@ -24,10 +24,11 @@ class Workbook(ModelBase):
         self.__sheets = []
 
     def appendSheet (self):
-        if len(self.__sheets) == 0:
+        n = len(self.__sheets)
+        if n == 0:
             self.__sheets.append(WorkbookGlobal())
         else:
-            self.__sheets.append(Worksheet())
+            self.__sheets.append(Worksheet(n-1))
 
         return self.getCurrentSheet()
 
@@ -112,6 +113,8 @@ class WorkbookGlobal(SheetBase):
         self.__sheetData = []
         self.__sharedStrings = []
         self.__supbooks = []
+        self.__externSheets = []  # tuple (book ID, sheet begin ID, sheet end ID)
+        self.__dbRanges = {}      # key: sheet ID (0-based), value: range tokens
 
     def createDOM (self, wb):
         nd = node.Element('workbook-global')
@@ -139,35 +142,91 @@ class WorkbookGlobal(SheetBase):
             return None
         return self.__supbooks[sbID]
 
+    def appendExternSheet (self, bookID, sheetBeginID, sheetEndID):
+        self.__externSheets.append((bookID, sheetBeginID, sheetEndID))
+
+    def getExternSheet (self, xtiID):
+        if len(self.__externSheets) <= xtiID:
+            return None
+        return self.__externSheets[xtiID]
+
+    def setFilterRange (self, sheetID, tokens):
+        self.__dbRanges[sheetID] = tokens
+
+    def getFilterRange (self, sheetID):
+        if not self.__dbRanges.has_key(sheetID):
+            return None
+
+        return self.__dbRanges[sheetID]
+
 
 class Worksheet(SheetBase):
 
-    def __init__ (self):
+    def __init__ (self, sheetID):
         SheetBase.__init__(self, SheetBase.Type.Worksheet)
-        self.rows = {}
+        self.__rows = {}
+        self.__autoFilterArrows = []
+        self.sheetID = sheetID
+
+    def setAutoFilterArrowSize (self, arrowSize):
+        arrows = []
+        for i in xrange(0, arrowSize):
+            arrows.append(None)
+
+        # Swap with the new and empty list.
+        self.__autoFilterArrows = arrows
 
     def setCell (self, col, row, cell):
-        if not self.rows.has_key(row):
-            self.rows[row] = {}
+        if not self.__rows.has_key(row):
+            self.__rows[row] = {}
 
-        self.rows[row][col] = cell
+        self.__rows[row][col] = cell
 
     def createDOM (self, wb):
         nd = node.Element('worksheet')
         nd.setAttr('version', self.version)
-        rows = self.rows.keys()
+
+        # cells
+        rows = self.__rows.keys()
         rows.sort()
         for row in rows:
             rowNode = nd.appendElement('row')
             rowNode.setAttr('id', row)
-            cols = self.rows[row].keys()
+            cols = self.__rows[row].keys()
             for col in cols:
-                cell = self.rows[row][col]
+                cell = self.__rows[row][col]
                 cellNode = cell.createDOM(wb)
                 rowNode.appendChild(cellNode)
                 cellNode.setAttr('col', col)
+
+        # autofilter (if exists)
+        self.__appendAutoFilterNode(wb, nd)
+
         return nd
 
+    def __appendAutoFilterNode (self, wb, baseNode):
+        if len(self.__autoFilterArrows) <= 0:
+            return
+
+        wbg = wb.getWorkbookGlobal()
+        tokens = wbg.getFilterRange(self.sheetID)
+        parser = formula.FormulaParser2(None, tokens, False)
+        parser.parse()
+        tokens = parser.getTokens()
+        if len(tokens) != 1 or tokens[0].tokenType != formula.TokenType.Area3d:
+            return
+
+
+        tk = tokens[0]
+        cellRange = tk.cellRange
+
+        elem = baseNode.appendElement('autofilter')
+        elem.setAttr('range', "(col=%d,row=%d)-(col=%d,row=%d)"%(cellRange.firstCol, cellRange.firstRow, cellRange.lastCol, cellRange.lastRow))
+
+        for col in xrange(cellRange.firstCol, cellRange.lastCol+1):
+            arrow = elem.appendElement('arrow')
+            arrow.setAttr('col', col)
+            arrow.setAttr('row', cellRange.firstRow)
 
 class CellBase(object):
 

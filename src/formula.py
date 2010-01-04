@@ -345,42 +345,51 @@ which is usually the first 2 bytes.
     def getText (self):
         return self.text
 
+# ============================================================================
+
+class TokenType:
+    Area3d = 0
+    Unknown = 9999
+
+class _TokenBase(object):
+    def __init__ (self, strm, opcode1, opcode2=None):
+        self.opcode1 = opcode1
+        self.opcode2 = opcode2
+        self.strm = strm
+        self.tokenType = TokenType.Unknown
+
+    def parse (self):
+        self.parseBytes()
+        self.strm = None # no need to hold reference to the stream.
+
+    def parseBytes (self):
+        # derived class should overwrite this method.
+        pass
+
+    def getText (self):
+        return ''
+
+class _Area3d(_TokenBase):
+    def parseBytes (self):
+        self.xti = self.strm.readUnsignedInt(2)
+        self.cellRange = parseCellRangeAddress(self.strm.readBytes(8))
+        self.tokenType = TokenType.Area3d
+
+    def getText (self):
+        return "(xti=%d,"%self.xti + self.cellRange.getName() + ")"
+
+_tokenMap = {
+    0x3B: _Area3d,
+    0x5B: _Area3d,
+    0x7B: _Area3d
+}
+
 class FormulaParser2(object):
     """This is a new formula parser that will eventually replace the old one.
 
 Once replaced, I'll change the name to FormulaParser and the names of the 
-nested classes will be without the leading underscore (_)."""
+associated token classes will be without the leading underscore (_)."""
 
-    class _TokenBase(object):
-        def __init__ (self, strm, opcode1, opcode2=None):
-            self.opcode1 = opcode1
-            self.opcode2 = opcode2
-            self.strm = strm
-
-        def parse (self):
-            self.parseBytes()
-            self.strm = None # no need to hold reference to the stream.
-
-        def parseBytes (self):
-            # derived class should overwrite this method.
-            pass
-
-        def getText (self):
-            return ''
-
-    class _Area3d(_TokenBase):
-        def parseBytes (self):
-            self.xti = self.strm.readUnsignedInt(2)
-            self.cellRange = parseCellRangeAddress(self.strm.readBytes(8))
-
-        def getText (self):
-            return "(xti=%d,"%self.xti + self.cellRange.getName() + ")"
-
-    tokenMap = {
-        0x3B: _Area3d,
-        0x5B: _Area3d,
-        0x7B: _Area3d
-    }
 
     def __init__ (self, header, bytes, sizeField=True):
         self.header = header
@@ -395,10 +404,10 @@ nested classes will be without the leading underscore (_)."""
     def parse (self):
         while not self.strm.isEndOfRecord():
             b = self.strm.readUnsignedInt(1)
-            if not FormulaParser2.tokenMap.has_key(b):
+            if not _tokenMap.has_key(b):
                 return
 
-            token = FormulaParser2.tokenMap[b](self.strm, b)
+            token = _tokenMap[b](self.strm, b)
             token.parse()
             self.tokens.append(token)
 
@@ -407,3 +416,6 @@ nested classes will be without the leading underscore (_)."""
         for tk in self.tokens:
             s += tk.getText()
         return s
+
+    def getTokens (self):
+        return self.tokens
