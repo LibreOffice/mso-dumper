@@ -141,7 +141,7 @@ def main ():
         dumper.dump()
     elif options.dump_mode == 'xml':
         dumper.dumpXML()
-    elif options.dump_mode == 'canonical-xml':
+    elif options.dump_mode == 'canonical-xml' or options.dump_mode == 'cxml':
         dumper.dumpCanonicalXML()
     else:
         error("unknown dump mode: '%s'\n"%options.dump_mode)

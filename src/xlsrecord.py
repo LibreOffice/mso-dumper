@@ -454,16 +454,24 @@ class BoundSheet(BaseRecordHandler):
 
 class Dimensions(BaseRecordHandler):
 
-    def parseBytes (self):
-        rowMic = self.readUnsignedInt(4)
-        rowMac = self.readUnsignedInt(4)
-        colMic = self.readUnsignedInt(2)
-        colMac = self.readUnsignedInt(2)
+    def __parseBytes (self):
+        self.rowMin = self.readUnsignedInt(4)
+        self.rowMax = self.readUnsignedInt(4)
+        self.colMin = self.readUnsignedInt(2)
+        self.colMax = self.readUnsignedInt(2)
 
-        self.appendLine("first defined row: %d"%rowMic)
-        self.appendLine("last defined row plus 1: %d"%rowMac)
-        self.appendLine("first defined column: %d"%colMic)
-        self.appendLine("last defined column plus 1: %d"%colMac)
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("first defined row: %d"%self.rowMin)
+        self.appendLine("last defined row plus 1: %d"%self.rowMax)
+        self.appendLine("first defined column: %d"%self.colMin)
+        self.appendLine("last defined column plus 1: %d"%self.colMax)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        sh = model.getCurrentSheet()
+        sh.setFirstDefinedCell(self.colMin, self.rowMin)
+        sh.setFirstFreeCell(self.colMax, self.rowMax)
 
 
 class FilePass(BaseRecordHandler):

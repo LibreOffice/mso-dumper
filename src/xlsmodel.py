@@ -166,7 +166,15 @@ class Worksheet(SheetBase):
         SheetBase.__init__(self, SheetBase.Type.Worksheet)
         self.__rows = {}
         self.__autoFilterArrows = []
-        self.sheetID = sheetID
+        self.__sheetID = sheetID
+        self.__firstDefinedCell = None
+        self.__firstFreeCell = None
+
+    def setFirstDefinedCell (self, col, row):
+        self.__firstDefinedCell = formula.CellAddress(col, row)
+
+    def setFirstFreeCell (self, col, row):
+        self.__firstFreeCell = formula.CellAddress(col, row)
 
     def setAutoFilterArrowSize (self, arrowSize):
         arrows = []
@@ -202,6 +210,13 @@ class Worksheet(SheetBase):
                 rowNode.appendChild(cellNode)
                 cellNode.setAttr('col', col)
 
+        # table dimension
+        if self.__firstDefinedCell != None:
+            nd.setAttr('first-defined-cell', self.__firstDefinedCell.getName())
+
+        if self.__firstFreeCell != None:
+            nd.setAttr('first-free-cell', self.__firstFreeCell.getName())
+
         # autofilter (if exists)
         self.__appendAutoFilterNode(wb, nd)
 
@@ -213,7 +228,7 @@ class Worksheet(SheetBase):
             return
 
         wbg = wb.getWorkbookGlobal()
-        tokens = wbg.getFilterRange(self.sheetID)
+        tokens = wbg.getFilterRange(self.__sheetID)
         parser = formula.FormulaParser2(None, tokens, False)
         parser.parse()
         tokens = parser.getTokens()
@@ -226,13 +241,14 @@ class Worksheet(SheetBase):
         cellRange = tk.cellRange
 
         elem = baseNode.appendElement('autofilter')
-        elem.setAttr('range', "(col=%d,row=%d)-(col=%d,row=%d)"%(cellRange.firstCol, cellRange.firstRow, cellRange.lastCol, cellRange.lastRow))
+        elem.setAttr('range', cellRange.getName())
 
         for i in xrange(0, len(self.__autoFilterArrows)):
             arrowObj = self.__autoFilterArrows[i]
             if arrowObj == None:
                 arrow = elem.appendElement('arrow')
-                arrow.setAttr('pos', "(col=%d,row=%d)"%(cellRange.firstCol+i,cellRange.firstRow))
+                cell = formula.CellAddress(cellRange.firstCol+i, cellRange.firstRow)
+                arrow.setAttr('pos', cell.getName())
             else:
                 elem.appendChild(arrowObj.createDOM(wb, cellRange))
 
@@ -299,7 +315,8 @@ class AutoFilterArrow(object):
         nd = node.Element('arrow')
         col = self.filterID + filterRange.firstCol
         row = filterRange.firstRow
-        nd.setAttr('pos', "(col=%d,row=%d)"%(col,row))
+        cell = formula.CellAddress(col, row)
+        nd.setAttr('pos', cell.getName())
         nd.setAttr('active', self.isActive)
         eqStr = ''
         if self.equalString1 != None:
