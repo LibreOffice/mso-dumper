@@ -514,6 +514,7 @@ class Formula(BaseRecordHandler):
         self.recalc         = (flags & 0x0001) != 0
         self.calcOnOpen     = (flags & 0x0002) != 0
         self.sharedFormula  = (flags & 0x0008) != 0
+        self.appCacheInfo = self.readUnsignedInt(4) # used only for app-specific optimization.  Ignore it for now.
         self.tokens = self.readRemainingBytes()
 
     def parseBytes (self):
