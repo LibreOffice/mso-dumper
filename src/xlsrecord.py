@@ -322,7 +322,7 @@ class Autofilter(BaseRecordHandler):
         obj = xlsmodel.AutoFilterArrow(self.filterIndex)
         obj.isActive = True
         obj.equalString1 = self.string1
-        obj.equalString1 = self.string2
+        obj.equalString2 = self.string2
         sh.setAutoFilterArrow(self.filterIndex, obj)
         # TODO: Pick up more complex states as we need them.
 
