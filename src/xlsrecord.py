@@ -520,7 +520,7 @@ class Formula(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
-        fparser = formula.FormulaParser(self.header, self.tokens)
+        fparser = formula.FormulaParser2(self.header, self.tokens)
         fparser.parse()
         ftext = fparser.getText()
 
@@ -531,7 +531,7 @@ class Formula(BaseRecordHandler):
         self.appendLine("calculate on open: %d"%self.calcOnOpen)
         self.appendLine("shared formula: %d"%self.sharedFormula)
         self.appendLine("formula bytes: %s"%globals.getRawBytes(self.tokens, True, False))
-        self.appendLine("tokens: "+ftext)
+        self.appendLine("formula string: "+ftext)
 
     def fillModel (self, model):
         self.__parseBytes()
