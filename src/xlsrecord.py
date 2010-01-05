@@ -321,11 +321,8 @@ class Autofilter(BaseRecordHandler):
         sh = model.getCurrentSheet()
         obj = xlsmodel.AutoFilterArrow(self.filterIndex)
         obj.isActive = True
-        if self.simple1:
-            obj.equalString1 = self.string1
-
-        if self.simple2:
-            obj.equalString1 = self.string2
+        obj.equalString1 = self.string1
+        obj.equalString1 = self.string2
         sh.setAutoFilterArrow(self.filterIndex, obj)
         # TODO: Pick up more complex states as we need them.
 
