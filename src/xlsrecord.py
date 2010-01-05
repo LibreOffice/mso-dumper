@@ -515,7 +515,8 @@ class Formula(BaseRecordHandler):
         self.calcOnOpen     = (flags & 0x0002) != 0
         self.sharedFormula  = (flags & 0x0008) != 0
         self.appCacheInfo = self.readUnsignedInt(4) # used only for app-specific optimization.  Ignore it for now.
-        self.tokens = self.readRemainingBytes()
+        tokenSize = self.readUnsignedInt(2)
+        self.tokens = self.readBytes(tokenSize)
 
     def parseBytes (self):
         self.__parseBytes()
@@ -1069,7 +1070,7 @@ class Name(BaseRecordHandler):
         self.__parseBytes()
 
         tokenText = globals.getRawBytes(self.tokenBytes, True, False)
-        o = formula.FormulaParser2(self.header, self.tokenBytes, False)
+        o = formula.FormulaParser2(self.header, self.tokenBytes)
         o.parse()
         formulaText = o.getText()
         self.appendLine("name: %s"%globals.encodeName(self.name))
