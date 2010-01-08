@@ -242,7 +242,7 @@ class Worksheet(SheetBase):
 
         elem = baseNode.appendElement('hidden-rows')
         for rowRange in self.__hiddenRows:
-            rangeNode = elem.appendElement('range').setAttr('span', "%d:%d"%(rowRange[0]+1, rowRange[1]+1))
+            elem.appendElement('range').setAttr('span', "%d:%d"%(rowRange[0]+1, rowRange[1]+1))
         
     def __appendAutoFilterNode (self, wb, baseNode):
         if len(self.__autoFilterArrows) <= 0:
