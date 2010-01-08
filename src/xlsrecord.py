@@ -919,37 +919,49 @@ class ColInfo(BaseRecordHandler):
 
 class Row(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.row  = self.readUnsignedInt(2)
+        self.col1 = self.readUnsignedInt(2)
+        self.col2 = self.readUnsignedInt(2)
+
+        flag = self.readUnsignedInt(2)
+        self.rowHeight     = (flag & 0x7FFF)
+        self.defaultHeight = ((flag & 0x8000) == 1)
+        self.irwMac = self.readUnsignedInt(2)
+
+        dummy = self.readUnsignedInt(2)
+        flag = self.readUnsignedInt(2)
+        self.outLevel   = (flag & 0x0007)
+        self.collapsed  = (flag & 0x0010)
+        self.zeroHeight = (flag & 0x0020) 
+        self.unsynced   = (flag & 0x0040)
+        self.ghostDirty = (flag & 0x0080)
+
     def parseBytes (self):
-        row  = self.readUnsignedInt(2)
-        col1 = self.readUnsignedInt(2)
-        col2 = self.readUnsignedInt(2)
+        self.__parseBytes()
 
-        rowHeightBits = self.readUnsignedInt(2)
-        rowHeight     = (rowHeightBits & 0x7FFF)
-        defaultHeight = ((rowHeightBits & 0x8000) == 1)
+        self.appendLine("row: %d; col: %d - %d"%(self.row, self.col1, self.col2))
+        self.appendLine("row height (twips): %d"%self.rowHeight)
 
-        self.appendLine("row: %d; col: %d - %d"%(row, col1, col2))
-        self.appendLine("row height (twips): %d"%rowHeight)
-        if defaultHeight:
+        if self.defaultHeight:
             self.appendLine("row height type: default")
         else:
             self.appendLine("row height type: custom")
 
-        irwMac = self.readUnsignedInt(2)
-        self.appendLine("optimize flag (0 for BIFF): %d"%irwMac)
+        self.appendLine("optimize flag (0 for BIFF): %d"%self.irwMac)
 
-        dummy = self.readUnsignedInt(2)
-        flags = self.readUnsignedInt(2)
-        outLevel   = (flags & 0x0007)
-        collapsed  = (flags & 0x0010)
-        zeroHeight = (flags & 0x0020)
-        unsynced   = (flags & 0x0040)
-        ghostDirty = (flags & 0x0080)
-        self.appendLine("outline level: %d"%outLevel)
-        self.appendLine("collapsed: %s"%self.getYesNo(collapsed))
-        self.appendLine("zero height: %s"%self.getYesNo(zeroHeight))
-        self.appendLine("unsynced: %s"%self.getYesNo(unsynced))
-        self.appendLine("ghost dirty: %s"%self.getYesNo(ghostDirty))
+        self.appendLine("outline level: %d"%self.outLevel)
+        self.appendLine("collapsed: %s"%self.getYesNo(self.collapsed))
+        self.appendLine("zero height: %s"%self.getYesNo(self.zeroHeight))
+        self.appendLine("unsynced: %s"%self.getYesNo(self.unsynced))
+        self.appendLine("ghost dirty: %s"%self.getYesNo(self.ghostDirty))
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        sh = model.getCurrentSheet()
+        # store whether or not this row is hidden.
+        if self.zeroHeight:
+            sh.setRowHidden(self.row)
 
 
 class Name(BaseRecordHandler):

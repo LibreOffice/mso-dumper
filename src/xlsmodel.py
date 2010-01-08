@@ -169,6 +169,7 @@ class Worksheet(SheetBase):
         self.__sheetID = sheetID
         self.__firstDefinedCell = None
         self.__firstFreeCell = None
+        self.__hiddenRows = [] # list of row ranges stored as pairs (start, end)
 
     def setFirstDefinedCell (self, col, row):
         self.__firstDefinedCell = formula.CellAddress(col, row)
@@ -192,6 +193,18 @@ class Worksheet(SheetBase):
             self.__rows[row] = {}
 
         self.__rows[row][col] = cell
+
+    def setRowHidden (self, row):
+        if len(self.__hiddenRows) == 0:
+            self.__hiddenRows.append([row, row])
+            return
+
+        if (row - self.__hiddenRows[-1][1]) <= 1:
+            # expand the last range.
+            self.__hiddenRows[-1][1] = row
+        else:
+            # start a new range.
+            self.__hiddenRows.append([row, row])
 
     def createDOM (self, wb):
         nd = node.Element('worksheet')
@@ -217,11 +230,20 @@ class Worksheet(SheetBase):
         if self.__firstFreeCell != None:
             nd.setAttr('first-free-cell', self.__firstFreeCell.getName())
 
-        # autofilter (if exists)
-        self.__appendAutoFilterNode(wb, nd)
+        self.__appendAutoFilterNode(wb, nd) # autofilter (if exists)
+        self.__appendHiddenRowsNode(wb, nd) # hidden rows
 
         return nd
 
+    def __appendHiddenRowsNode (self, wb, baseNode):
+        if len(self.__hiddenRows) == 0:
+            # no hidden rows
+            return
+
+        elem = baseNode.appendElement('hidden-rows')
+        for rowRange in self.__hiddenRows:
+            rangeNode = elem.appendElement('range').setAttr('span', "%d:%d"%(rowRange[0]+1, rowRange[1]+1))
+        
     def __appendAutoFilterNode (self, wb, baseNode):
         if len(self.__autoFilterArrows) <= 0:
             # No autofilter in this sheet.
