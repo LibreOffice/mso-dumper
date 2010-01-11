@@ -962,6 +962,7 @@ class Row(BaseRecordHandler):
         # store whether or not this row is hidden.
         if self.zeroHeight:
             sh.setRowHidden(self.row)
+        sh.setRowHeight(self.row, self.rowHeight)
 
 
 class Name(BaseRecordHandler):

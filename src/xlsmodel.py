@@ -162,6 +162,29 @@ class WorkbookGlobal(SheetBase):
 
 class Worksheet(SheetBase):
 
+    class OrderedRangeList(object):
+        def __init__ (self):
+            self.__list = [] # list of ranges with value [start, end, value]
+
+        def setValue (self, key, val):
+            if len(self.__list) == 0:
+                self.__list.append([key, key, val])
+                return
+
+            if (key - self.__list[-1][1]) <= 1 and self.__list[-1][2] == val:
+                # expand the last range.
+                self.__list[-1][1] = key
+            else:
+                # start a new range.
+                self.__list.append([key, key, val])
+
+        def getAllRanges (self):
+            return self.__list
+
+        def getLength (self):
+            return len(self.__list)
+
+
     def __init__ (self, sheetID):
         SheetBase.__init__(self, SheetBase.Type.Worksheet)
         self.__rows = {}
@@ -169,7 +192,8 @@ class Worksheet(SheetBase):
         self.__sheetID = sheetID
         self.__firstDefinedCell = None
         self.__firstFreeCell = None
-        self.__hiddenRows = [] # list of row ranges stored as pairs (start, end)
+        self.__hiddenRows = Worksheet.OrderedRangeList()
+        self.__rowHeights = Worksheet.OrderedRangeList()
 
     def setFirstDefinedCell (self, col, row):
         self.__firstDefinedCell = formula.CellAddress(col, row)
@@ -195,16 +219,10 @@ class Worksheet(SheetBase):
         self.__rows[row][col] = cell
 
     def setRowHidden (self, row):
-        if len(self.__hiddenRows) == 0:
-            self.__hiddenRows.append([row, row])
-            return
+        self.__hiddenRows.setValue(row, True)
 
-        if (row - self.__hiddenRows[-1][1]) <= 1:
-            # expand the last range.
-            self.__hiddenRows[-1][1] = row
-        else:
-            # start a new range.
-            self.__hiddenRows.append([row, row])
+    def setRowHeight (self, row, height):
+        self.__rowHeights.setValue(row, height)
 
     def createDOM (self, wb):
         nd = node.Element('worksheet')
@@ -232,16 +250,27 @@ class Worksheet(SheetBase):
 
         self.__appendAutoFilterNode(wb, nd) # autofilter (if exists)
         self.__appendHiddenRowsNode(wb, nd) # hidden rows
+        self.__appendRowHeightNode(wb, nd)  # row heights
 
         return nd
 
+    def __appendRowHeightNode (self, wb, baseNode):
+        if self.__rowHeights.getLength() == 0:
+            return
+
+        base = baseNode.appendElement('row-heights')
+        for rowRange in self.__rowHeights.getAllRanges():
+            entry = base.appendElement('range')
+            entry.setAttr('span', "%d:%d"%(rowRange[0]+1, rowRange[1]+1))
+            entry.setAttr('height', "%d"%(rowRange[2]))
+
     def __appendHiddenRowsNode (self, wb, baseNode):
-        if len(self.__hiddenRows) == 0:
+        if self.__hiddenRows.getLength() == 0:
             # no hidden rows
             return
 
         elem = baseNode.appendElement('hidden-rows')
-        for rowRange in self.__hiddenRows:
+        for rowRange in self.__hiddenRows.getAllRanges():
             elem.appendElement('range').setAttr('span', "%d:%d"%(rowRange[0]+1, rowRange[1]+1))
         
     def __appendAutoFilterNode (self, wb, baseNode):
