@@ -17,8 +17,10 @@ class NodeType:
 class NodeBase:
     def __init__ (self, nodeType = NodeType.Unknown):
         self.parent = None
-        self.__children = []
         self.nodeType = nodeType
+
+        self.__children = []
+        self.__hasContent = False
 
     def appendChild (self, node):
         self.__children.append(node)
@@ -29,9 +31,13 @@ class NodeBase:
         self.appendChild(node)
         return node
 
+    def hasContent (self):
+        return self.__hasContent
+
     def appendContent (self, text):
         node = Content(text)
         self.appendChild(node)
+        self.__hasContent = True
         return node
 
     def firstChild (self):
@@ -134,15 +140,19 @@ def convertAttrValue (val):
     return val
 
 def prettyPrint (fd, node):
-    printNode(fd, node, 0)
+    printNode(fd, node, 0, True)
 
-def printNode (fd, node, level):
-    singleIndent = ' '*4
+def printNode (fd, node, level, breakLine):
+    singleIndent = ''
+    lf = ''
+    if breakLine:
+        singleIndent = ' '*4
+        lf = "\n"
     indent = singleIndent*level
     if node.nodeType == NodeType.Root:
         # root node itself only contains child nodes.
         for child in node.getChildNodes():
-            printNode(fd, child, level)
+            printNode(fd, child, level, True)
     elif node.nodeType == NodeType.Element:
         hasChildren = len(node.getChildNodes()) > 0
 
@@ -160,18 +170,23 @@ def printNode (fd, node, level):
                 line += " " + key + '="' + encodeString(val) + '"'
 
         if hasChildren:
-            line = "<%s>\n"%line
+            breakChildren = breakLine and not node.hasContent()
+            line = "<%s>"%line
+            if breakChildren:
+                line += "\n"
             fd.write (indent + line)
             for child in node.getChildNodes():
-                printNode(fd, child, level+1)
-            line = "</%s>\n"%node.name
-            fd.write (indent + line)
+                printNode(fd, child, level+1, breakChildren)
+            line = "</%s>%s"%(node.name, lf)
+            if breakChildren:
+                line = indent + line
+            fd.write (line)
         else:
-            line = "<%s/>\n"%line
+            line = "<%s/>%s"%(line, lf)
             fd.write (indent + line)
 
     elif node.nodeType == NodeType.Content:
-        content = node.content.strip()
+        content = node.content
         content = encodeString(content)
         if len(content) > 0:
-            fd.write (indent + content + "\n")
+            fd.write (indent + content + lf)
