@@ -858,7 +858,7 @@ class SST(BaseRecordHandler):
         self.appendLine("total number of unique strings: %d"%self.strCount)
         i = 0
         for s in self.sharedStrings:
-            self.appendLine("s%d: %s"%(i, s.baseText))
+            self.appendLine("s%d: %s"%(i, globals.encodeName(s.baseText)))
             i += 1
 
     def fillModel (self, model):

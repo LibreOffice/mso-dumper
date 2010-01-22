@@ -111,7 +111,7 @@ def encodeName (name):
 
     newname = ''
     for i in xrange(0, n):
-        if ord(name[i]) <= 20:
+        if ord(name[i]) <= 20 or ord(name[i]) >= 127:
             newname += "\\x%2.2X"%ord(name[i])
         else:
             newname += name[i]
