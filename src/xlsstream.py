@@ -184,7 +184,7 @@ recData = {
     0x0218: ["NAME", "Defined Name"],
     0x0221: ["ARRAY", "Array-Entered Formula", xlsrecord.Array],
     0x0223: ["EXTERNNAME", "Externally Referenced Name"],
-    0x0225: ["DEFAULTROWHEIGHT", "Default Row Height"],
+    0x0225: ["DEFAULTROWHEIGHT", "Default Row Height", xlsrecord.DefRowHeight],
     0x0231: ["FONT", "Font Description", xlsrecord.Font],
     0x0236: ["TABLE", "Data Table"],
     0x023E: ["WINDOW2", "Sheet Window Information"],

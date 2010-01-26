@@ -896,6 +896,29 @@ class DefColWidth(BaseRecordHandler):
         self.appendLine("default column width (in characters): %d"%w)
 
 
+class DefRowHeight(BaseRecordHandler):
+
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(1)
+        self.readUnsignedInt(1) # ignore 1 byte.
+        self.unsynced = (flag & 0x01) != 0
+        self.dyZero   = (flag & 0x02) != 0
+        self.exAsc    = (flag & 0x04) != 0
+        self.exDsc    = (flag & 0x08) != 0
+        self.rowHeight = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineBoolean("default row height settings changed", self.unsynced)
+        self.appendLineBoolean("empty rows have a height of zero", self.dyZero)
+        self.appendLineBoolean("empty rows have a thick border style at top", self.exAsc)
+        self.appendLineBoolean("empty rows have a thick border style at bottom", self.exDsc)
+        if self.dyZero:
+            self.appendLine("default height for hidden rows: %d"%self.rowHeight)
+        else:
+            self.appendLine("default height for empty rows: %d"%self.rowHeight)
+
+
 class ColInfo(BaseRecordHandler):
 
     def parseBytes (self):
@@ -926,7 +949,7 @@ class Row(BaseRecordHandler):
 
         flag = self.readUnsignedInt(2)
         self.rowHeight     = (flag & 0x7FFF)
-        self.defaultHeight = ((flag & 0x8000) == 1)
+        self.defaultHeight = ((flag & 0x8000) != 0)
         self.irwMac = self.readUnsignedInt(2)
 
         dummy = self.readUnsignedInt(2)
