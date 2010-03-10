@@ -20,8 +20,13 @@ def getValueOrUnknown (list, idx, errmsg='(unknown)'):
 
     return errmsg
 
+class RKAuxData(object):
+    """Store auxiliary data for RK value"""
+    def __init__ (self):
+        self.multi100 = False
+        self.signedInt = False
 
-def decodeRK (rkval):
+def decodeRK (rkval, auxData = None):
     multi100  = ((rkval & 0x00000001) != 0)
     signedInt = ((rkval & 0x00000002) != 0)
     realVal   = (rkval & 0xFFFFFFFC)
@@ -39,6 +44,10 @@ def decodeRK (rkval):
 
     if multi100:
         realVal /= 100.0
+
+    if auxData != None:
+        auxData.multi100 = multi100
+        auxData.signedInt = signedInt
 
     return realVal
 
@@ -820,12 +829,13 @@ class RK(BaseRecordHandler):
         xf  = globals.getSignedInt(self.bytes[4:6])
 
         rkval = globals.getSignedInt(self.bytes[6:10])
-        realVal = decodeRK(rkval)
+        auxData = RKAuxData()
+        realVal = decodeRK(rkval, auxData)
 
         self.appendCellPosition(col, row)
         self.appendLine("XF record ID: %d"%xf)
-        self.appendLine("multiplied by 100: %d"%multi100)
-        if signedInt:
+        self.appendLine("multiplied by 100: %d"%auxData.multi100)
+        if auxData.signedInt:
             self.appendLine("type: signed integer")
         else:
             self.appendLine("type: floating point")
