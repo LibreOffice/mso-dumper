@@ -27,6 +27,8 @@
 
 import globals
 
+def indent (level):
+    return '  '*level
 
 class RecordHeader:
     def __init__ (self):
@@ -48,6 +50,30 @@ class ColorRef:
         self.systemRGB    = (self.flag & 0x04) != 0
         self.schemeIndex  = (self.flag & 0x08) != 0
         self.sysIndex     = (self.flag & 0x10) != 0
+
+    def appendLine (self, recHdl, level):
+        if self.paletteIndex:
+            # red and green and used as an unsigned index into the current color palette.
+            paletteId = self.green * 256 + self.red
+            recHdl.appendLine(indent(level) + "color index in current palette: %d"%paletteId)
+        if self.sysIndex:
+            # red and green are used as an unsigned 16-bit index into the system color table.
+            sysId = self.green * 256 + self.red
+            recHdl.appendLine(indent(level) + "system index: %d"%sysId)
+        elif self.schemeIndex:
+            # the red value is used as as a color scheme index
+            recHdl.appendLine(indent(level) + "color scheme index: %d"%self.red)
+
+        else:
+            recHdl.appendLine(indent(level) + "color: (red=%d, green=%d, blue=%d)    flag: 0x%2.2X"%
+                (self.red, self.green, self.blue, self.flag))
+            recHdl.appendLine(indent(level) + "palette index: %s"%recHdl.getTrueFalse(self.paletteIndex))
+            recHdl.appendLine(indent(level) + "palette RGB: %s"%recHdl.getTrueFalse(self.paletteRGB))
+            recHdl.appendLine(indent(level) + "system RGB: %s"%recHdl.getTrueFalse(self.systemRGB))
+            recHdl.appendLine(indent(level) + "system RGB: %s"%recHdl.getTrueFalse(self.systemRGB))
+            recHdl.appendLine(indent(level) + "scheme index: %s"%recHdl.getTrueFalse(self.schemeIndex))
+            recHdl.appendLine(indent(level) + "system index: %s"%recHdl.getTrueFalse(self.sysIndex))
+
 
 
 class FDG:
@@ -95,23 +121,14 @@ class FOPT:
         ]
 
         def appendLines (self, recHdl, prop, level):
-            indent = '  '*level
             styleName = globals.getValueOrUnknown(FOPT.CXStyle.style, prop.value)
-            recHdl.appendLine(indent + "connector style: %s (0x%8.8X)"%(styleName, prop.value))
+            recHdl.appendLine(indent(level) + "connector style: %s (0x%8.8X)"%(styleName, prop.value))
 
     class FillColor:
 
         def appendLines (self, recHdl, prop, level):
-            indent = '  '*level
             color = ColorRef(prop.value)
-            recHdl.appendLine(indent + "color: (red=%d, green=%d, blue=%d)    flag: 0x%2.2X"%
-                (color.red, color.green, color.blue, color.flag))
-            recHdl.appendLine(indent + "palette index: %s"%recHdl.getTrueFalse(color.paletteIndex))
-            recHdl.appendLine(indent + "palette RGB: %s"%recHdl.getTrueFalse(color.paletteRGB))
-            recHdl.appendLine(indent + "system RGB: %s"%recHdl.getTrueFalse(color.systemRGB))
-            recHdl.appendLine(indent + "system RGB: %s"%recHdl.getTrueFalse(color.systemRGB))
-            recHdl.appendLine(indent + "scheme index: %s"%recHdl.getTrueFalse(color.schemeIndex))
-            recHdl.appendLine(indent + "system index: %s"%recHdl.getTrueFalse(color.sysIndex))
+            color.appendLine(recHdl, level)
 
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
@@ -267,12 +284,11 @@ class MSODrawHandler(globals.ByteStream):
         self.parent = parent
 
     def printRecordHeader (self, rh, level=0):
-        indent = MSODrawHandler.singleIndent*(level+1)
-        self.parent.appendLine(indent + "record header:")
-        self.parent.appendLine(indent + "recVer: 0x%1.1X"%rh.recVer)
-        self.parent.appendLine(indent + "recInstance: 0x%3.3X"%rh.recInstance)
-        self.parent.appendLine(indent + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawHandler.getRecTypeName(rh)))
-        self.parent.appendLine(indent + "recLen: %d"%rh.recLen)
+        self.parent.appendLine(indent(level+1) + "record header:")
+        self.parent.appendLine(indent(level+1) + "recVer: 0x%1.1X"%rh.recVer)
+        self.parent.appendLine(indent(level+1) + "recInstance: 0x%3.3X"%rh.recInstance)
+        self.parent.appendLine(indent(level+1) + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawHandler.getRecTypeName(rh)))
+        self.parent.appendLine(indent(level+1) + "recLen: %d"%rh.recLen)
 
     def readFDG (self):
         fdg = FDG()
