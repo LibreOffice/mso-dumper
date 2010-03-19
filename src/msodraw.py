@@ -36,6 +36,20 @@ class RecordHeader:
         self.recLen = None
 
 
+class ColorRef:
+    def __init__ (self, byte):
+        self.red   = (byte & 0x000000FF)
+        self.green = (byte & 0x0000FF00) / 256 
+        self.blue  = (byte & 0x00FF0000) / 65536
+        self.flag  = (byte & 0xFF000000) / 16777216
+
+        self.paletteIndex = (self.flag & 0x01) != 0
+        self.paletteRGB   = (self.flag & 0x02) != 0
+        self.systemRGB    = (self.flag & 0x04) != 0
+        self.schemeIndex  = (self.flag & 0x08) != 0
+        self.sysIndex     = (self.flag & 0x10) != 0
+
+
 class FDG:
     def __init__ (self):
         self.shapeCount = None
@@ -85,8 +99,23 @@ class FOPT:
             styleName = globals.getValueOrUnknown(FOPT.CXStyle.style, prop.value)
             recHdl.appendLine(indent + "connector style: %s (0x%8.8X)"%(styleName, prop.value))
 
+    class FillColor:
+
+        def appendLines (self, recHdl, prop, level):
+            indent = '  '*level
+            color = ColorRef(prop.value)
+            recHdl.appendLine(indent + "color: (red=%d, green=%d, blue=%d)    flag: 0x%2.2X"%
+                (color.red, color.green, color.blue, color.flag))
+            recHdl.appendLine(indent + "palette index: %s"%recHdl.getTrueFalse(color.paletteIndex))
+            recHdl.appendLine(indent + "palette RGB: %s"%recHdl.getTrueFalse(color.paletteRGB))
+            recHdl.appendLine(indent + "system RGB: %s"%recHdl.getTrueFalse(color.systemRGB))
+            recHdl.appendLine(indent + "system RGB: %s"%recHdl.getTrueFalse(color.systemRGB))
+            recHdl.appendLine(indent + "scheme index: %s"%recHdl.getTrueFalse(color.schemeIndex))
+            recHdl.appendLine(indent + "system index: %s"%recHdl.getTrueFalse(color.sysIndex))
+
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
+        0x0181: ['Fill Color', FillColor],
         0x0303: ['Connector Shape Style (cxstyle)', CXStyle]
     }
 
