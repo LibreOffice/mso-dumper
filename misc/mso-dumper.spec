@@ -23,6 +23,7 @@ Authors:
 --------
     Kohei Yoshida <kyoshida@novell.com>
     Thorsten Behrens <tbehrens@novell.com>
+    Fredrik Ekholdt (for xmlpp.py)  
 
 %prep
 %setup -q
