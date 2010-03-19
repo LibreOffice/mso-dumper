@@ -37,9 +37,9 @@ cp src/*.py %buildroot/usr/share/mso-dumper-%version/src
 %install
 install -d %buildroot/usr/share/mso-dumper-%version
 install -d %buildroot/usr/share/doc/packages/mso-dumper-%version
-pushd . && cd %buildroot/usr/bin && \
-        ln -s ../share/mso-dumper-%version/xls-dump.py xls-dump && \
-        ln -s ../share/mso-dumper-%version/ppt-dump.py ppt-dump && \
+cd %buildroot/usr/bin
+ln -s ../share/mso-dumper-%version/xls-dump.py xls-dump
+ln -s ../share/mso-dumper-%version/ppt-dump.py ppt-dump
 
 %clean
 rm -rf %buildroot
@@ -47,6 +47,7 @@ rm -rf %buildroot
 %files
 %defattr(-,root,root)
 %dir /usr/share/doc/packages/mso-dumper-%version
+%dir /usr/share/doc/packages/mso-dumper-%version/src
 %dir /usr/share/mso-dumper-%version
 
 /usr/bin/xls-dump
