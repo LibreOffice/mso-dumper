@@ -31,13 +31,14 @@ Authors:
 %build
 mkdir -p %buildroot/usr/bin
 mkdir -p %buildroot/usr/share/mso-dumper-%version/src
+mkdir -p %buildroot/usr/share/doc/packages/mso-dumper-%version
 cp xls-dump.py %buildroot/usr/share/mso-dumper-%version/
 cp ppt-dump.py %buildroot/usr/share/mso-dumper-%version/
 cp src/*.py %buildroot/usr/share/mso-dumper-%version/src
 
 %install
 install -d %buildroot/usr/share/mso-dumper-%version
-install -d %buildroot/usr/share/doc/packages/mso-dumper-%version
+#install -d %buildroot/usr/share/doc/packages/mso-dumper-%version
 cd %buildroot/usr/bin
 ln -s ../share/mso-dumper-%version/xls-dump.py xls-dump
 ln -s ../share/mso-dumper-%version/ppt-dump.py ppt-dump
@@ -48,8 +49,8 @@ rm -rf %buildroot
 %files
 %defattr(-,root,root)
 %dir /usr/share/doc/packages/mso-dumper-%version
-%dir /usr/share/doc/packages/mso-dumper-%version/src
 %dir /usr/share/mso-dumper-%version
+%dir /usr/share/mso-dumper-%version/src
 
 /usr/bin/xls-dump
 /usr/bin/ppt-dump
