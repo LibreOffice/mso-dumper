@@ -106,6 +106,20 @@ class ByteStream(object):
             self.pos = self.size
 
 
+def getValueOrUnknown (list, idx, errmsg='(unknown)'):
+    listType = type(list)
+    if listType == type([]):
+        # list
+        if idx < len(list):
+            return list[idx]
+    elif listType == type({}):
+        # dictionary
+        if list.has_key(idx):
+            return list[idx]
+
+    return errmsg
+
+
 def output (msg):
     sys.stdout.write(msg)
 

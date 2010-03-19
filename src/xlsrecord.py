@@ -33,19 +33,6 @@ from globals import debug
 # -------------------------------------------------------------------
 # record handler classes
 
-def getValueOrUnknown (list, idx, errmsg='(unknown)'):
-    listType = type(list)
-    if listType == type([]):
-        # list
-        if idx < len(list):
-            return list[idx]
-    elif listType == type({}):
-        # dictionary
-        if list.has_key(idx):
-            return list[idx]
-
-    return errmsg
-
 class RKAuxData(object):
     """Store auxiliary data for RK value"""
     def __init__ (self):
@@ -227,7 +214,7 @@ class Autofilter(BaseRecordHandler):
 
             # comparison code
             if self.sign != None:
-                s = getValueOrUnknown(Autofilter.compareCodes, self.sign)
+                s = globals.getValueOrUnknown(Autofilter.compareCodes, self.sign)
                 hdl.appendLine("  comparison code: %s (%d)"%(s, self.sign))
 
 
@@ -272,7 +259,7 @@ class Autofilter(BaseRecordHandler):
             if self.flag:
                 # error value
                 hdl.appendLine("  error value: %s (0x%2.2X)"%
-                    (getValueOrUnknown(Autofilter.errorCodes, self.value), self.value))
+                    (globals.getValueOrUnknown(Autofilter.errorCodes, self.value), self.value))
             else:
                 # boolean value
                 hd.appendLine("  boolean value: %s"%hdl.getTrueFalse(self.value))
@@ -1066,11 +1053,11 @@ class Name(BaseRecordHandler):
 
     @staticmethod
     def getBuiltInName (name):
-        return getValueOrUnknown(Name.builtInNames, ord(name[0]))
+        return globals.getValueOrUnknown(Name.builtInNames, ord(name[0]))
 
     @staticmethod
     def getFuncCategory (val):
-        return getValueOrUnknown(Name.funcCategories, val)
+        return globals.getValueOrUnknown(Name.funcCategories, val)
 
     def __writeOptionFlags (self):
         self.appendLine("option flags:")
@@ -1390,7 +1377,7 @@ class PhoneticInfo(BaseRecordHandler):
 
     @staticmethod
     def getPhoneticType (flag):
-        return getValueOrUnknown(PhoneticInfo.phoneticType, flag)
+        return globals.getValueOrUnknown(PhoneticInfo.phoneticType, flag)
 
     alignType = [
         'general alignment',    # 0x00
@@ -1401,7 +1388,7 @@ class PhoneticInfo(BaseRecordHandler):
 
     @staticmethod
     def getAlignType (flag):
-        return getValueOrUnknown(PhoneticInfo.alignType, flag)
+        return globals.getValueOrUnknown(PhoneticInfo.alignType, flag)
 
     def parseBytes (self):
         fontIdx = self.readUnsignedInt(2)
@@ -1437,7 +1424,7 @@ class Font(BaseRecordHandler):
 
     @staticmethod
     def getFontFamily (code):
-        return getValueOrUnknown(Font.fontFamilyNames, code)
+        return globals.getValueOrUnknown(Font.fontFamilyNames, code)
 
     scriptNames = [
         'normal script',
@@ -1447,7 +1434,7 @@ class Font(BaseRecordHandler):
 
     @staticmethod
     def getScriptName (code):
-        return getValueOrUnknown(Font.scriptNames, code)
+        return globals.getValueOrUnknown(Font.scriptNames, code)
 
 
     underlineTypes = {
@@ -1460,7 +1447,7 @@ class Font(BaseRecordHandler):
 
     @staticmethod
     def getUnderlineStyleName (val):
-        return getValueOrUnknown(Font.underlineTypes, val)
+        return globals.getValueOrUnknown(Font.underlineTypes, val)
 
     charSetNames = {
         0x00: 'ANSI_CHARSET',
@@ -1486,7 +1473,7 @@ class Font(BaseRecordHandler):
 
     @staticmethod
     def getCharSetName (code):
-        return getValueOrUnknown(Font.charSetNames, code)
+        return globals.getValueOrUnknown(Font.charSetNames, code)
 
     def parseBytes (self):
         height     = self.readUnsignedInt(2)
@@ -1614,7 +1601,7 @@ class XF(BaseRecordHandler):
             # cell XF data
 
             # Horizontal alignment
-            horAlignName = getValueOrUnknown(
+            horAlignName = globals.getValueOrUnknown(
                 XF.horAlignTypes[:-1], self.data.horAlign, 'not specified')
             self.appendLine("horizontal alignment: %s (0x%2.2X)"%(horAlignName, self.data.horAlign))
             self.appendLineBoolean("distributed", self.data.distributed)
@@ -1622,7 +1609,7 @@ class XF(BaseRecordHandler):
             self.appendLineBoolean("wrap text", self.data.wrapText)
 
             # Vertical alignment
-            verAlignName = getValueOrUnknown(
+            verAlignName = globals.getValueOrUnknown(
                 XF.vertAlignTypes, self.data.verAlign, 'unknown')
             self.appendLine("vertical alignment: %s (0x%2.2X)"%(verAlignName, self.data.verAlign))
 
@@ -1638,7 +1625,7 @@ class XF(BaseRecordHandler):
 
             self.appendLine("indent level: %d"%self.data.indentLevel)
             self.appendLineBoolean("shrink to fit", self.data.shrinkToFit)
-            self.appendLine("reading order: %s"%getValueOrUnknown(XF.readOrderTypes, self.data.readOrder))
+            self.appendLine("reading order: %s"%globals.getValueOrUnknown(XF.readOrderTypes, self.data.readOrder))
 
 
 class FeatureHeader(BaseRecordHandler):

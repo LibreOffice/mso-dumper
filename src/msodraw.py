@@ -27,18 +27,6 @@
 
 import globals
 
-def getValueOrUnknown (list, idx, errmsg='(unknown)'):
-    listType = type(list)
-    if listType == type([]):
-        # list
-        if idx < len(list):
-            return list[idx]
-    elif listType == type({}):
-        # dictionary
-        if list.has_key(idx):
-            return list[idx]
-
-    return errmsg
 
 class RecordHeader:
     def __init__ (self):
@@ -94,7 +82,7 @@ class FOPT:
 
         def appendLines (self, recHdl, prop, level):
             indent = '  '*level
-            styleName = getValueOrUnknown(FOPT.CXStyle.style, prop.value)
+            styleName = globals.getValueOrUnknown(FOPT.CXStyle.style, prop.value)
             recHdl.appendLine(indent + "connector style: %s (0x%8.8X)"%(styleName, prop.value))
 
     propTable = {
