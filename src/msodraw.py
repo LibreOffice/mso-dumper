@@ -224,3 +224,122 @@ containerTypeNames = {
     Type.FSPGR:            'OfficeArtFSPGR',
     Type.FConnectorRule:   'OfficeArtFConnectorRule'
 }
+
+# ----------------------------------------------------------------------------
+
+class MSODrawHandler(globals.ByteStream):
+
+    singleIndent = ' '*2
+
+    def __init__ (self, bytes, parent):
+        """The 'parent' instance must have appendLine() method that takes one string argument."""
+
+        globals.ByteStream.__init__(self, bytes)
+        self.parent = parent
+
+    def printRecordHeader (self, rh, level=0):
+        indent = MSODrawHandler.singleIndent*(level+1)
+        self.parent.appendLine(indent + "record header:")
+        self.parent.appendLine(indent + "recVer: 0x%1.1X"%rh.recVer)
+        self.parent.appendLine(indent + "recInstance: 0x%3.3X"%rh.recInstance)
+        self.parent.appendLine(indent + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawHandler.getRecTypeName(rh)))
+        self.parent.appendLine(indent + "recLen: %d"%rh.recLen)
+
+    def readFDG (self):
+        fdg = FDG()
+        fdg.shapeCount  = self.readUnsignedInt(4)
+        fdg.lastShapeID = self.readUnsignedInt(4)
+        return fdg
+
+    def readFOPT (self, rh):
+        fopt = FOPT()
+        strm = globals.ByteStream(self.readBytes(rh.recLen))
+        while not strm.isEndOfRecord():
+            entry = FOPT.E()
+            val = strm.readUnsignedInt(2)
+            entry.ID          = (val & 0x3FFF)
+            entry.flagBid     = (val & 0x4000) # if true, the value is a blip ID.
+            entry.flagComplex = (val & 0x8000) # if true, the value stores the size of the extra bytes.
+            entry.value = strm.readSignedInt(4)
+            if entry.flagComplex:
+                entry.extra = strm.readBytes(entry.value)
+            fopt.properties.append(entry)
+
+        return fopt
+
+    def readFRIT (self):
+        frit = FRIT()
+        frit.lastGroupID = self.readUnsignedInt(2)
+        frit.secondLastGroupID = self.readUnsignedInt(2)
+        return frit
+
+    def readFSP (self):
+        fsp = FSP()
+        fsp.spid = self.readUnsignedInt(4)
+        fsp.flag = self.readUnsignedInt(4)
+        return fsp
+
+    def readFSPGR (self):
+        fspgr = FSPGR()
+        fspgr.left   = self.readSignedInt(4)
+        fspgr.top    = self.readSignedInt(4)
+        fspgr.right  = self.readSignedInt(4)
+        fspgr.bottom = self.readSignedInt(4)
+        return fspgr
+
+    def readFConnectorRule (self):
+        fcon = FConnectorRule()
+        fcon.ruleID = self.readUnsignedInt(4)
+        fcon.spIDA = self.readUnsignedInt(4)
+        fcon.spIDB = self.readUnsignedInt(4)
+        fcon.spIDC = self.readUnsignedInt(4)
+        fcon.conSiteIDA = self.readUnsignedInt(4)
+        fcon.conSiteIDB = self.readUnsignedInt(4)
+        return fcon
+
+    def readRecordHeader (self):
+        rh = RecordHeader()
+        mixed = self.readUnsignedInt(2)
+        rh.recVer = (mixed & 0x000F)
+        rh.recInstance = (mixed & 0xFFF0) / 16
+        rh.recType = self.readUnsignedInt(2)
+        rh.recLen  = self.readUnsignedInt(4)
+        return rh
+
+    @staticmethod
+    def getRecTypeName (rh):
+        if containerTypeNames.has_key(rh.recType):
+            return containerTypeNames[rh.recType]
+        return 'unknown'
+
+    def parseBytes (self):
+        firstRec = True
+        while not self.isEndOfRecord():
+            if firstRec:
+                firstRec = False
+            else:
+                self.parent.appendLine("-"*61)
+            rh = self.readRecordHeader()
+            self.printRecordHeader(rh)
+            # if rh.recType == Type.dgContainer:
+            if rh.recVer == 0xF:
+                # container
+                pass
+            elif rh.recType == Type.FDG:
+                fdg = self.readFDG()
+                fdg.appendLines(self.parent, rh)
+            elif rh.recType == Type.FOPT:
+                fopt = self.readFOPT(rh)
+                fopt.appendLines(self.parent, rh)
+            elif rh.recType == Type.FSPGR:
+                fspgr = self.readFSPGR()
+                fspgr.appendLines(self.parent, rh)
+            elif rh.recType == Type.FSP:
+                fspgr = self.readFSP()
+                fspgr.appendLines(self.parent, rh)
+            elif rh.recType == Type.FConnectorRule:
+                fcon = self.readFConnectorRule()
+                fcon.appendLines(self.parent, rh)
+            else:
+                # unknown object
+                self.readBytes(rh.recLen)
