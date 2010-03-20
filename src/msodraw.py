@@ -169,12 +169,65 @@ class FOPT:
             recHdl.appendLine(indent(level)+"fUsefUseShapeAnchor       : %s"%recHdl.getTrueFalse(M))
             recHdl.appendLine(indent(level)+"fUsefRecolorFillAsPicture : %s"%recHdl.getTrueFalse(N))
 
+    class LineColor:
+
+        def appendLines (self, recHdl, prop, level):
+            color = ColorRef(prop.value)
+            color.appendLine(recHdl, level)
+
+    class GroupShape:
+
+        flagNames = [
+            'fPrint',                 # A
+            'fHidden',                # B
+            'fOneD',                  # C
+            'fIsButton',              # D
+            'fOnDblClickNotify',      # E
+            'fBehindDocument',        # F
+            'fEditedWrap',            # G
+            'fScriptAnchor',          # H
+            'fReallyHidden',          # I
+            'fAllowOverlap',          # J
+            'fUserDrawn',             # K
+            'fHorizRule',             # L
+            'fNoshadeHR',             # M
+            'fStandardHR',            # N
+            'fIsBullet',              # O
+            'fLayoutInCell',          # P
+            'fUsefPrint',             # Q
+            'fUsefHidden',            # R
+            'fUsefOneD',              # S
+            'fUsefIsButton',          # T
+            'fUsefOnDblClickNotify',  # U
+            'fUsefBehindDocument',    # V
+            'fUsefEditedWrap',        # W
+            'fUsefScriptAnchor',      # X
+            'fUsefReallyHidden',      # Y
+            'fUsefAllowOverlap',      # Z
+            'fUsefUserDrawn',         # a
+            'fUsefHorizRule',         # b
+            'fUsefNoshadeHR',         # c
+            'fUsefStandardHR',        # d
+            'fUsefIsBullet',          # e
+            'fUsefLayoutInCell'       # f
+        ]
+
+        def appendLines (self, recHdl, prop, level):
+            flag = prop.value
+            flagCount = len(FOPT.GroupShape.flagNames)
+            recHdl.appendLine(indent(level)+"flag: 0x%8.8X"%flag)
+            for i in xrange(0, flagCount):
+                bval = (flag & 0x00000001)
+                recHdl.appendLine(indent(level)+"%s: %s"%(FOPT.GroupShape.flagNames[i], recHdl.getTrueFalse(bval)))
+                flag /= 2
 
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
         0x0181: ['Fill Color', FillColor],
         0x01BF: ['Fill Style Boolean Properties', FillStyle],
-        0x0303: ['Connector Shape Style (cxstyle)', CXStyle]
+        0x01C0: ['Line Color', LineColor],
+        0x0303: ['Connector Shape Style (cxstyle)', CXStyle],
+        0x03BF: ['Group Shape Boolean Properties', GroupShape]
     }
 
     class E:
