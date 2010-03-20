@@ -30,13 +30,51 @@ import globals
 def indent (level):
     return '  '*level
 
-class RecordHeader:
-    def __init__ (self):
-        self.recVer = None
-        self.recInstance = None
-        self.recType = None
-        self.recLen = None
 
+class RecordHeader:
+
+    class Type:
+        dgContainer     = 0xF002
+        spgrContainer   = 0xF003
+        spContainer     = 0xF004
+        solverContainer = 0xF005
+        FDG             = 0xF008
+        FSPGR           = 0xF009
+        FSP             = 0xF00A
+        FOPT            = 0xF00B
+        FConnectorRule  = 0xF012
+
+    containerTypeNames = {
+        Type.dgContainer:      'OfficeArtDgContainer',
+        Type.spContainer:      'OfficeArtSpContainer',
+        Type.spgrContainer:    'OfficeArtSpgrContainer',
+        Type.solverContainer:  'OfficeArtSolverContainer',
+        Type.FDG:              'OfficeArtFDG',
+        Type.FOPT:             'OfficeArtFOPT',
+        Type.FSP:              'OfficeArtFSP',
+        Type.FSPGR:            'OfficeArtFSPGR',
+        Type.FConnectorRule:   'OfficeArtFConnectorRule'
+    }
+
+    @staticmethod
+    def getRecTypeName (recType):
+        if RecordHeader.containerTypeNames.has_key(recType):
+            return RecordHeader.containerTypeNames[recType]
+        return 'unknown'
+
+    def __init__ (self, strm):
+        mixed = strm.readUnsignedInt(2)
+        self.recVer = (mixed & 0x000F)
+        self.recInstance = (mixed & 0xFFF0) / 16
+        self.recType = strm.readUnsignedInt(2)
+        self.recLen  = strm.readUnsignedInt(4)
+
+    def appendLines (self, recHdl, level=0):
+        recHdl.appendLine(indent(level+1) + "record header:")
+        recHdl.appendLine(indent(level+1) + "recVer: 0x%1.1X"%self.recVer)
+        recHdl.appendLine(indent(level+1) + "recInstance: 0x%3.3X"%self.recInstance)
+        recHdl.appendLine(indent(level+1) + "recType: 0x%4.4X (%s)"%(self.recType, RecordHeader.getRecTypeName(self.recType)))
+        recHdl.appendLine(indent(level+1) + "recLen: %d"%self.recLen)
 
 class ColorRef:
     def __init__ (self, byte):
@@ -77,9 +115,9 @@ class ColorRef:
 
 
 class FDG:
-    def __init__ (self):
-        self.shapeCount = None
-        self.lastShapeID = -1
+    def __init__ (self, strm):
+        self.shapeCount  = strm.readUnsignedInt(4)
+        self.lastShapeID = strm.readUnsignedInt(4)
 
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("FDG content (drawing data):")
@@ -266,18 +304,18 @@ class FOPT:
 
 
 class FRIT:
-    def __init__ (self):
-        self.lastGroupID = None
-        self.secondLastGroupID = None
+    def __init__ (self, strm):
+        self.lastGroupID = strm.readUnsignedInt(2)
+        self.secondLastGroupID = strm.readUnsignedInt(2)
 
     def appendLines (self, recHdl, rh):
         pass
 
 
 class FSP:
-    def __init__ (self):
-        self.spid = None
-        self.flag = None
+    def __init__ (self, strm):
+        self.spid = strm.readUnsignedInt(4)
+        self.flag = strm.readUnsignedInt(4)
 
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("FSP content (instance of a shape):")
@@ -309,11 +347,11 @@ class FSP:
 
 
 class FSPGR:
-    def __init__ (self):
-        self.left   = None
-        self.top    = None
-        self.right  = None
-        self.bottom = None
+    def __init__ (self, strm):
+        self.left   = strm.readSignedInt(4)
+        self.top    = strm.readSignedInt(4)
+        self.right  = strm.readSignedInt(4)
+        self.bottom = strm.readSignedInt(4)
 
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("FSPGR content (coordinate system of group shape):")
@@ -324,13 +362,13 @@ class FSPGR:
 
 
 class FConnectorRule:
-    def __init__ (self):
-        self.ruleID = None
-        self.spIDA = None
-        self.spIDB = None
-        self.spIDC = None
-        self.conSiteIDA = None
-        self.conSiteIDB = None
+    def __init__ (self, strm):
+        self.ruleID = strm.readUnsignedInt(4)
+        self.spIDA = strm.readUnsignedInt(4)
+        self.spIDB = strm.readUnsignedInt(4)
+        self.spIDC = strm.readUnsignedInt(4)
+        self.conSiteIDA = strm.readUnsignedInt(4)
+        self.conSiteIDB = strm.readUnsignedInt(4)
 
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("FConnectorRule content:")
@@ -340,30 +378,6 @@ class FConnectorRule:
         recHdl.appendLine("  ID of the connector shape: %d"%self.spIDB)
         recHdl.appendLine("  ID of the connection site in the begin shape: %d"%self.conSiteIDA)
         recHdl.appendLine("  ID of the connection site in the end shape: %d"%self.conSiteIDB)
-
-
-class Type:
-    dgContainer     = 0xF002
-    spgrContainer   = 0xF003
-    spContainer     = 0xF004
-    solverContainer = 0xF005
-    FDG             = 0xF008
-    FSPGR           = 0xF009
-    FSP             = 0xF00A
-    FOPT            = 0xF00B
-    FConnectorRule  = 0xF012
-
-containerTypeNames = {
-    Type.dgContainer:      'OfficeArtDgContainer',
-    Type.spContainer:      'OfficeArtSpContainer',
-    Type.spgrContainer:    'OfficeArtSpgrContainer',
-    Type.solverContainer:  'OfficeArtSolverContainer',
-    Type.FDG:              'OfficeArtFDG',
-    Type.FOPT:             'OfficeArtFOPT',
-    Type.FSP:              'OfficeArtFSP',
-    Type.FSPGR:            'OfficeArtFSPGR',
-    Type.FConnectorRule:   'OfficeArtFConnectorRule'
-}
 
 # ----------------------------------------------------------------------------
 
@@ -376,19 +390,6 @@ class MSODrawHandler(globals.ByteStream):
 
         globals.ByteStream.__init__(self, bytes)
         self.parent = parent
-
-    def printRecordHeader (self, rh, level=0):
-        self.parent.appendLine(indent(level+1) + "record header:")
-        self.parent.appendLine(indent(level+1) + "recVer: 0x%1.1X"%rh.recVer)
-        self.parent.appendLine(indent(level+1) + "recInstance: 0x%3.3X"%rh.recInstance)
-        self.parent.appendLine(indent(level+1) + "recType: 0x%4.4X (%s)"%(rh.recType, MSODrawHandler.getRecTypeName(rh)))
-        self.parent.appendLine(indent(level+1) + "recLen: %d"%rh.recLen)
-
-    def readFDG (self):
-        fdg = FDG()
-        fdg.shapeCount  = self.readUnsignedInt(4)
-        fdg.lastShapeID = self.readUnsignedInt(4)
-        return fdg
 
     def readFOPT (self, rh):
         fopt = FOPT()
@@ -406,51 +407,6 @@ class MSODrawHandler(globals.ByteStream):
 
         return fopt
 
-    def readFRIT (self):
-        frit = FRIT()
-        frit.lastGroupID = self.readUnsignedInt(2)
-        frit.secondLastGroupID = self.readUnsignedInt(2)
-        return frit
-
-    def readFSP (self):
-        fsp = FSP()
-        fsp.spid = self.readUnsignedInt(4)
-        fsp.flag = self.readUnsignedInt(4)
-        return fsp
-
-    def readFSPGR (self):
-        fspgr = FSPGR()
-        fspgr.left   = self.readSignedInt(4)
-        fspgr.top    = self.readSignedInt(4)
-        fspgr.right  = self.readSignedInt(4)
-        fspgr.bottom = self.readSignedInt(4)
-        return fspgr
-
-    def readFConnectorRule (self):
-        fcon = FConnectorRule()
-        fcon.ruleID = self.readUnsignedInt(4)
-        fcon.spIDA = self.readUnsignedInt(4)
-        fcon.spIDB = self.readUnsignedInt(4)
-        fcon.spIDC = self.readUnsignedInt(4)
-        fcon.conSiteIDA = self.readUnsignedInt(4)
-        fcon.conSiteIDB = self.readUnsignedInt(4)
-        return fcon
-
-    def readRecordHeader (self):
-        rh = RecordHeader()
-        mixed = self.readUnsignedInt(2)
-        rh.recVer = (mixed & 0x000F)
-        rh.recInstance = (mixed & 0xFFF0) / 16
-        rh.recType = self.readUnsignedInt(2)
-        rh.recLen  = self.readUnsignedInt(4)
-        return rh
-
-    @staticmethod
-    def getRecTypeName (rh):
-        if containerTypeNames.has_key(rh.recType):
-            return containerTypeNames[rh.recType]
-        return 'unknown'
-
     def parseBytes (self):
         firstRec = True
         while not self.isEndOfRecord():
@@ -458,26 +414,26 @@ class MSODrawHandler(globals.ByteStream):
                 firstRec = False
             else:
                 self.parent.appendLine("-"*61)
-            rh = self.readRecordHeader()
-            self.printRecordHeader(rh)
+            rh = RecordHeader(self)
+            rh.appendLines(self.parent, 0)
             # if rh.recType == Type.dgContainer:
             if rh.recVer == 0xF:
                 # container
                 pass
-            elif rh.recType == Type.FDG:
-                fdg = self.readFDG()
+            elif rh.recType == RecordHeader.Type.FDG:
+                fdg = FDG(self)
                 fdg.appendLines(self.parent, rh)
-            elif rh.recType == Type.FOPT:
+            elif rh.recType == RecordHeader.Type.FOPT:
                 fopt = self.readFOPT(rh)
                 fopt.appendLines(self.parent, rh)
-            elif rh.recType == Type.FSPGR:
-                fspgr = self.readFSPGR()
+            elif rh.recType == RecordHeader.Type.FSPGR:
+                fspgr = FSPGR(self)
                 fspgr.appendLines(self.parent, rh)
-            elif rh.recType == Type.FSP:
-                fspgr = self.readFSP()
+            elif rh.recType == RecordHeader.Type.FSP:
+                fspgr = FSP(self)
                 fspgr.appendLines(self.parent, rh)
-            elif rh.recType == Type.FConnectorRule:
-                fcon = self.readFConnectorRule()
+            elif rh.recType == RecordHeader.Type.FConnectorRule:
+                fcon = FConnectorRule(self)
                 fcon.appendLines(self.parent, rh)
             else:
                 # unknown object
