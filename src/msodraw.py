@@ -30,6 +30,8 @@ import globals
 def indent (level):
     return '  '*level
 
+def headerLine ():
+    return "+ " + "-"*58 + "+"
 
 class RecordHeader:
 
@@ -62,6 +64,14 @@ class RecordHeader:
             return RecordHeader.containerTypeNames[recType]
         return 'unknown'
 
+    @staticmethod
+    def appendHeaderLine (recHdl, line):
+        n = len(line)
+        if n < 60:
+            line += ' '*(60-n)
+            line += '|'
+        recHdl.appendLine(line)
+
     def __init__ (self, strm):
         mixed = strm.readUnsignedInt(2)
         self.recVer = (mixed & 0x000F)
@@ -70,11 +80,11 @@ class RecordHeader:
         self.recLen  = strm.readUnsignedInt(4)
 
     def appendLines (self, recHdl, level=0):
-        recHdl.appendLine(indent(level+1) + "record header:")
-        recHdl.appendLine(indent(level+1) + "recVer: 0x%1.1X"%self.recVer)
-        recHdl.appendLine(indent(level+1) + "recInstance: 0x%3.3X"%self.recInstance)
-        recHdl.appendLine(indent(level+1) + "recType: 0x%4.4X (%s)"%(self.recType, RecordHeader.getRecTypeName(self.recType)))
-        recHdl.appendLine(indent(level+1) + "recLen: %d"%self.recLen)
+        pre = "| "
+        RecordHeader.appendHeaderLine(recHdl, pre + "Record type: 0x%4.4X (%s)"%(self.recType, RecordHeader.getRecTypeName(self.recType)))
+        RecordHeader.appendHeaderLine(recHdl, pre + "  version: 0x%1.1X   instance: 0x%3.3X   size: %d"%
+            (self.recVer, self.recInstance, self.recLen))
+
 
 class ColorRef:
     def __init__ (self, byte):
@@ -132,7 +142,6 @@ class FOPT:
     class TextBoolean:
 
         def appendLines (self, recHdl, prop, level):
-            indent = '  '*level
             A = (prop.value & 0x00000001) != 0
             B = (prop.value & 0x00000002) != 0
             C = (prop.value & 0x00000004) != 0
@@ -143,12 +152,12 @@ class FOPT:
             H = (prop.value & 0x00040000) != 0
             I = (prop.value & 0x00080000) != 0
             J = (prop.value & 0x00100000) != 0
-            recHdl.appendLineBoolean(indent + "fit shape to text",     B)
-            recHdl.appendLineBoolean(indent + "auto text margin",      D)
-            recHdl.appendLineBoolean(indent + "select text",           E)
-            recHdl.appendLineBoolean(indent + "use fit shape to text", G)
-            recHdl.appendLineBoolean(indent + "use auto text margin",  I)
-            recHdl.appendLineBoolean(indent + "use select text",       J)
+            recHdl.appendLineBoolean(indent(level) + "fit shape to text",     B)
+            recHdl.appendLineBoolean(indent(level) + "auto text margin",      D)
+            recHdl.appendLineBoolean(indent(level) + "select text",           E)
+            recHdl.appendLineBoolean(indent(level) + "use fit shape to text", G)
+            recHdl.appendLineBoolean(indent(level) + "use auto text margin",  I)
+            recHdl.appendLineBoolean(indent(level) + "use select text",       J)
 
     class CXStyle:
         style = [
@@ -408,12 +417,8 @@ class MSODrawHandler(globals.ByteStream):
         return fopt
 
     def parseBytes (self):
-        firstRec = True
         while not self.isEndOfRecord():
-            if firstRec:
-                firstRec = False
-            else:
-                self.parent.appendLine("-"*61)
+            self.parent.appendLine(headerLine())
             rh = RecordHeader(self)
             rh.appendLines(self.parent, 0)
             # if rh.recType == Type.dgContainer:
@@ -422,18 +427,23 @@ class MSODrawHandler(globals.ByteStream):
                 pass
             elif rh.recType == RecordHeader.Type.FDG:
                 fdg = FDG(self)
+                self.parent.appendLine(headerLine())
                 fdg.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FOPT:
                 fopt = self.readFOPT(rh)
+                self.parent.appendLine(headerLine())
                 fopt.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FSPGR:
                 fspgr = FSPGR(self)
+                self.parent.appendLine(headerLine())
                 fspgr.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FSP:
                 fspgr = FSP(self)
+                self.parent.appendLine(headerLine())
                 fspgr.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FConnectorRule:
                 fcon = FConnectorRule(self)
+                self.parent.appendLine(headerLine())
                 fcon.appendLines(self.parent, rh)
             else:
                 # unknown object
