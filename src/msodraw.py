@@ -130,9 +130,50 @@ class FOPT:
             color = ColorRef(prop.value)
             color.appendLine(recHdl, level)
 
+    class FillStyle:
+
+        def appendLines (self, recHdl, prop, level):
+            flag1 = recHdl.readUnsignedInt(1)
+            recHdl.moveForward(1)
+            flag2 = recHdl.readUnsignedInt(1)
+            recHdl.moveForward(1)
+            A = (flag1 & 0x01) != 0 # fNoFillHitTest
+            B = (flag1 & 0x02) != 0 # fillUseRect
+            C = (flag1 & 0x04) != 0 # fillShape
+            D = (flag1 & 0x08) != 0 # fHitTestFill
+            E = (flag1 & 0x10) != 0 # fFilled
+            F = (flag1 & 0x20) != 0 # fUseShapeAnchor
+            G = (flag1 & 0x40) != 0 # fRecolorFillAsPicture
+
+            H = (flag2 & 0x01) != 0 # fUseNoFillHitTest
+            I = (flag2 & 0x02) != 0 # fUsefillUseRect
+            J = (flag2 & 0x04) != 0 # fUsefillShape
+            K = (flag2 & 0x08) != 0 # fUsefHitTestFill
+            L = (flag2 & 0x10) != 0 # fUsefFilled
+            M = (flag2 & 0x20) != 0 # fUsefUseShapeAnchor
+            N = (flag2 & 0x40) != 0 # fUsefRecolorFillAsPicture
+
+            recHdl.appendLine(indent(level)+"fNoFillHitTest            : %s"%recHdl.getTrueFalse(A))
+            recHdl.appendLine(indent(level)+"fillUseRect               : %s"%recHdl.getTrueFalse(B))
+            recHdl.appendLine(indent(level)+"fillShape                 : %s"%recHdl.getTrueFalse(C))
+            recHdl.appendLine(indent(level)+"fHitTestFill              : %s"%recHdl.getTrueFalse(D))
+            recHdl.appendLine(indent(level)+"fFilled                   : %s"%recHdl.getTrueFalse(E))
+            recHdl.appendLine(indent(level)+"fUseShapeAnchor           : %s"%recHdl.getTrueFalse(F))
+            recHdl.appendLine(indent(level)+"fRecolorFillAsPicture     : %s"%recHdl.getTrueFalse(G))
+
+            recHdl.appendLine(indent(level)+"fUseNoFillHitTest         : %s"%recHdl.getTrueFalse(H))
+            recHdl.appendLine(indent(level)+"fUsefillUseRect           : %s"%recHdl.getTrueFalse(I))
+            recHdl.appendLine(indent(level)+"fUsefillShape             : %s"%recHdl.getTrueFalse(J))
+            recHdl.appendLine(indent(level)+"fUsefHitTestFill          : %s"%recHdl.getTrueFalse(K))
+            recHdl.appendLine(indent(level)+"fUsefFilled               : %s"%recHdl.getTrueFalse(L))
+            recHdl.appendLine(indent(level)+"fUsefUseShapeAnchor       : %s"%recHdl.getTrueFalse(M))
+            recHdl.appendLine(indent(level)+"fUsefRecolorFillAsPicture : %s"%recHdl.getTrueFalse(N))
+
+
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
         0x0181: ['Fill Color', FillColor],
+        0x01BF: ['Fill Style Boolean Properties', FillStyle],
         0x0303: ['Connector Shape Style (cxstyle)', CXStyle]
     }
 
