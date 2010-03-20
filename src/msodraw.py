@@ -392,8 +392,6 @@ class FConnectorRule:
 
 class MSODrawHandler(globals.ByteStream):
 
-    singleIndent = ' '*2
-
     def __init__ (self, bytes, parent):
         """The 'parent' instance must have appendLine() method that takes one string argument."""
 
@@ -424,27 +422,25 @@ class MSODrawHandler(globals.ByteStream):
             # if rh.recType == Type.dgContainer:
             if rh.recVer == 0xF:
                 # container
-                pass
-            elif rh.recType == RecordHeader.Type.FDG:
+                continue
+
+            self.parent.appendLine(headerLine())
+            if rh.recType == RecordHeader.Type.FDG:
                 fdg = FDG(self)
-                self.parent.appendLine(headerLine())
                 fdg.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FOPT:
                 fopt = self.readFOPT(rh)
-                self.parent.appendLine(headerLine())
                 fopt.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FSPGR:
                 fspgr = FSPGR(self)
-                self.parent.appendLine(headerLine())
                 fspgr.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FSP:
                 fspgr = FSP(self)
-                self.parent.appendLine(headerLine())
                 fspgr.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FConnectorRule:
                 fcon = FConnectorRule(self)
-                self.parent.appendLine(headerLine())
                 fcon.appendLines(self.parent, rh)
             else:
                 # unknown object
-                self.readBytes(rh.recLen)
+                bytes = self.readBytes(rh.recLen)
+                self.parent.appendLine(globals.getRawBytes(bytes, True, False))
