@@ -499,11 +499,15 @@ class SplitMenuColorContainer:
             msocr.appendLines(recHdl, rh)
 
 
-class FClientAnchorXLS:
-    """Excel-specific anchor data"""
+class FClientAnchorSheet:
+    """Excel-specific anchor data (OfficeArtClientAnchorSheet)"""
 
     def __init__ (self, strm):
-        self.flag = strm.readUnsignedInt(2)
+        # dx is 1/1024th of the underlying cell's width.
+        # dy is 1/1024th of the underlying cell's height.
+        flag = strm.readUnsignedInt(2)
+        self.moveWithCells   = (flag & 0x0001) != 0
+        self.resizeWithCells = (flag & 0x0002 != 0)
         self.col1 = strm.readUnsignedInt(2)
         self.dx1 = strm.readUnsignedInt(2)
         self.row1 = strm.readUnsignedInt(2)
@@ -518,6 +522,8 @@ class FClientAnchorXLS:
         recHdl.appendLine("  cols: %d-%d   rows: %d-%d"%(self.col1, self.col2, self.row1, self.row2))
         recHdl.appendLine("  dX1: %d  dY1: %d"%(self.dx1, self.dy1))
         recHdl.appendLine("  dX2: %d  dY2: %d"%(self.dx2, self.dy2))
+        recHdl.appendLineBoolean("  move with cells", self.moveWithCells)
+        recHdl.appendLineBoolean("  resize with cells", self.resizeWithCells)
 
     def fillModel (self, model, sheet):
         obj = xlsmodel.Shape(self.col1, self.row1, self.dx1, self.dy1, self.col2, self.row2, self.dx2, self.dy2)
@@ -532,7 +538,7 @@ recData = {
     RecordHeader.Type.FDGGBlock: FDGGBlock,
     RecordHeader.Type.FConnectorRule: FConnectorRule,
     RecordHeader.Type.FDGSL: FDGSL,
-    RecordHeader.Type.FClientAnchor: FClientAnchorXLS,
+    RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
     RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer
 }
 
@@ -593,7 +599,7 @@ class MSODrawHandler(globals.ByteStream):
 
             if rh.recType == RecordHeader.Type.FClientAnchor and \
                 model.hostApp == globals.ModelBase.HostAppType.Excel:
-                obj = FClientAnchorXLS(self)
+                obj = FClientAnchorSheet(self)
                 obj.fillModel(model, sheet)
             else:
                 # unknown object
