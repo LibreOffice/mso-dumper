@@ -162,7 +162,7 @@ recData = {
     0x00EA: ["TABIDCONF", "Sheet Tab ID of Conflict History"],
     0x00EB: ["MSODRAWINGGROUP", "Microsoft Office Drawing Group", xlsrecord.MSODrawingGroup],
     0x00EC: ["MSODRAWING", "Microsoft Office Drawing", xlsrecord.MSODrawing],
-    0x00ED: ["MSODRAWINGSELECTION", "Microsoft Office Drawing Selection"],
+    0x00ED: ["MSODRAWINGSELECTION", "Microsoft Office Drawing Selection", xlsrecord.MSODrawingSelection],
     0x00EF: ["PHONETIC", "Asian Phonetic Settings", xlsrecord.PhoneticInfo],
     0x00F0: ["SXRULE", "PivotTable Rule Data"],
     0x00F1: ["SXEX", "PivotTable View Extended Information"],

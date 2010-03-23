@@ -26,6 +26,7 @@
 ########################################################################
 
 import globals
+import sys
 
 def indent (level):
     return '  '*level
@@ -47,6 +48,7 @@ class RecordHeader:
         FSP                     = 0xF00A
         FOPT                    = 0xF00B
         FConnectorRule          = 0xF012
+        FDGSL                   = 0xF119
         SplitMenuColorContainer = 0xF11E
 
     containerTypeNames = {
@@ -61,6 +63,7 @@ class RecordHeader:
         Type.FSP:                     'OfficeArtFSP',
         Type.FSPGR:                   'OfficeArtFSPGR',
         Type.FConnectorRule:          'OfficeArtFConnectorRule',
+        Type.FDGSL:                   'OfficeArtFDGSL',
         Type.SplitMenuColorContainer: 'OfficeArtSplitMenuColorContainer'
     }
 
@@ -181,6 +184,33 @@ class FDGGBlock:
         self.head.appendLines(recHdl, rh)
         for idcl in self.idcls:
             idcl.appendLines(recHdl, rh)
+
+
+class FDGSL:
+    selectionMode = {
+        0x00000000: 'default state',
+        0x00000001: 'ready to rotate',
+        0x00000002: 'ready to change the curvature of line shapes',
+        0x00000007: 'ready to crop the picture'
+    }
+
+    def __init__ (self, strm):
+        self.cpsp = strm.readUnsignedInt(4)  # the spec says undefined.
+        self.dgslk = strm.readUnsignedInt(4) # selection mode
+        self.shapeFocus = strm.readUnsignedInt(4) # shape ID in focus
+        self.shapesSelected = []
+        shapeCount = (strm.getSize() - 20)/4
+        for i in xrange(0, shapeCount):
+            spid = strm.readUnsignedInt(4)
+            self.shapesSelected.append(spid)
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("FDGSL content:")
+        recHdl.appendLine("  selection mode: %s"%
+            globals.getValueOrUnknown(FDGSL.selectionMode, self.dgslk))
+        recHdl.appendLine("  ID of shape in focus: %d"%self.shapeFocus)
+        for shape in self.shapesSelected:
+            recHdl.appendLine("  ID of shape selected: %d"%shape)
 
 
 class FOPT:
@@ -518,6 +548,9 @@ class MSODrawHandler(globals.ByteStream):
             elif rh.recType == RecordHeader.Type.FConnectorRule:
                 fcon = FConnectorRule(self)
                 fcon.appendLines(self.parent, rh)
+            elif rh.recType == RecordHeader.Type.FDGSL:
+                fdgsl = FDGSL(self)
+                fdgsl.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.SplitMenuColorContainer:
                 smcc = SplitMenuColorContainer(self)
                 smcc.appendLines(self.parent, rh)
