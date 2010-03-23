@@ -2763,21 +2763,43 @@ somewhere in the MSDN website.  In case of multiple MSODRAWING records in a
 single worksheet stream, they need to be treated as if they are lumped 
 together.
 """
+    def __parseBytes (self):
+        self.msodHdl = msodraw.MSODrawHandler(self.bytes, self)
 
     def parseBytes (self):
-        msodHdl = msodraw.MSODrawHandler(self.bytes, self)
-        msodHdl.parseBytes()
+        self.__parseBytes()
+        self.msodHdl.parseBytes()
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        self.msodHdl.fillModel(model)
 
 
 class MSODrawingGroup(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.msodHdl = msodraw.MSODrawHandler(self.bytes, self)
+
     def parseBytes (self):
-        msoHdl = msodraw.MSODrawHandler(self.bytes, self)
-        msoHdl.parseBytes()
+        self.__parseBytes()
+        self.msodHdl.parseBytes()
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        self.msodHdl.fillModel(model)
 
 
 class MSODrawingSelection(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.msodHdl = msodraw.MSODrawHandler(self.bytes, self)
+
+
     def parseBytes (self):
-        msoHdl = msodraw.MSODrawHandler(self.bytes, self)
-        msoHdl.parseBytes()
+        self.__parseBytes()
+        self.msodHdl.parseBytes()
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        self.msodHdl.fillModel(model)
+

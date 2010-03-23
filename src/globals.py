@@ -31,6 +31,18 @@ class ByteConvertError(Exception): pass
 
 class ByteStreamError(Exception): pass
 
+
+class ModelBase(object):
+
+    class HostAppType:
+        Word       = 0
+        Excel      = 1
+        PowerPoint = 2
+
+    def __init__ (self, hostApp):
+        self.hostApp = hostApp
+
+
 class Params(object):
     """command-line parameters."""
     def __init__ (self):

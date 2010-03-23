@@ -33,8 +33,9 @@ class ModelType:
     Unknown = 999
 
 
-class ModelBase(object):
+class ModelBase(globals.ModelBase):
     def __init__ (self, modelType=ModelType.Unknown):
+        globals.ModelBase.__init__(self, globals.ModelBase.HostAppType.Excel)
         self.modelType = modelType
 
 
@@ -186,6 +187,17 @@ class WorkbookGlobal(SheetBase):
         return self.__dbRanges[sheetID]
 
 
+class Shape(object):
+    def __init__ (self, col1, row1, dx1, dy1, col2, row2, dx2, dy2):
+        self.col1 = col1
+        self.row1 = row1
+        self.dx1 = dx1
+        self.dy1 = dy1
+        self.col2 = col2
+        self.row2 = row2
+        self.dx2 = dx2
+        self.dy2 = dy2
+
 class Worksheet(SheetBase):
 
     class OrderedRangeList(object):
@@ -220,6 +232,10 @@ class Worksheet(SheetBase):
         self.__firstFreeCell = None
         self.__hiddenRows = Worksheet.OrderedRangeList()
         self.__rowHeights = Worksheet.OrderedRangeList()
+        self.__shapes = []
+
+    def addShape (self, obj):
+        self.__shapes.append(obj)
 
     def setFirstDefinedCell (self, col, row):
         self.__firstDefinedCell = formula.CellAddress(col, row)
@@ -277,7 +293,7 @@ class Worksheet(SheetBase):
         self.__appendAutoFilterNode(wb, nd) # autofilter (if exists)
         self.__appendHiddenRowsNode(wb, nd) # hidden rows
         self.__appendRowHeightNode(wb, nd)  # row heights
-
+        self.__appendShapesNode(wb, nd) # drawing objects
         return nd
 
     def __appendRowHeightNode (self, wb, baseNode):
@@ -328,6 +344,20 @@ class Worksheet(SheetBase):
                 arrow.setAttr('pos', cell.getName())
             else:
                 elem.appendChild(arrowObj.createDOM(wb, cellRange))
+
+    def __appendShapesNode (self, wb, baseNode):
+        n = len(self.__shapes)
+        if n == 0:
+            # no drawing objects on this sheet.
+            return
+
+        elem = baseNode.appendElement('shapes')
+        for obj in self.__shapes:
+            objElem = elem.appendElement('shape')
+            objElem.setAttr('range', "(col=%d,row=%d)-(col=%d,row=%d)"%(obj.col1,obj.row1,obj.col2,obj.row2))
+            objElem.setAttr('offset-begin', "(dx=%d,dy=%d)"%(obj.dx1,obj.dy1))
+            objElem.setAttr('offset-end', "(dx=%d,dy=%d)"%(obj.dx2,obj.dy2))
+
 
 
 class CellBase(object):

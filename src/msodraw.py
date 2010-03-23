@@ -25,7 +25,7 @@
 #
 ########################################################################
 
-import globals
+import globals, xlsmodel
 import sys
 
 def indent (level):
@@ -63,8 +63,8 @@ class RecordHeader:
         Type.FDG:                     'OfficeArtFDG',
         Type.FDGGBlock:               'OfficeArtFDGGBlock',
         Type.FOPT:                    'OfficeArtFOPT',
-        Type.FClientAnchor:           'msofbtClientAnchor',
-        Type.FClientData:             'msofbtClientData',
+        Type.FClientAnchor:           'OfficeArtClientAnchor',
+        Type.FClientData:             'OfficeArtClientData',
         Type.FSP:                     'OfficeArtFSP',
         Type.FSPGR:                   'OfficeArtFSPGR',
         Type.FConnectorRule:          'OfficeArtFConnectorRule',
@@ -499,7 +499,7 @@ class SplitMenuColorContainer:
             msocr.appendLines(recHdl, rh)
 
 
-class FClientAnchor:
+class FClientAnchorXLS:
     """Excel-specific anchor data"""
 
     def __init__ (self, strm):
@@ -519,6 +519,10 @@ class FClientAnchor:
         recHdl.appendLine("  dX1: %d  dY1: %d"%(self.dx1, self.dy1))
         recHdl.appendLine("  dX2: %d  dY2: %d"%(self.dx2, self.dy2))
 
+    def fillModel (self, model, sheet):
+        obj = xlsmodel.Shape(self.col1, self.row1, self.dx1, self.dy1, self.col2, self.row2, self.dx2, self.dy2)
+        sheet.addShape(obj)
+
 # ----------------------------------------------------------------------------
 
 recData = {
@@ -528,7 +532,7 @@ recData = {
     RecordHeader.Type.FDGGBlock: FDGGBlock,
     RecordHeader.Type.FConnectorRule: FConnectorRule,
     RecordHeader.Type.FDGSL: FDGSL,
-    RecordHeader.Type.FClientAnchor: FClientAnchor,
+    RecordHeader.Type.FClientAnchor: FClientAnchorXLS,
     RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer
 }
 
@@ -577,3 +581,22 @@ class MSODrawHandler(globals.ByteStream):
                 # unknown object
                 bytes = self.readBytes(rh.recLen)
                 self.parent.appendLine(globals.getRawBytes(bytes, True, False))
+
+
+    def fillModel (self, model):
+        sheet = model.getCurrentSheet()
+        while not self.isEndOfRecord():
+            rh = RecordHeader(self)
+            if rh.recVer == 0xF:
+                # container
+                continue
+
+            if rh.recType == RecordHeader.Type.FClientAnchor and \
+                model.hostApp == globals.ModelBase.HostAppType.Excel:
+                obj = FClientAnchorXLS(self)
+                obj.fillModel(model, sheet)
+            else:
+                # unknown object
+                bytes = self.readBytes(rh.recLen)
+
+
