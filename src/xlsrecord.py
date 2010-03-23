@@ -1334,7 +1334,8 @@ class Crn(BaseRecordHandler):
                 self.appendLine("* numeric value (%g)"%val)
             elif typeId == 0x2:
                 # string
-                text, length = globals.getRichText(self.bytes[i:])
+                ret, length = globals.getUnicodeRichExtText(self.bytes[i:])
+                text = ret.baseText
                 i += length
                 text = globals.encodeName(text)
                 self.appendLine("* string value (%s)"%text)
