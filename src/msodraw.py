@@ -34,6 +34,7 @@ def indent (level):
 def headerLine ():
     return "+ " + "-"*58 + "+"
 
+
 class RecordHeader:
 
     class Type:
@@ -47,6 +48,8 @@ class RecordHeader:
         FSPGR                   = 0xF009
         FSP                     = 0xF00A
         FOPT                    = 0xF00B
+        FClientAnchor           = 0xF010
+        FClientData             = 0xF011
         FConnectorRule          = 0xF012
         FDGSL                   = 0xF119
         SplitMenuColorContainer = 0xF11E
@@ -60,6 +63,8 @@ class RecordHeader:
         Type.FDG:                     'OfficeArtFDG',
         Type.FDGGBlock:               'OfficeArtFDGGBlock',
         Type.FOPT:                    'OfficeArtFOPT',
+        Type.FClientAnchor:           'msofbtClientAnchor',
+        Type.FClientData:             'msofbtClientData',
         Type.FSP:                     'OfficeArtFSP',
         Type.FSPGR:                   'OfficeArtFSPGR',
         Type.FConnectorRule:          'OfficeArtFConnectorRule',
@@ -493,7 +498,39 @@ class SplitMenuColorContainer:
         for msocr in self.smca:
             msocr.appendLines(recHdl, rh)
 
+
+class FClientAnchor:
+    """Excel-specific anchor data"""
+
+    def __init__ (self, strm):
+        self.flag = strm.readUnsignedInt(2)
+        self.col1 = strm.readUnsignedInt(2)
+        self.dx1 = strm.readUnsignedInt(2)
+        self.row1 = strm.readUnsignedInt(2)
+        self.dy1 = strm.readUnsignedInt(2)
+        self.col2 = strm.readUnsignedInt(2)
+        self.dx2 = strm.readUnsignedInt(2)
+        self.row2 = strm.readUnsignedInt(2)
+        self.dy2 = strm.readUnsignedInt(2)
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("Client anchor (Excel):")
+        recHdl.appendLine("  cols: %d-%d   rows: %d-%d"%(self.col1, self.col2, self.row1, self.row2))
+        recHdl.appendLine("  dX1: %d  dY1: %d"%(self.dx1, self.dy1))
+        recHdl.appendLine("  dX2: %d  dY2: %d"%(self.dx2, self.dy2))
+
 # ----------------------------------------------------------------------------
+
+recData = {
+    RecordHeader.Type.FDG: FDG,
+    RecordHeader.Type.FSPGR: FSPGR,
+    RecordHeader.Type.FSP: FSP,
+    RecordHeader.Type.FDGGBlock: FDGGBlock,
+    RecordHeader.Type.FConnectorRule: FConnectorRule,
+    RecordHeader.Type.FDGSL: FDGSL,
+    RecordHeader.Type.FClientAnchor: FClientAnchor,
+    RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer
+}
 
 class MSODrawHandler(globals.ByteStream):
 
@@ -530,30 +567,12 @@ class MSODrawHandler(globals.ByteStream):
                 continue
 
             self.parent.appendLine(headerLine())
-            if rh.recType == RecordHeader.Type.FDG:
-                fdg = FDG(self)
-                fdg.appendLines(self.parent, rh)
-            elif rh.recType == RecordHeader.Type.FDGGBlock:
-                fdgg = FDGGBlock(self)
-                fdgg.appendLines(self.parent, rh)
+            if recData.has_key(rh.recType):
+                obj = recData[rh.recType](self)
+                obj.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FOPT:
                 fopt = self.readFOPT(rh)
                 fopt.appendLines(self.parent, rh)
-            elif rh.recType == RecordHeader.Type.FSPGR:
-                fspgr = FSPGR(self)
-                fspgr.appendLines(self.parent, rh)
-            elif rh.recType == RecordHeader.Type.FSP:
-                fspgr = FSP(self)
-                fspgr.appendLines(self.parent, rh)
-            elif rh.recType == RecordHeader.Type.FConnectorRule:
-                fcon = FConnectorRule(self)
-                fcon.appendLines(self.parent, rh)
-            elif rh.recType == RecordHeader.Type.FDGSL:
-                fdgsl = FDGSL(self)
-                fdgsl.appendLines(self.parent, rh)
-            elif rh.recType == RecordHeader.Type.SplitMenuColorContainer:
-                smcc = SplitMenuColorContainer(self)
-                smcc.appendLines(self.parent, rh)
             else:
                 # unknown object
                 bytes = self.readBytes(rh.recLen)

@@ -809,10 +809,12 @@ class Obj(BaseRecordHandler):
         flag   = self.readUnsignedInt(2)
 
         # the rest of the bytes are reserved & should be all zero.
-        self.readBytes(12)
+        unused1 = self.readUnsignedInt(4)
+        unused2 = self.readUnsignedInt(4)
+        unused3 = self.readUnsignedInt(4)
 
         self.appendLine("common object: ")
-        self.appendLine("  type: %s"%Obj.Cmo.getType(objType))
+        self.appendLine("  type: %s (0x%2.2X)"%(Obj.Cmo.getType(objType), objType))
         self.appendLine("  object ID: %d"%objID)
 
         # 0    0001h fLocked    =1 if the object is locked when the sheet is protected
@@ -823,11 +825,23 @@ class Obj(BaseRecordHandler):
         # 14   4000h fAutoLine  =1 if the object uses automatic line style
         # 15   8000h (Reserved) Reserved; must be 0 (zero)
 
-        locked    = (flag & 0x0001)
-        printable = (flag & 0x0010)
-        autoFill  = (flag & 0x2000)
-        autoLine  = (flag & 0x4000)
+        locked          = (flag & 0x0001) != 0 # A
+                                               # B
+        defaultSize     = (flag & 0x0004) != 0 # C
+        published       = (flag & 0x0008) != 0 # D
+        printable       = (flag & 0x0010) != 0 # E
+                                               # F
+                                               # G
+        disabled        = (flag & 0x0080) != 0 # H
+        UIObj           = (flag & 0x0100) != 0 # I
+        recalcObj       = (flag & 0x0200) != 0 # J
+                                               # K
+                                               # L
+        recalcObjAlways = (flag & 0x1000) != 0 # M
+        autoFill        = (flag & 0x2000) != 0 # N
+        autoLine        = (flag & 0x4000) != 0 # O
         self.appendLineBoolean("  locked", locked)
+        self.appendLineBoolean("  default size", defaultSize)
         self.appendLineBoolean("  printable", printable)
         self.appendLineBoolean("  automatic fill style", autoFill)
         self.appendLineBoolean("  automatic line style", autoLine)
