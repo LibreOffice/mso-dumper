@@ -36,26 +36,32 @@ def headerLine ():
 class RecordHeader:
 
     class Type:
-        dgContainer     = 0xF002
-        spgrContainer   = 0xF003
-        spContainer     = 0xF004
-        solverContainer = 0xF005
-        FDG             = 0xF008
-        FSPGR           = 0xF009
-        FSP             = 0xF00A
-        FOPT            = 0xF00B
-        FConnectorRule  = 0xF012
+        dggContainer            = 0xF000
+        dgContainer             = 0xF002
+        spgrContainer           = 0xF003
+        spContainer             = 0xF004
+        solverContainer         = 0xF005
+        FDGGBlock               = 0xF006
+        FDG                     = 0xF008
+        FSPGR                   = 0xF009
+        FSP                     = 0xF00A
+        FOPT                    = 0xF00B
+        FConnectorRule          = 0xF012
+        SplitMenuColorContainer = 0xF11E
 
     containerTypeNames = {
-        Type.dgContainer:      'OfficeArtDgContainer',
-        Type.spContainer:      'OfficeArtSpContainer',
-        Type.spgrContainer:    'OfficeArtSpgrContainer',
-        Type.solverContainer:  'OfficeArtSolverContainer',
-        Type.FDG:              'OfficeArtFDG',
-        Type.FOPT:             'OfficeArtFOPT',
-        Type.FSP:              'OfficeArtFSP',
-        Type.FSPGR:            'OfficeArtFSPGR',
-        Type.FConnectorRule:   'OfficeArtFConnectorRule'
+        Type.dggContainer:            'OfficeArtDggContainer',
+        Type.dgContainer:             'OfficeArtDgContainer',
+        Type.spContainer:             'OfficeArtSpContainer',
+        Type.spgrContainer:           'OfficeArtSpgrContainer',
+        Type.solverContainer:         'OfficeArtSolverContainer',
+        Type.FDG:                     'OfficeArtFDG',
+        Type.FDGGBlock:               'OfficeArtFDGGBlock',
+        Type.FOPT:                    'OfficeArtFOPT',
+        Type.FSP:                     'OfficeArtFSP',
+        Type.FSPGR:                   'OfficeArtFSPGR',
+        Type.FConnectorRule:          'OfficeArtFConnectorRule',
+        Type.SplitMenuColorContainer: 'OfficeArtSplitMenuColorContainer'
     }
 
     @staticmethod
@@ -134,6 +140,47 @@ class FDG:
         recHdl.appendLine("  ID of this shape: %d"%rh.recInstance)
         recHdl.appendLine("  shape count: %d"%self.shapeCount)
         recHdl.appendLine("  last shape ID: %d"%self.lastShapeID)
+
+
+class IDCL:
+    def __init__ (self, strm):
+        self.dgid = strm.readUnsignedInt(4)
+        self.cspidCur = strm.readUnsignedInt(4)
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("IDCL content:")
+        recHdl.appendLine("  drawing ID: %d"%self.dgid)
+        recHdl.appendLine("  cspidCur: 0x%8.8X"%self.cspidCur)
+
+class FDGG:
+    def __init__ (self, strm):
+        self.spidMax  = strm.readUnsignedInt(4) # current max shape ID
+        self.cidcl    = strm.readUnsignedInt(4) # number of OfficeArtIDCL's.
+        self.cspSaved = strm.readUnsignedInt(4) # total number of shapes in all drawings
+        self.cdgSaved = strm.readUnsignedInt(4) # total number of drawings saved in the file
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("FDGG content:")
+        recHdl.appendLine("  current max shape ID: %d"%self.spidMax)
+        recHdl.appendLine("  number of OfficeArtIDCL's: %d"%self.cidcl)
+        recHdl.appendLine("  total number of shapes in all drawings: %d"%self.cspSaved)
+        recHdl.appendLine("  total number of drawings in the file: %d"%self.cdgSaved)
+
+class FDGGBlock:
+    def __init__ (self, strm):
+        self.head = FDGG(strm)
+        self.idcls = []
+        # NOTE: The spec says head.cidcl stores the number of IDCL's, but each
+        # FDGGBlock only contains bytes enough to store (head.cidcl - 1) of 
+        # IDCL's.
+        for i in xrange(0, self.head.cidcl-1):
+            idcl = IDCL(strm)
+            self.idcls.append(idcl)
+
+    def appendLines (self, recHdl, rh):
+        self.head.appendLines(recHdl, rh)
+        for idcl in self.idcls:
+            idcl.appendLines(recHdl, rh)
 
 
 class FOPT:
@@ -388,6 +435,34 @@ class FConnectorRule:
         recHdl.appendLine("  ID of the connection site in the begin shape: %d"%self.conSiteIDA)
         recHdl.appendLine("  ID of the connection site in the end shape: %d"%self.conSiteIDB)
 
+
+class MSOCR:
+    def __init__ (self, strm):
+        self.red = strm.readUnsignedInt(1)
+        self.green = strm.readUnsignedInt(1)
+        self.blue = strm.readUnsignedInt(1)
+        flag = strm.readUnsignedInt(1)
+        self.isSchemeIndex = (flag & 0x08) != 0
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("MSOCR content (color index)")
+        if self.isSchemeIndex:
+            recHdl.appendLine("  scheme index: %d"%self.red)
+        else:
+            recHdl.appendLine("  RGB color: (red=%d, green=%d, blue=%d)"%(self.red, self.green, self.blue))
+
+class SplitMenuColorContainer:
+    def __init__ (self, strm):
+        self.smca = []
+        # this container contains 4 MSOCR records.
+        for i in xrange(0, 4):
+            msocr = MSOCR(strm)
+            self.smca.append(msocr)
+
+    def appendLines (self, recHdl, rh):
+        for msocr in self.smca:
+            msocr.appendLines(recHdl, rh)
+
 # ----------------------------------------------------------------------------
 
 class MSODrawHandler(globals.ByteStream):
@@ -428,6 +503,9 @@ class MSODrawHandler(globals.ByteStream):
             if rh.recType == RecordHeader.Type.FDG:
                 fdg = FDG(self)
                 fdg.appendLines(self.parent, rh)
+            elif rh.recType == RecordHeader.Type.FDGGBlock:
+                fdgg = FDGGBlock(self)
+                fdgg.appendLines(self.parent, rh)
             elif rh.recType == RecordHeader.Type.FOPT:
                 fopt = self.readFOPT(rh)
                 fopt.appendLines(self.parent, rh)
@@ -440,6 +518,9 @@ class MSODrawHandler(globals.ByteStream):
             elif rh.recType == RecordHeader.Type.FConnectorRule:
                 fcon = FConnectorRule(self)
                 fcon.appendLines(self.parent, rh)
+            elif rh.recType == RecordHeader.Type.SplitMenuColorContainer:
+                smcc = SplitMenuColorContainer(self)
+                smcc.appendLines(self.parent, rh)
             else:
                 # unknown object
                 bytes = self.readBytes(rh.recLen)

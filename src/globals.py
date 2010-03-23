@@ -29,6 +29,7 @@ import sys, struct, math, zipfile, xmlpp, StringIO
 
 class ByteConvertError(Exception): pass
 
+class ByteStreamError(Exception): pass
 
 class Params(object):
     """command-line parameters."""
@@ -64,6 +65,10 @@ class ByteStream(object):
         return self.size
 
     def readBytes (self, length):
+        if self.pos + length > self.size:
+            error("reading %d bytes from position %d would exceed the current size of %d\n"%
+                (length, self.pos, self.size))
+            raise ByteStreamError()
         r = self.bytes[self.pos:self.pos+length]
         self.pos += length
         return r

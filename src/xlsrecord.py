@@ -2755,3 +2755,8 @@ together.
         msodHdl.parseBytes()
 
 
+class MSODrawingGroup(BaseRecordHandler):
+
+    def parseBytes (self):
+        msoHdl = msodraw.MSODrawHandler(self.bytes, self)
+        msoHdl.parseBytes()
