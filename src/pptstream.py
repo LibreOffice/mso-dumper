@@ -223,7 +223,7 @@ recData = {
  1014:  ["DFF_PST_DocViewInfo"],
  1015:  ["DFF_PST_SslideLayoutAtom"],
  1016:  ["DFF_PST_MainMaster"],
- 1017:  ["DFF_PST_SSSlideInfoAtom"],
+ 1017:  ["DFF_PST_SSSlideInfoAtom", pptrecord.SlideInfo],
  1018:  ["DFF_PST_SlideViewInfo"],
  1019:  ["DFF_PST_GuideAtom"],
  1020:  ["DFF_PST_ViewInfo"],

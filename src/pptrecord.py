@@ -391,6 +391,21 @@ class ColorScheme(BaseRecordHandler):
                                                   "Accent and followed hyperlink"))
 
 # -------------------------------------------------------------------
+# special record handler: ssslide info atom
+
+class SlideInfo(BaseRecordHandler):
+    """SSSlide Info atom."""
+
+    def parseBytes (self):
+        self.appendLine("slide time: %d"%self.readUnsignedInt(4))
+        self.appendLine("sound ref: %d"%self.readUnsignedInt(4))
+        ttype=self.readUnsignedInt(2)
+        self.appendLine("direction: %d"%(ttype & 0xff))
+        self.appendLine("transition type: %d"%(ttype & 0xff00))
+        self.appendLine("flags: %d"%self.readUnsignedInt(2))
+        self.appendLine("speed: %d"%self.readUnsignedInt(1))
+
+# -------------------------------------------------------------------
 # special record handlers: ppt97 animation info
 
 class AnimationInfo(BaseRecordHandler):
