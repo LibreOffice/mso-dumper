@@ -233,6 +233,7 @@ class Worksheet(SheetBase):
         self.__hiddenRows = Worksheet.OrderedRangeList()
         self.__rowHeights = Worksheet.OrderedRangeList()
         self.__shapes = []
+        self.__lastCell = None
 
     def addShape (self, obj):
         self.__shapes.append(obj)
@@ -259,6 +260,10 @@ class Worksheet(SheetBase):
             self.__rows[row] = {}
 
         self.__rows[row][col] = cell
+        self.__lastCell = cell
+
+    def getLastCell (self):
+        return self.__lastCell
 
     def setRowHidden (self, row):
         self.__hiddenRows.setValue(row, True)
@@ -401,6 +406,7 @@ class FormulaCell(CellBase):
     def __init__ (self):
         CellBase.__init__(self, CellBase.Type.Formula)
         self.tokens = None
+        self.cachedResult = None
 
     def createDOM (self, wb):
         nd = node.Element('formula-cell')
@@ -410,6 +416,9 @@ class FormulaCell(CellBase):
             nd.setAttr('formula', parser.getText())
             s = globals.getRawBytes(self.tokens, True, False)
             nd.setAttr('token-bytes', s)
+            if self.cachedResult != None:
+                nd.setAttr('formula-result', self.cachedResult)
+
         return nd
 
 

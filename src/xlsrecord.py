@@ -560,6 +560,7 @@ class Formula(BaseRecordHandler):
         sheet = model.getCurrentSheet()
         cell = xlsmodel.FormulaCell()
         cell.tokens = self.tokens
+        cell.cachedResult = self.fval
         sheet.setCell(self.col, self.row, cell)
 
 
@@ -872,10 +873,19 @@ class RK(BaseRecordHandler):
 class String(BaseRecordHandler):
     """Cached string formula result for preceding formula record."""
 
-    def parseBytes (self):
+    def __parseBytes (self):
         strLen = globals.getSignedInt(self.bytes[0:1])
-        name, byteLen = globals.getRichText(self.bytes[2:], strLen)
-        self.appendLine("string value: '%s'"%name)
+        self.name, byteLen = globals.getRichText(self.bytes[2:], strLen)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("string value: '%s'"%self.name)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        cell = model.getCurrentSheet().getLastCell()
+        if cell.modelType == xlsmodel.CellBase.Type.Formula:
+            cell.cachedResult = self.name
 
 
 class SST(BaseRecordHandler):
