@@ -2795,7 +2795,6 @@ class MSODrawingSelection(BaseRecordHandler):
     def __parseBytes (self):
         self.msodHdl = msodraw.MSODrawHandler(self.bytes, self)
 
-
     def parseBytes (self):
         self.__parseBytes()
         self.msodHdl.parseBytes()

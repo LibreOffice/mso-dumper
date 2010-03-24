@@ -588,7 +588,6 @@ class MSODrawHandler(globals.ByteStream):
                 bytes = self.readBytes(rh.recLen)
                 self.parent.appendLine(globals.getRawBytes(bytes, True, False))
 
-
     def fillModel (self, model):
         sheet = model.getCurrentSheet()
         while not self.isEndOfRecord():

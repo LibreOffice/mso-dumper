@@ -246,9 +246,12 @@ Note the following:
 
     totalByteLen = strm.getCurrentPos() + textLen + extraBytes
     if is16Bit:
-        return ("<16-bit strings not supported yet>", totalByteLen)
+        text = ''
+        for i in xrange(0, textLen):
+            text += toTextBytes(strm.readBytes(2)).decode('utf-16')
+    else:
+        text = toTextBytes(strm.readBytes(textLen))
 
-    text = toTextBytes(strm.readBytes(textLen))
     return (text, totalByteLen)
 
 
