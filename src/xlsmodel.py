@@ -73,7 +73,7 @@ class Workbook(ModelBase):
             return
 
         wbglobal = self.__sheets[0]
-#       nd.appendChild(wbglobal.createDOM(self))
+        nd.appendChild(wbglobal.createDOM(self))
         for i in xrange(1, n):
             sheet = self.__sheets[i]
             sheetNode = sheet.createDOM(self)
@@ -111,10 +111,7 @@ class Supbook(object):
         Unused   = 5
 
     def __init__ (self, sbType=None):
-        self.sbType = sbType
-
-    def getType (self):
-        return self.sbType
+        self.type = sbType
 
 
 class SupbookSelf(Supbook):
@@ -123,9 +120,86 @@ class SupbookSelf(Supbook):
         self.sheetCount = sheetCount
 
 
+class ExtSheetCache(object):
+    """External sheet cache
+
+To store external reference cache from XCT/CRN records."""
+
+    class CellType:
+        Empty   = 0x00
+        Number  = 0x01
+        String  = 0x02
+        Boolean = 0x04
+        Error   = 0x10
+
+    cellTypeNames = {
+        CellType.Empty:   'empty',
+        CellType.Number:  'number',
+        CellType.String:  'string',
+        CellType.Boolean: 'boolean',
+        CellType.Error:   'error'
+    }
+
+    def __init__ (self):
+        self.__rows = {}
+
+    def setValue (self, row, col, celltype, val):
+        if not self.__rows.has_key(row):
+            self.__rows[row] = {}
+        self.__rows[row][col] = (celltype, val)
+
+    def createDOM (self, wb):
+        nd = node.Element("sheet")
+        rows = self.__rows.keys()
+        rows.sort()
+        for row in rows:
+            rowElem = nd.appendElement("row")
+            rowElem.setAttr("id", row)
+            cols = self.__rows[row].keys()
+            cols.sort()
+            for col in cols:
+                cell = self.__rows[row][col]
+                celltype, val = cell[0], cell[1]
+                cellElem = rowElem.appendElement("cell")
+                cellElem.setAttr("col", col)
+                cellElem.setAttr("value", val)
+                cellElem.setAttr("type", globals.getValueOrUnknown(ExtSheetCache.cellTypeNames, celltype))
+
+        return nd
+
 class SupbookExternal(Supbook):
+
     def __init__ (self):
         Supbook.__init__(self, Supbook.Type.External)
+        self.docURL = None
+        self.__sheets = []
+        self.__curSheet = 0
+
+    def appendSheetName (self, name):
+        # the 2nd item is the sheet cache.
+        self.__sheets.append([name, None])
+
+    def setCurrentSheet (self, sheetID):
+        self.__curSheet = sheetID
+
+    def getCurrentSheetCache (self):
+        sheetItem = self.__sheets[self.__curSheet]
+        if sheetItem[1] == None:
+            sheetItem[1] = ExtSheetCache()
+        return sheetItem[1]
+
+    def createDOM (self, wb):
+        nd = node.Element("external-sheet-cache")
+        # 1st char is always 0x1.
+        nd.setAttr("url", globals.encodeName(self.docURL[1:]))
+        for sheet in self.__sheets:
+            if sheet[1] == None:
+                continue
+            elem = sheet[1].createDOM(wb)
+            elem.setAttr("name", sheet[0])
+            nd.appendChild(elem)
+
+        return nd
 
 
 class WorkbookGlobal(SheetBase):
@@ -142,9 +216,15 @@ class WorkbookGlobal(SheetBase):
         self.__supbooks = []
         self.__externSheets = []  # tuple (book ID, sheet begin ID, sheet end ID)
         self.__dbRanges = {}      # key: sheet ID (0-based), value: range tokens
+        self.__lastSupbook = None
 
     def createDOM (self, wb):
         nd = node.Element('workbook-global')
+        for sb in self.__supbooks:
+            if sb.type != Supbook.Type.External:
+                continue
+            nd.appendChild(sb.createDOM(wb))
+
         return nd
 
     def appendSheetData (self, data):
@@ -163,11 +243,15 @@ class WorkbookGlobal(SheetBase):
 
     def appendSupbook (self, sb):
         self.__supbooks.append(sb)
+        self.__lastSupbook = sb
 
     def getSupbook (self, sbID):
         if len(self.__supbooks) <= sbID:
             return None
         return self.__supbooks[sbID]
+
+    def getLastSupbook (self):
+        return self.__lastSupbook
 
     def appendExternSheet (self, bookID, sheetBeginID, sheetEndID):
         self.__externSheets.append((bookID, sheetBeginID, sheetEndID))
