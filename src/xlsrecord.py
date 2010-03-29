@@ -89,10 +89,14 @@ Like parseBytes(), the derived classes must overwrite this method."""
         pass
 
     def output (self):
-        self.parseBytes()
         print("%4.4Xh: %s"%(self.header, "-"*61))
-        for line in self.lines:
-            print("%4.4Xh: %s"%(self.header, line))
+        try:
+            self.parseBytes()
+            for line in self.lines:
+                print("%4.4Xh: %s"%(self.header, line))
+        except:
+            print("%4.4Xh: Error interpreting the record!"%self.header)
+
 
     def appendLine (self, line):
         self.lines.append(line)
@@ -1098,7 +1102,7 @@ class Name(BaseRecordHandler):
                 self.appendLine("  function group: %d"%self.funcGrp)
             else:
                 self.appendLine("  command macro")
-            if isVBMacro:
+            if self.isVBMacro:
                 self.appendLine("  visual basic macro")
             else:
                 self.appendLine("  sheet macro")
