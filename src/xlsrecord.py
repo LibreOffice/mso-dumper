@@ -33,6 +33,14 @@ from globals import debug
 # -------------------------------------------------------------------
 # record handler classes
 
+class Ref8U(object):
+
+    def __init__ (self, strm):
+        self.row1 = strm.readUnsignedInt(2)
+        self.row2 = strm.readUnsignedInt(2)
+        self.col1 = strm.readUnsignedInt(2)
+        self.col2 = strm.readUnsignedInt(2)
+
 class RKAuxData(object):
     """Store auxiliary data for RK value"""
     def __init__ (self):
@@ -473,6 +481,80 @@ class BoundSheet(BaseRecordHandler):
         data.name = self.name
         data.visible = not self.hiddenState
         wbglobal.appendSheetData(data)
+
+
+class CF(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.conditionType = self.readUnsignedInt(1)
+        self.compFunction = self.readUnsignedInt(1)
+        self.sizeFormula1 = self.readUnsignedInt(2)
+        self.sizeFormula2 = self.readUnsignedInt(2)
+        bits = self.readUnsignedInt(6)
+        self.alchNinch          = (bits & 0x000000000001) != 0  # whether the value of dxfalc.alc MUST be ignored.
+        self.alcvNinch          = (bits & 0x000000000002) != 0  # whether the value of dxfalc.alcv MUST be ignored.
+        self.wrapNinch          = (bits & 0x000000000004) != 0  # whether the value of dxfalc.fWrap MUST be ignored.
+        self.trotNinch          = (bits & 0x000000000008) != 0  # whether the value of dxfalc.trot MUST be ignored.
+        self.kintoNinch         = (bits & 0x000000000010) != 0  # whether the value of dxfalc.fJustLast MUST be ignored.
+        self.cIndentNinch       = (bits & 0x000000000020) != 0  # whether the values of dxfalc.cIndent and dxfalc.iIndent MUST be ignored.
+        self.fShrinkNinch       = (bits & 0x000000000040) != 0  # whether the value of dxfalc.fShrinkToFit MUST be ignored.
+        self.fMergeCellNinch    = (bits & 0x000000000080) != 0  # whether the value of dxfalc.fMergeCell MUST be ignored.
+        self.lockedNinch        = (bits & 0x000000000100) != 0  # whether the value of dxfprot.fLocked MUST be ignored.
+        self.hiddenNinch        = (bits & 0x000000000200) != 0  # whether the value of dxfprot.fHidden MUST be ignored.
+        self.glLeftNinch        = (bits & 0x000000000400) != 0  # whether the values of dxfbdr.dgLeft and dxfbdr.icvLeft MUST be ignored .
+        self.glRightNinch       = (bits & 0x000000000800) != 0  # whether the values of dxfbdr.dgRight and dxfbdr.icvRight MUST be ignored.
+        self.glTopNinch         = (bits & 0x000000001000) != 0  # whether the values of dxfbdr.dgTop and dxfbdr.icvTop MUST be ignored.
+        self.glBottomNinch      = (bits & 0x000000002000) != 0  # whether the values of dxfbdr.dgBottom and dxfbdr.icvBottom MUST be ignored.
+        self.glDiagDownNinch    = (bits & 0x000000004000) != 0  # whether the value of dxfbdr.bitDiagDown MUST be ignored.
+        self.glDiagUpNinch      = (bits & 0x000000008000) != 0  # whether the value of dxfbdr.bitDiagUp MUST be ignored.
+        self.flsNinch           = (bits & 0x000000010000) != 0  # whether the value of dxfpat.fls MUST be ignored.
+        self.icvFNinch          = (bits & 0x000000020000) != 0  # whether the value of dxfpat.icvForeground MUST be ignored.
+        self.icvBNinch          = (bits & 0x000000040000) != 0  # whether the value of dxfpat.icvBackground MUST be ignored.
+        self.ifmtNinch          = (bits & 0x000000080000) != 0  # whether the value of dxfnum.ifmt MUST be ignored.
+        self.fIfntNinch         = (bits & 0x000000100000) != 0  # whether the value of dxffntd.ifnt MUST be ignored.
+        self.V                  = (bits & 0x000000200000) != 0  # (unused)
+        self.W                  = (bits & 0x000001C00000) != 0  # (reserved; 3-bits)
+        self.ibitAtrNum         = (bits & 0x000002000000) != 0  # whether number formatting information is part of this structure.
+        self.ibitAtrFnt         = (bits & 0x000004000000) != 0  # whether font information is part of this structure.
+        self.ibitAtrAlc         = (bits & 0x000008000000) != 0  # whether alignment information is part of this structure.
+        self.ibitAtrBdr         = (bits & 0x000010000000) != 0  # whether border formatting information is part of this structure.
+        self.ibitAtrPat         = (bits & 0x000020000000) != 0  # whether pattern information is part of this structure.
+        self.ibitAtrProt        = (bits & 0x000040000000) != 0  # whether rotation information is part of this structure.
+        self.iReadingOrderNinch = (bits & 0x000080000000) != 0  # whether the value of dxfalc.iReadingOrder MUST be ignored.
+        self.fIfmtUser          = (bits & 0x000100000000) != 0  # When set to 1, dxfnum contains a format string.
+        self.f                  = (bits & 0x000200000000) != 0  # (unused)
+        self.fNewBorder         = (bits & 0x000400000000) != 0  # 0=border formats to all cells; 1=border formats to the range outline only
+        self.fZeroInited        = (bits & 0x800000000000) != 0  # whether the value of dxfalc.iReadingOrder MUST be taken into account.
+
+
+    def parseBytse (self):
+        self.__parseBytes()
+
+
+class CondFmt(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.cfCount = self.readUnsignedInt(2)
+        tmp = self.readUnsignedInt(2)
+        self.toughRecalc = (tmp & 0x01) != 0
+        self.recordID = (tmp & 0xFE) / 2
+        self.refBound = Ref8U(self)
+
+        hitRangeCount = self.readUnsignedInt(2)
+        self.hitRanges = []
+        for i in xrange(0, hitRangeCount):
+            self.hitRanges.append(Ref8U(self))
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("record count: %d"%self.cfCount)
+        self.appendLineBoolean("tough recalc", self.toughRecalc)
+        self.appendLine("ID of this record: %d"%self.recordID)
+        self.appendLine("format range: (col=%d,row=%d) - (col=%d,row=%d)"%
+            (self.refBound.col1, self.refBound.row1, self.refBound.col2, self.refBound.row2))
+        for hitRange in self.hitRanges:
+            self.appendLine("hit range: (col=%d,row=%d) - (col=%d,row=%d)"%
+                (hitRange.col1, hitRange.row1, hitRange.col2, hitRange.row2))
 
 
 class Dimensions(BaseRecordHandler):
