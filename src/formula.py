@@ -395,6 +395,13 @@ class _TokenBase(object):
     def getText (self):
         return ''
 
+class _Int(_TokenBase):
+    def parseBytes (self):
+        self.value = self.strm.readUnsignedInt(2)
+
+    def getText (self):
+        return "%d"%self.value
+
 class _Area3d(_TokenBase):
     def parseBytes (self):
         self.xti = self.strm.readUnsignedInt(2)
@@ -805,6 +812,7 @@ class _FuncVar(_TokenBase):
         return _FuncVar.funcTab[self.funcType] + "()"
 
 _tokenMap = {
+    0x1E: _Int,
     0x3B: _Area3d,
     0x5B: _Area3d,
     0x7B: _Area3d,

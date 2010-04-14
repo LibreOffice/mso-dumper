@@ -626,10 +626,18 @@ class CF(BaseRecordHandler):
                 self.appendLine("number format to use: %d (ID)"%self.numFmtID)
 
         # formulas
-        self.appendLine("formula 1 bytes: %s"%globals.getRawBytes(self.formula1, True, False))
-        self.appendLine("formula 2 bytes: %s"%globals.getRawBytes(self.formula2, True, False))
 
-        
+        if len(self.formula1) > 0:
+            self.appendLine("formula 1 (bytes): %s"%globals.getRawBytes(self.formula1, True, False))
+            parser = formula.FormulaParser2(self.header, self.formula1)
+            parser.parse()
+            self.appendLine("formula 1 (displayed): " + parser.getText())
+
+        if len(self.formula2) > 0:
+            self.appendLine("formula 2 (bytes): %s"%globals.getRawBytes(self.formula2, True, False))
+            parser = formula.FormulaParser2(self.header, self.formula2)
+            parser.parse()
+            self.appendLine("formula 2 (displayed): " + parser.getText())       
 
 
 class CondFmt(BaseRecordHandler):
