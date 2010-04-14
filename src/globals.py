@@ -246,6 +246,7 @@ Note the following:
 
     totalByteLen = strm.getCurrentPos() + textLen + extraBytes
     if is16Bit:
+        totalByteLen += textLen # double the text length since each char is 2 bytes.
         text = ''
         for i in xrange(0, textLen):
             text += toTextBytes(strm.readBytes(2)).decode('utf-16')

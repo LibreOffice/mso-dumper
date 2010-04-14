@@ -30,6 +30,8 @@ import globals, formula, xlsmodel, msodraw
 
 from globals import debug
 
+class RecordError(Exception): pass
+
 # -------------------------------------------------------------------
 # record handler classes
 
@@ -488,47 +490,146 @@ class CF(BaseRecordHandler):
     def __parseBytes (self):
         self.conditionType = self.readUnsignedInt(1)
         self.compFunction = self.readUnsignedInt(1)
-        self.sizeFormula1 = self.readUnsignedInt(2)
-        self.sizeFormula2 = self.readUnsignedInt(2)
-        bits = self.readUnsignedInt(6)
-        self.alchNinch          = (bits & 0x000000000001) != 0  # whether the value of dxfalc.alc MUST be ignored.
-        self.alcvNinch          = (bits & 0x000000000002) != 0  # whether the value of dxfalc.alcv MUST be ignored.
-        self.wrapNinch          = (bits & 0x000000000004) != 0  # whether the value of dxfalc.fWrap MUST be ignored.
-        self.trotNinch          = (bits & 0x000000000008) != 0  # whether the value of dxfalc.trot MUST be ignored.
-        self.kintoNinch         = (bits & 0x000000000010) != 0  # whether the value of dxfalc.fJustLast MUST be ignored.
-        self.cIndentNinch       = (bits & 0x000000000020) != 0  # whether the values of dxfalc.cIndent and dxfalc.iIndent MUST be ignored.
-        self.fShrinkNinch       = (bits & 0x000000000040) != 0  # whether the value of dxfalc.fShrinkToFit MUST be ignored.
-        self.fMergeCellNinch    = (bits & 0x000000000080) != 0  # whether the value of dxfalc.fMergeCell MUST be ignored.
-        self.lockedNinch        = (bits & 0x000000000100) != 0  # whether the value of dxfprot.fLocked MUST be ignored.
-        self.hiddenNinch        = (bits & 0x000000000200) != 0  # whether the value of dxfprot.fHidden MUST be ignored.
-        self.glLeftNinch        = (bits & 0x000000000400) != 0  # whether the values of dxfbdr.dgLeft and dxfbdr.icvLeft MUST be ignored .
-        self.glRightNinch       = (bits & 0x000000000800) != 0  # whether the values of dxfbdr.dgRight and dxfbdr.icvRight MUST be ignored.
-        self.glTopNinch         = (bits & 0x000000001000) != 0  # whether the values of dxfbdr.dgTop and dxfbdr.icvTop MUST be ignored.
-        self.glBottomNinch      = (bits & 0x000000002000) != 0  # whether the values of dxfbdr.dgBottom and dxfbdr.icvBottom MUST be ignored.
-        self.glDiagDownNinch    = (bits & 0x000000004000) != 0  # whether the value of dxfbdr.bitDiagDown MUST be ignored.
-        self.glDiagUpNinch      = (bits & 0x000000008000) != 0  # whether the value of dxfbdr.bitDiagUp MUST be ignored.
-        self.flsNinch           = (bits & 0x000000010000) != 0  # whether the value of dxfpat.fls MUST be ignored.
-        self.icvFNinch          = (bits & 0x000000020000) != 0  # whether the value of dxfpat.icvForeground MUST be ignored.
-        self.icvBNinch          = (bits & 0x000000040000) != 0  # whether the value of dxfpat.icvBackground MUST be ignored.
-        self.ifmtNinch          = (bits & 0x000000080000) != 0  # whether the value of dxfnum.ifmt MUST be ignored.
-        self.fIfntNinch         = (bits & 0x000000100000) != 0  # whether the value of dxffntd.ifnt MUST be ignored.
-        self.V                  = (bits & 0x000000200000) != 0  # (unused)
-        self.W                  = (bits & 0x000001C00000) != 0  # (reserved; 3-bits)
-        self.ibitAtrNum         = (bits & 0x000002000000) != 0  # whether number formatting information is part of this structure.
-        self.ibitAtrFnt         = (bits & 0x000004000000) != 0  # whether font information is part of this structure.
-        self.ibitAtrAlc         = (bits & 0x000008000000) != 0  # whether alignment information is part of this structure.
-        self.ibitAtrBdr         = (bits & 0x000010000000) != 0  # whether border formatting information is part of this structure.
-        self.ibitAtrPat         = (bits & 0x000020000000) != 0  # whether pattern information is part of this structure.
-        self.ibitAtrProt        = (bits & 0x000040000000) != 0  # whether rotation information is part of this structure.
-        self.iReadingOrderNinch = (bits & 0x000080000000) != 0  # whether the value of dxfalc.iReadingOrder MUST be ignored.
-        self.fIfmtUser          = (bits & 0x000100000000) != 0  # When set to 1, dxfnum contains a format string.
-        self.f                  = (bits & 0x000200000000) != 0  # (unused)
-        self.fNewBorder         = (bits & 0x000400000000) != 0  # 0=border formats to all cells; 1=border formats to the range outline only
-        self.fZeroInited        = (bits & 0x800000000000) != 0  # whether the value of dxfalc.iReadingOrder MUST be taken into account.
+        sizeFormula1 = self.readUnsignedInt(2)
+        sizeFormula2 = self.readUnsignedInt(2)
+        self.__parseDXFN()
 
+        self.formula1 = self.readBytes(sizeFormula1)
+        self.formula2 = self.readBytes(sizeFormula2)
 
-    def parseBytse (self):
+    def __parseDXFN (self):
+
+        bits = self.readUnsignedInt(4)
+        self.alchNinch          = (bits & 0x00000001) != 0  # whether the value of dxfalc.alc MUST be ignored.
+        self.alcvNinch          = (bits & 0x00000002) != 0  # whether the value of dxfalc.alcv MUST be ignored.
+        self.wrapNinch          = (bits & 0x00000004) != 0  # whether the value of dxfalc.fWrap MUST be ignored.
+        self.trotNinch          = (bits & 0x00000008) != 0  # whether the value of dxfalc.trot MUST be ignored.
+        self.kintoNinch         = (bits & 0x00000010) != 0  # whether the value of dxfalc.fJustLast MUST be ignored.
+        self.cIndentNinch       = (bits & 0x00000020) != 0  # whether the values of dxfalc.cIndent and dxfalc.iIndent MUST be ignored.
+        self.fShrinkNinch       = (bits & 0x00000040) != 0  # whether the value of dxfalc.fShrinkToFit MUST be ignored.
+        self.fMergeCellNinch    = (bits & 0x00000080) != 0  # whether the value of dxfalc.fMergeCell MUST be ignored.
+        self.lockedNinch        = (bits & 0x00000100) != 0  # whether the value of dxfprot.fLocked MUST be ignored.
+        self.hiddenNinch        = (bits & 0x00000200) != 0  # whether the value of dxfprot.fHidden MUST be ignored.
+        self.glLeftNinch        = (bits & 0x00000400) != 0  # whether the values of dxfbdr.dgLeft and dxfbdr.icvLeft MUST be ignored .
+        self.glRightNinch       = (bits & 0x00000800) != 0  # whether the values of dxfbdr.dgRight and dxfbdr.icvRight MUST be ignored.
+        self.glTopNinch         = (bits & 0x00001000) != 0  # whether the values of dxfbdr.dgTop and dxfbdr.icvTop MUST be ignored.
+        self.glBottomNinch      = (bits & 0x00002000) != 0  # whether the values of dxfbdr.dgBottom and dxfbdr.icvBottom MUST be ignored.
+        self.glDiagDownNinch    = (bits & 0x00004000) != 0  # whether the value of dxfbdr.bitDiagDown MUST be ignored.
+        self.glDiagUpNinch      = (bits & 0x00008000) != 0  # whether the value of dxfbdr.bitDiagUp MUST be ignored.
+        self.flsNinch           = (bits & 0x00010000) != 0  # whether the value of dxfpat.fls MUST be ignored.
+        self.icvFNinch          = (bits & 0x00020000) != 0  # whether the value of dxfpat.icvForeground MUST be ignored.
+        self.icvBNinch          = (bits & 0x00040000) != 0  # whether the value of dxfpat.icvBackground MUST be ignored.
+        self.ifmtNinch          = (bits & 0x00080000) != 0  # whether the value of dxfnum.ifmt MUST be ignored.
+        self.fIfntNinch         = (bits & 0x00100000) != 0  # whether the value of dxffntd.ifnt MUST be ignored.
+        self.V                  = (bits & 0x00200000) != 0  # (unused)
+        self.W                  = (bits & 0x01C00000) != 0  # (reserved; 3-bits)
+        self.ibitAtrNum         = (bits & 0x02000000) != 0  # whether number formatting information is part of this structure.
+        self.ibitAtrFnt         = (bits & 0x04000000) != 0  # whether font information is part of this structure.
+        self.ibitAtrAlc         = (bits & 0x08000000) != 0  # whether alignment information is part of this structure.
+        self.ibitAtrBdr         = (bits & 0x10000000) != 0  # whether border formatting information is part of this structure.
+        self.ibitAtrPat         = (bits & 0x20000000) != 0  # whether pattern information is part of this structure.
+        self.ibitAtrProt        = (bits & 0x40000000) != 0  # whether rotation information is part of this structure.
+        self.iReadingOrderNinch = (bits & 0x80000000) != 0  # whether the value of dxfalc.iReadingOrder MUST be ignored.
+        bits = self.readUnsignedInt(2)
+        self.fIfmtUser          = (bits & 0x0001) != 0  # When set to 1, dxfnum contains a format string.
+        self.f                  = (bits & 0x0002) != 0  # (unused)
+        self.fNewBorder         = (bits & 0x0004) != 0  # 0=border formats to all cells; 1=border formats to the range outline only
+        self.fZeroInited        = (bits & 0x8000) != 0  # whether the value of dxfalc.iReadingOrder MUST be taken into account.
+
+        if self.ibitAtrNum:
+            # DXFNum (number format)
+            if self.fIfmtUser:
+                # DXFNumUser (string)
+                sizeDXFNumUser = self.readUnsignedInt(2)
+                strBytes = self.readBytes(sizeDXFNumUser)
+                text, textLen = globals.getRichText(strBytes)
+                self.numFmtName = text
+            else:
+                # DXFNumIFmt
+                self.readUnsignedInt(1) # ignored
+                self.numFmtID = self.readUnsignedInt(1)
+
+        if self.ibitAtrFnt:
+            # DXFFntD (font information)
+            nameLen = self.readUnsignedInt(1)
+            if nameLen > 0:
+                # Note the text length may double in case of a double-byte string.
+                curPos = self.getCurrentPos()
+                self.fontName, nameLen = globals.getRichText(self.readRemainingBytes(), nameLen)
+                self.setCurrentPos(curPos) # Move back to the pre-text position.
+                self.moveForward(realLen)  # Move for exactly the bytes read.
+
+            if 63 - nameLen < 0:
+                raise RecordError
+
+            self.readUnsignedInt(63 - nameLen) # Ignore these bytes.
+            self.fontAttrs = self.readBytes(16) # I'll process this later.
+            self.fontColor = self.readUnsignedInt(4)
+            self.readUnsignedInt(4) # ignored
+            tsNinch = self.readUnsignedInt(4)
+            sssNinch = self.readUnsignedInt(4) != 0
+            ulsNinch = self.readUnsignedInt(4) != 0
+            blsNinch = self.readUnsignedInt(4) != 0
+            self.readUnsignedInt(4) # ignored
+            ich = self.readUnsignedInt(4)
+            cch = self.readUnsignedInt(4)
+            iFnt = self.readUnsignedInt(2)
+
+        if self.ibitAtrAlc:
+            # DXFALC (text alignment properties)
+            self.readUnsignedInt(8)
+
+        if self.ibitAtrBdr:
+            # DXFBdr (border properties)
+            self.readUnsignedInt(8)
+
+        if self.ibitAtrPat:
+            # DXFPat (pattern and colors)
+            self.readUnsignedInt(4)
+
+        if self.ibitAtrProt:
+            # DXFProt (protection attributes)
+            self.readUnsignedInt(2)
+
+    conditionType = {
+        0x01: "use comparison function",
+        0x02: "use 1st formula"
+    }
+
+    compFunction = {
+        0x01: "(v1 <= v2 && (v1 <= cell || cell == v2)) || (v2 < v1 && v2 <= cell && cell <= v1)",
+        0x02: "v1 <= v2 && (cell < v1 || v2 < cell)",
+        0x03: "cell == v1",
+        0x04: "cell != v1",
+        0x05: "v1 < cell",
+        0x06: "cell < v1",
+        0x07: "v1 <= cell",
+        0x08: "cell <= v1"
+    }
+
+    def parseBytes (self):
         self.__parseBytes()
+
+        # condition type
+        condTypeName = globals.getValueOrUnknown(CF.conditionType, self.conditionType)
+        self.appendLine("condition type: %s (0x%2.2X)"%(condTypeName, self.conditionType))
+
+        # comparison function
+        compFuncText = globals.getValueOrUnknown(CF.compFunction, self.compFunction)
+        self.appendLine("comparison function: %s (0x%2.2X)"%(compFuncText, self.compFunction))
+
+        # DXFN structure (TODO: This is not complete)
+        if self.ibitAtrNum:
+            if self.fIfmtUser:
+                self.appendLine("number format to use: %s (name)"%self.numFmtName)
+            else:
+                self.appendLine("number format to use: %d (ID)"%self.numFmtID)
+
+        # formulas
+        self.appendLine("formula 1 bytes: %s"%globals.getRawBytes(self.formula1, True, False))
+        self.appendLine("formula 2 bytes: %s"%globals.getRawBytes(self.formula2, True, False))
+
+        
 
 
 class CondFmt(BaseRecordHandler):
