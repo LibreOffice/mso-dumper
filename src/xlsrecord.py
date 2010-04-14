@@ -665,6 +665,18 @@ class CondFmt(BaseRecordHandler):
             self.appendLine("hit range: (col=%d,row=%d) - (col=%d,row=%d)"%
                 (hitRange.col1, hitRange.row1, hitRange.col2, hitRange.row2))
 
+    def fillModel (self, model):
+        self.__parseBytes()
+        formatRange = formula.CellRange()
+        formatRange.firstCol = self.refBound.col1
+        formatRange.lastCol  = self.refBound.col2
+        formatRange.firstRow = self.refBound.row1
+        formatRange.lastRow  = self.refBound.row2
+        obj = xlsmodel.CondFormat()
+        obj.formatRange = formatRange
+        sheet = model.getCurrentSheet()
+        sheet.setCondFormat(obj)
+
 
 class Dimensions(BaseRecordHandler):
 

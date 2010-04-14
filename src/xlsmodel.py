@@ -318,6 +318,7 @@ class Worksheet(SheetBase):
         self.__rowHeights = Worksheet.OrderedRangeList()
         self.__shapes = []
         self.__lastCell = None
+        self.__condFormats = []
 
     def addShape (self, obj):
         self.__shapes.append(obj)
@@ -355,6 +356,12 @@ class Worksheet(SheetBase):
     def setRowHeight (self, row, height):
         self.__rowHeights.setValue(row, height)
 
+    def setCondFormat (self, condFmt):
+        self.__condFormats.append(condFmt)
+
+    def getLastCondFormat (self):
+        return self.__condFormats[-1]
+
     def createDOM (self, wb):
         nd = node.Element('worksheet')
         nd.setAttr('version', self.version)
@@ -382,7 +389,8 @@ class Worksheet(SheetBase):
         self.__appendAutoFilterNode(wb, nd) # autofilter (if exists)
         self.__appendHiddenRowsNode(wb, nd) # hidden rows
         self.__appendRowHeightNode(wb, nd)  # row heights
-        self.__appendShapesNode(wb, nd) # drawing objects
+        self.__appendShapesNode(wb, nd)     # drawing objects
+        self.__appendCondFormatNode(wb, nd) # conditional formatting
         return nd
 
     def __appendRowHeightNode (self, wb, baseNode):
@@ -447,6 +455,15 @@ class Worksheet(SheetBase):
             objElem.setAttr('offset-begin', "(dx=%d,dy=%d)"%(obj.dx1,obj.dy1))
             objElem.setAttr('offset-end', "(dx=%d,dy=%d)"%(obj.dx2,obj.dy2))
 
+    def __appendCondFormatNode (self, wb, baseNode):
+        n = len(self.__condFormats)
+        if n == 0:
+            return
+
+        elem = baseNode.appendElement('cond-formats')
+        for obj in self.__condFormats:
+            objElem = elem.appendElement('cond-format')
+            objElem.setAttr('format-range', "%s"%obj.formatRange.getName())
 
 
 class CellBase(object):
@@ -528,3 +545,10 @@ class AutoFilterArrow(object):
             eqStr += ',' + self.equalString2
         nd.setAttr('equals', eqStr)
         return nd
+
+
+class CondFormat(object):
+
+    def __init__ (self):
+        self.formatRange = None
+
