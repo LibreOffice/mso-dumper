@@ -196,7 +196,7 @@ recData = {
     0x01B8: ["HLINK", "Hyperlink", xlsrecord.Hyperlink],
     0x01BB: ["SXFDBTYPE", "SQL Datatype Identifier"],
     0x01BC: ["PROT4REVPASS", "Shared Workbook Protection Password"],
-    0x01BE: ["DV", "Data Validation Criteria"],
+    0x01BE: ["DV", "Data Validation Criteria", xlsrecord.Dv],
     0x01C0: ["EXCEL9FILE", "Excel 9 File"],
     0X01C1: ["RECALCID", "Recalc Information"],
     0x0200: ["DIMENSIONS", "Cell Table Size", xlsrecord.Dimensions],

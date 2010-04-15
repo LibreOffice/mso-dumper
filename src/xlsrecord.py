@@ -700,6 +700,31 @@ class Dimensions(BaseRecordHandler):
         sh.setFirstFreeCell(self.colMax, self.rowMax)
 
 
+class Dv(BaseRecordHandler):
+
+    def __parseBytes (self):
+        bits = self.readUnsignedInt(4)
+        self.valType      = (bits & 0x0000000F)
+        self.errStyle     = (bits & 0x00000070) / (2**4)
+        self.strLookup    = (bits & 0x00000080) != 0
+        self.allowBlank   = (bits & 0x00000100) != 0
+        self.noDropDown   = (bits & 0x00000200) != 0
+        self.imeMode      = (bits & 0x0003FC00) / (2**10)    # take 8 bits and shift by 10 bits
+        self.showInputMsg = (bits & 0x00040000) != 0
+        self.showErrorMsg = (bits & 0x00080000) != 0
+        self.operator     = (bits & 0x00F00000) / (2**20)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("type: 0x%1.1X"%self.valType)
+        self.appendLine("error style: 0x%1.1X"%self.errStyle)
+        self.appendLineBoolean("list of valid inputs", self.strLookup)
+        self.appendLineBoolean("allow blank", self.allowBlank)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+
+
 class DVal(BaseRecordHandler):
 
     def __parseBytes (self):
