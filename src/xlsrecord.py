@@ -714,12 +714,62 @@ class Dv(BaseRecordHandler):
         self.showErrorMsg = (bits & 0x00080000) != 0
         self.operator     = (bits & 0x00F00000) / (2**20)
 
+    valueTypes = [
+        'any type of value',               # 0x0 
+        'whole number',                    # 0x1 
+        'decimal value',                   # 0x2 
+        'matches one in a list of values', # 0x3 
+        'date value',                      # 0x4 
+        'time value',                      # 0x5 
+        'text value',                      # 0x6 
+        'custom formula'                   # 0x7 
+    ]
+
+    errorStyles = [
+        'stop icon',       # 0x00
+        'warning icon',    # 0x01
+        'information icon' # 0x02
+    ]
+
+    imeModes = [
+        'No Control',              # 0x00 
+        'On',                      # 0x01 
+        'Off (English)',           # 0x02 
+        'Hiragana',                # 0x04 
+        'wide katakana',           # 0x05 
+        'narrow katakana',         # 0x06 
+        'Full-width alphanumeric', # 0x07 
+        'Half-width alphanumeric', # 0x08 
+        'Full-width hangul',       # 0x09 
+        'Half-width hangul'        # 0x0A 
+    ]
+
+    operatorTypes = [
+        'Between',                  # 0x0
+        'Not Between',              # 0x1
+        'Equals',                   # 0x2
+        'Not Equals',               # 0x3
+        'Greater Than',             # 0x4
+        'Less Than',                # 0x5
+        'Greater Than or Equal To', # 0x6
+        'Less Than or Equal To'     # 0x7
+    ]
+
     def parseBytes (self):
         self.__parseBytes()
-        self.appendLine("type: 0x%1.1X"%self.valType)
-        self.appendLine("error style: 0x%1.1X"%self.errStyle)
+        s = globals.getValueOrUnknown(Dv.valueTypes, self.valType)
+        self.appendLine("type: %s (0x%1.1X)"%(s, self.valType))
+        s = globals.getValueOrUnknown(Dv.errorStyles, self.errStyle)
+        self.appendLine("error style: %s (0x%1.1X)"%(s, self.errStyle))
         self.appendLineBoolean("list of valid inputs", self.strLookup)
         self.appendLineBoolean("allow blank", self.allowBlank)
+        self.appendLineBoolean("suppress down-down in cell", self.noDropDown)
+        s = globals.getValueOrUnknown(Dv.imeModes, self.imeMode)
+        self.appendLine("IME mode: %s (0x%1.1X)"%(s, self.imeMode))
+        self.appendLineBoolean("show input message", self.showInputMsg)
+        self.appendLineBoolean("show error message", self.showErrorMsg)
+        s = globals.getValueOrUnknown(Dv.operatorTypes, self.operator)
+        self.appendLine("operator type: %s (0x%1.1X)"%(s, self.operator))
 
     def fillModel (self, model):
         self.__parseBytes()
