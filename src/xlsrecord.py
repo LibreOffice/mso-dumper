@@ -702,18 +702,6 @@ class Dimensions(BaseRecordHandler):
 
 class Dv(BaseRecordHandler):
 
-    def __parseBytes (self):
-        bits = self.readUnsignedInt(4)
-        self.valType      = (bits & 0x0000000F)
-        self.errStyle     = (bits & 0x00000070) / (2**4)
-        self.strLookup    = (bits & 0x00000080) != 0
-        self.allowBlank   = (bits & 0x00000100) != 0
-        self.noDropDown   = (bits & 0x00000200) != 0
-        self.imeMode      = (bits & 0x0003FC00) / (2**10)    # take 8 bits and shift by 10 bits
-        self.showInputMsg = (bits & 0x00040000) != 0
-        self.showErrorMsg = (bits & 0x00080000) != 0
-        self.operator     = (bits & 0x00F00000) / (2**20)
-
     valueTypes = [
         'any type of value',               # 0x0 
         'whole number',                    # 0x1 
@@ -755,6 +743,30 @@ class Dv(BaseRecordHandler):
         'Less Than or Equal To'     # 0x7
     ]
 
+    def __parseBytes (self):
+        bits = self.readUnsignedInt(4)
+        self.valType      = (bits & 0x0000000F)
+        self.errStyle     = (bits & 0x00000070) / (2**4)
+        self.strLookup    = (bits & 0x00000080) != 0
+        self.allowBlank   = (bits & 0x00000100) != 0
+        self.noDropDown   = (bits & 0x00000200) != 0
+        self.imeMode      = (bits & 0x0003FC00) / (2**10)    # take 8 bits and shift by 10 bits
+        self.showInputMsg = (bits & 0x00040000) != 0
+        self.showErrorMsg = (bits & 0x00080000) != 0
+        self.operator     = (bits & 0x00F00000) / (2**20)
+
+        self.promptTitle = self.readUnicodeString()
+        self.errorTitle = self.readUnicodeString()
+        self.prompt = self.readUnicodeString()
+        self.error = self.readUnicodeString()
+
+        formulaLen = self.readUnsignedInt(2)
+        self.readUnsignedInt(2) # ignore 2 bytes.
+        self.formula1 = self.readBytes(formulaLen)
+        formulaLen = self.readUnsignedInt(2)
+        self.readUnsignedInt(2) # ignore 2 bytes.
+        self.formula2 = self.readBytes(formulaLen)
+
     def parseBytes (self):
         self.__parseBytes()
         s = globals.getValueOrUnknown(Dv.valueTypes, self.valType)
@@ -770,6 +782,22 @@ class Dv(BaseRecordHandler):
         self.appendLineBoolean("show error message", self.showErrorMsg)
         s = globals.getValueOrUnknown(Dv.operatorTypes, self.operator)
         self.appendLine("operator type: %s (0x%1.1X)"%(s, self.operator))
+        self.appendLine("prompt title: %s"%self.promptTitle)
+        self.appendLine("error title: %s"%self.errorTitle)
+        self.appendLine("prompt: %s"%self.prompt)
+        self.appendLine("error: %s"%self.error)
+        self.appendLine("formula 1 (bytes): %s"%globals.getRawBytes(self.formula1, True, False))
+
+        parser = formula.FormulaParser2(self.header, self.formula1)
+        parser.parse()
+        s = parser.getText()
+        self.appendLine("formula 1 (displayed): %s"%s)
+
+        self.appendLine("formula 2 (bytes): %s"%globals.getRawBytes(self.formula2, True, False))
+        parser = formula.FormulaParser2(self.header, self.formula2)
+        parser.parse()
+        s = parser.getText()
+        self.appendLine("formula 2 (displayed): %s"%s)
 
     def fillModel (self, model):
         self.__parseBytes()
