@@ -767,6 +767,16 @@ class Dv(BaseRecordHandler):
         self.readUnsignedInt(2) # ignore 2 bytes.
         self.formula2 = self.readBytes(formulaLen)
 
+        rangeCount = self.readUnsignedInt(2)
+        self.ranges = []
+        for i in xrange(0, rangeCount):
+            obj = formula.CellRange()
+            obj.firstRow = self.readUnsignedInt(2)
+            obj.lastRow = self.readUnsignedInt(2)
+            obj.firstCol = self.readUnsignedInt(2)
+            obj.lastCol = self.readUnsignedInt(2)
+            self.ranges.append(obj)
+
     def parseBytes (self):
         self.__parseBytes()
         s = globals.getValueOrUnknown(Dv.valueTypes, self.valType)
@@ -798,6 +808,9 @@ class Dv(BaseRecordHandler):
         parser.parse()
         s = parser.getText()
         self.appendLine("formula 2 (displayed): %s"%s)
+
+        for rng in self.ranges:
+            self.appendLine("range: %s"%rng.getName())
 
     def fillModel (self, model):
         self.__parseBytes()
