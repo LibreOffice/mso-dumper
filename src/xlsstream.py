@@ -189,7 +189,7 @@ recData = {
     0x01AF: ["PROT4REV", "Shared Workbook Protection Flag"],
     0x01B0: ["CONDFMT", "Conditional Formatting Range Information", xlsrecord.CondFmt],
     0x01B1: ["CF", "Conditional Formatting Conditions", xlsrecord.CF],
-    0x01B2: ["DVAL", "Data Validation Information"],
+    0x01B2: ["DVAL", "Data Validation Information", xlsrecord.DVal],
     0x01B5: ["DCONBIN", "Data Consolidation Information"],
     0x01B6: ["TXO", "Text Object"],
     0x01B7: ["REFRESHALL", "Refresh Flag", xlsrecord.RefreshAll],

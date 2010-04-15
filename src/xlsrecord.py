@@ -700,6 +700,30 @@ class Dimensions(BaseRecordHandler):
         sh.setFirstFreeCell(self.colMax, self.rowMax)
 
 
+class DVal(BaseRecordHandler):
+
+    def __parseBytes (self):
+        bits = self.readUnsignedInt(2)
+        self.winClosed = (bits & 0x0001) != 0
+        self.left = self.readUnsignedInt(4)
+        self.top = self.readUnsignedInt(4)
+        self.objID = self.readSignedInt(4)
+        self.dvCount = self.readUnsignedInt(4)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineBoolean("window was closed", self.winClosed)
+        self.appendLine("window position: (x=%d,y=%d)"%(self.left, self.top))
+        s = ''
+        if self.objID == -1:
+            s = '(no drop-down displayed)'
+        self.appendLine("drop-down button object ID: %d %s"%(self.objID, s))
+        self.appendLine("number of DV records: %d"%self.dvCount)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+
+
 class FilePass(BaseRecordHandler):
 
     def parseBytes (self):
