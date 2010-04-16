@@ -763,9 +763,20 @@ class Dv(BaseRecordHandler):
         formulaLen = self.readUnsignedInt(2)
         self.readUnsignedInt(2) # ignore 2 bytes.
         self.formula1 = self.readBytes(formulaLen)
+        self.strFormula1 = ''
+        if len(self.formula1) > 0:
+            parser = formula.FormulaParser2(self.header, self.formula1)
+            parser.parse()
+            self.strFormula1 = parser.getText()
+
         formulaLen = self.readUnsignedInt(2)
         self.readUnsignedInt(2) # ignore 2 bytes.
         self.formula2 = self.readBytes(formulaLen)
+        self.strFormula2 = ''
+        if len(self.formula2) > 0:
+            parser = formula.FormulaParser2(self.header, self.formula2)
+            parser.parse()
+            self.strFormula2 = parser.getText()
 
         rangeCount = self.readUnsignedInt(2)
         self.ranges = []
@@ -797,24 +808,32 @@ class Dv(BaseRecordHandler):
         self.appendLine("prompt: %s"%self.prompt)
         self.appendLine("error: %s"%self.error)
         self.appendLine("formula 1 (bytes): %s"%globals.getRawBytes(self.formula1, True, False))
-
-        parser = formula.FormulaParser2(self.header, self.formula1)
-        parser.parse()
-        s = parser.getText()
-        self.appendLine("formula 1 (displayed): %s"%s)
+        self.appendLine("formula 1 (displayed): %s"%self.strFormula1)
 
         self.appendLine("formula 2 (bytes): %s"%globals.getRawBytes(self.formula2, True, False))
-        parser = formula.FormulaParser2(self.header, self.formula2)
-        parser.parse()
-        s = parser.getText()
-        self.appendLine("formula 2 (displayed): %s"%s)
+        self.appendLine("formula 2 (displayed): %s"%self.strFormula2)
 
         for rng in self.ranges:
             self.appendLine("range: %s"%rng.getName())
 
     def fillModel (self, model):
         self.__parseBytes()
-
+        obj = xlsmodel.DataValidation(self.ranges)
+        obj.valueType = globals.getValueOrUnknown(Dv.valueTypes, self.valType)
+        obj.errorStyle = globals.getValueOrUnknown(Dv.errorStyles, self.errStyle)
+        obj.operator = globals.getValueOrUnknown(Dv.operatorTypes, self.operator)
+        obj.showInputMsg = self.showInputMsg
+        obj.showErrorMsg = self.showErrorMsg
+        obj.strLookup = self.strLookup
+        obj.allowBlank = self.allowBlank
+        obj.prompt = self.prompt
+        obj.promptTitle = self.promptTitle
+        obj.error = self.error
+        obj.errorTitle = self.errorTitle
+        obj.formula1 = self.strFormula1
+        obj.formula2 = self.strFormula2
+        sheet = model.getCurrentSheet()
+        sheet.setDataValidation(obj)
 
 class DVal(BaseRecordHandler):
 

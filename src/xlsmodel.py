@@ -319,6 +319,8 @@ class Worksheet(SheetBase):
         self.__shapes = []
         self.__lastCell = None
         self.__condFormats = []
+        self.__dataValidations = []
+
 
     def addShape (self, obj):
         self.__shapes.append(obj)
@@ -362,6 +364,9 @@ class Worksheet(SheetBase):
     def getLastCondFormat (self):
         return self.__condFormats[-1]
 
+    def setDataValidation (self, dv):
+        self.__dataValidations.append(dv)
+
     def createDOM (self, wb):
         nd = node.Element('worksheet')
         nd.setAttr('version', self.version)
@@ -391,6 +396,7 @@ class Worksheet(SheetBase):
         self.__appendRowHeightNode(wb, nd)  # row heights
         self.__appendShapesNode(wb, nd)     # drawing objects
         self.__appendCondFormatNode(wb, nd) # conditional formatting
+        self.__appendDataValidationNode(wb, nd) # conditional formatting
         return nd
 
     def __appendRowHeightNode (self, wb, baseNode):
@@ -464,6 +470,16 @@ class Worksheet(SheetBase):
         for obj in self.__condFormats:
             objElem = elem.appendElement('cond-format')
             objElem.setAttr('format-range', "%s"%obj.formatRange.getName())
+
+    def __appendDataValidationNode (self, wb, baseNode):
+        n = len(self.__dataValidations)
+        if n == 0:
+            return
+
+        elem = baseNode.appendElement('data-validations')
+        for obj in self.__dataValidations:
+            child = obj.createDOM(wb)
+            elem.appendChild(child)
 
 
 class CellBase(object):
@@ -551,4 +567,61 @@ class CondFormat(object):
 
     def __init__ (self):
         self.formatRange = None
+
+
+class DataValidation(object):
+
+    def __init__ (self, ranges):
+        self.ranges = ranges  # list of formula.CellRange
+        self.valueType = None
+        self.errorStyle = None
+        self.operator = None
+        self.strLookup = None
+        self.allowBlank = None
+        self.showInputMsg = None
+        self.showErrorMsg = None
+
+        self.prompt = None
+        self.promptTitle = None
+        self.error = None
+        self.errorTitle = None
+
+        self.formula1 = None
+        self.formula2 = None
+
+    def createDOM (self, wb):
+        nd = node.Element("data-validation")
+        nd.setAttr("value-type", self.valueType)
+        nd.setAttr("operator", self.operator)
+        nd.setAttr("value-list", self.strLookup)
+        nd.setAttr("allow-blank", self.allowBlank)
+        nd.setAttr("show-input-message", self.showInputMsg)
+        nd.setAttr("show-error-message", self.showErrorMsg)
+        for rng in self.ranges:
+            s = rng.getName()
+            elem = nd.appendElement("range")
+            elem.setAttr("address", s)
+
+        if self.prompt != None:
+            elem = nd.appendElement("prompt")
+            elem.setAttr("text", self.prompt)
+            elem.setAttr("title", self.promptTitle)
+
+        if self.error != None:
+            elem = nd.appendElement("error")
+            elem.setAttr("style", self.errorStyle)
+            elem.setAttr("text", self.error)
+            elem.setAttr("title", self.errorTitle)
+
+        if self.formula1 != None:
+            elem = nd.appendElement("formula")
+            elem.setAttr("index", 1)
+            elem.setAttr("value", self.formula1)
+
+        if self.formula2 != None:
+            elem = nd.appendElement("formula")
+            elem.setAttr("index", 2)
+            elem.setAttr("value", self.formula2)
+
+        return nd
 
