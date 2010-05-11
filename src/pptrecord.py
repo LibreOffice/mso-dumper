@@ -645,8 +645,11 @@ class TextRulerAtom(BaseRecordHandler):
             self.appendLine("default tab size %d"%tabSize)
 
         if rulerMask & 0x0004:
-            self.appendLine("reading tabStops, not sure that this will work")
-            self.readRecord(self)
+            numTabStops = self.readUnsignedInt(2)
+            for i in xrange(0, numTabStops):
+                tabDistance = self.readUnsignedInt(2)
+                tabAlignment = self.readUnsignedInt(2)
+                self.appendParaProp("para tab stop %d: distance %d, align %4.4Xh"%(i, tabDistance, tabAlignment))
 
         if rulerMask & 0x0008:
             leftMargin = self.readUnsignedInt(2)
