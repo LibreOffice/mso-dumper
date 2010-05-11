@@ -629,6 +629,65 @@ class AnimReference(BaseRecordHandler):
         self.refTypeHandler[refType](self,refType,refMode)
 
 
+class TextRulerAtom(BaseRecordHandler):
+    """Text Ruler Atom."""
+    def parseBytes (self):
+        rulerMask = self.readUnsignedInt(4)
+
+        self.appendLine("ruler mask %Xh"%rulerMask)
+
+        if rulerMask & 0x0002:
+            levels = self.readUnsignedInt(2)
+            self.appendLine("number of indent levels %d"%levels)
+
+        if rulerMask & 0x0001:
+            tabSize = self.readUnsignedInt(2)
+            self.appendLine("default tab size %d"%tabSize)
+
+        if rulerMask & 0x0004:
+            self.appendLine("reading tabStops, not sure that this will work")
+            self.readRecord(self)
+
+        if rulerMask & 0x0008:
+            leftMargin = self.readUnsignedInt(2)
+            self.appendLine("leftMargin0 %d"%leftMargin)
+
+        if rulerMask & 0x0100:
+            leftIndent = self.readUnsignedInt(2)
+            self.appendLine("leftIndent0 %d"%leftIndent)
+
+        if rulerMask & 0x0010:
+            leftMargin = self.readUnsignedInt(2)
+            self.appendLine("leftMargin1 %d"%leftMargin)
+
+        if rulerMask & 0x0200:
+            leftIndent = self.readUnsignedInt(2)
+            self.appendLine("leftIndent1 %d"%leftIndent)
+
+        if rulerMask & 0x0020:
+            leftMargin = self.readUnsignedInt(2)
+            self.appendLine("leftMargin2 %d"%leftMargin)
+
+        if rulerMask & 0x0400:
+            leftIndent = self.readUnsignedInt(2)
+            self.appendLine("leftIndent2 %d"%leftIndent)
+
+        if rulerMask & 0x0040:
+            leftMargin = self.readUnsignedInt(2)
+            self.appendLine("leftMargin3 %d"%leftMargin)
+
+        if rulerMask & 0x0800:
+            leftIndent = self.readUnsignedInt(2)
+            self.appendLine("leftIndent3 %d"%leftIndent)
+
+        if rulerMask & 0x0080:
+            leftMargin = self.readUnsignedInt(2)
+            self.appendLine("leftMargin4 %d"%leftMargin)
+
+        if rulerMask & 0x1000:
+            leftIndent = self.readUnsignedInt(2)
+            self.appendLine("leftIndent4 %d"%leftIndent)
+
 # -------------------------------------------------------------------
 # special record handlers: text style properties
 

@@ -286,7 +286,7 @@ recData = {
  4003:  ["DFF_PST_TxMasterStyleAtom", pptrecord.MasterTextStyles],
  4004:  ["DFF_PST_TxCFStyleAtom"],
  4005:  ["DFF_PST_TxPFStyleAtom"],
- 4006:  ["DFF_PST_TextRulerAtom"],
+ 4006:  ["DFF_PST_TextRulerAtom", pptrecord.TextRulerAtom],
  4007:  ["DFF_PST_TextBookmarkAtom"],
  4008:  ["DFF_PST_TextBytesAtom", pptrecord.ShapeString],
  4009:  ["DFF_PST_TxSIStyleAtom"],
