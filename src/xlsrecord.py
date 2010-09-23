@@ -1973,11 +1973,35 @@ class XF(BaseRecordHandler):
         'right-to-left'  # READING_ORDER_RTL     0x02
     ]
 
-    class CellXF(object):
+    borderStyles = [
+        ['NONE','No border'],                             # 0x0000
+        ['THIN','Thin line'],                             # 0x0001
+        ['MEDIUM','Medium line'],                         # 0x0002
+        ['DASHED','Dashed line'],                         # 0x0003
+        ['DOTTED','Dotted line'],                         # 0x0004
+        ['THICK','Thick line'],                           # 0x0005
+        ['DOUBLE','Double line'],                         # 0x0006
+        ['HAIR','Hairline'],                              # 0x0007
+        ['MEDIUMDASHED','Medium dashed line'],            # 0x0008
+        ['DASHDOT','Dash-dot line'],                      # 0x0009
+        ['MEDIUMDASHDOT','Medium dash-dot line'],         # 0x000A
+        ['DASHDOTDOT','Dash-dot-dot line'],               # 0x000B
+        ['MEDIUMDASHDOTDOT','Medium dash-dot-dot line'],  # 0x000C
+        ['SLANTDASHDOT','Slanted dash-dot-dot line']      # 0x000D
+    ]
+
+    @staticmethod
+    def printBorderStyle (val):
+        if val >= len(XF.borderStyles):
+            return '(unknown)'
+
+        return "%s - %s (0x%2.2X)"%(XF.borderStyles[val][0], XF.borderStyles[val][1], val)
+
+    class XFBase(object):
         def __init__ (self):
             pass
 
-        def parseBytes (self, strm):
+        def parseHeaderBytes (self, strm):
             byte = strm.readUnsignedInt(1)
             self.horAlign = (byte & 0x07)
             self.wrapText = (byte & 0x08) != 0
@@ -1988,6 +2012,21 @@ class XF(BaseRecordHandler):
             self.indentLevel = (byte & 0x0F)
             self.shrinkToFit = (byte & 0x10) != 0
             self.readOrder   = (byte & 0xC0) / (2**6)
+
+        def parseBorderStyles (self, strm):
+            byte = strm.readUnsignedInt(1)
+            self.leftBdrStyle   = (byte & 0x0F)
+            self.rightBdrStyle  = (byte & 0xF0) / (2**4)
+            byte = strm.readUnsignedInt(1)
+            self.topBdrStyle    = (byte & 0x0F)
+            self.bottomBdrStyle = (byte & 0xF0) / (2**4)
+
+    class CellXF(XFBase):
+        def __init__ (self):
+            pass
+
+        def parseBytes (self, strm):
+            self.parseHeaderBytes(strm)
             byte = strm.readUnsignedInt(1)
             self.atrNum  = (byte & 0x04) != 0
             self.atrFnt  = (byte & 0x08) != 0
@@ -1995,13 +2034,21 @@ class XF(BaseRecordHandler):
             self.atrBdr  = (byte & 0x20) != 0
             self.atrPat  = (byte & 0x40) != 0
             self.atrProt = (byte & 0x80) != 0
+            self.parseBorderStyles(strm)
 
-    class CellStyleXF(object):
+    class CellStyleXF(XFBase):
         def __init__ (self):
             pass
 
         def parseBytes (self, strm):
-            pass
+            self.parseHeaderBytes(strm)
+            strm.readUnsignedInt(1) # skip 1 byte.
+            self.parseBorderStyles(strm)
+            byte = strm.readUnsignedInt(2)
+            self.leftColor  = (byte & 0x007F)           # 7-bits
+            self.rightColor = (byte & 0x0780) / (2**7)  # 7-bits
+            self.diagBorder = (byte & 0xC000) / (2**14) # 2-bits
+
 
     def __parseBytes (self):
         self.fontId = self.readUnsignedInt(2)
@@ -2036,37 +2083,47 @@ class XF(BaseRecordHandler):
         if self.style:
             s = "cell style XF"
         self.appendLine("stored data type: " + s)
+
+        # common data between cell XF and cell style XF
+
+        # Horizontal alignment
+        horAlignName = globals.getValueOrUnknown(
+            XF.horAlignTypes[:-1], self.data.horAlign, 'not specified')
+        self.appendLine("horizontal alignment: %s (0x%2.2X)"%(horAlignName, self.data.horAlign))
+        self.appendLineBoolean("distributed", self.data.distributed)
+
+        self.appendLineBoolean("wrap text", self.data.wrapText)
+
+        # Vertical alignment
+        verAlignName = globals.getValueOrUnknown(
+            XF.vertAlignTypes, self.data.verAlign, 'unknown')
+        self.appendLine("vertical alignment: %s (0x%2.2X)"%(verAlignName, self.data.verAlign))
+
+        # Text rotation
+        s = "text rotation: "
+        if self.data.textRotation == 0xFF:
+            s += "vertical"
+        elif self.data.textRotation >= 0 and self.data.textRotation <= 90:
+            s += "%d degrees (counterclockwise)"%self.data.textRotation
+        elif self.data.textRotation > 90 and self.data.textRotation <= 180:
+            s += "%d degrees (clockwise)"%(self.data.textRotation - 90)
+        self.appendLine(s)
+
+        self.appendLine("indent level: %d"%self.data.indentLevel)
+        self.appendLineBoolean("shrink to fit", self.data.shrinkToFit)
+        self.appendLine("reading order: %s"%globals.getValueOrUnknown(XF.readOrderTypes, self.data.readOrder))
+
+        self.appendLine("border style (l): %s"%XF.printBorderStyle(self.data.leftBdrStyle))
+        self.appendLine("border style (r): %s"%XF.printBorderStyle(self.data.rightBdrStyle))
+        self.appendLine("border style (t): %s"%XF.printBorderStyle(self.data.topBdrStyle))
+        self.appendLine("border style (b): %s"%XF.printBorderStyle(self.data.bottomBdrStyle))
+
         if self.style:
+            # cell style XF data
             pass
         else:
             # cell XF data
-
-            # Horizontal alignment
-            horAlignName = globals.getValueOrUnknown(
-                XF.horAlignTypes[:-1], self.data.horAlign, 'not specified')
-            self.appendLine("horizontal alignment: %s (0x%2.2X)"%(horAlignName, self.data.horAlign))
-            self.appendLineBoolean("distributed", self.data.distributed)
-
-            self.appendLineBoolean("wrap text", self.data.wrapText)
-
-            # Vertical alignment
-            verAlignName = globals.getValueOrUnknown(
-                XF.vertAlignTypes, self.data.verAlign, 'unknown')
-            self.appendLine("vertical alignment: %s (0x%2.2X)"%(verAlignName, self.data.verAlign))
-
-            # Text rotation
-            s = "text rotation: "
-            if self.data.textRotation == 0xFF:
-                s += "vertical"
-            elif self.data.textRotation >= 0 and self.data.textRotation <= 90:
-                s += "%d degrees (counterclockwise)"%self.data.textRotation
-            elif self.data.textRotation > 90 and self.data.textRotation <= 180:
-                s += "%d degrees (clockwise)"%(self.data.textRotation - 90)
-            self.appendLine(s)
-
-            self.appendLine("indent level: %d"%self.data.indentLevel)
-            self.appendLineBoolean("shrink to fit", self.data.shrinkToFit)
-            self.appendLine("reading order: %s"%globals.getValueOrUnknown(XF.readOrderTypes, self.data.readOrder))
+            pass
 
 
 class FeatureHeader(BaseRecordHandler):
