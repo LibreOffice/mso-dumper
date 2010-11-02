@@ -1527,6 +1527,8 @@ class Name(BaseRecordHandler):
         o.parse()
         formulaText = o.getText()
         self.appendLine("name: %s"%globals.encodeName(self.name))
+
+        # is this name global or sheet-local?
         s = "global or local: "
         if self.sheetId == 0:
             s += "global"
