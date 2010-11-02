@@ -1472,36 +1472,40 @@ class Name(BaseRecordHandler):
             self.appendLine("  standard name")
 
         if self.isComplFormula:
-            self.appendLine("  complex formula")
+            self.appendLine("  complex formula - can return an array")
         else:
             self.appendLine("  simple formula")
         if self.isBuiltinName:
             self.appendLine("  built-in name")
         else:
             self.appendLine("  user-defined name")
-        if self.isBinary:
-            self.appendLine("  binary data")
-        else:
-            self.appendLine("  formula definition")
+
+        self.appendLineBoolean("  published", self.isPublished)
+        self.appendLineBoolean("  workbook parameter", self.isWorkbookParam)
+
 
     def __parseBytes (self):
         flag = self.readUnsignedInt(2)
-        self.isHidden       = (flag & 0x0001) != 0
-        self.isFuncMacro    = (flag & 0x0002) != 0
-        self.isVBMacro      = (flag & 0x0004) != 0
-        self.isMacroName    = (flag & 0x0008) != 0
-        self.isComplFormula = (flag & 0x0010) != 0
-        self.isBuiltinName  = (flag & 0x0020) != 0
-        self.funcGrp        = (flag & 0x0FC0) / 64
-        self.isBinary       = (flag & 0x1000) != 0
+        self.isHidden        = (flag & 0x0001) != 0
+        self.isFuncMacro     = (flag & 0x0002) != 0
+        self.isVBMacro       = (flag & 0x0004) != 0
+        self.isMacroName     = (flag & 0x0008) != 0
+        self.isComplFormula  = (flag & 0x0010) != 0
+        self.isBuiltinName   = (flag & 0x0020) != 0
+        self.funcGrp         = (flag & 0x0FC0) / 64
+        reserved             = (flag & 0x1000) != 0
+        self.isPublished     = (flag & 0x2000) != 0
+        self.isWorkbookParam = (flag & 0x4000) != 0
+        reserved             = (flag & 0x8000) != 0
 
         self.keyShortCut      = self.readUnsignedInt(1)
         nameLen               = self.readUnsignedInt(1)
         self.formulaLen       = self.readUnsignedInt(2)
-        self.localNameSheetId = self.readUnsignedInt(2)
+        self.readUnsignedInt(2) # 2-bytes reserved
+
         # 1-based index into the sheets in the current book, where the list is
         # arranged by the visible order of the tabs.
-        self.sheetId          = self.readUnsignedInt(2) 
+        self.sheetId = self.readUnsignedInt(2)
 
         # these optional texts may come after the formula token bytes.
         # NOTE: [MS-XLS] spec says these bytes are reserved and to be ignored.
@@ -1523,13 +1527,19 @@ class Name(BaseRecordHandler):
         o.parse()
         formulaText = o.getText()
         self.appendLine("name: %s"%globals.encodeName(self.name))
+        s = "global or local: "
+        if self.sheetId == 0:
+            s += "global"
+        else:
+            s += "local (1-based sheet ID = %d)"%self.sheetId
+        self.appendLine(s)
+
         if self.isBuiltinName:
             self.appendLine("built-in name: %s"%Name.getBuiltInName(self.name))
 
         self.appendLine("function category: %s (%d)"%(Name.getFuncCategory(self.funcGrp), self.funcGrp))
         self.__writeOptionFlags()
 
-        self.appendLine("sheet ID: %d"%self.sheetId)
 #       self.appendLine("menu text length: %d"%self.menuTextLen)
 #       self.appendLine("description length: %d"%self.descTextLen)
 #       self.appendLine("help tip text length: %d"%self.helpTextLen)
