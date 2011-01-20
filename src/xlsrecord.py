@@ -2201,6 +2201,24 @@ class FeatureHeader(BaseRecordHandler):
 # -------------------------------------------------------------------
 # SX - Pivot Table
 
+class DConName(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.rangeName = self.readUnicodeString()
+        self.flag = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("defined name: %s"%self.rangeName)
+        if self.flag == 0:
+            self.appendMultiLine("This defined name has a workbook scope and is contained in this file.")
+        else:
+            # The additional bytes contain info about the workbook and
+            # worksheet where the defined name is located.  We don't handle
+            # this yet.
+            pass
+
+
 class SXViewEx9(BaseRecordHandler):
 
     def parseBytes (self):

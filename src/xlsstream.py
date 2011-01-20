@@ -73,7 +73,7 @@ recData = {
     0x004D: ["PLS", "Environment-Specific Print Record"],
     0x0050: ["DCON", "Data Consolidation Information"],
     0x0051: ["DCONREF", "Data Consolidation References"],
-    0x0052: ["DCONNAME", "Data Consolidation Named References"],
+    0x0052: ["DCONNAME", "Data Consolidation Named References", xlsrecord.DConName],
     0x0055: ["DEFCOLWIDTH", "Default Width for Columns", xlsrecord.DefColWidth],
     0x0059: ["XCT", "CRN Record Count", xlsrecord.Xct],
     0x005A: ["CRN", "Nonresident Operands", xlsrecord.Crn],
