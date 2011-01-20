@@ -35,6 +35,23 @@ class RecordError(Exception): pass
 # -------------------------------------------------------------------
 # record handler classes
 
+class RefU(object):
+
+    def __init__ (self, strm):
+        self.row1 = strm.readUnsignedInt(2)
+        self.row2 = strm.readUnsignedInt(2)
+        self.col1 = strm.readUnsignedInt(1)
+        self.col2 = strm.readUnsignedInt(1)
+
+    def toString (self):
+        rge = formula.CellRange()
+        rge.firstRow = self.row1
+        rge.firstCol = self.col1
+        rge.lastRow = self.row2
+        rge.lastCol = self.col2
+        return rge.toString()
+
+
 class Ref8U(object):
 
     def __init__ (self, strm):
@@ -42,6 +59,7 @@ class Ref8U(object):
         self.row2 = strm.readUnsignedInt(2)
         self.col1 = strm.readUnsignedInt(2)
         self.col2 = strm.readUnsignedInt(2)
+
 
 class RKAuxData(object):
     """Store auxiliary data for RK value"""
@@ -2217,6 +2235,20 @@ class DConName(BaseRecordHandler):
             # worksheet where the defined name is located.  We don't handle
             # this yet.
             pass
+
+class DConRef(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.ref = RefU(self)
+        textLen = self.readUnsignedInt(2)
+        bytes = self.bytes[self.pos:]
+        text, byteLen = globals.getRichText(bytes, textLen)
+        self.sheetName = globals.encodeName(text)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("range: %s"%self.ref.toString())
+        self.appendLine("sheet name: %s"%self.sheetName)
 
 
 class SXViewEx9(BaseRecordHandler):

@@ -53,6 +53,9 @@ class CellAddress(object):
         self.isColRelative = colRel
         self.isRowRelative = rowRel
 
+    def toString (self):
+        return self.getName()
+
     def getName (self):
         colName = toAbsName(toColName(self.col), self.isColRelative)
         rowName = toAbsName("%d"%(self.row+1),   self.isRowRelative)
@@ -68,6 +71,9 @@ class CellRange(object):
         self.isLastRowRelative = False
         self.isFirstColRelative = False
         self.isLastColRelative = False
+
+    def toString (self):
+        return self.getName()
 
     def getName (self):
         col1 = toColName(self.firstCol)
