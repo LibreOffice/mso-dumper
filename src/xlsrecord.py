@@ -908,6 +908,18 @@ class FilterMode(BaseRecordHandler):
         self.appendMultiLine("NOTE: The presence of this record indicates that the sheet has a filtered list.")
 
 
+class Format(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.numfmtID = self.readUnsignedInt(2)
+        self.code = self.readUnicodeString()
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("index: %d"%self.numfmtID)
+        self.appendLine("code: %s"%self.code)
+
+
 class Formula(BaseRecordHandler):
 
     def __parseBytes (self):
