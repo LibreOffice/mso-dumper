@@ -917,7 +917,7 @@ class Format(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         self.appendLine("index: %d"%self.numfmtID)
-        self.appendLine("code: %s"%self.code)
+        self.appendLine("code: %s"%globals.encodeName(self.code))
 
 
 class Formula(BaseRecordHandler):
