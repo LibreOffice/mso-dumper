@@ -3277,39 +3277,54 @@ class CHLine(BaseRecordHandler):
 class CHSourceLink(BaseRecordHandler):
 
     destTypes = ['title', 'values', 'category', 'bubbles']
-    linkTypes = ['default', 'directly', 'worksheet']
+    linkTypes = ['auto', 'direct value', 'reference']
 
-    DEST_TITLE    = 0;
-    DEST_VALUES   = 1;
-    DEST_CATEGORY = 2;
-    DEST_BUBBLES  = 3;
+    DEST_TITLE    = 0
+    DEST_VALUES   = 1
+    DEST_CATEGORY = 2
+    DEST_BUBBLES  = 3
 
-    LINK_DEFAULT   = 0;
-    LINK_DIRECTLY  = 1;
-    LINK_WORKSHEET = 2;
+    # Data source type
+    class DataSourceType:
+        Auto      = 0 # category name, series name or bubble size that was automatically generated.
+        Value     = 1 # text or value as specified by the formula field
+        Reference = 2 # value from a range of cells as specified by the formula field
+
+    def __parseBytes (self):
+        self.destType = self.readUnsignedInt(1)
+        self.linkType = self.readUnsignedInt(1)
+        flags    = self.readUnsignedInt(2)
+        self.numFmt   = self.readUnsignedInt(2)
+        
+        self.destName = 'unknown'
+        if self.destType < len(CHSourceLink.destTypes):
+            self.destName = CHSourceLink.destTypes[self.destType]
+
+        self.linkName = 'unknown'
+        if self.linkType < len(CHSourceLink.linkTypes):
+            self.linkName = CHSourceLink.linkTypes[self.linkType]
+
+        if self.linkType == CHSourceLink.DataSourceType.Reference:
+            lenToken = self.readUnsignedInt(2)
+            self.tokens = self.readBytes(lenToken)
+
+        self.useNumFormat = (flags & 0x0001) != 0
 
     def parseBytes (self):
-        destType = self.readUnsignedInt(1)
-        linkType = self.readUnsignedInt(1)
-        flags    = self.readUnsignedInt(2)
-        numFmt   = self.readUnsignedInt(2)
+        self.__parseBytes()
         
-        destName = 'unknown'
-        if destType < len(CHSourceLink.destTypes):
-            destName = CHSourceLink.destTypes[destType]
+        self.appendLine("destination type: %s"%self.destName)
+        self.appendLine("link type: %s"%self.linkName)
 
-        linkName = 'unknown'
-        if linkType < len(CHSourceLink.linkTypes):
-            linkName = CHSourceLink.linkTypes[linkType]
-
-        self.appendLine("destination type: %s"%destName)
-        self.appendLine("link type: %s"%linkName)
-
-        if linkType == CHSourceLink.LINK_WORKSHEET:
+        if self.linkType == CHSourceLink.DataSourceType.Reference:
             # external reference.  Read the formula tokens.
-            lenToken = self.readUnsignedInt(2)
-            tokens = self.readBytes(lenToken)
-            self.appendLine("formula tokens: %s"%globals.getRawBytes(tokens,True,False))
+            self.appendLine("formula tokens: %s"%globals.getRawBytes(self.tokens,True,False))
+            parser = formula.FormulaParser2(self.header, self.tokens)
+            parser.parse()
+            self.appendLine("formula: %s"%parser.getText())
+
+        if self.useNumFormat:
+            self.appendLine("number format: %d"%self.numFmt)
 
 
 class MSODrawing(BaseRecordHandler):
