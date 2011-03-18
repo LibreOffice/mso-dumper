@@ -383,7 +383,7 @@ class TokenType:
     Area3d = 0
     Unknown = 9999
 
-class _TokenBase(object):
+class PtgBase(object):
     def __init__ (self, strm, opcode1, opcode2=None):
         self.opcode1 = opcode1
         self.opcode2 = opcode2
@@ -401,14 +401,14 @@ class _TokenBase(object):
     def getText (self):
         return ''
 
-class _Int(_TokenBase):
+class _Int(PtgBase):
     def parseBytes (self):
         self.value = self.strm.readUnsignedInt(2)
 
     def getText (self):
         return "%d"%self.value
 
-class _Area3d(_TokenBase):
+class _Area3d(PtgBase):
     def parseBytes (self):
         self.xti = self.strm.readUnsignedInt(2)
         self.cellRange = parseCellRangeAddress(self.strm.readBytes(8))
@@ -417,7 +417,7 @@ class _Area3d(_TokenBase):
     def getText (self):
         return "(xti=%d,"%self.xti + self.cellRange.getName() + ")"
 
-class PtgRef3d(_TokenBase):
+class PtgRef3d(PtgBase):
     def parseBytes (self):
         self.ixti = self.strm.readUnsignedInt(2)
         # TODO: parse differently for named range formulas.
@@ -428,7 +428,7 @@ class PtgRef3d(_TokenBase):
     def getText (self):
         return "(xti=%d,%s)"%(self.ixti, self.cell.getName())
 
-class _FuncVar(_TokenBase):
+class _FuncVar(PtgBase):
 
     funcTab = {
         0x0000: 'COUNT',
