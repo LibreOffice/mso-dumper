@@ -417,6 +417,17 @@ class _Area3d(_TokenBase):
     def getText (self):
         return "(xti=%d,"%self.xti + self.cellRange.getName() + ")"
 
+class PtgRef3d(_TokenBase):
+    def parseBytes (self):
+        self.ixti = self.strm.readUnsignedInt(2)
+        # TODO: parse differently for named range formulas.
+        self.cell = parseCellAddress(self.strm.readBytes(4))
+        self.cell.isColRelative = False
+        self.cell.isRowRelative = False
+
+    def getText (self):
+        return "(xti=%d,%s)"%(self.ixti, self.cell.getName())
+
 class _FuncVar(_TokenBase):
 
     funcTab = {
@@ -823,6 +834,7 @@ _tokenMap = {
     0x5B: _Area3d,
     0x7B: _Area3d,
 
+    0x3A: PtgRef3d,
     0x42: _FuncVar
 }
 
