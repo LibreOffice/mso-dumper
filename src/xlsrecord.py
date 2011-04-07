@@ -2533,7 +2533,7 @@ class SXStreamID(BaseRecordHandler):
 
         strmId = globals.getSignedInt(self.bytes)
         self.strmData.appendPivotCacheId(strmId)
-        self.appendLine("pivot cache stream ID in SX DB storage: %d"%strmId)
+        self.appendLine("pivot cache stream ID in SX DB storage: %4.4X"%strmId)
 
 
 class SXView(BaseRecordHandler):
@@ -2604,13 +2604,13 @@ class SXViewSource(BaseRecordHandler):
         src = globals.getSignedInt(self.bytes)
         srcType = 'unknown'
         if src == 0x01:
-            srcType = 'Excel list or database'
+            srcType = 'internal range (followed by DConRef, DConName or DConBin)'
         elif src == 0x02:
-            srcType = 'External data source (Microsoft Query)'
+            srcType = 'external data source (followed by DbQuery)'
         elif src == 0x04:
-            srcType = 'Multiple consolidation ranges'
+            srcType = 'multiple consolidation ranges (followed by SXTbl)'
         elif src == 0x10:
-            srcType = 'Scenario Manager summary report'
+            srcType = 'scenario (temporary internal structure)'
 
         self.appendLine("data source type: %s"%srcType)
 
@@ -2678,32 +2678,85 @@ class SXViewFields(BaseRecordHandler):
 
 class SXViewFieldsEx(BaseRecordHandler):
 
-    def parseBytes (self):
-        grbit1 = self.readUnsignedInt(2)
-        grbit2 = self.readUnsignedInt(1)
-        numItemAutoShow = self.readUnsignedInt(1)
-        dataFieldSort = self.readSignedInt(2)
-        dataFieldAutoShow = self.readSignedInt(2)
-        numFmt = self.readUnsignedInt(2)
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(2)
+        self.showAllItems      = (flag & 0x0001) != 0 # A
+        self.dragToRow         = (flag & 0x0002) != 0 # B
+        self.dragToColumn      = (flag & 0x0004) != 0 # C
+        self.dragToPage        = (flag & 0x0008) != 0 # D
+        self.dragToHide        = (flag & 0x0010) != 0 # E
+        self.disableDragToData = (flag & 0x0020) != 0 # F
+        reserved               = (flag & 0x0040) != 0 # G
+        self.serverBased       = (flag & 0x0080) != 0 # H
+        reserved               = (flag & 0x0100) != 0 # I
+        self.autoSort          = (flag & 0x0200) != 0 # J
+        self.ascendSort        = (flag & 0x0400) != 0 # K
+        self.autoShow          = (flag & 0x0800) != 0 # L
+        self.topAutoShow       = (flag & 0x1000) != 0 # M
+        self.calculatedField   = (flag & 0x2000) != 0 # N
+        self.insertPageBreaks  = (flag & 0x4000) != 0 # O
+        self.hideNewItems      = (flag & 0x8000) != 0 # P
 
-        # custom name length: it can be up to 254 characters.  255 (0xFF) if
-        # no custom name is used.
-        nameLen = self.readUnsignedInt(1)
+        flag = self.readUnsignedInt(1)
+        # skip the first 5 bits.
+        self.outlineForm       = (flag & 0x20) != 0 # Q
+        self.insertBlankRow    = (flag & 0x40) != 0 # R
+        self.subtotalAtTop     = (flag & 0x80) != 0 # S
 
-        dummy = self.readBytes(10)
+        # number of items to show in auto show mode.
+        self.autoShowCount = self.readUnsignedInt(1)
+
+        self.autoSortItem = self.readSignedInt(2)
+        self.autoShowItem = self.readSignedInt(2)
+        self.numberFormat = self.readUnsignedInt(2)
+
+        nameLen = self.readUnsignedInt(2)
+        self.subName = None
+        if nameLen != 0xFFFF:
+            self.readBytes(8) # ignored
+            self.subName, byteLen = getRichText(self.readRemainingBytes(), nameLen)
         
-        self.appendLine("auto show item: %d"%numItemAutoShow)
-        self.appendLine("sort field index: %d"%dataFieldSort)
-        self.appendLine("auto show field index: %d"%dataFieldAutoShow)
-        self.appendLine("number format: %d"%numFmt)
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineBoolean("show all items", self.showAllItems)
+        self.appendLineBoolean("drag to row", self.dragToRow)
+        self.appendLineBoolean("drag to column", self.dragToColumn)
+        self.appendLineBoolean("drag to page", self.dragToPage)
+        self.appendLineBoolean("drag to hide", self.dragToHide)
+        self.appendLineBoolean("disable drag to data", self.disableDragToData)
+        self.appendLineBoolean("server based", self.serverBased)
+        self.appendLineBoolean("auto sort", self.autoSort)
+        self.appendLineBoolean("ascending sort", self.ascendSort)
+        self.appendLineBoolean("auto show", self.autoShow)
+        self.appendLineBoolean("top auto show", self.topAutoShow)
+        self.appendLineBoolean("calculated field", self.calculatedField)
+        self.appendLineBoolean("insert page breaks", self.insertPageBreaks)
+        self.appendLineBoolean("hide new items after refresh", self.hideNewItems)
 
-        if nameLen == 0xFF:
-            self.appendLine("custome name: none")
+        self.appendLineBoolean("outline form", self.outlineForm)
+        self.appendLineBoolean("insert blank row", self.insertBlankRow)
+        self.appendLineBoolean("subtotal at top", self.subtotalAtTop)
+
+        self.appendLine("items to show in auto show: %d"%self.autoShowCount)
+
+        if self.autoSort:
+            if self.autoSortItem == -1:
+                self.appendLine("auto sort: sort by pivot items themselves")
+            else:
+                self.appendLine("auto sort: sort by data item %d"%self.autoSortItem)
+
+        if self.autoShow:
+            if self.autoShowItem == -1:
+                self.appendLine("auto show: not enabled")
+            else:
+                self.appendLine("auto show: use data item %d"%self.autoShowItem)
+
+        self.appendLine("number format: %d"%self.numberFormat)
+
+        if self.subName == None:
+            self.appendLine("aggregate function: none")
         else:
-            name = globals.getTextBytes(self.readRemainingBytes())
-            self.appendLine("custome name: %s"%name)
-
-        return
+            self.appendLine("aggregate function: %s"%self.subName)
 
 
 class SXDataItem(BaseRecordHandler):
