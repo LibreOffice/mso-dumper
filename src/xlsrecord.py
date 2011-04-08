@@ -125,6 +125,8 @@ Like parseBytes(), the derived classes must overwrite this method."""
         except:
             print("%4.4Xh: Error interpreting the record!"%self.header)
 
+    def debug (self, msg):
+        print ("%4.4Xh: %s"%(self.header, msg))
 
     def appendLine (self, line):
         self.lines.append(line)
@@ -2262,6 +2264,18 @@ class DConRef(BaseRecordHandler):
         self.appendLine("range: %s"%self.ref.toString())
         self.appendLine("sheet name: %s"%self.sheetName)
 
+class SXIvd(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.ids = []
+        n = self.getSize() / 2
+        for i in xrange(0, n):
+            self.ids.append(self.readSignedInt(2))
+
+    def parseBytes (self):
+        self.__parseBytes()
+        for id in self.ids:
+            self.appendLine("field value: %d"%id)
 
 class SXViewEx9(BaseRecordHandler):
 
