@@ -654,20 +654,21 @@ entire file stream.
             print("(first sector ID: %d; size: %d; location: %s)"%
                   (entry.StreamSectorID, entry.StreamSize, strmLoc))
     
-            satObj = None
-            secSize = 0
-            if entry.StreamLocation == StreamLocation.SAT:
-                satObj = self.SAT
-                secSize = self.header.getSectorSize()
-            elif entry.StreamLocation == StreamLocation.SSAT:
-                satObj = self.SSAT
-                secSize = self.header.getShortSectorSize()
-            if satObj != None:
-                chain = satObj.getSectorIDChain(entry.StreamSectorID)
-                print("sector count: %d"%len(chain))
-                print("total sector size: %d"%(len(chain)*secSize))
-                if self.params.showSectorChain:
-                    self.__outputSectorChain(chain)
+            if entry.StreamSize > 0:
+                satObj = None
+                secSize = 0
+                if entry.StreamLocation == StreamLocation.SAT:
+                    satObj = self.SAT
+                    secSize = self.header.getSectorSize()
+                elif entry.StreamLocation == StreamLocation.SSAT:
+                    satObj = self.SSAT
+                    secSize = self.header.getShortSectorSize()
+                if satObj != None:
+                    chain = satObj.getSectorIDChain(entry.StreamSectorID)
+                    print("sector count: %d"%len(chain))
+                    print("total sector size: %d"%(len(chain)*secSize))
+                    if self.params.showSectorChain:
+                        self.__outputSectorChain(chain)
 
 
     def __outputSectorChain (self, chain):
