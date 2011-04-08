@@ -499,6 +499,9 @@ entire file stream.
             self.StreamSize = 0
             self.bytes = []
 
+        def isStorage (self):
+            return self.Type == Directory.Type.RootStorage or \
+                self.Type == Directory.Type.UserStorage
 
     def __init__ (self, header, params):
         self.sectorSize = header.getSectorSize()
@@ -533,7 +536,6 @@ entire file stream.
         elif entry.StreamLocation == StreamLocation.SSAT:
             chain = self.header.getSSAT().getSectorIDChain(entry.StreamSectorID)
 
-
         if entry.StreamLocation == StreamLocation.SSAT:
             # Get the root storage stream.
             if self.RootStorage == None:
@@ -556,6 +558,9 @@ entire file stream.
 
         return bytes
 
+    def getRawStream (self, entry):
+        bytes = self.__getRawStream(entry)
+        return bytes
 
     def getRawStreamByName (self, name):
         bytes = []
@@ -694,6 +699,8 @@ entire file stream.
             output("%2.2X "%ord(byte))
         print("")
 
+    def getDirectoryEntries (self):
+        return self.entries
 
     def getDirectoryNames (self):
         names = []

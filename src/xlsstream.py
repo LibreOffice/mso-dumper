@@ -367,19 +367,17 @@ class XLStream(object):
             return
         obj.output()
 
-
-    def getDirectoryNames (self):
+    def getDirectoryEntries (self):
         obj = self.__getDirectoryObj()
         if obj == None:
             return
-        return obj.getDirectoryNames()
+        return obj.getDirectoryEntries()
 
-
-    def getDirectoryStreamByName (self, name):
+    def getDirectoryStream (self, entry):
         obj = self.__getDirectoryObj()
         bytes = []
         if obj != None:
-            bytes = obj.getRawStreamByName(name)
+            bytes = obj.getRawStream(entry)
         strm = XLDirStream(bytes, self.params, self.strmData)
         return strm
 

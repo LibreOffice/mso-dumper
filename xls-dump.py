@@ -90,14 +90,18 @@ class XLDumper(object):
         self.strm.printSAT()
         self.strm.printSSAT()
         self.strm.printDirectory()
-        dirnames = self.strm.getDirectoryNames()
-        for dirname in dirnames:
-            if len(dirname) == 0 or dirname == 'Root Entry':
+        dirEntries = self.strm.getDirectoryEntries()
+        for entry in dirEntries:
+            dirname = entry.Name
+            if len(dirname) == 0:
                 continue
 
-            dirstrm = self.strm.getDirectoryStreamByName(dirname)
+            dirstrm = self.strm.getDirectoryStream(entry)
             self.__printDirHeader(dirname, len(dirstrm.bytes))
-            if dirname == "Workbook":
+            if entry.isStorage():
+                continue
+
+            elif dirname == "Workbook":
                 success = True
                 while success: 
                     success = self.__readSubStream(dirstrm)
@@ -105,9 +109,7 @@ class XLDumper(object):
             elif dirname == "Revision Log":
                 dirstrm.type = xlsstream.DirType.RevisionLog
                 self.__readSubStream(dirstrm)
-            elif dirname == '_SX_DB_CUR':
-                dirstrm.type = xlsstream.DirType.PivotTableCache
-                self.__readSubStream(dirstrm)
+
             elif self.strmData.isPivotCacheStream(dirname):
                 dirstrm.type = xlsstream.DirType.PivotTableCache
                 self.__readSubStream(dirstrm)
