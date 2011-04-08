@@ -40,11 +40,15 @@ class XLDumper(object):
         self.strm = None
         self.strmData = None
 
-    def __printDirHeader (self, dirname, byteLen):
+    def __printDirHeader (self, direntry, byteLen):
+        dirname = direntry.Name
         dirname = globals.encodeName(dirname)
         print("")
         print("="*68)
-        print("%s (size: %d bytes)"%(dirname, byteLen))
+        if direntry.isStorage():
+            print("%s (storage)"%dirname)
+        else:
+            print("%s (stream, size: %d bytes)"%(dirname, byteLen))
         print("-"*68)
 
     def __parseFile (self):
@@ -97,7 +101,7 @@ class XLDumper(object):
                 continue
 
             dirstrm = self.strm.getDirectoryStream(entry)
-            self.__printDirHeader(dirname, len(dirstrm.bytes))
+            self.__printDirHeader(entry, len(dirstrm.bytes))
             if entry.isStorage():
                 continue
 
