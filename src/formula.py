@@ -415,7 +415,7 @@ class PtgNameX(PtgBase):
         self.nameID = self.strm.readUnsignedInt(4)
 
     def getText (self):
-        return "(xti=%d,name=%d)"%(self.xti, self.nameID)
+        return "(name: xti=%d, name=%d)"%(self.xti, self.nameID)
 
 class _Int(PtgBase):
     def parseBytes (self):
