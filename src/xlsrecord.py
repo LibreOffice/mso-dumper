@@ -1638,49 +1638,66 @@ class ExternSheet(BaseRecordHandler):
 
 class ExternName(BaseRecordHandler):
 
-    def __parseOptionFlags (self, flags):
-        self.isBuiltinName = (flags & 0x0001) != 0
-        self.isAutoDDE     = (flags & 0x0002) != 0
-        self.isStdDocName  = (flags & 0x0008) != 0
-        self.isOLE         = (flags & 0x0010) != 0
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(2)
+
+        self.isBuiltinName = (flag & 0x0001) != 0
+        self.automatic     = (flag & 0x0002) != 0
+        self.wantPict      = (flag & 0x0004) != 0
+        self.isOLE         = (flag & 0x0008) != 0
+        self.isOLELink     = (flag & 0x0010) != 0
+
         # 5 - 14 bits stores last successful clip format
-        self.lastClipFormat = (flags & 0x7FE0)
+        self.clipFormat    = (flag & 0x7FE0) / 2**5
 
-    def parseBytes (self):
-        # first 2 bytes are option flags for external name.
-        optionFlags = globals.getSignedInt(self.bytes[0:2])
-        self.__parseOptionFlags(optionFlags)
+        self.displayAsIcon = (flag & 0x8000) != 0
 
-        if self.isOLE:
+        if self.isOLELink:
             # next 4 bytes are 32-bit storage ID
-            storageID = globals.getSignedInt(self.bytes[2:6])
-            nameLen = globals.getSignedInt(self.bytes[6:7])
-            name, byteLen = globals.getRichText(self.bytes[7:], nameLen)
-            self.appendLine("type: OLE")
-            self.appendLine("storage ID: %d"%storageID)
-            self.appendLine("name: %s"%name)
+            self.storageID = self.readUnsignedInt(4)
+            nameLen = self.readUnsignedInt(1)
+            self.name = self.readUnicodeString(nameLen)
         else:
             # assume external defined name (could be DDE link).
             # TODO: differentiate DDE link from external defined name.
 
-            supbookID = globals.getSignedInt(self.bytes[2:4])
-            nameLen = globals.getSignedInt(self.bytes[6:7])
-            name, byteLen = globals.getRichText(self.bytes[7:], nameLen)
-            tokenText = globals.getRawBytes(self.bytes[7+byteLen:], True, False)
+            self.supbookID = self.readUnsignedInt(2)
+            nameLen = self.readUnsignedInt(1)
+            self.name = self.readUnicodeString(nameLen)
+            self.tokens = self.readRemainingBytes()
+
+    def parseBytes (self):
+        self.__parseBytes()
+
+        self.appendLineBoolean("built-in name", self.isBuiltinName)
+        self.appendLineBoolean("auto DDE or OLE", self.automatic)
+        self.appendLineBoolean("use picture format", self.wantPict)
+        self.appendLineBoolean("OLE", self.isOLE)
+        self.appendLineBoolean("OLE Link", self.isOLELink)
+        self.appendLine("clip format: %d"%self.clipFormat)
+        self.appendLineBoolean("display as icon", self.displayAsIcon)
+
+        if self.isOLELink:
+            self.appendLine("type: OLE")
+            self.appendLine("storage ID: 0x%4.4X"%self.storageID)
+            self.appendLine("name: %s"%self.name)
+        else:
+            # TODO: Test this.
             self.appendLine("type: defined name")
-            if supbookID == 0:
+            if self.supbookID == 0:
                 self.appendLine("sheet ID: 0 (global defined names)")
             else:
-                self.appendLine("sheet ID: %d"%supbookID)
-            self.appendLine("name: %s"%name)
+                self.appendLine("sheet ID: %d"%self.supbookID)
+
+            self.appendLine("name: %s"%self.name)
+            tokenText = globals.getRawBytes(self.tokens, True, False)
             self.appendLine("formula bytes: %s"%tokenText)
 
             # parse formula tokens
-            o = formula.FormulaParser(self.header, self.bytes[7+byteLen:])
+            o = formula.FormulaParser2(self.header, self.tokens)
             o.parse()
             ftext = o.getText()
             self.appendLine("formula: %s"%ftext)
-
 
 class Xct(BaseRecordHandler):
 
@@ -3058,7 +3075,7 @@ class CTCellContent(BaseRecordHandler):
     def readFormula (self):
         size = globals.getSignedInt(self.readBytes(2))
         fmlaBytes = self.readBytes(size)
-        o = formula.FormulaParser(self.header, fmlaBytes, False)
+        o = formula.FormulaParser2(self.header, fmlaBytes)
         o.parse()
         return "formula", fmlaBytes, o.getText()
 

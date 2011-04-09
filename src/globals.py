@@ -112,9 +112,10 @@ class ByteStream(object):
         bytes = self.readBytes(8)
         return getDouble(bytes)
 
-    def readUnicodeString (self):
+    def readUnicodeString (self, textLen=None):
         # First 2-bytes contains the text length, followed by a 1-byte flag.
-        textLen = self.readUnsignedInt(2)
+        if textLen == None:
+            textLen = self.readUnsignedInt(2)
         bytes = self.bytes[self.pos:]
         text, byteLen = getRichText(bytes, textLen)
         self.moveForward (byteLen)
