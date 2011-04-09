@@ -1657,6 +1657,7 @@ class ExternName(BaseRecordHandler):
             self.storageID = self.readUnsignedInt(4)
             nameLen = self.readUnsignedInt(1)
             self.name = self.readUnicodeString(nameLen)
+            self.moper = self.readRemainingBytes()
         else:
             # assume external defined name (could be DDE link).
             # TODO: differentiate DDE link from external defined name.
@@ -1681,6 +1682,19 @@ class ExternName(BaseRecordHandler):
             self.appendLine("type: OLE")
             self.appendLine("storage ID: 0x%4.4X"%self.storageID)
             self.appendLine("name: %s"%self.name)
+            if len(self.moper) > 0:
+                try:
+                    strm = globals.ByteStream(self.moper)
+                    lastCol = strm.readUnsignedInt(1)
+                    lastRow = strm.readUnsignedInt(2)
+                    self.appendLine("last column: %d"%lastCol)
+                    self.appendLine("last row: %d"%lastRow)
+                    rest = strm.readRemainingBytes()
+                    restStr = globals.getRawBytes(rest, True, False)
+                    self.appendLine("cache: %s"%restStr)
+
+                except:
+                    pass
         else:
             # TODO: Test this.
             self.appendLine("type: defined name")
