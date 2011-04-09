@@ -401,6 +401,14 @@ class PtgBase(object):
     def getText (self):
         return ''
 
+class PtgExp(PtgBase):
+    def parseBytes (self):
+        self.row = self.strm.readUnsignedInt(2)
+        self.col = self.strm.readUnsignedInt(2)
+
+    def getText (self):
+        return "(ptgexp: row=%d, col=%d)"%(self.row, self.col)
+
 class _Int(PtgBase):
     def parseBytes (self):
         self.value = self.strm.readUnsignedInt(2)
@@ -829,6 +837,7 @@ class _FuncVar(PtgBase):
         return _FuncVar.funcTab[self.funcType] + "()"
 
 _tokenMap = {
+    0x01: PtgExp,
     0x1E: _Int,
     0x3B: _Area3d,
     0x5B: _Area3d,

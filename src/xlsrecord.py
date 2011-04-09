@@ -930,10 +930,14 @@ class Formula(BaseRecordHandler):
         self.xf = self.readUnsignedInt(2)
         self.fval = self.readDouble()
 
-        flags = self.readUnsignedInt(2)
-        self.recalc         = (flags & 0x0001) != 0
-        self.calcOnOpen     = (flags & 0x0002) != 0
-        self.sharedFormula  = (flags & 0x0008) != 0
+        flag = self.readUnsignedInt(2)
+        self.recalc         = (flag & 0x0001) != 0 # A
+        reserved            = (flag & 0x0002) != 0 # B
+        self.fillAlignment  = (flag & 0x0004) != 0 # C
+        self.sharedFormula  = (flag & 0x0008) != 0 # D
+        reserved            = (flag & 0x0010) != 0 # E
+        self.clearErrors    = (flag & 0x0020) != 0 # F
+
         self.appCacheInfo = self.readUnsignedInt(4) # used only for app-specific optimization.  Ignore it for now.
         tokenSize = self.readUnsignedInt(2)
         self.tokens = self.readBytes(tokenSize)
@@ -947,9 +951,10 @@ class Formula(BaseRecordHandler):
         self.appendCellPosition(self.col, self.row)
         self.appendLine("XF record ID: %d"%self.xf)
         self.appendLine("formula result: %g"%self.fval)
-        self.appendLine("recalculate always: %d"%self.recalc)
-        self.appendLine("calculate on open: %d"%self.calcOnOpen)
-        self.appendLine("shared formula: %d"%self.sharedFormula)
+        self.appendLineBoolean("recalculate always", self.recalc)
+        self.appendLineBoolean("fill or center across selection", self.fillAlignment)
+        self.appendLineBoolean("shared formula", self.sharedFormula)
+        self.appendLineBoolean("clear errors", self.clearErrors)
         self.appendLine("formula bytes: %s"%globals.getRawBytes(self.tokens, True, False))
         self.appendLine("formula string: "+ftext)
 
