@@ -969,70 +969,22 @@ class Formula(BaseRecordHandler):
 
 class Array(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.ref = RefU(self)
+        flag = self.readUnsignedInt(2)
+        self.alwaysCalc = (flag & 0x0001) != 0
+        unused = self.readBytes(4)
+        tokenSize = self.readUnsignedInt(2)
+        self.tokens = self.readBytes(tokenSize)
+
     def parseBytes (self):
-        row1 = self.readUnsignedInt(2)
-        row2 = self.readUnsignedInt(2)
-        col1 = self.readUnsignedInt(1)
-        col2 = self.readUnsignedInt(1)
-
-        flags = self.readUnsignedInt(2)
-        alwaysCalc = (0x01 & flags)
-        calcOnLoad = (0x02 & flags)
-
-        # Ignore these bits when reading a BIFF file.  When a BIFF file is 
-        # being written, chn must be 00000000.
-        chn = self.readUnsignedInt(4)
-
-        fmlLen = self.readUnsignedInt(2)
-        tokens = self.readBytes(fmlLen)
-
-        fparser = formula.FormulaParser(self.header, tokens)
+        self.__parseBytes()
+        self.appendLine("range: %s"%self.ref.toString())
+        self.appendLineBoolean("always calc", self.alwaysCalc)
+        fparser = formula.FormulaParser2(self.header, self.tokens)
         fparser.parse()
-        ftext = fparser.getText()
-
-        self.appendLine("rows: %d - %d"%(row1, row2))
-        self.appendLine("columns: %d - %d"%(col1, col2))
-        self.appendLine("always calculate formula: " + self.getTrueFalse(alwaysCalc))
-        self.appendLine("calculate formula on file load: " + self.getTrueFalse(calcOnLoad))
-        self.appendLine("formula bytes: %s"%globals.getRawBytes(tokens, True, False))
-        self.appendLine("tokens: " + ftext)
-
-        if self.getCurrentPos() >= len(self.bytes):
-            return
-
-        # cached values
-        cols = self.readUnsignedInt(1) + 1
-        rows = self.readUnsignedInt(2) + 1
-        self.appendLine("array size: cols=%d, rows=%d"%(cols, rows))
-        for row in xrange(0, rows):
-            for col in xrange(0, cols):
-                msg = "(row=%d, col=%d): "%(row, col)
-                valtype = self.readUnsignedInt(1)
-                if valtype == 0x00:
-                    # empty - ignore 8 bytes.
-                    self.readUnsignedInt(8)
-                    msg += "empty"
-                elif valtype == 0x01:
-                    # double
-                    val = self.readDouble()
-                    msg += "double: %g"%val
-                elif valtype == 0x02:
-                    # string
-                    strLen = self.readUnsignedInt(2) + 1
-                    text, strLen = globals.getRichText(self.readBytes(strLen), strLen)
-                    msg += "text: '%s'"%text
-                elif valtype == 0x04:
-                    # bool
-                    val = self.readUnsignedInt(1)
-                    msg += "bool: " + self.getTrueFalse(val)
-                elif valtype == 0x10:
-                    # error
-                    val = self.readUnsignedInt(1)
-                    msg += "error: %d"%val
-                self.appendLine(msg)
-
-        return
-
+        self.appendLine("formula bytes: %s"%globals.getRawBytes(self.tokens, True, False))
+        self.appendLine("formula string: %s"%fparser.getText())
 
 class Label(BaseRecordHandler):
 

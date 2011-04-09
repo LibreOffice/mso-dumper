@@ -409,6 +409,14 @@ class PtgExp(PtgBase):
     def getText (self):
         return "(ptgexp: row=%d, col=%d)"%(self.row, self.col)
 
+class PtgNameX(PtgBase):
+    def parseBytes (self):
+        self.xti = self.strm.readUnsignedInt(2)
+        self.nameID = self.strm.readUnsignedInt(4)
+
+    def getText (self):
+        return "(xti=%d,name=%d)"%(self.xti, self.nameID)
+
 class _Int(PtgBase):
     def parseBytes (self):
         self.value = self.strm.readUnsignedInt(2)
@@ -840,6 +848,7 @@ _tokenMap = {
     0x01: PtgExp,
     0x1E: _Int,
     0x3B: _Area3d,
+    0x59: PtgNameX,
     0x5B: _Area3d,
     0x7B: _Area3d,
 
