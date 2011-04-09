@@ -425,7 +425,7 @@ class Worksheet(SheetBase):
 
         wbg = wb.getWorkbookGlobal()
         tokens = wbg.getFilterRange(self.__sheetID)
-        parser = formula.FormulaParser2(None, tokens)
+        parser = formula.FormulaParser(None, tokens)
         parser.parse()
         tokens = parser.getTokens()
         if len(tokens) != 1 or tokens[0].tokenType != formula.TokenType.Area3d:
@@ -528,7 +528,7 @@ class FormulaCell(CellBase):
     def createDOM (self, wb):
         nd = node.Element('formula-cell')
         if self.tokens != None:
-            parser = formula.FormulaParser2(None, self.tokens)
+            parser = formula.FormulaParser(None, self.tokens)
             parser.parse()
             nd.setAttr('formula', parser.getText())
             s = globals.getRawBytes(self.tokens, True, False)

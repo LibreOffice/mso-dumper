@@ -649,13 +649,13 @@ class CF(BaseRecordHandler):
 
         if len(self.formula1) > 0:
             self.appendLine("formula 1 (bytes): %s"%globals.getRawBytes(self.formula1, True, False))
-            parser = formula.FormulaParser2(self.header, self.formula1)
+            parser = formula.FormulaParser(self.header, self.formula1)
             parser.parse()
             self.appendLine("formula 1 (displayed): " + parser.getText())
 
         if len(self.formula2) > 0:
             self.appendLine("formula 2 (bytes): %s"%globals.getRawBytes(self.formula2, True, False))
-            parser = formula.FormulaParser2(self.header, self.formula2)
+            parser = formula.FormulaParser(self.header, self.formula2)
             parser.parse()
             self.appendLine("formula 2 (displayed): " + parser.getText())       
 
@@ -785,7 +785,7 @@ class Dv(BaseRecordHandler):
         self.formula1 = self.readBytes(formulaLen)
         self.strFormula1 = ''
         if len(self.formula1) > 0:
-            parser = formula.FormulaParser2(self.header, self.formula1)
+            parser = formula.FormulaParser(self.header, self.formula1)
             parser.parse()
             self.strFormula1 = parser.getText()
 
@@ -794,7 +794,7 @@ class Dv(BaseRecordHandler):
         self.formula2 = self.readBytes(formulaLen)
         self.strFormula2 = ''
         if len(self.formula2) > 0:
-            parser = formula.FormulaParser2(self.header, self.formula2)
+            parser = formula.FormulaParser(self.header, self.formula2)
             parser.parse()
             self.strFormula2 = parser.getText()
 
@@ -944,7 +944,7 @@ class Formula(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
-        fparser = formula.FormulaParser2(self.header, self.tokens)
+        fparser = formula.FormulaParser(self.header, self.tokens)
         fparser.parse()
         ftext = fparser.getText()
 
@@ -981,7 +981,7 @@ class Array(BaseRecordHandler):
         self.__parseBytes()
         self.appendLine("range: %s"%self.ref.toString())
         self.appendLineBoolean("always calc", self.alwaysCalc)
-        fparser = formula.FormulaParser2(self.header, self.tokens)
+        fparser = formula.FormulaParser(self.header, self.tokens)
         fparser.parse()
         self.appendLine("formula bytes: %s"%globals.getRawBytes(self.tokens, True, False))
         self.appendLine("formula string: %s"%fparser.getText())
@@ -1512,7 +1512,7 @@ class Name(BaseRecordHandler):
         self.__parseBytes()
 
         tokenText = globals.getRawBytes(self.tokenBytes, True, False)
-        o = formula.FormulaParser2(self.header, self.tokenBytes)
+        o = formula.FormulaParser(self.header, self.tokenBytes)
         o.parse()
         formulaText = o.getText()
         self.appendLine("name: %s"%globals.encodeName(self.name))
@@ -1694,7 +1694,7 @@ class ExternName(BaseRecordHandler):
             self.appendLine("formula bytes: %s"%tokenText)
 
             # parse formula tokens
-            o = formula.FormulaParser2(self.header, self.tokens)
+            o = formula.FormulaParser(self.header, self.tokens)
             o.parse()
             ftext = o.getText()
             self.appendLine("formula: %s"%ftext)
@@ -3075,7 +3075,7 @@ class CTCellContent(BaseRecordHandler):
     def readFormula (self):
         size = globals.getSignedInt(self.readBytes(2))
         fmlaBytes = self.readBytes(size)
-        o = formula.FormulaParser2(self.header, fmlaBytes)
+        o = formula.FormulaParser(self.header, fmlaBytes)
         o.parse()
         return "formula", fmlaBytes, o.getText()
 
@@ -3360,7 +3360,7 @@ class CHSourceLink(BaseRecordHandler):
         if self.linkType == CHSourceLink.DataSourceType.Reference:
             # external reference.  Read the formula tokens.
             self.appendLine("formula tokens: %s"%globals.getRawBytes(self.tokens,True,False))
-            parser = formula.FormulaParser2(self.header, self.tokens)
+            parser = formula.FormulaParser(self.header, self.tokens)
             parser.parse()
             self.appendLine("formula: %s"%parser.getText())
 

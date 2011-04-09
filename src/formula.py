@@ -597,7 +597,7 @@ _tokenMap = {
     0x42: _FuncVar
 }
 
-class FormulaParser2(object):
+class FormulaParser(object):
     """This is a new formula parser that will eventually replace the old one.
 
 Once replaced, I'll change the name to FormulaParser and the names of the 
