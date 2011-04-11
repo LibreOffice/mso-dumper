@@ -32,6 +32,21 @@ import ole, xlsstream, globals, node, xlsmodel
 
 from globals import error
 
+def isOleStream (dirname):
+    """Determine whether or not a stream is an OLE stream.
+
+Accodring to the spec, an OLE stream is always named 0x1,'O','l','e'."""
+
+    name = [0x01, 0x4F, 0x6C, 0x65] # 0x01, 'O', 'l', 'e'
+    if len(dirname) != len(name):
+        return False
+
+    for i in xrange(0, len(dirname)):
+        if ord(dirname[i]) != name[i]:
+            return False
+
+    return True
+
 class XLDumper(object):
 
     def __init__ (self, filepath, params):
@@ -117,6 +132,8 @@ class XLDumper(object):
             elif self.strmData.isPivotCacheStream(dirname):
                 dirstrm.type = xlsstream.DirType.PivotTableCache
                 self.__readSubStream(dirstrm)
+            elif isOleStream(dirname):
+                self.__readOleStream(dirstrm)
             else:
                 globals.dumpBytes(dirstrm.bytes, 512)
 
@@ -129,6 +146,9 @@ class XLDumper(object):
             return True
         except xlsstream.EndOfStream:
             return False
+
+    def __readOleStream (self, strm):
+        globals.dumpBytes(strm.bytes, 512)
 
     def __readSubStreamXML (self, strm):
         try:
