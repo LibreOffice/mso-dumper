@@ -1,5 +1,5 @@
 --- /dev/null	2011-01-31 08:27:50.166383946 +0000
-+++ scratch/mso-dumper/src/oletool.py 2011-01-31 09:15:32.000000000 +0000
++++ src/oletool.py 2011-01-31 09:15:32.000000000 +0000
 @@ -0,0 +1,204 @@
 +#!/usr/bin/env python
 +import sys, os.path, optparse
@@ -207,8 +207,8 @@
 +    main()
 diff --git a/scratch/mso-dumper/src/ole.py b/scratch/mso-dumper/src/ole.py
 index 9b01928..3db2458 100644
---- a/scratch/mso-dumper/src/ole.py
-+++ b/scratch/mso-dumper/src/ole.py
+--- src/ole.py
++++ src/ole.py
 @@ -526,7 +526,8 @@ entire file stream.
              self.RootStorageBytes += self.header.bytes[pos:pos+self.sectorSize]
  
