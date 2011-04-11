@@ -5,7 +5,6 @@ sys.path.append(sys.path[0]+"/src")
 
 import ole, globals
 
-from globals import encodeName
 class DateTime:
     def __init__(self):
         self.day = 0
