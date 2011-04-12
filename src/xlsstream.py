@@ -305,6 +305,20 @@ recDataRev = {
     0x0151: ["EONB*", "Change Track End of Nested Block"]
 }
 
+class StreamData(object):
+    """run-time stream data."""
+    def __init__ (self):
+        self.encrypted = False
+        self.pivotCacheIDs = {}
+
+    def appendPivotCacheId (self, newId):
+        # must be 4-digit with leading '0's.
+        strId = "%.4d"%newId
+        self.pivotCacheIDs[strId] = True
+
+    def isPivotCacheStream (self, name):
+        return self.pivotCacheIDs.has_key(name)
+
 class XLStream(object):
 
     def __init__ (self, chars, params, strmData):

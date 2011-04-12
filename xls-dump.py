@@ -68,7 +68,7 @@ class XLDumper(object):
 
     def __parseFile (self):
         file = open(self.filepath, 'rb')
-        self.strmData = globals.StreamData()
+        self.strmData = xlsstream.StreamData()
         self.strm = xlsstream.XLStream(file.read(), self.params, self.strmData)
         file.close()
 

@@ -45,7 +45,6 @@ class OleContainer:
 
     def __parseFile (self):
         file = open(self.filePath, 'rb')
-        self.strmData = globals.StreamData()
         self.chars = file.read()
         file.close()    
 
