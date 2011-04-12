@@ -116,8 +116,11 @@ append a line to be displayed.
 Like parseBytes(), the derived classes must overwrite this method."""
         pass
 
+    def __getHeaderStr (self):
+        return "%4.4Xh: "%self.header
+
     def output (self):
-        headerStr = "%4.4Xh: "%self.header
+        headerStr = self.__getHeaderStr()
         print (headerStr + "-"*(globals.OutputWidth-len(headerStr)))
         try:
             self.parseBytes()
@@ -133,7 +136,7 @@ Like parseBytes(), the derived classes must overwrite this method."""
         self.lines.append(line)
 
     def appendMultiLine (self, line):
-        charWidth = 61
+        charWidth = globals.OutputWidth - len(self.__getHeaderStr())
         singleLine = ''
         testLine = ''
         for word in line.split():
