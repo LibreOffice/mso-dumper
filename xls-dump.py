@@ -59,12 +59,12 @@ class XLDumper(object):
         dirname = direntry.Name
         dirname = globals.encodeName(dirname)
         print("")
-        print("="*68)
+        print("="*globals.OutputWidth)
         if direntry.isStorage():
             print("%s (storage)"%dirname)
         else:
             print("%s (stream, size: %d bytes)"%(dirname, byteLen))
-        print("-"*68)
+        print("-"*globals.OutputWidth)
 
     def __parseFile (self):
         file = open(self.filepath, 'rb')

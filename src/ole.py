@@ -115,16 +115,16 @@ class Header(object):
                 output("%2.2X "%ord(b))
             output("\n")
 
-        def printSep (c='-', w=68, prefix=''):
+        def printSep (c, w, prefix=''):
             print(prefix + c*w)
 
-        printSep('=', 68)
+        printSep('=', globals.OutputWidth)
         print("Compound Document Header")
-        printSep('-', 68)
+        printSep('-', globals.OutputWidth)
 
         if self.params.debug:
             globals.dumpBytes(self.bytes[0:512])
-            printSep('-', 68)
+            printSep('-', globals.OutputWidth)
 
         # document ID and unique ID
         output("Document ID: ")
@@ -306,9 +306,9 @@ all the sectors pointed by the sector IDs in order of occurrence.
 
     def output (self):
         print('')
-        print("="*68)
+        print("="*globals.OutputWidth)
         print("Master Sector Allocation Table (MSAT)")
-        print("-"*68)
+        print("-"*globals.OutputWidth)
 
         for id in self.secIDs:
             print("sector ID: %5d   (pos: %7d)"%(id, 512+id*self.sectorSize))
@@ -411,15 +411,15 @@ class SAT(object):
 
     def output (self):
         print('')
-        print("="*68)
+        print("="*globals.OutputWidth)
         print("Sector Allocation Table (SAT)")
-        print("-"*68)
+        print("-"*globals.OutputWidth)
         if self.params.debug:
             self.outputRawBytes()
-            print("-"*68)
+            print("-"*globals.OutputWidth)
             for i in xrange(0, len(self.array)):
                 print("%5d: %5d"%(i, self.array[i]))
-            print("-"*68)
+            print("-"*globals.OutputWidth)
 
         self.outputArrayStats()
 
@@ -449,12 +449,12 @@ sectors are contained in the SAT as a sector ID chain.
 
     def output (self):
         print('')
-        print("="*68)
+        print("="*globals.OutputWidth)
         print("Short Sector Allocation Table (SSAT)")
-        print("-"*68)
+        print("-"*globals.OutputWidth)
         if self.params.debug:
             self.outputRawBytes()
-            print("-"*68)
+            print("-"*globals.OutputWidth)
             for i in xrange(0, len(self.array)):
                 item = self.array[i]
                 output("%3d : %3d\n"%(i, item))
@@ -577,20 +577,20 @@ entire file stream.
 
     def output (self, debug=False):
         print('')
-        print("="*68)
+        print("="*globals.OutputWidth)
         print("Directory")
 
         if debug:
-            print("-"*68)
+            print("-"*globals.OutputWidth)
             print("sector(s) used:")
             for secID in self.sectorIDs:
                 print("  sector %d"%secID)
 
             print("")
             for secID in self.sectorIDs:
-                print("-"*68)
+                print("-"*globals.OutputWidth)
                 print("  Raw Hex Dump (sector %d)"%secID)
-                print("-"*68)
+                print("-"*globals.OutputWidth)
                 pos = globals.getSectorPos(secID, self.sectorSize)
                 globals.dumpBytes(self.bytes[pos:pos+self.sectorSize], 128)
 
@@ -598,7 +598,7 @@ entire file stream.
             self.__outputEntry(entry, debug)
 
     def __outputEntry (self, entry, debug):
-        print("-"*68)
+        print("-"*globals.OutputWidth)
         if len(entry.Name) > 0:
             name = entry.Name
             if ord(name[0]) <= 5:
@@ -608,9 +608,9 @@ entire file stream.
             print("name: [empty]   (name buffer size: %d bytes)"%entry.CharBufferSize)
 
         if self.params.debug:
-            print("-"*68)
+            print("-"*globals.OutputWidth)
             globals.dumpBytes(entry.bytes)
-            print("-"*68)
+            print("-"*globals.OutputWidth)
 
         output("type: ")
         if entry.Type == Directory.Type.Empty:

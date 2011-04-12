@@ -334,14 +334,14 @@ class XLStream(object):
         self.params = params
         self.strmData = strmData
 
-    def __printSep (self, c='-', w=68, prefix=''):
+    def __printSep (self, c, w, prefix=''):
         print(prefix + c*w)
 
     def printStreamInfo (self):
-        self.__printSep('=', 68)
+        self.__printSep('=', globals.OutputWidth)
         print("Excel File Format Dumper by Kohei Yoshida")
         print("  total stream size: %d bytes"%self.size)
-        self.__printSep('=', 68)
+        self.__printSep('=', globals.OutputWidth)
         print('')
 
     def printHeader (self):
@@ -434,7 +434,7 @@ class XLDirStream(object):
             self.pos += 1
         return bytes
 
-    def __printSep (self, c='-', w=68, prefix=''):
+    def __printSep (self, c, w, prefix=''):
         print(prefix + c*w)
 
     def __readRecordBytes (self):
@@ -492,7 +492,8 @@ class XLDirStream(object):
         handler = None 
         
         print("")
-        self.__printSep('=', 61, "%4.4Xh: "%header)
+        headerStr = "%4.4Xh: "%header
+        self.__printSep('=', globals.OutputWidth-len(headerStr), headerStr)
         if recData.has_key(header):
             print("%4.4Xh: %s - %s (%4.4Xh)"%
                   (header, recData[header][0], recData[header][1], header))
@@ -511,7 +512,7 @@ class XLDirStream(object):
         else:
             print("%4.4Xh:   size = %d"%(header, size))
 
-        self.__printSep('-', 61, "%4.4Xh: "%header)
+        self.__printSep('-', globals.OutputWidth-len(headerStr), headerStr)
         for i in xrange(0, size):
             if (i+1) % 16 == 1:
                 output("%4.4Xh: "%header)

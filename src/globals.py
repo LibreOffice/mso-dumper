@@ -27,6 +27,8 @@
 
 import sys, struct, math, zipfile, xmlpp, StringIO
 
+OutputWidth = 76
+
 class ByteConvertError(Exception): pass
 
 class ByteStreamError(Exception): pass
