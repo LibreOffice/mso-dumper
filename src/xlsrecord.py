@@ -1667,6 +1667,7 @@ class ExternName(BaseRecordHandler):
             # TODO: differentiate DDE link from external defined name.
 
             self.supbookID = self.readUnsignedInt(2)
+            reserved = self.readUnsignedInt(2)
             nameLen = self.readUnsignedInt(1)
             self.name = self.readUnicodeString(nameLen)
             self.tokens = self.readRemainingBytes()
