@@ -161,8 +161,11 @@ class XLDumper(object):
         strm.read()
 
     def __readCompObjStream (self, dirstrm):
-        strm = olestream.CompObjStream(dirstrm.bytes)
-        strm.read()
+        try:
+            strm = olestream.CompObjStream(dirstrm.bytes)
+            strm.read()
+        except olestream.CompObjStreamError:
+            globals.error("failed to parse CompObj stream.\n")
 
     def __readSubStreamXML (self, strm):
         try:
