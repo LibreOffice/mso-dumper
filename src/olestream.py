@@ -28,6 +28,8 @@
 import sys
 import globals
 
+class CompObjStreamError(Exception): pass
+
 class MonikerStream(object):
     def __init__ (self, bytes):
         self.strm = globals.ByteStream(bytes)
@@ -79,6 +81,78 @@ class OLEStream(object):
         print ("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
 #       globals.dumpBytes(self.strm.bytes, 512)
 
+class CompObjStream(object):
+
+    def __init__ (self, bytes):
+        self.strm = globals.ByteStream(bytes)
+
+    def read (self):
+        # CompObjHeader
+        reserved = self.strm.readBytes(4)
+        ver = self.strm.readUnsignedInt(4)
+        reserved = self.strm.readBytes(20)
+        print ("version: 0x%4.4X"%ver)
+
+        # LengthPrefixedAnsiString
+        length = self.strm.readUnsignedInt(4)
+        displayName = self.strm.readBytes(length)
+        if ord(displayName[-1]) != 0x00:
+            # must be null-terminated.
+            raise CompObjStreamError()
+
+        print ("display name: " + displayName[:-1])
+
+        # ClipboardFormatOrAnsiString
+        marker = self.strm.readUnsignedInt(4)
+        if marker == 0:
+            # Don't do anything.
+            pass
+        elif marker == 0xFFFFFFFF or marker == 0xFFFFFFFE:
+            clipFormatID = self.strm.readUnsignedInt(4)
+            print ("clipboard format ID: %d"%clipFormatID)
+        else:
+            clipName = self.strm.readBytes(marker)
+            if ord(clipName[-1]) != 0x00:
+                # must be null-terminated.
+                raise CompObjStreamError()
+            print ("clipboard format name: %s"%clipName[:-1])
+
+        # LengthPrefixedAnsiString
+        length = self.strm.readUnsignedInt(4)
+        if length == 0 or length > 0x00000028:
+            # the spec says this stream is now invalid.
+            raise CompObjStreamError()
+
+        reserved = self.strm.readBytes(length)
+        if ord(reserved[-1]) != 0x00:
+            # must be null-terminated.
+            raise CompObjStreamError()
+
+        print ("reserved name : %s"%reserved[:-1])
+        unicodeMarker = self.strm.readUnsignedInt(4)
+        if unicodeMarker != 0x71B239F4:
+            raise CompObjStreamError()
+
+        # LengthPrefixedUnicodeString
+        length = self.strm.readUnsignedInt(4)
+        if length > 0:
+            s = globals.getUTF8FromUTF16(self.strm.readBytes(length*2))
+            print ("display name (unicode): %s"%s)
+
+        # ClipboardFormatOrAnsiString
+        marker = self.strm.readUnsignedInt(4)
+        if marker == 0:
+            # Don't do anything.
+            pass
+        elif marker == 0xFFFFFFFF or marker == 0xFFFFFFFE:
+            clipFormatID = self.strm.readUnsignedInt(4)
+            print ("clipboard format ID: %d"%clipFormatID)
+        else:
+            clipName = globals.getUTF8FromUTF16(self.strm.readBytes(marker*2))
+            if ord(clipName[-1]) != 0x00:
+                # must be null-terminated.
+                raise CompObjStreamError()
+            print ("clipboard format name: %s"%clipName[:-1])
 
 
 

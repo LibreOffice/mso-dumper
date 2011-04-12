@@ -32,20 +32,27 @@ import ole, xlsstream, globals, node, xlsmodel, olestream
 
 from globals import error
 
+def equalsName (name, array):
+    if len(name) != len(array):
+        return False
+
+    for i in xrange(0, len(name)):
+        if ord(name[i]) != array[i]:
+            return False
+
+    return True
+
 def isOleStream (dirname):
     """Determine whether or not a stream is an OLE stream.
 
 Accodring to the spec, an OLE stream is always named '\1Ole'."""
 
-    name = [0x01, 0x4F, 0x6C, 0x65] # 0x01, 'O', 'l', 'e'
-    if len(dirname) != len(name):
-        return False
+    name = [0x01, 0x4F, 0x6C, 0x65] # 0x01, 'Ole'
+    return equalsName(dirname, name)
 
-    for i in xrange(0, len(dirname)):
-        if ord(dirname[i]) != name[i]:
-            return False
-
-    return True
+def isCompObjStream (dirname):
+    name = [0x01, 0x43, 0x6F, 0x6D, 0x70, 0x4F, 0x62, 0x6A] # 0x01, 'CompObj'
+    return equalsName(dirname, name)
 
 class XLDumper(object):
 
@@ -134,6 +141,8 @@ class XLDumper(object):
                 self.__readSubStream(dirstrm)
             elif isOleStream(dirname):
                 self.__readOleStream(dirstrm)
+            elif isCompObjStream(dirname):
+                self.__readCompObjStream(dirstrm)
             else:
                 globals.dumpBytes(dirstrm.bytes, 512)
 
@@ -149,6 +158,10 @@ class XLDumper(object):
 
     def __readOleStream (self, dirstrm):
         strm = olestream.OLEStream(dirstrm.bytes)
+        strm.read()
+
+    def __readCompObjStream (self, dirstrm):
+        strm = olestream.CompObjStream(dirstrm.bytes)
         strm.read()
 
     def __readSubStreamXML (self, strm):
