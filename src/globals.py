@@ -277,7 +277,8 @@ def dumpBytes (chars, subDivide=None):
         return
 
     labelWidth = int(math.ceil(math.log(charLen, 10)))
-    flushBytes = False
+    lineBuf = ''
+    i = 0
     for i in xrange(0, charLen):
         if (i+1)%16 == 1:
             # print line header with seek position
@@ -285,23 +286,39 @@ def dumpBytes (chars, subDivide=None):
             output(fmt%i)
 
         byte = ord(chars[i])
+        if 32 < byte and byte < 127:
+            lineBuf += chars[i]
+        else:
+            lineBuf += '.'
         output("%2.2X "%byte)
-        flushBytes = True
 
         if (i+1)%4 == 0:
             # put extra space at every 4 bytes.
             output(" ")
 
         if (i+1)%16 == 0:
+            # end of line
+            output (" " + lineBuf)
             output("\n")
-            flushBytes = False
             if subDivideLine != None and (line+1)%subDivideLine == 0:
                 output("\n")
+            lineBuf = ''
             line += 1
 
-    if flushBytes:
-        output("\n")
+    if len(lineBuf) > 0:
+        i += 1
+        while True:
+            output ("   ")
+            if (i+1)%4 == 0:
+                # put extra space at every 4 bytes.
+                output(" ")
+            if (i+1) % 16 == 0:
+                # end of line
+                output (" " + lineBuf)
+                output("\n")
+                break
 
+            i += 1
 
 def getSectorPos (secID, secSize):
     return 512 + secID*secSize
