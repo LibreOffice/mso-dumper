@@ -277,7 +277,7 @@ def dumpBytes (chars, subDivide=None):
         return
 
     labelWidth = int(math.ceil(math.log(charLen, 10)))
-    lineBuf = ''
+    lineBuf = '' # bytes interpreted as chars at the end of each line
     i = 0
     for i in xrange(0, charLen):
         if (i+1)%16 == 1:
@@ -298,7 +298,7 @@ def dumpBytes (chars, subDivide=None):
 
         if (i+1)%16 == 0:
             # end of line
-            output (" " + lineBuf)
+            output (lineBuf)
             output("\n")
             if subDivideLine != None and (line+1)%subDivideLine == 0:
                 output("\n")
@@ -306,6 +306,7 @@ def dumpBytes (chars, subDivide=None):
             line += 1
 
     if len(lineBuf) > 0:
+        # pad with white space so that the line string gets aligned.
         i += 1
         while True:
             output ("   ")
@@ -314,11 +315,10 @@ def dumpBytes (chars, subDivide=None):
                 output(" ")
             if (i+1) % 16 == 0:
                 # end of line
-                output (" " + lineBuf)
-                output("\n")
                 break
-
             i += 1
+        output (lineBuf)
+        output("\n")
 
 def getSectorPos (secID, secSize):
     return 512 + secID*secSize
