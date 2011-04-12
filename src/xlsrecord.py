@@ -127,7 +127,7 @@ Like parseBytes(), the derived classes must overwrite this method."""
             for line in self.lines:
                 print (headerStr + line)
         except:
-            print(headerStr + "Error interpreting the record!"%self.header)
+            print(headerStr + "Error interpreting the record!")
 
     def debug (self, msg):
         print ("%4.4Xh: %s"%(self.header, msg))
