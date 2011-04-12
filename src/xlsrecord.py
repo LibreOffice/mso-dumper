@@ -117,13 +117,14 @@ Like parseBytes(), the derived classes must overwrite this method."""
         pass
 
     def output (self):
-        print("%4.4Xh: %s"%(self.header, "-"*61))
+        headerStr = "%4.4Xh: "%self.header
+        print (headerStr + "-"*(globals.OutputWidth-len(headerStr)))
         try:
             self.parseBytes()
             for line in self.lines:
-                print("%4.4Xh: %s"%(self.header, line))
+                print (headerStr + line)
         except:
-            print("%4.4Xh: Error interpreting the record!"%self.header)
+            print(headerStr + "Error interpreting the record!"%self.header)
 
     def debug (self, msg):
         print ("%4.4Xh: %s"%(self.header, msg))
