@@ -28,14 +28,14 @@
 
 import sys, os.path, optparse
 sys.path.append(sys.path[0]+"/src")
-import ole, xlsstream, globals, node, xlsmodel
+import ole, xlsstream, globals, node, xlsmodel, olestream
 
 from globals import error
 
 def isOleStream (dirname):
     """Determine whether or not a stream is an OLE stream.
 
-Accodring to the spec, an OLE stream is always named 0x1,'O','l','e'."""
+Accodring to the spec, an OLE stream is always named '\1Ole'."""
 
     name = [0x01, 0x4F, 0x6C, 0x65] # 0x01, 'O', 'l', 'e'
     if len(dirname) != len(name):
@@ -147,8 +147,9 @@ class XLDumper(object):
         except xlsstream.EndOfStream:
             return False
 
-    def __readOleStream (self, strm):
-        globals.dumpBytes(strm.bytes, 512)
+    def __readOleStream (self, dirstrm):
+        strm = olestream.OLEStream(dirstrm.bytes)
+        strm.read()
 
     def __readSubStreamXML (self, strm):
         try:
