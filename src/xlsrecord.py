@@ -1642,6 +1642,70 @@ class ExternSheet(BaseRecordHandler):
 
 class ExternName(BaseRecordHandler):
 
+    class MOper(object):
+        Errors = {
+            0x00: '#NULL!' ,
+            0x07: '#DIV/0!',
+            0x0F: '#VALUE!',
+            0x17: '#REF!'  ,
+            0x1D: '#NAME?' ,
+            0x24: '#NUM!'  ,
+            0x2A: '#N/A'
+        }
+
+        def __init__ (self, bytes):
+            self.strm = globals.ByteStream(bytes)
+
+        def parse (self):
+            self.lastCol = self.strm.readUnsignedInt(1)
+            self.lastRow = self.strm.readUnsignedInt(2)
+            self.values = []
+            n = (self.lastCol+1)*(self.lastRow+1)
+            for i in xrange(0, n):
+                # parse each value
+                oc = self.strm.readUnsignedInt(1)
+                if oc == 0x01:
+                    # number
+                    val = self.strm.readDouble()
+                    self.values.append(val)
+                elif oc == 0x02:
+                    # string
+                    s = self.strm.readUnicodeString()
+                    self.values.append(s)
+                elif oc == 0x04:
+                    # boolean
+                    b = self.strm.readUnsignedInt(1) != 0
+                    self.strm.readBytes(7)
+                    self.values.append(b)
+                elif oc == 0x10:
+                    # error
+                    err = self.strm.readUnsignedInt(1)
+                    self.strm.readBytes(7)
+                    self.values.append(err)
+                else:
+                    # null value
+                    self.strm.readBytes(8)
+                    self.values.append(None)
+
+        def output (self, hdl):
+            hdl.appendLine("last column: %d"%self.lastCol)
+            hdl.appendLine("last row: %d"%self.lastRow)
+            for value in self.values:
+                if type(value) == type(0.0):
+                    hdl.appendLine("value: %g"%value)
+                elif type(value) == type("s"):
+                    hdl.appendLine("value: %s"%value)
+                elif type(value) == type(True):
+                    hdl.appendLine("value: %d (boolean)"%value)
+                elif type(value) == type(1):
+                    # error code stored as an integer.
+                    if ExternName.MOper.Errors.has_key(value):
+                        hdl.appendLine("value: %s"%ExternName.MOper.Errors[value])
+                    else:
+                        hdl.appendLine("value: 0x%2.2X (unknown error)"%value)
+                else:
+                    hdl.appendLine("value: (unknown)")
+
     def __parseBytes (self):
         flag = self.readUnsignedInt(2)
 
@@ -1689,17 +1753,11 @@ class ExternName(BaseRecordHandler):
             self.appendLine("name: %s"%self.name)
             if len(self.moper) > 0:
                 try:
-                    strm = globals.ByteStream(self.moper)
-                    lastCol = strm.readUnsignedInt(1)
-                    lastRow = strm.readUnsignedInt(2)
-                    self.appendLine("last column: %d"%lastCol)
-                    self.appendLine("last row: %d"%lastRow)
-                    rest = strm.readRemainingBytes()
-                    restStr = globals.getRawBytes(rest, True, False)
-                    self.appendLine("cache: %s"%restStr)
-
+                    parser = ExternName.MOper(self.moper)
+                    parser.parse()
+                    parser.output(self)
                 except:
-                    pass
+                    self.appendLine("Error while parsing the moper bytes.")
         else:
             # TODO: Test this.
             self.appendLine("type: defined name")
