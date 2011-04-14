@@ -151,6 +151,29 @@ class PtgExp(PtgBase):
     def getText (self):
         return "(ptgexp: row=%d, col=%d)"%(self.row, self.col)
 
+class PtgMissArg(PtgBase):
+    def parseBytes (self):
+        pass
+
+    def getText (self):
+        return '(arg missing)'
+
+class PtgRef(PtgBase):
+    def parseBytes (self):
+        self.row = self.strm.readUnsignedInt(2)
+        self.col = self.strm.readUnsignedInt(2)
+
+    def getText (self):
+        return "(ref: row=%d, col=%d)"%(self.row, self.col)
+
+class PtgStr(PtgBase):
+    def parseBytes (self):
+        length = self.strm.readUnsignedInt(1)
+        self.value = self.strm.readUnicodeString(length)
+
+    def getText (self):
+        return "(str: '%s')"%self.value
+
 class PtgNameX(PtgBase):
     def parseBytes (self):
         self.xti = self.strm.readUnsignedInt(2)
@@ -159,12 +182,12 @@ class PtgNameX(PtgBase):
     def getText (self):
         return "(name: xti=%d, name=%d)"%(self.xti, self.nameID)
 
-class _Int(PtgBase):
+class PtgInt(PtgBase):
     def parseBytes (self):
         self.value = self.strm.readUnsignedInt(2)
 
     def getText (self):
-        return "%d"%self.value
+        return "(int: %d)"%self.value
 
 class _Area3d(PtgBase):
     def parseBytes (self):
@@ -588,7 +611,10 @@ class _FuncVar(PtgBase):
 
 _tokenMap = {
     0x01: PtgExp,
-    0x1E: _Int,
+    0x16: PtgMissArg,
+    0x17: PtgStr,
+    0x1E: PtgInt,
+    0x24: PtgRef,
     0x3B: _Area3d,
     0x59: PtgNameX,
     0x5B: _Area3d,
