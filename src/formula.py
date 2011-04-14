@@ -209,7 +209,7 @@ class PtgRef3d(PtgBase):
     def getText (self):
         return "(xti=%d,%s)"%(self.ixti, self.cell.getName())
 
-class _FuncVar(PtgBase):
+class PtgFuncVar(PtgBase):
 
     funcTab = {
         0x0000: 'COUNT',
@@ -597,17 +597,13 @@ class _FuncVar(PtgBase):
     def getText (self):
         if self.isCeTab:
             # I'll support this later.
-            return ''
+            raise FormulaParserError("special built-in function not supported yet")
 
-        if not _FuncVar.funcTab.has_key(self.funcType):
+        if not PtgFuncVar.funcTab.has_key(self.funcType):
             # unknown function name
             return '#NAME!'
 
-        if self.argCount > 0:
-            # I'll support functions with arguments later.
-            return ''
-
-        return _FuncVar.funcTab[self.funcType] + "()"
+        return "(func: %s; arg: %d)"%(PtgFuncVar.funcTab[self.funcType], self.argCount)
 
 _tokenMap = {
     0x01: PtgExp,
@@ -621,7 +617,7 @@ _tokenMap = {
     0x7B: _Area3d,
 
     0x3A: PtgRef3d,
-    0x42: _FuncVar
+    0x42: PtgFuncVar
 }
 
 class FormulaParser(object):
