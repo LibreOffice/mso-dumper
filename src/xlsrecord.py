@@ -949,8 +949,11 @@ class Formula(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         fparser = formula.FormulaParser(self.header, self.tokens)
-        fparser.parse()
-        ftext = fparser.getText()
+        try:
+            fparser.parse()
+            ftext = fparser.getText()
+        except formula.FormulaParserError as e:
+            ftext = "(Error: %s)"%e.args[0]
 
         self.appendCellPosition(self.col, self.row)
         self.appendLine("XF record ID: %d"%self.xf)

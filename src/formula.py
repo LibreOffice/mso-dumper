@@ -29,6 +29,7 @@ import struct, sys
 import globals
 
 class InvalidCellAddress(Exception): pass
+class FormulaParserError(Exception): pass
 
 def toColName (colID):
     if colID > 255:
@@ -614,7 +615,7 @@ associated token classes will be without the leading underscore (_)."""
             b = self.strm.readUnsignedInt(1)
             if not _tokenMap.has_key(b):
                 # Unknown token.  Stop parsing.
-                return
+                raise FormulaParserError("unknown token 0x%2.2X"%b)
 
             token = _tokenMap[b](self.strm, b)
             token.parse()
