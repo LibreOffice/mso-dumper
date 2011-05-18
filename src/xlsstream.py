@@ -52,7 +52,7 @@ recData = {
     0x0019: ["WINDOWPROTECT", "Windows Are Protected"],
     0x0021: ["ARRAY", "Array-Entered Formula", xlsrecord.Array], # undocumented, but identical to 0x0221 ?
     0x001A: ["VERTICALPAGEBREAKS", "Explicit Column Page Breaks"],
-    0x001B: ["HORIZONTALPAGEBREAKS", "Explicit Row Page Breaks"],
+    0x001B: ["HORIZONTALPAGEBREAKS", "Explicit Row Page Breaks", xlsrecord.HorBreaks],
     0x001C: ["NOTE", "Comment Associated with a Cell"],
     0x001D: ["SELECTION", "Current Selection"],
     0x0022: ["DATEMODE", "Base Date for Displaying Date Values"],

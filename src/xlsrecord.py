@@ -974,6 +974,25 @@ class Formula(BaseRecordHandler):
         sheet.setCell(self.col, self.row, cell)
 
 
+class HorBreaks(BaseRecordHandler):
+    """Stores all horizontal breaks in a sheet."""
+
+    def __parseBytes (self):
+        self.count = self.readUnsignedInt(2)
+        self.breaks = []
+        for i in xrange(0, self.count):
+            row = self.readUnsignedInt(2)
+            col1 = self.readUnsignedInt(2)
+            col2 = self.readUnsignedInt(2)
+            self.breaks.append((row, col1, col2))
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("count: %d"%self.count)
+        for i in xrange(0, self.count):
+            self.appendLine("break: (row: %d; colums: %d-%d)"%self.breaks[i])
+
+
 class Array(BaseRecordHandler):
 
     def __parseBytes (self):
