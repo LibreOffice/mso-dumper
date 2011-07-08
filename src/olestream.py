@@ -175,10 +175,11 @@ class PropertySetStream(object):
         print ("FMT ID 0: %s"%globals.getRawBytes(fmtID0, True, False))
         offset0 = self.strm.readUnsignedInt(4)
         print ("offset 0: 0x%4.4X"%offset0)
-        fmtID1 = self.strm.readBytes(16)
-        print ("FMT ID 1: %s"%globals.getRawBytes(fmtID0, True, False))
-        offset1 = self.strm.readUnsignedInt(4)
-        print ("offset 1: 0x%4.4X\n"%offset1)
+        if sets > 1:
+            fmtID1 = self.strm.readBytes(16)
+            print ("FMT ID 1: %s"%globals.getRawBytes(fmtID0, True, False))
+            offset1 = self.strm.readUnsignedInt(4)
+            print ("offset 1: 0x%4.4X\n"%offset1)
         self.readSet(offset0)
         if sets > 1:
             self.strm.setCurrentPos(offset1);
