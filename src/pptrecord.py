@@ -691,6 +691,9 @@ class TextRulerAtom(BaseRecordHandler):
             leftIndent = self.readUnsignedInt(2)
             self.appendLine("leftIndent4 %d"%leftIndent)
 
+    def appendParaProp (self, text):
+        self.appendLine("para prop given: "+text)
+
 # -------------------------------------------------------------------
 # special record handlers: text style properties
 
