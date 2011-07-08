@@ -154,5 +154,66 @@ class CompObjStream(object):
                 raise CompObjStreamError()
             print ("clipboard format name: %s"%clipName[:-1])
 
+class PropertySetStream(object):
 
+    def __init__ (self, bytes):
+        self.strm = globals.ByteStream(bytes)
 
+    def read (self):
+        byteorder = self.strm.readUnsignedInt(2)
+        if byteorder != 0xFFFE:
+            raise PropertySetStreamError()
+        ver = self.strm.readUnsignedInt(2)
+        print ("version: 0x%4.4X"%ver)
+        sID = self.strm.readUnsignedInt(4)
+        print ("system identifier: 0x%4.4X"%sID)
+        clsID = self.strm.readBytes(16)
+        print ("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
+        sets = self.strm.readUnsignedInt(4)
+        print ("number of property sets: 0x%4.4X"%sets)
+        fmtID0 = self.strm.readBytes(16)
+        print ("FMT ID 0: %s"%globals.getRawBytes(fmtID0, True, False))
+        offset0 = self.strm.readUnsignedInt(4)
+        print ("offset 0: 0x%4.4X"%offset0)
+        fmtID1 = self.strm.readBytes(16)
+        print ("FMT ID 1: %s"%globals.getRawBytes(fmtID0, True, False))
+        offset1 = self.strm.readUnsignedInt(4)
+        print ("offset 1: 0x%4.4X\n"%offset1)
+        self.readSet(offset0)
+        if sets > 1:
+            self.strm.setCurrentPos(offset1);
+            self.readSet(offset1)
+
+    def readSet (self, setOffset):
+        print ("-----------------------------")
+        print ("Property set")
+        print ("-----------------------------")
+        size = self.strm.readUnsignedInt(4)
+        print ("size: 0x%4.4X"%size)
+        props = self.strm.readUnsignedInt(4)
+        print ("number of properties: 0x%4.4X"%props)
+        pos = 0
+        while pos < props:
+            self.strm.setCurrentPos(setOffset + 8 + pos*8);
+            id = self.strm.readUnsignedInt(4)
+            offset = self.strm.readUnsignedInt(4)
+            print ("ID: 0x%4.4X offset: 0x%4.4X"%(id, offset))
+            self.strm.setCurrentPos(setOffset + offset);
+            type = self.strm.readUnsignedInt(2)
+            padding = self.strm.readUnsignedInt(2)
+            if padding != 0:
+                raise PropertySetStreamError()
+            print ("type: 0x%4.4X"%type)
+            if type == 2:
+                value = self.strm.readSignedInt(2)
+                print ("VT_I2: %d"%value)
+            elif type == 0x41:
+                blobSize = self.strm.readUnsignedInt(4)
+                print ("VT_BLOB size: 0x%4.4X"%blobSize)
+                print ("------------------------------------------------------------------------")
+                globals.dumpBytes(self.strm.bytes[self.strm.pos:self.strm.pos+blobSize], blobSize)
+                print ("------------------------------------------------------------------------")
+            else:
+                print ("unknown type")
+            pos += 1
+        print ("")

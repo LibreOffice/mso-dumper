@@ -28,7 +28,7 @@
 
 import sys, os.path, getopt
 sys.path.append(sys.path[0]+"/src")
-import ole, pptstream, globals
+import ole, pptstream, globals, olestream
 
 from globals import error
 
@@ -76,6 +76,9 @@ class PPTDumper(object):
             elif  dirname == "Current User":
                 if not self.__readSubStream(dirstrm):
                     result = False
+            elif  dirname == "\x05DocumentSummaryInformation":
+                strm = olestream.PropertySetStream(dirstrm.bytes)
+                strm.read()
             else:
                 globals.dumpBytes(dirstrm.bytes, 512)
         return result
