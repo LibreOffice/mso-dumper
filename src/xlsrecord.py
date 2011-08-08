@@ -1317,6 +1317,18 @@ class RK(BaseRecordHandler):
             self.appendLine("type: floating point")
         self.appendLine("value: %g"%realVal)
 
+class Scl(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.numerator = self.readSignedInt(2)
+        self.denominator = self.readSignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        val = 0.0 # force the value to be treated as double precision.
+        val += self.numerator
+        val /= self.denominator
+        self.appendLine("zoom level: %g"%val)
 
 class String(BaseRecordHandler):
     """Cached string formula result for preceding formula record."""
@@ -3256,7 +3268,7 @@ class CTCellContent(BaseRecordHandler):
 # -------------------------------------------------------------------
 # CH - Chart
 
-class CHChart(BaseRecordHandler):
+class Chart(BaseRecordHandler):
 
     def parseBytes (self):
         x = globals.getSignedInt(self.bytes[0:4])
