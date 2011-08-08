@@ -3306,21 +3306,25 @@ class Series(BaseRecordHandler):
             r = CHSeries.seriesTypes[idx]
         return r
 
+    def __parseBytes (self):
+        self.catType     = self.readUnsignedInt(2)
+        self.valType     = self.readUnsignedInt(2) # must be 1 (ignored)
+        self.catCount    = self.readUnsignedInt(2)
+        self.valCount    = self.readUnsignedInt(2)
+        self.bubbleType  = self.readUnsignedInt(2) # must be 1 (ignored)
+        self.bubbleCount = self.readUnsignedInt(2)
+
     def parseBytes (self):
-        catType     = self.readUnsignedInt(2)
-        valType     = self.readUnsignedInt(2)
-        catCount    = self.readUnsignedInt(2)
-        valCount    = self.readUnsignedInt(2)
-        bubbleType  = self.readUnsignedInt(2)
-        bubbleCount = self.readUnsignedInt(2)
-
-        self.appendLine("category type: %s (count: %d)"%
-            (CHSeries.getSeriesType(catType), catCount))
-        self.appendLine("value type: %s (count: %d)"%
-            (CHSeries.getSeriesType(valType), valCount))
-        self.appendLine("bubble type: %s (count: %d)"%
-            (CHSeries.getSeriesType(bubbleType), bubbleCount))
-
+        self.__parseBytes()
+        s = "unknown"
+        if self.catType == 1:
+            s = "numeric"
+        elif self.catType == 3:
+            s = "text"
+        self.appendLine("data type: %s"%s)
+        self.appendLine("category or horizontal value count: %d"%self.catCount)
+        self.appendLine("value or vertical value count: %d"%self.valCount)
+        self.appendLine("bubble size value count: %d"%self.bubbleCount)
 
 class CHAxis(BaseRecordHandler):
 
