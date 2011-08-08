@@ -181,6 +181,9 @@ Like parseBytes(), the derived classes must overwrite this method."""
         else:
             return falseStr
 
+    def readShortXLUnicodeString (self):
+        cch = self.readUnsignedInt(1)
+        return self.readUnicodeString(cch)
 
 class AutofilterInfo(BaseRecordHandler):
 
@@ -1340,6 +1343,17 @@ class Scl(BaseRecordHandler):
         val += self.numerator
         val /= self.denominator
         self.appendLine("zoom level: %g"%val)
+
+class SeriesText(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.readBytes(2) # must be zero, ignored.
+        self.text = self.readShortXLUnicodeString()
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("text: '%s'"%self.text)
+
 
 class String(BaseRecordHandler):
     """Cached string formula result for preceding formula record."""
