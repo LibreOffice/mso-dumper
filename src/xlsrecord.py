@@ -1250,6 +1250,21 @@ class Obj(BaseRecordHandler):
         self.appendLineBoolean("  automatic fill style", autoFill)
         self.appendLineBoolean("  automatic line style", autoLine)
 
+class PrintSize(BaseRecordHandler):
+
+    Types = [
+        "unchanged from the defaults in the workbook",
+        "resized non-proportionally to fill the entire page",
+        "resized proportionally to fill the entire page",
+        "size defined in the chart record"
+    ]
+
+    def __parseBytes (self):
+        self.typeID = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine(globals.getValueOrUnknown(PrintSize.Types, self.typeID))
 
 class RK(BaseRecordHandler):
     """Cell with encoded integer or floating-point value"""

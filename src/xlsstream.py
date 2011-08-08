@@ -65,6 +65,7 @@ recData = {
     0x002B: ["PRINTGRIDLINES", "Print Gridlines Flag"],
     0x002F: ["FILEPASS", "File Is Password-Protected", xlsrecord.FilePass],
     0x0031: ["FONT", "Font and Character Formatting", xlsrecord.Font],
+    0x0033: ["PRINTSIZE", "Printed Size of the Chart", xlsrecord.PrintSize],
     0x003C: ["CONTINUE", "Continues Long Records"],
     0x003D: ["WINDOW1", "Window Information"],
     0x0040: ["BACKUP", "Save Backup Version of the File"],
