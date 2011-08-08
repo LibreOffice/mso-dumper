@@ -1108,7 +1108,7 @@ class MulBlank(BaseRecordHandler):
         s = "XF Record IDs:"
         for xfCell in self.xfCells:
             s += " %d"%xfCell
-        self.appendLine(s)
+        self.appendMultiLine(s)
 
 
 class Number(BaseRecordHandler):
