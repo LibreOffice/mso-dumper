@@ -236,7 +236,7 @@ recData = {
     0x089C: ["HEADERFOOTER", "Header Footer"],
     0x089B: ["COMPRESSPICTURES", "Automatic Picture Compression Mode"],
     0x08A3: ["FORCEFULLCALCULATION", "Force Full Calculation Mode"],
-    0x1001: ["CHUNITS", "?"],
+    0x1001: ["UNITS", "[unused, must be ignored]"],
     0x1002: ["CHCHART", "Chart Header Data", xlsrecord.CHChart],
     0x1003: ["CHSERIES", "Chart Series", xlsrecord.CHSeries],
     0x1006: ["CHDATAFORMAT", "?"],
