@@ -42,7 +42,7 @@ recData = {
     0x000F: ["REFMODE", "Reference Mode"],
     0x0010: ["DELTA", "Iteration Increment"],
     0x0011: ["ITERATION", "Iteration Mode"],
-    0x0012: ["PROTECT", "Protection Flag"],
+    0x0012: ["PROTECT", "Protection Flag", xlsrecord.Protect],
     0x0013: ["PASSWORD", "Protection Password"],
     0x0014: ["HEADER", "Print Header on Each Page"],
     0x0015: ["FOOTER", "Print Footer on Each Page"],

@@ -1286,6 +1286,16 @@ class PrintSize(BaseRecordHandler):
         self.__parseBytes()
         self.appendLine(globals.getValueOrUnknown(PrintSize.Types, self.typeID))
 
+class Protect(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.locked = self.readUnsignedInt(2) != 0
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineBoolean("workbook locked", self.locked)
+
+
 class RK(BaseRecordHandler):
     """Cell with encoded integer or floating-point value"""
 
