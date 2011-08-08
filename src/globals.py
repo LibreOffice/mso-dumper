@@ -108,6 +108,14 @@ class ByteStream(object):
         self.moveForward (byteLen)
         return text
 
+    def readFixedPoint (self):
+        # [MS-OSHARED] Section 2.2.1.6 FixedPoint
+        integral = self.readSignedInt(2)
+        fractional = self.readUnsignedInt(2)
+        val = 0.0
+        val += integral + (fractional / 65536.0)
+        return val
+
     def moveBack (self, byteCount):
         self.pos -= byteCount
         if self.pos < 0:

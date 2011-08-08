@@ -1270,6 +1270,17 @@ class Obj(BaseRecordHandler):
         self.appendLineBoolean("  automatic fill style", autoFill)
         self.appendLineBoolean("  automatic line style", autoLine)
 
+class PlotGrowth(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.dx = self.readFixedPoint()
+        self.dy = self.readFixedPoint()
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("horizontal growth: %g"%self.dx)
+        self.appendLine("vertical growth: %g"%self.dy)
+
 class PrintSize(BaseRecordHandler):
 
     Types = [

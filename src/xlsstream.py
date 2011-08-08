@@ -290,6 +290,7 @@ recData = {
     0x1060: ["FBI", "Font Information for Chart", xlsrecord.Fbi],
     0x1061: ["CHPIEEXT", "?"],
     0x1062: ["CHLABELRANGE2", "?"],
+    0x1064: ["PLOTGROWTH", "Font Scaling Information in the Plot Area", xlsrecord.PlotGrowth],
     0x1065: ["CHSIINDEX*", "?"],
     0x1066: ["CHESCHERFORMAT", "?"]
 }
