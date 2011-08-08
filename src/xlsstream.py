@@ -287,6 +287,7 @@ recData = {
     0x105B: ["CHSERERRORBAR", "?"],
     0x105D: ["CHSERIESFORMAT", "?"],
     0x105F: ["CH3DDATAFORMAT", "?"],
+    0x1060: ["FBI", "Font Information for Chart", xlsrecord.Fbi],
     0x1061: ["CHPIEEXT", "?"],
     0x1062: ["CHLABELRANGE2", "?"],
     0x1065: ["CHSIINDEX*", "?"],

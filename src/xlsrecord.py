@@ -882,6 +882,26 @@ class DVal(BaseRecordHandler):
     def fillModel (self, model):
         self.__parseBytes()
 
+class Fbi(BaseRecordHandler):
+    def __parseBytes (self):
+        self.fontWidth = self.readUnsignedInt(2)
+        self.fontHeight = self.readUnsignedInt(2)
+        self.defaultHeight = self.readUnsignedInt(2)
+        self.scaleType = self.readUnsignedInt(2)
+        self.fontID = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("font width (twips): %d"%self.fontWidth)
+        self.appendLine("font height (twips): %d"%self.fontHeight)
+        self.appendLine("default font height (twips): %d"%self.defaultHeight)
+        if self.scaleType == 0:
+            s = "chart area"
+        else:
+            s = "plot area"
+        self.appendLine("scale by: %s"%s)
+        self.appendLine("font ID: %d"%self.fontID)
+
 
 class FilePass(BaseRecordHandler):
 
