@@ -3290,7 +3290,7 @@ class Chart(BaseRecordHandler):
         self.appendLine("size: (width, height) = (%d, %d)"%(w, h))
         
         
-class CHSeries(BaseRecordHandler):
+class Series(BaseRecordHandler):
 
     DATE     = 0
     NUMERIC  = 1
