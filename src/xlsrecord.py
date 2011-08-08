@@ -1087,6 +1087,28 @@ class MulRK(BaseRecordHandler):
             cell = xlsmodel.NumberCell(decodeRK(rkrec.number))
             sheet.setCell(col, self.row, cell)
 
+class MulBlank(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.row = self.readUnsignedInt(2)
+        self.col1 = self.readUnsignedInt(2)
+        self.col2 = -1
+        self.xfCells = []
+        while True:
+            val = self.readUnsignedInt(2)
+            if self.isEndOfRecord():
+                self.col2 = val
+                break
+            self.xfCells.append(val)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("row: %d"%self.row)
+        self.appendLine("columns: %d-%d"%(self.col1, self.col2))
+        s = "XF Record IDs:"
+        for xfCell in self.xfCells:
+            s += " %d"%xfCell
+        self.appendLine(s)
 
 
 class Number(BaseRecordHandler):
