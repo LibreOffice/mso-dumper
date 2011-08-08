@@ -3522,58 +3522,40 @@ class CHLine(BaseRecordHandler):
         self.appendLine("shadow: %s"%self.getYesNo(shadow))
 
 
-class CHSourceLink(BaseRecordHandler):
+class Brai(BaseRecordHandler):
 
-    destTypes = ['title', 'values', 'category', 'bubbles']
-    linkTypes = ['auto', 'direct value', 'reference']
+    destTypes = [
+        'series, legend entry, trendline name, or error bars name',
+        'values or horizontal values',
+        'categories or vertical values',
+        'bubble size values of the series']
 
-    DEST_TITLE    = 0
-    DEST_VALUES   = 1
-    DEST_CATEGORY = 2
-    DEST_BUBBLES  = 3
-
-    # Data source type
-    class DataSourceType:
-        Auto      = 0 # category name, series name or bubble size that was automatically generated.
-        Value     = 1 # text or value as specified by the formula field
-        Reference = 2 # value from a range of cells as specified by the formula field
+    linkTypes = [
+        'auto-generated category name, series name, or bubble size',
+        'text or value',
+        'range of cells']
 
     def __parseBytes (self):
-        self.destType = self.readUnsignedInt(1)
-        self.linkType = self.readUnsignedInt(1)
-        flags    = self.readUnsignedInt(2)
-        self.numFmt   = self.readUnsignedInt(2)
-        
-        self.destName = 'unknown'
-        if self.destType < len(CHSourceLink.destTypes):
-            self.destName = CHSourceLink.destTypes[self.destType]
-
-        self.linkName = 'unknown'
-        if self.linkType < len(CHSourceLink.linkTypes):
-            self.linkName = CHSourceLink.linkTypes[self.linkType]
-
-        if self.linkType == CHSourceLink.DataSourceType.Reference:
-            lenToken = self.readUnsignedInt(2)
-            self.tokens = self.readBytes(lenToken)
-
-        self.useNumFormat = (flags & 0x0001) != 0
+        self.id = self.readUnsignedInt(1)
+        self.rt = self.readUnsignedInt(1)
+        flag = self.readUnsignedInt(2)
+        self.unlinkedIFmt = (flag & 0x0001) != 0
+        self.iFmt = self.readUnsignedInt(2)
+        tokenCount = self.readUnsignedInt(2)
+        # TODO: parse chart formula tokens here.
 
     def parseBytes (self):
         self.__parseBytes()
-        
-        self.appendLine("destination type: %s"%self.destName)
-        self.appendLine("link type: %s"%self.linkName)
+        self.appendLine("part type: %s"%globals.getValueOrUnknown(Brai.destTypes, self.id))
+        self.appendLine("referenced data type: %s"%globals.getValueOrUnknown(Brai.linkTypes, self.rt))
+        s = "number format: "
+        if self.unlinkedIFmt:
+            s += "custom format"
+        else:
+            s += "source data format"
+            self.appendLine(s)
 
-        if self.linkType == CHSourceLink.DataSourceType.Reference:
-            # external reference.  Read the formula tokens.
-            self.appendLine("formula tokens: %s"%globals.getRawBytes(self.tokens,True,False))
-            parser = formula.FormulaParser(self.header, self.tokens)
-            parser.parse()
-            self.appendLine("formula: %s"%parser.getText())
-
-        if self.useNumFormat:
-            self.appendLine("number format: %d"%self.numFmt)
-
+        self.appendLine("number format ID: %d"%self.iFmt)
 
 class MSODrawing(BaseRecordHandler):
     """Handler for the MSODRAWING record
