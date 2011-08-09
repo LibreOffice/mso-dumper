@@ -3541,8 +3541,8 @@ class Brai(BaseRecordHandler):
         flag = self.readUnsignedInt(2)
         self.unlinkedIFmt = (flag & 0x0001) != 0
         self.iFmt = self.readUnsignedInt(2)
-        tokenCount = self.readUnsignedInt(2)
-        # TODO: parse chart formula tokens here.
+        tokenBytes = self.readUnsignedInt(2)
+        self.formulaBytes = self.readBytes(tokenBytes)
 
     def parseBytes (self):
         self.__parseBytes()
@@ -3556,6 +3556,14 @@ class Brai(BaseRecordHandler):
             self.appendLine(s)
 
         self.appendLine("number format ID: %d"%self.iFmt)
+        self.appendLine("formula size (bytes): %d"%len(self.formulaBytes))
+        if len(self.formulaBytes) > 0:
+            parser = formula.FormulaParser(self.header, self.formulaBytes)
+            try:
+                parser.parse()
+                self.appendLine("formula: %s"%parser.getText())
+            except formula.FormulaParserError as e:
+                self.appendLine("formula parser error: %s"%e.args[0])
 
 class MSODrawing(BaseRecordHandler):
     """Handler for the MSODRAWING record

@@ -125,6 +125,22 @@ class TokenType:
     Area3d = 0
     Unknown = 9999
 
+def getPtgDataType (opcode):
+    return (opcode & 0x60) / (2**5)
+
+class PtgDataType(object):
+
+    Reference = 0x1
+    Value     = 0x2
+    Array     = 0x3
+
+    __names = ['ref', 'value', 'array']
+    @staticmethod
+    def getText (value):
+        if 1 <= value and value <= 3:
+            return PtgDataType.__names[value-1]
+        return 'unknown'
+
 class PtgBase(object):
     def __init__ (self, strm, opcode1, opcode2=None):
         self.opcode1 = opcode1
@@ -166,6 +182,14 @@ class PtgRef(PtgBase):
     def getText (self):
         return "(ref: row=%d, col=%d)"%(self.row, self.col)
 
+class PtgMemFunc(PtgBase):
+    def parseBytes(self):
+        self.dataType = getPtgDataType(self.opcode1)
+        self.length = self.strm.readUnsignedInt(2)
+
+    def getText (self):
+        return "(mem func: type=%s size=%d)"%(PtgDataType.getText(self.dataType), self.length)
+
 class PtgStr(PtgBase):
     def parseBytes (self):
         length = self.strm.readUnsignedInt(1)
@@ -188,6 +212,14 @@ class PtgInt(PtgBase):
 
     def getText (self):
         return "(int: %d)"%self.value
+
+class PtgParen(PtgBase):
+    def getText (self):
+        return '(paren)'
+
+class PtgUnion(PtgBase):
+    def getText (self):
+        return '(union)'
 
 class _Area3d(PtgBase):
     def parseBytes (self):
@@ -607,10 +639,13 @@ class PtgFuncVar(PtgBase):
 
 _tokenMap = {
     0x01: PtgExp,
+    0x10: PtgUnion,
+    0x15: PtgParen,
     0x16: PtgMissArg,
     0x17: PtgStr,
     0x1E: PtgInt,
     0x24: PtgRef,
+    0x29: PtgMemFunc,
     0x3B: _Area3d,
     0x59: PtgNameX,
     0x5B: _Area3d,
