@@ -3488,20 +3488,20 @@ class CHLabelRange(BaseRecordHandler):
         self.appendLineBoolean("axis reversed", reversed)
 
 
-class CHLegend(BaseRecordHandler):
+class Legend(BaseRecordHandler):
     
     dockModeMap = {0: 'bottom', 1: 'corner', 2: 'top', 3: 'right', 4: 'left', 7: 'not docked'}
     spacingMap = ['close', 'medium', 'open']
 
     def getDockModeText (self, val):
-        if CHLegend.dockModeMap.has_key(val):
-            return CHLegend.dockModeMap[val]
+        if Legend.dockModeMap.has_key(val):
+            return Legend.dockModeMap[val]
         else:
             return '(unknown)'
 
     def getSpacingText (self, val):
-        if val < len(CHLegend.spacingMap):
-            return CHLegend.spacingMap[val]
+        if val < len(Legend.spacingMap):
+            return Legend.spacingMap[val]
         else:
             return '(unknown)'
 
@@ -3510,7 +3510,7 @@ class CHLegend(BaseRecordHandler):
         y = self.readSignedInt(4)
         w = self.readSignedInt(4)
         h = self.readSignedInt(4)
-        dockMode = self.readUnsignedInt(1)
+        dockMode = self.readUnsignedInt(1) # [MS-XLS] says unused !?
         spacing  = self.readUnsignedInt(1)
         flags    = self.readUnsignedInt(2)
 

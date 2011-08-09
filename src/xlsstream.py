@@ -247,7 +247,7 @@ recData = {
     0x100C: ["CHATTACHEDLABEL", "?"],
     0x100D: ["SERIESTEXT", "Series Category Name or Title Text in Chart", xlsrecord.SeriesText],
     0x1014: ["CHTYPEGROUP", "?"],
-    0x1015: ["CHLEGEND", "?", xlsrecord.CHLegend],
+    0x1015: ["LEGEND", "Legend Properties", xlsrecord.Legend],
     0x1017: ["CHBAR, CHCOLUMN", "?", xlsrecord.CHBar],
     0x1018: ["CHLINE", "?", xlsrecord.CHLine],
     0x1019: ["CHPIE", "?"],
