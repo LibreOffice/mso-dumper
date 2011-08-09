@@ -31,6 +31,8 @@ from globals import output
 
 class EndOfStream(Exception): pass
 
+unusedRecDesc = "[unused, must be ignored]"
+
     # opcode: [canonical name, description, handler (optional)]
 
 recData = {
@@ -236,7 +238,7 @@ recData = {
     0x089C: ["HEADERFOOTER", "Header Footer"],
     0x089B: ["COMPRESSPICTURES", "Automatic Picture Compression Mode"],
     0x08A3: ["FORCEFULLCALCULATION", "Force Full Calculation Mode"],
-    0x1001: ["UNITS", "[unused, must be ignored]"],
+    0x1001: ["UNITS", unusedRecDesc],
     0x1002: ["CHART", "Position And Size of Chart Area", xlsrecord.Chart],
     0x1003: ["SERIES", "Data Properties for Series, Trendlines or Error Bars", xlsrecord.Series],
     0x1006: ["CHDATAFORMAT", "?"],
@@ -259,6 +261,7 @@ recData = {
     0x101F: ["CHVALUERANGE", "Chart Axis Value Range", xlsrecord.CHValueRange],
     0x1020: ["CHLABELRANGE", "Chart Axis Label Range", xlsrecord.CHLabelRange],
     0x1021: ["CHAXISLINE", "?"],
+    0x1022: ["CRTLINK", unusedRecDesc],
     0x1024: ["DEFAULTTEXT", "Default Text", xlsrecord.DefaultText],
     0x1025: ["TEXT", "Label Properties", xlsrecord.Text],
     0x1026: ["CHFONT", "?"],
