@@ -92,6 +92,18 @@ def decodeRK (rkval, auxData = None):
 
     return realVal
 
+class LongRGB(object):
+    def __init__ (self, r, g, b):
+        self.red = r
+        self.green = g
+        self.blue = b
+
+class ICV(object):
+    def __init__ (self, value):
+        self.value = value
+
+    def toString (self):
+        return "color=0x%2.2X"%self.value
 
 class BaseRecordHandler(globals.ByteStream):
 
@@ -184,6 +196,16 @@ Like parseBytes(), the derived classes must overwrite this method."""
     def readShortXLUnicodeString (self):
         cch = self.readUnsignedInt(1)
         return self.readUnicodeString(cch)
+
+    def readLongRGB (self):
+        r = self.readUnsignedInt(1)
+        g = self.readUnsignedInt(1)
+        b = self.readUnsignedInt(1)
+        self.readBytes(1) # reserved
+        return LongRGB(r, g, b)
+
+    def readICV (self):
+        return ICV(self.readUnsignedInt(2))
 
 class AutofilterInfo(BaseRecordHandler):
 
@@ -3282,14 +3304,6 @@ class CTCellContent(BaseRecordHandler):
         o.parse()
         return "formula", fmlaBytes, o.getText()
 
-
-
-
-
-
-
-
-
 # -------------------------------------------------------------------
 # CH - Chart
 
@@ -3303,7 +3317,71 @@ class Chart(BaseRecordHandler):
         self.appendLine("position: (x, y) = (%d, %d)"%(x, y))
         self.appendLine("size: (width, height) = (%d, %d)"%(w, h))
         
-        
+class DefaultText(BaseRecordHandler):
+
+    __types = [
+        'non-percent or non-value',
+        'percent or value',
+        'non-scalable font',
+        'scalable font']
+
+    def __parseBytes (self):
+        self.id = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine(globals.getValueOrUnknown(DefaultText.__types, self.id))
+
+class Text(BaseRecordHandler):
+
+    __horAlign = { 1: 'left', 2: 'center', 3: 'right', 4: 'justify', 7: 'distributed' }
+    __verAlign = { 1: 'top', 2: 'center', 3: 'bottom', 4: 'justify', 7: 'distributed' }
+    __bkgMode = { 1: 'transparent', 2: 'opaque' }
+
+    def __parseBytes (self):
+        self.at = self.readUnsignedInt(1)
+        self.vat = self.readUnsignedInt(1)
+        self.bkgMode = self.readUnsignedInt(2)
+        self.textColor = self.readLongRGB()
+        self.x = self.readSignedInt(4)
+        self.y = self.readSignedInt(4)
+        self.dx = self.readSignedInt(4)
+        self.dy = self.readSignedInt(4)
+
+        flag = self.readUnsignedInt(2)
+        self.autoColor        = (flag & 0x0001) != 0 # A
+        self.showKey          = (flag & 0x0002) != 0 # B
+        self.showValue        = (flag & 0x0004) != 0 # C 
+        unused                = (flag & 0x0008) != 0 # D (unused)
+        self.autoText         = (flag & 0x0010) != 0 # E
+        self.generated        = (flag & 0x0020) != 0 # F
+        self.deleted          = (flag & 0x0040) != 0 # G
+        self.autoMode         = (flag & 0x0080) != 0 # H
+        unused                = (flag & 0x0700) != 0 # I (unused)
+        self.showLabelAndPerc = (flag & 0x0800) != 0 # J
+        self.showPercent      = (flag & 0x1000) != 0 # K
+        self.showBubbleSizes  = (flag & 0x2000) != 0 # L
+        self.showLabel        = (flag & 0x4000) != 0 # M
+        reserved              = (flag & 0x8000) != 0 # N (reserved)
+
+        self.icvTextColor = self.readICV()
+
+        flag = self.readUnsignedInt(2)
+        self.dlp = (flag & 0x000F)
+        self.readingOrder = (flag & 0xC000) / (2**14)
+        self.trot = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("horizontal alignment: %s"%
+            globals.getValueOrUnknown(Text.__horAlign, self.at))
+        self.appendLine("vertical alignment: %s"%
+            globals.getValueOrUnknown(Text.__verAlign, self.vat))
+        self.appendLine("text background: %s"%
+            globals.getValueOrUnknown(Text.__bkgMode, self.bkgMode))
+
+        # TODO : handle the rest of the data.
+
 class Series(BaseRecordHandler):
 
     DATE     = 0
