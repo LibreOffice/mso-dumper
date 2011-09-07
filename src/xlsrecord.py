@@ -2316,6 +2316,10 @@ class XF(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
+        if self.style:
+            self.appendLine("parent style ID: 0x%2.2X (should be 0xFFF for cell style XF)"%self.cellStyleXFIndex)
+        else:
+            self.appendLine("parent style ID: %d"%self.cellStyleXFIndex)
         self.appendLine("font ID: %d"%self.fontId)
         self.appendLine("number format ID: %d"%self.numId)
         self.appendLineBoolean("locked protection", self.locked)
