@@ -81,27 +81,29 @@ class XLDumper(object):
 
     def dumpXML (self):
         self.__parseFile()
-        dirnames = self.strm.getDirectoryNames()
-        for dirname in dirnames:
+        dirEntries = self.strm.getDirectoryEntries()
+        for entry in dirEntries:
+            dirname = entry.Name
             if dirname != "Workbook":
                 # for now, we only dump the Workbook directory stream.
                 continue
 
-            dirstrm = self.strm.getDirectoryStreamByName(dirname)
+            dirstrm = self.strm.getDirectoryStream(entry)
             self.__readSubStreamXML(dirstrm)
 
     def dumpCanonicalXML (self):
         self.__parseFile()
-        dirnames = self.strm.getDirectoryNames()
         docroot = node.Root()
         root = docroot.appendElement('xls-dump')
 
-        for dirname in dirnames:
+        dirEntries = self.strm.getDirectoryEntries()
+        for entry in dirEntries:
+            dirname = entry.Name
             if dirname != "Workbook":
                 # for now, we only dump the Workbook directory stream.
                 continue
 
-            dirstrm = self.strm.getDirectoryStreamByName(dirname)
+            dirstrm = self.strm.getDirectoryStream(entry)
             wbmodel = self.__buildWorkbookModel(dirstrm)
             wbmodel.encrypted = self.strmData.encrypted
             root.appendChild(wbmodel.createDOM())
