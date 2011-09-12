@@ -50,17 +50,25 @@ class Workbook(ModelBase):
         # private members
         self.__sheets = []
 
-    def appendSheet (self):
-        n = len(self.__sheets)
-        if n == 0:
-            self.__sheets.append(WorkbookGlobal())
-        else:
-            self.__sheets.append(Worksheet(n-1))
+    
+    def appendSheet (self, sheetType):
+        def raiseError(cause):
+            def errorFunc():
+                raise Exception(cause)
+                
+        HANDLERS = { 0x0005: WorkbookGlobal,
+                     0x0006: raiseError("Unsupported sheet type: Visual Basic module"),
+                     0x0010: lambda: Worksheet(len(self.__sheets)),
+                     0x0020: Chart,
+                     0x0040: raiseError("Unsupported sheet type: Excel 4.0 macro sheet"),
+                     0x0100: raiseError("Unsupported sheet type: Workspace file")
+                    }
+        self.__sheets.append(HANDLERS[sheetType]())
 
-        return self.getCurrentSheet()
+        return self.__sheets[-1]
 
     def getWorkbookGlobal (self):
-        return self.__sheets[0]
+        return filter(lambda x: isinstance(x, WorkbookGlobal), self.__sheets)[0]
 
     def getCurrentSheet (self):
         return self.__sheets[-1]
@@ -68,20 +76,19 @@ class Workbook(ModelBase):
     def createDOM (self):
         nd = node.Element('workbook')
         nd.setAttr('encrypted', self.encrypted)
-        n = len(self.__sheets)
+        sheets = filter(lambda x: isinstance(x, Worksheet), self.__sheets)
+        n = len(sheets)
         if n == 0:
             return
 
-        wbglobal = self.__sheets[0]
+        wbglobal = self.getWorkbookGlobal()
         nd.appendChild(wbglobal.createDOM(self))
-        for i in xrange(1, n):
-            sheet = self.__sheets[i]
+        for (i,sheet) in enumerate(sheets):
             sheetNode = sheet.createDOM(self)
             nd.appendChild(sheetNode)
-            if i > 0:
-                data = wbglobal.getSheetData(i-1)
-                sheetNode.setAttr('name', data.name)
-                sheetNode.setAttr('visible', data.visible)
+            data = wbglobal.getSheetData(i-1)
+            sheetNode.setAttr('name', data.name)
+            sheetNode.setAttr('visible', data.visible)
 
         return nd
 
@@ -91,6 +98,7 @@ class SheetBase(object):
     class Type:
         WorkbookGlobal = 0
         Worksheet = 1
+        Chart=2
 
     def __init__ (self, modelType):
         self.modelType = modelType
@@ -201,6 +209,10 @@ class SupbookExternal(Supbook):
 
         return nd
 
+
+class Chart(SheetBase):
+    def __init__(self):
+        super(Chart, self).__init__(SheetBase.Type.Chart)
 
 class WorkbookGlobal(SheetBase):
     class SheetData:

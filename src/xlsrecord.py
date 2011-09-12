@@ -436,52 +436,64 @@ class BOF(BaseRecordHandler):
         else:
             return '(unknown)'
 
+    def __parseBytes (self):
+        # BIFF version
+        self.ver = self.readUnsignedInt(2)
+
+        # Substream type
+        self.dataType = self.readUnsignedInt(2)
+
+        # build ID and year
+        self.buildID = self.readUnsignedInt(2)
+        self.buildYear = self.readUnsignedInt(2)
+
+        # file history flags
+        self.flags = self.readUnsignedInt(4)
+        self.win     = (self.flags & 0x00000001)
+        self.risc    = (self.flags & 0x00000002)
+        self.beta    = (self.flags & 0x00000004)
+        self.winAny  = (self.flags & 0x00000008)
+        self.macAny  = (self.flags & 0x00000010)
+        self.betaAny = (self.flags & 0x00000020)
+        self.riscAny = (self.flags & 0x00000100)
+        self.lowestExcelVer = self.readSignedInt(4)
+    
     def parseBytes (self):
+        self.__parseBytes()
         # BIFF version
         ver = self.readUnsignedInt(2)
         s = 'not BIFF8'
-        if ver == 0x0600:
+        if self.ver == 0x0600:
             s = 'BIFF8'
         self.appendLine("BIFF version: %s"%s)
 
         # Substream type
-        dataType = self.readUnsignedInt(2)
-        self.appendLine("type: %s"%BOF.Type[dataType])
+        self.appendLine("type: %s"%BOF.Type[self.dataType])
 
         # build ID and year
-        buildID = self.readUnsignedInt(2)
-        self.appendLine("build ID: %s (%4.4Xh)"%(self.getBuildIdName(buildID), buildID))
-        buildYear = self.readUnsignedInt(2)
-        self.appendLine("build year: %d"%buildYear)
+        self.appendLine("build ID: %s (%4.4Xh)"%(self.getBuildIdName(self.buildID), self.buildID))
+        self.appendLine("build year: %d"%self.buildYear)
 
         # file history flags
-        flags = self.readUnsignedInt(4)
-        win     = (flags & 0x00000001)
-        risc    = (flags & 0x00000002)
-        beta    = (flags & 0x00000004)
-        winAny  = (flags & 0x00000008)
-        macAny  = (flags & 0x00000010)
-        betaAny = (flags & 0x00000020)
-        riscAny = (flags & 0x00000100)
-        self.appendLine("last edited by Excel on Windows: %s"%self.getYesNo(win))
-        self.appendLine("last edited by Excel on RISC: %s"%self.getYesNo(risc))
-        self.appendLine("last edited by beta version of Excel: %s"%self.getYesNo(beta))
-        self.appendLine("has ever been edited by Excel for Windows: %s"%self.getYesNo(winAny))
-        self.appendLine("has ever been edited by Excel for Macintosh: %s"%self.getYesNo(macAny))
-        self.appendLine("has ever been edited by beta version of Excel: %s"%self.getYesNo(betaAny))
-        self.appendLine("has ever been edited by Excel on RISC: %s"%self.getYesNo(riscAny))
+        self.appendLine("last edited by Excel on Windows: %s"%self.getYesNo(self.win))
+        self.appendLine("last edited by Excel on RISC: %s"%self.getYesNo(self.risc))
+        self.appendLine("last edited by beta version of Excel: %s"%self.getYesNo(self.beta))
+        self.appendLine("has ever been edited by Excel for Windows: %s"%self.getYesNo(self.winAny))
+        self.appendLine("has ever been edited by Excel for Macintosh: %s"%self.getYesNo(self.macAny))
+        self.appendLine("has ever been edited by beta version of Excel: %s"%self.getYesNo(self.betaAny))
+        self.appendLine("has ever been edited by Excel on RISC: %s"%self.getYesNo(self.riscAny))
 
-        lowestExcelVer = self.readSignedInt(4)
-        self.appendLine("earliest Excel version that can read all records: %d"%lowestExcelVer)
+        self.appendLine("earliest Excel version that can read all records: %d"%self.lowestExcelVer)
 
     def fillModel (self, model):
+        
         if model.modelType != xlsmodel.ModelType.Workbook:
             return
+        self.__parseBytes()
 
-        sheet = model.appendSheet()
-        ver = self.readUnsignedInt(2)
+        sheet = model.appendSheet(self.dataType)
         s = 'not BIFF8'
-        if ver == 0x0600:
+        if self.ver == 0x0600:
             s = 'BIFF8'
         sheet.version = s
 
@@ -745,8 +757,9 @@ class Dimensions(BaseRecordHandler):
     def fillModel (self, model):
         self.__parseBytes()
         sh = model.getCurrentSheet()
-        sh.setFirstDefinedCell(self.colMin, self.rowMin)
-        sh.setFirstFreeCell(self.colMax, self.rowMax)
+        if not isinstance(sh, xlsmodel.Chart):
+            sh.setFirstDefinedCell(self.colMin, self.rowMin)
+            sh.setFirstFreeCell(self.colMax, self.rowMax)
 
 
 class Dv(BaseRecordHandler):
