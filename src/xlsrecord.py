@@ -98,6 +98,11 @@ class LongRGB(object):
         self.green = g
         self.blue = b
 
+def dumpRgb(rgb):
+    return {'r': rgb.red,
+            'g': rgb.green,
+            'b': rgb.blue}
+
 class ICV(object):
     def __init__ (self, value):
         self.value = value
@@ -781,7 +786,13 @@ class Dimensions(BaseRecordHandler):
         if not isinstance(sh, xlsmodel.Chart):
             sh.setFirstDefinedCell(self.colMin, self.rowMin)
             sh.setFirstFreeCell(self.colMax, self.rowMax)
-
+    
+    def dumpData(self):
+        self.__parseBytes()
+        return ('dimensions', {'row-min': self.rowMin,
+                               'row-max': self.rowMax,
+                               'col-min': self.colMin,
+                               'col-max': self.colMax})
 
 class Dv(BaseRecordHandler):
 
@@ -961,6 +972,13 @@ class Fbi(BaseRecordHandler):
         self.appendLine("scale by: %s"%s)
         self.appendLine("font ID: %d"%self.fontID)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('fbi', {'font-width': self.fontWidth,
+                        'font-height': self.fontHeight,
+                        'default-height': self.defaultHeight,
+                        'scale-type': self.scaleType,
+                        'font-id': self.fontID})
 
 class FilePass(BaseRecordHandler):
 
@@ -1199,9 +1217,17 @@ class Number(BaseRecordHandler):
         self.fval = self.readDouble()
         
     def parseBytes (self):
+        self.__parseBytes()
         self.appendCellPosition(self.col, self.row)
         self.appendLine("XF record ID: %d"%self.xf)
         self.appendLine("value: %g"%self.fval)
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('number', {'row': self.row,
+                           'col': self.col,
+                           'xf': self.xf,
+                           'fval': self.fval})
 
 
 class Obj(BaseRecordHandler):
@@ -1341,9 +1367,13 @@ class PlotGrowth(BaseRecordHandler):
         self.__parseBytes()
         self.appendLine("horizontal growth: %g"%self.dx)
         self.appendLine("vertical growth: %g"%self.dy)
+        
+    def dumpData(self):
+        self.__parseBytes()
+        return ('plot-growth', {'dx': self.dx,
+                                'dy': self.dy})
 
 class PrintSize(BaseRecordHandler):
-
     Types = [
         "unchanged from the defaults in the workbook",
         "resized non-proportionally to fill the entire page",
@@ -1358,14 +1388,21 @@ class PrintSize(BaseRecordHandler):
         self.__parseBytes()
         self.appendLine(globals.getValueOrUnknown(PrintSize.Types, self.typeID))
 
-class Protect(BaseRecordHandler):
+    def dumpData(self):
+        self.__parseBytes()
+        return ('print-size', {'type-id': self.typeID})
 
+class Protect(BaseRecordHandler):
     def __parseBytes (self):
         self.locked = self.readUnsignedInt(2) != 0
 
     def parseBytes (self):
         self.__parseBytes()
         self.appendLineBoolean("workbook locked", self.locked)
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('protect', {'locked': self.locked})
 
 
 class RK(BaseRecordHandler):
@@ -1401,6 +1438,11 @@ class Scl(BaseRecordHandler):
         val += self.numerator
         val /= self.denominator
         self.appendLine("zoom level: %g"%val)
+        
+    def dumpData(self):
+        self.__parseBytes()
+        return ('scl', {'numer': self.numerator,
+                        'denom': self.denominator})
 
 class SeriesText(BaseRecordHandler):
 
@@ -3345,33 +3387,47 @@ class CTCellContent(BaseRecordHandler):
 
 
 class Header(BaseRecordHandler):
-	pass
+    def dumpData(self):
+        return ('header', {})
 
 class Footer(BaseRecordHandler):
-	pass
+    def dumpData(self):
+        return ('footer', {})
 
 class HCenter(BaseRecordHandler):
     def __parseBytes(self):
         self.val = self.readUnsignedInt(2)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('hcenter', {'val': self.val})
+
 class VCenter(BaseRecordHandler):
     def __parseBytes(self):
         self.val = self.readUnsignedInt(2)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('vcenter', {'val': self.val})
+
 class Setup(BaseRecordHandler):
-	pass 
+    def dumpData(self):
+        return ('setup', {})
 
 class Units(BaseRecordHandler):
-	pass
+    def dumpData(self):
+        return ('units', {})
 
 class Begin(BaseRecordHandler):
 	pass
  
 class PlotArea(BaseRecordHandler):
-	pass
+    def dumpData(self):
+        return ('plot-area', {})
 
 class CrtLink(BaseRecordHandler): # it's unused
-	pass
+    def dumpData(self):
+        return ('crt-link', {})
 
 class End(BaseRecordHandler):
 	pass
@@ -3387,6 +3443,13 @@ class Chart(BaseRecordHandler):
         self.__parseBytes()
         self.appendLine("position: (x, y) = (%d, %d)"%(self.x, self.y))
         self.appendLine("size: (width, height) = (%d, %d)"%(self.w, self.h))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('chart-xfrm', {'x': self.x,
+                               'y': self.y,
+                               'w': self.w,
+                               'h': self.h})
 
 class Frame(BaseRecordHandler):
     __frt_table = {0x0000: "frame surrounding the chart element",
@@ -3404,6 +3467,12 @@ class Frame(BaseRecordHandler):
         self.appendLine("autoSize: %s" % self.autoSize)
         self.appendLine("autoPosition: %s" % self.autoPosition)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('frame', {'frt': self.frt,
+                          'auto-size': self.autoSize,
+                          'auto-position': self.autoPosition})
+
 class LineFormat(BaseRecordHandler):
     def __parseBytes(self):
         self.rgb = self.readLongRGB()
@@ -3420,6 +3489,16 @@ class LineFormat(BaseRecordHandler):
         self.__parseBytes()
         # TODO: dump all data
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('line-format', {'lns': self.lns,
+                                'we': self.we,
+                                'auto': self.auto,
+                                'axis-on': self.axisOn,
+                                'auto-co': self.autoCo,
+                                'icv': self.icv},
+                                [('rgb', dumpRgb(self.rgb))])
+
 class AreaFormat(BaseRecordHandler):
     def __parseBytes(self):
         self.foreColor = self.readLongRGB()
@@ -3435,6 +3514,16 @@ class AreaFormat(BaseRecordHandler):
         self.__parseBytes()
         # TODO: dump all data
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('area-format', {'fls': self.fls,
+                                'auto': self.auto,
+                                'invert-neg': self.invertNeg,
+                                'icv-fore': self.icvFore,
+                                'icv-back': self.icvBack},
+                                [('fore-color', dumpRgb(self.foreColor)),
+                                 ('back-color', dumpRgb(self.backColor))])
+
 class DataFormat(BaseRecordHandler):
     def __parseBytes(self):
         self.xi = self.readUnsignedInt(2)
@@ -3446,6 +3535,12 @@ class DataFormat(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         # TODO: dump all data
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('data-format', {'xi': self.xi,
+                                'yi': self.yi,
+                                'iss': self.iss})
 
 class ChartFormat(BaseRecordHandler):
     def __parseBytes(self):
@@ -3461,6 +3556,11 @@ class ChartFormat(BaseRecordHandler):
         self.__parseBytes()
         # TODO: dump all data
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('chart-format', {'varied': self.varied,
+                                 'icrt': self.icrt})
+
 class Chart3DBarShape(BaseRecordHandler):
     def __parseBytes(self):
         self.riser = self.readUnsignedInt(1) 
@@ -3470,9 +3570,18 @@ class Chart3DBarShape(BaseRecordHandler):
         self.__parseBytes()
         # TODO: dump all data
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('chart-3dbar-shape', {'riser': self.riser,
+                                      'taper': self.taper})
+
 class SerToCrt(BaseRecordHandler):
     def __parseBytes(self):
         self.id = self.readUnsignedInt(2)
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('ser-to-crt', {'id': self.id})
 
 class Pos(BaseRecordHandler):
     def __parseBytes(self):
@@ -3487,18 +3596,39 @@ class Pos(BaseRecordHandler):
         self.y2 = self.readSignedInt(2)
         unused = self.readUnsignedInt(2)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('pos', {'md-top-lt': self.mdTopLt,
+                        'md-bot-rt': self.mdBotRt,
+                        'x1': self.x1,
+                        'y1': self.y1,
+                        'x2': self.x2,
+                        'y2': self.y2})
+
 class FontX(BaseRecordHandler):
     def __parseBytes(self):
         self.iFont = self.readUnsignedInt(2)
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('font-x', {'i-font': self.iFont})
 
 class AxesUsed(BaseRecordHandler):
     def __parseBytes(self):
         self.cAxes = self.readUnsignedInt(2)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('axes-used', {'c-axes': self.cAxes})
+
 class AxisParent(BaseRecordHandler):
     def __parseBytes(self):
         self.iax = self.readUnsignedInt(2)
         # 16 bytes are unused
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('axis-parent', {'iax': self.iax})
 
 class AxcExt(BaseRecordHandler):
     def __parseBytes (self):
@@ -3521,6 +3651,25 @@ class AxcExt(BaseRecordHandler):
         self.autoCross          = (flag & 0x0040) != 0 # G
         self.autoDate         = (flag & 0x0080) != 0 # H
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('axc-ext', {'cat-min': self.catMin,
+                            'cat-max': self.catMax,
+                            'cat-major': self.catMajor,
+                            'du-major': self.duMajor,
+                            'cat-minor': self.catMinor,
+                            'du-minor': self.duMinor,
+                            'du-base': self.duBase,
+                            'cat-cross-date': self.catCrossDate,
+                            'auto-min': self.autoMin,
+                            'auto-max': self.autoMax,
+                            'auto-major': self.autoMajor,
+                            'auto-minor': self.autoMinor,
+                            'date-axis': self.dateAxis,
+                            'auto-base': self.autoBase,
+                            'auto-cross': self.autoCross,
+                            'auto-date': self.autoDate})
+
 class Tick(BaseRecordHandler):
     def __parseBytes (self):
         self.tktMajor = self.readUnsignedInt(1)
@@ -3542,13 +3691,35 @@ class Tick(BaseRecordHandler):
         self.icv = self.readICV()
         self.trot = self.readUnsignedInt(2)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('tick', {'tkt-major': self.tktMajor,
+                         'tkt-minor': self.tktMinor,
+                         'tlt': self.tlt,
+                         'w-bkg-mode': self.wBkgMode,
+                         'auto-co': self.autoCo,
+                         'auto-mode': self.autoMode,
+                         'rot': self.rot,
+                         'reading-order': self.readingOrder,
+                         'icv': self.icv,
+                         'trot': self.trot},
+                         [('rgb', dumpRgb(self.rgb))])
+
 class AxisLine(BaseRecordHandler):
     def __parseBytes(self):
         self.id = self.readUnsignedInt(2)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('axis-line', {'id': self.id})
+
 class SIIndex(BaseRecordHandler):
     def __parseBytes(self):
         self.numIndex = self.readUnsignedInt(2)
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('si-index', {'num-index': self.numIndex})
 
 class DefaultText(BaseRecordHandler):
 
@@ -3564,6 +3735,10 @@ class DefaultText(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         self.appendLine(globals.getValueOrUnknown(DefaultText.__types, self.id))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('default-text', {'id': self.id})
 
 class Text(BaseRecordHandler):
 
@@ -3615,6 +3790,31 @@ class Text(BaseRecordHandler):
 
         # TODO : handle the rest of the data.
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('text', {'at': self.at,
+                         'vat': self.vat,
+                         'bkg-mode': self.bkgMode,
+                         'x': self.x,
+                         'y': self.y,
+                         'dx': self.dx,
+                         'dy': self.dy,
+                         'auto-color': self.autoColor,
+                         'show-key': self.showKey,
+                         'show-value': self.showValue,
+                         'auto-text': self.autoText,
+                         'generated': self.generated,
+                         'deleted': self.deleted,
+                         'show-label-and-perc': self.showLabelAndPerc,
+                         'show-percent': self.showPercent,
+                         'show-bubble-sizes': self.showBubbleSizes,
+                         'show-label': self.showLabel,
+                         'icv-text-color': self.icvTextColor,
+                         'dlp': self.dlp,
+                         'reading-order': self.readingOrder,
+                         'trot': self.trot},
+                         [('text-color', dumpRgb(self.textColor))])
+
 class Series(BaseRecordHandler):
 
     DATE     = 0
@@ -3651,6 +3851,15 @@ class Series(BaseRecordHandler):
         self.appendLine("value or vertical value count: %d"%self.valCount)
         self.appendLine("bubble size value count: %d"%self.bubbleCount)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('series', {'cat-type': self.catType,
+                         'val-type': self.valType,
+                         'cat-count': self.catCount,
+                         'val-count': self.valCount,
+                         'bubble-type': self.bubbleType,
+                         'bubble-count': self.bubbleCount})
+                         
 class CHAxis(BaseRecordHandler):
 
     axisTypeList = ['x-axis', 'y-axis', 'z-axis']
@@ -3669,6 +3878,14 @@ class CHAxis(BaseRecordHandler):
         else:
             self.appendLine("axis type: unknown")
         self.appendLine("area: (x, y, w, h) = (%d, %d, %d, %d) [no longer used]"%(self.x, self.y, self.w, self.h))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('axis', {'axis-type': self.axisType,
+                         'x': self.x,
+                         'y': self.y,
+                         'w': self.w,
+                         'h': self.h})
 
 
 class CHProperties(BaseRecordHandler):
@@ -3696,6 +3913,14 @@ class CHProperties(BaseRecordHandler):
 
         self.appendLine("empty value treatment: %s" % emptyValues)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('sht-props', {'empty-flags': self.emptyFlags,
+                             'manual-series': self.manualSeries,
+                             'show-vis-cells': self.showVisCells,
+                             'no-resize': self.noResize,
+                             'manual-plot-area': self.manualPlotArea})
+
 class CHLabelRange(BaseRecordHandler):
 
     
@@ -3716,12 +3941,15 @@ class CHLabelRange(BaseRecordHandler):
         self.appendLineBoolean("axis between categories", self.betweenCateg)
         self.appendLineBoolean("other axis crosses at maximum", self.maxCross)
         self.appendLineBoolean("axis reversed", self.reversed)
-    
-    def fillModel(self, model):
+
+    def dumpData(self):
         self.__parseBytes()
-        sh = model.getCurrentSheet()
-        sh.setCatSerRange(self.axisCross, self.freqLabel, self.freqTick, 
-                          self.betweenCateg, self.maxCross, self.reversed)
+        return ('cat-ser-range', {'axis-cross': self.axisCross,
+                                  'freq-label': self.freqLabel,
+                                  'freq-tick': self.freqTick,
+                                  'between-categ': self.betweenCateg,
+                                  'max-cross': self.maxCross,
+                                  'reversed': self.reversed})
 
 
 class Legend(BaseRecordHandler):
@@ -3773,6 +4001,20 @@ class Legend(BaseRecordHandler):
         self.appendLine("")
         self.appendMultiLine("NOTE: Position and size are in units of 1/4000 of chart's width or height.")
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('legend', {'x': self.x,
+                           'y': self.y,
+                           'w': self.w,
+                           'h': self.h,
+                           'dock-mode': self.dockMode,
+                           'spacing': self.spacing,
+                           'docked': self.docked,
+                           'auto-series': self.autoSeries,
+                           'auto-pos-x': self.autoPosX,
+                           'auto-pos-y': self.autoPosY,
+                           'stacked': self.stacked,
+                           'data-table': self.dataTable})
 
 class CHValueRange(BaseRecordHandler):
 
@@ -3806,9 +4048,25 @@ class CHValueRange(BaseRecordHandler):
             (self.cross, self.getYesNo(self.autoCross), self.getYesNo(self.maxCross)))
         self.appendLine("biff5 or above: %s"%self.getYesNo(self.bit8))
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('value-range', {'min-val': self.minVal,
+                                'max-val': self.maxVal,
+                                'major-step': self.majorStep,
+                                'minor-step': self.minorStep,
+                                'cross': self.cross,
+                                'auto-min': self.autoMin,
+                                'auto-max': self.autoMax,
+                                'auto-major': self.autoMajor,
+                                'auto-minor': self.autoMinor,
+                                'auto-cross': self.autoCross,
+                                'log-scale': self.logScale,
+                                'reversed': self.reversed,
+                                'max-cross': self.maxCross,
+                                'biff5bit': self.bit8})
+
 
 class CHBar(BaseRecordHandler):
-
     def __parseBytes (self):
         self.overlap = globals.getSignedInt(self.readBytes(2))
         self.gap     = globals.getSignedInt(self.readBytes(2))
@@ -3833,6 +4091,14 @@ class CHBar(BaseRecordHandler):
         sh = model.getCurrentSheet()
         sh.setBar(self.overlap, self.gap, self.horizontal, self.stacked, self.percent, self.shadow)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('bar', {'overlap': self.overlap,
+                        'gap': self.gap,
+                        'horizontal': self.horizontal,
+                        'stacked': self.stacked,
+                        'shadow': self.shadow})
+
 class CHLine(BaseRecordHandler):
 
     def parseBytes (self):
@@ -3847,7 +4113,6 @@ class CHLine(BaseRecordHandler):
 
 
 class Brai(BaseRecordHandler):
-
     destTypes = [
         'series, legend entry, trendline name, or error bars name',
         'values or horizontal values',
@@ -3896,6 +4161,14 @@ class Brai(BaseRecordHandler):
             self.appendLine("formula: %s"%self.formula)
         else:
             self.appendLine("formula parser error: %s"%self.formulaError)
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('brai', {'id': self.id,
+                         'rt': self.rt,
+                         'unlinked-ifmt': self.unlinkedIFmt,
+                         'i-fmt': self.iFmt,
+                         'formula': self.formula}) # assuming the formula is fine
 
 class MSODrawing(BaseRecordHandler):
     """Handler for the MSODRAWING record
