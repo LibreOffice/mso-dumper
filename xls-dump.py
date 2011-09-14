@@ -29,6 +29,7 @@
 import sys, os.path, optparse
 sys.path.append(sys.path[0]+"/src")
 import ole, xlsstream, globals, node, xlsmodel, olestream
+import xlsparser
 
 from globals import error
 
@@ -82,13 +83,17 @@ class XLDumper(object):
     def dumpXML (self):
         self.__parseFile()
         dirs = self.strm.getDirectoryEntries()
+        docroot = node.Root()
+        root = docroot.appendElement('xls-dump')
+        
         for d in dirs:
             if d.Name != "Workbook":
                 # for now, we only dump the Workbook directory stream.
                 continue
 
             dirstrm = self.strm.getDirectoryStream(d)
-            self.__readSubStreamXML(dirstrm)
+            data = self.__readSubStreamXML(dirstrm)
+            self.__dumpDataAsXML(data, root)
 
     def dumpCanonicalXML (self):
         self.__parseFile()
@@ -167,12 +172,19 @@ class XLDumper(object):
         except olestream.CompObjStreamError:
             globals.error("failed to parse CompObj stream.\n")
 
+    def __dumpDataAsXML(self, data, root):
+        print data
+        
     def __readSubStreamXML (self, strm):
+        handlers = []
         try:
             while True:
-                strm.readRecordXML()
+                handler = strm.getNextRecordHandler()
+                handlers.append(handler)
         except xlsstream.EndOfStream:
             pass
+        parser = xlsparser.XlsParser(handlers)
+        return parser.dumpData()
 
     def __buildWorkbookModel (self, strm):
         model = xlsmodel.Workbook()

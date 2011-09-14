@@ -128,6 +128,12 @@ append a line to be displayed.
 Like parseBytes(), the derived classes must overwrite this method."""
         pass
 
+    def dumpData (self):
+        """Parse the original bytes and return the data dump as ('name', {'val1': val1,...})
+
+Like parseBytes(), the derived classes must overwrite this method."""
+        pass
+
     def __getHeaderStr (self):
         return "%4.4Xh: "%self.header
 
@@ -411,6 +417,8 @@ class Autofilter(BaseRecordHandler):
         sh.setAutoFilterArrow(self.filterIndex, obj)
         # TODO: Pick up more complex states as we need them.
 
+class EOF(BaseRecordHandler):
+    pass
 
 class BOF(BaseRecordHandler):
 
@@ -461,7 +469,6 @@ class BOF(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         # BIFF version
-        ver = self.readUnsignedInt(2)
         s = 'not BIFF8'
         if self.ver == 0x0600:
             s = 'BIFF8'
@@ -498,7 +505,21 @@ class BOF(BaseRecordHandler):
         sheet.version = s
 
 
-
+    def dumpData(self):
+        self.__parseBytes()
+        return ('bof', {'ver': self.ver,
+                        'data-type': self.dataType,
+                        'build-id': self.buildID,
+                        'build-year': self.buildYear,
+                        'win': self.win,
+                        'risc': self.risc,
+                        'beta': self.beta,
+                        'win-any': self.winAny,
+                        'mac-any': self.macAny,
+                        'beta-any': self.betaAny,
+                        'risc-any': self.riscAny,
+                        'lowest-version': self.lowestExcelVer})
+                        
 class BoundSheet(BaseRecordHandler):
 
     hiddenStates = {0x00: 'visible', 0x01: 'hidden', 0x02: 'very hidden'}
@@ -1171,14 +1192,16 @@ class MulBlank(BaseRecordHandler):
 
 class Number(BaseRecordHandler):
 
+    def __parseBytes (self):
+        self.row = self.readSignedInt(2)
+        self.col = self.readSignedInt(2)
+        self.xf = self.readSignedInt(2)
+        self.fval = self.readDouble()
+        
     def parseBytes (self):
-        row = globals.getSignedInt(self.bytes[0:2])
-        col = globals.getSignedInt(self.bytes[2:4])
-        xf  = globals.getSignedInt(self.bytes[4:6])
-        fval = globals.getDouble(self.bytes[6:14])
-        self.appendCellPosition(col, row)
-        self.appendLine("XF record ID: %d"%xf)
-        self.appendLine("value: %g"%fval)
+        self.appendCellPosition(self.col, self.row)
+        self.appendLine("XF record ID: %d"%self.xf)
+        self.appendLine("value: %g"%self.fval)
 
 
 class Obj(BaseRecordHandler):
@@ -3320,16 +3343,213 @@ class CTCellContent(BaseRecordHandler):
 # -------------------------------------------------------------------
 # CH - Chart
 
-class Chart(BaseRecordHandler):
 
-    def parseBytes (self):
-        x = globals.getSignedInt(self.bytes[0:4])
-        y = globals.getSignedInt(self.bytes[4:8])
-        w = globals.getSignedInt(self.bytes[8:12])
-        h = globals.getSignedInt(self.bytes[12:16])
-        self.appendLine("position: (x, y) = (%d, %d)"%(x, y))
-        self.appendLine("size: (width, height) = (%d, %d)"%(w, h))
+class Header(BaseRecordHandler):
+	pass
+
+class Footer(BaseRecordHandler):
+	pass
+
+class HCenter(BaseRecordHandler):
+    def __parseBytes(self):
+        self.val = self.readUnsignedInt(2)
+
+class VCenter(BaseRecordHandler):
+    def __parseBytes(self):
+        self.val = self.readUnsignedInt(2)
+
+class Setup(BaseRecordHandler):
+	pass 
+
+class Units(BaseRecordHandler):
+	pass
+
+class Begin(BaseRecordHandler):
+	pass
+ 
+class PlotArea(BaseRecordHandler):
+	pass
+
+class CrtLink(BaseRecordHandler): # it's unused
+	pass
+
+class End(BaseRecordHandler):
+	pass
+
+class Chart(BaseRecordHandler):
+    def __parseBytes(self):
+        self.x = globals.getSignedInt(self.bytes[0:4])
+        self.y = globals.getSignedInt(self.bytes[4:8])
+        self.w = globals.getSignedInt(self.bytes[8:12])
+        self.h = globals.getSignedInt(self.bytes[12:16])
         
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("position: (x, y) = (%d, %d)"%(self.x, self.y))
+        self.appendLine("size: (width, height) = (%d, %d)"%(self.w, self.h))
+
+class Frame(BaseRecordHandler):
+    __frt_table = {0x0000: "frame surrounding the chart element",
+                   0x0004: "frame with a shadow surrounding the chart element"}
+                   
+    def __parseBytes(self):
+        self.frt = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(2)
+        self.autoSize = (flags & 0x001) != 0
+        self.autoPosition = (flags & 0x002) != 0
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("frame type: %s" % ChartFrame.__frt_table[self.frt])
+        self.appendLine("autoSize: %s" % self.autoSize)
+        self.appendLine("autoPosition: %s" % self.autoPosition)
+
+class LineFormat(BaseRecordHandler):
+    def __parseBytes(self):
+        self.rgb = self.readLongRGB()
+        self.lns = self.readUnsignedInt(2)
+        self.we = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(2)
+        self.auto = (flags & 0x001) != 0 # A
+        unused = (flags & 0x002) != 0 # B (unused)
+        self.axisOn = (flags & 0x004) != 0 # C
+        self.autoCo = (flags & 0x008) != 0 # D
+        self.icv = self.readICV()
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+class AreaFormat(BaseRecordHandler):
+    def __parseBytes(self):
+        self.foreColor = self.readLongRGB()
+        self.backColor = self.readLongRGB()
+        self.fls = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(2)
+        self.auto = (flags & 0x001) != 0 # A
+        self.invertNeg = (flags & 0x002) != 0 # B 
+        self.icvFore = self.readICV()
+        self.icvBack = self.readICV()
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+class DataFormat(BaseRecordHandler):
+    def __parseBytes(self):
+        self.xi = self.readUnsignedInt(2)
+        self.yi = self.readUnsignedInt(2)
+        self.iss = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(2)
+        unused = (flags & 0x001) != 0 # A (??? - not described in docs)
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+class ChartFormat(BaseRecordHandler):
+    def __parseBytes(self):
+        reserved1 = self.readUnsignedInt(4)
+        reserved2 = self.readUnsignedInt(4)
+        reserved3 = self.readUnsignedInt(4)
+        reserved4 = self.readUnsignedInt(4)
+        flags = self.readUnsignedInt(2)
+        self.varied = (flags & 0x001) != 0 # A
+        self.icrt = self.readUnsignedInt(2)
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+class Chart3DBarShape(BaseRecordHandler):
+    def __parseBytes(self):
+        self.riser = self.readUnsignedInt(1) 
+        self.taper = self.readUnsignedInt(1) 
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+class SerToCrt(BaseRecordHandler):
+    def __parseBytes(self):
+        self.id = self.readUnsignedInt(2)
+
+class Pos(BaseRecordHandler):
+    def __parseBytes(self):
+        self.mdTopLt = self.readUnsignedInt(2)
+        self.mdBotRt = self.readUnsignedInt(2)
+        self.x1 = self.readSignedInt(2)
+        unused = self.readUnsignedInt(2)
+        self.y1 = self.readSignedInt(2)
+        unused = self.readUnsignedInt(2)
+        self.x2 = self.readSignedInt(2)
+        unused = self.readUnsignedInt(2)
+        self.y2 = self.readSignedInt(2)
+        unused = self.readUnsignedInt(2)
+
+class FontX(BaseRecordHandler):
+    def __parseBytes(self):
+        self.iFont = self.readUnsignedInt(2)
+
+class AxesUsed(BaseRecordHandler):
+    def __parseBytes(self):
+        self.cAxes = self.readUnsignedInt(2)
+
+class AxisParent(BaseRecordHandler):
+    def __parseBytes(self):
+        self.iax = self.readUnsignedInt(2)
+        # 16 bytes are unused
+
+class AxcExt(BaseRecordHandler):
+    def __parseBytes (self):
+        self.catMin = self.readUnsignedInt(2)
+        self.catMax = self.readUnsignedInt(2)
+        self.catMajor = self.readUnsignedInt(2)
+        self.duMajor = self.readUnsignedInt(2)
+        self.catMinor = self.readUnsignedInt(2)
+        self.duMinor = self.readUnsignedInt(2)
+        self.duBase = self.readUnsignedInt(2)
+        self.catCrossDate = self.readUnsignedInt(2)
+
+        flag = self.readUnsignedInt(2)
+        self.autoMin        = (flag & 0x0001) != 0 # A
+        self.autoMax          = (flag & 0x0002) != 0 # B
+        self.autoMajor        = (flag & 0x0004) != 0 # C 
+        self.autoMinor        = (flag & 0x0008) != 0 # D 
+        self.dateAxis         = (flag & 0x0010) != 0 # E
+        self.autoBase        = (flag & 0x0020) != 0 # F
+        self.autoCross          = (flag & 0x0040) != 0 # G
+        self.autoDate         = (flag & 0x0080) != 0 # H
+
+class Tick(BaseRecordHandler):
+    def __parseBytes (self):
+        self.tktMajor = self.readUnsignedInt(1)
+        self.tktMinor = self.readUnsignedInt(1)
+        self.tlt = self.readUnsignedInt(1)
+        self.wBkgMode = self.readUnsignedInt(1)
+        self.rgb = self.readLongRGB()
+        reserved1 = self.readUnsignedInt(4)
+        reserved2 = self.readUnsignedInt(4)
+        reserved3 = self.readUnsignedInt(4)
+        reserved4 = self.readUnsignedInt(4)
+        flag = self.readUnsignedInt(2)
+        # TODO: recheck it
+        self.autoCo        = (flag & 0x0001) != 0 # A
+        self.autoMode          = (flag & 0x0002) != 0 # B
+        self.rot = (flag & (0x4+0x8+0x10)) >> 2 
+        self.readingOrder        = (flag >>14) 
+        
+        self.icv = self.readICV()
+        self.trot = self.readUnsignedInt(2)
+
+class AxisLine(BaseRecordHandler):
+    def __parseBytes(self):
+        self.id = self.readUnsignedInt(2)
+
+class SIIndex(BaseRecordHandler):
+    def __parseBytes(self):
+        self.numIndex = self.readUnsignedInt(2)
+
 class DefaultText(BaseRecordHandler):
 
     __types = [
@@ -3434,71 +3654,74 @@ class Series(BaseRecordHandler):
 class CHAxis(BaseRecordHandler):
 
     axisTypeList = ['x-axis', 'y-axis', 'z-axis']
-
+    
+    def __parseBytes(self):
+        self.axisType = self.readUnsignedInt(2)
+        self.x = self.readSignedInt(4)
+        self.y = self.readSignedInt(4)
+        self.w = self.readSignedInt(4)
+        self.h = self.readSignedInt(4)
+        
     def parseBytes (self):
-        axisType = self.readUnsignedInt(2)
-        x = self.readSignedInt(4)
-        y = self.readSignedInt(4)
-        w = self.readSignedInt(4)
-        h = self.readSignedInt(4)
-        if axisType < len(CHAxis.axisTypeList):
-            self.appendLine("axis type: %s (%d)"%(CHAxis.axisTypeList[axisType], axisType))
+        self.__parseBytes()
+        if self.axisType < len(CHAxis.axisTypeList):
+            self.appendLine("axis type: %s (%d)"%(CHAxis.axisTypeList[self.axisType], self.axisType))
         else:
             self.appendLine("axis type: unknown")
-        self.appendLine("area: (x, y, w, h) = (%d, %d, %d, %d) [no longer used]"%(x, y, w, h))
+        self.appendLine("area: (x, y, w, h) = (%d, %d, %d, %d) [no longer used]"%(self.x, self.y, self.w, self.h))
 
 
 class CHProperties(BaseRecordHandler):
-
+    def __parseBytes(self):
+        flags = self.readUnsignedInt(2)
+        self.emptyFlags = self.readUnsignedInt(2)
+        self.manualSeries   = (flags & 0x0001) != 0
+        self.showVisCells   = (flags & 0x0002) != 0
+        self.noResize       = (flags & 0x0004) != 0
+        self.manualPlotArea = (flags & 0x0008) != 0
+        
     def parseBytes (self):
-        flags = globals.getSignedInt(self.bytes[0:2])
-        emptyFlags = globals.getSignedInt(self.bytes[2:4])
+        self.__parseBytes()
 
-        manualSeries   = "false"
-        showVisCells   = "false"
-        noResize       = "false"
-        manualPlotArea = "false"
-
-        if (flags & 0x0001):
-            manualSeries = "true"
-        if (flags & 0x0002):
-            showVisCells = "true"
-        if (flags & 0x0004):
-            noResize = "true"
-        if (flags & 0x0008):
-            manualPlotArea = "true"
-
-        self.appendLine("manual series: %s"%manualSeries)
-        self.appendLine("show only visible cells: %s"%showVisCells)
-        self.appendLine("no resize: %s"%noResize)
-        self.appendLine("manual plot area: %s"%manualPlotArea)
+        self.appendLine("manual series: %s" % self.getTrueFalse(self.manualSeries))
+        self.appendLine("show only visible cells: %s" % self.getTrueFalse(self.showVisCells))
+        self.appendLine("no resize: %s"%self.getTrueFalse(self.noResize))
+        self.appendLine("manual plot area: %s" % self.getTrueFalse(self.manualPlotArea))
 
         emptyValues = "skip"
-        if emptyFlags == 1:
+        if self.emptyFlags == 1:
             emptyValues = "plot as zero"
-        elif emptyFlags == 2:
+        elif self.emptyFlags == 2:
             emptyValues = "interpolate empty values"
 
-        self.appendLine("empty value treatment: %s"%emptyValues)
-
+        self.appendLine("empty value treatment: %s" % emptyValues)
 
 class CHLabelRange(BaseRecordHandler):
 
-    def parseBytes (self):
-        axisCross = self.readUnsignedInt(2)
-        freqLabel = self.readUnsignedInt(2)
-        freqTick  = self.readUnsignedInt(2)
-        self.appendLine("axis crossing: %d"%axisCross)
-        self.appendLine("label frequency: %d"%freqLabel)
-        self.appendLine("tick frequency: %d"%freqTick)
-
+    
+    def __parseBytes (self):
+        self.axisCross = self.readUnsignedInt(2)
+        self.freqLabel = self.readUnsignedInt(2)
+        self.freqTick  = self.readUnsignedInt(2)
         flags     = self.readUnsignedInt(2)
-        betweenCateg = (flags & 0x0001)
-        maxCross     = (flags & 0x0002)
-        reversed     = (flags & 0x0004)
-        self.appendLineBoolean("axis between categories", betweenCateg)
-        self.appendLineBoolean("other axis crosses at maximum", maxCross)
-        self.appendLineBoolean("axis reversed", reversed)
+        self.betweenCateg = (flags & 0x0001) != 0
+        self.maxCross     = (flags & 0x0002) != 0
+        self.reversed     = (flags & 0x0004) != 0
+        
+    def parseBytes (self):
+        self.appendLine("axis crossing: %d"%self.axisCross)
+        self.appendLine("label frequency: %d"%self.freqLabel)
+        self.appendLine("tick frequency: %d"%self.freqTick)
+
+        self.appendLineBoolean("axis between categories", self.betweenCateg)
+        self.appendLineBoolean("other axis crosses at maximum", self.maxCross)
+        self.appendLineBoolean("axis reversed", self.reversed)
+    
+    def fillModel(self, model):
+        self.__parseBytes()
+        sh = model.getCurrentSheet()
+        sh.setCatSerRange(self.axisCross, self.freqLabel, self.freqTick, 
+                          self.betweenCateg, self.maxCross, self.reversed)
 
 
 class Legend(BaseRecordHandler):
@@ -3518,32 +3741,34 @@ class Legend(BaseRecordHandler):
         else:
             return '(unknown)'
 
-    def parseBytes (self):
-        x = self.readSignedInt(4)
-        y = self.readSignedInt(4)
-        w = self.readSignedInt(4)
-        h = self.readSignedInt(4)
-        dockMode = self.readUnsignedInt(1) # [MS-XLS] says unused !?
-        spacing  = self.readUnsignedInt(1)
+    def __parseBytes (self):
+        self.x = self.readSignedInt(4)
+        self.y = self.readSignedInt(4)
+        self.w = self.readSignedInt(4)
+        self.h = self.readSignedInt(4)
+        self.dockMode = self.readUnsignedInt(1) # [MS-XLS] says unused !?
+        self.spacing  = self.readUnsignedInt(1)
         flags    = self.readUnsignedInt(2)
 
-        docked     = (flags & 0x0001)
-        autoSeries = (flags & 0x0002)
-        autoPosX   = (flags & 0x0004)
-        autoPosY   = (flags & 0x0008)
-        stacked    = (flags & 0x0010)
-        dataTable  = (flags & 0x0020)
-
-        self.appendLine("legend position: (x, y) = (%d, %d)"%(x,y))
-        self.appendLine("legend size: width = %d, height = %d"%(w,h))
-        self.appendLine("dock mode: %s"%self.getDockModeText(dockMode))
-        self.appendLine("spacing: %s"%self.getSpacingText(spacing))
-        self.appendLineBoolean("docked", docked)
-        self.appendLineBoolean("auto series", autoSeries)
-        self.appendLineBoolean("auto position x", autoPosX)
-        self.appendLineBoolean("auto position y", autoPosY)
-        self.appendLineBoolean("stacked", stacked)
-        self.appendLineBoolean("data table", dataTable)
+        self.docked     = (flags & 0x0001) != 0
+        self.autoSeries = (flags & 0x0002) != 0
+        self.autoPosX   = (flags & 0x0004) != 0
+        self.autoPosY   = (flags & 0x0008) != 0
+        self.stacked    = (flags & 0x0010) != 0
+        self.dataTable  = (flags & 0x0020) != 0
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("legend position: (x, y) = (%d, %d)"%(self.x, self.y))
+        self.appendLine("legend size: width = %d, height = %d"%(self.w, self.h))
+        self.appendLine("dock mode: %s"%self.getDockModeText(self.dockMode))
+        self.appendLine("spacing: %s"%self.getSpacingText(self.spacing))
+        self.appendLineBoolean("docked", self.docked)
+        self.appendLineBoolean("auto series", self.autoSeries)
+        self.appendLineBoolean("auto position x", self.autoPosX)
+        self.appendLineBoolean("auto position y", self.autoPosY)
+        self.appendLineBoolean("stacked", self.stacked)
+        self.appendLineBoolean("data table", self.dataTable)
 
         self.appendLine("")
         self.appendMultiLine("NOTE: Position and size are in units of 1/4000 of chart's width or height.")
@@ -3551,54 +3776,62 @@ class Legend(BaseRecordHandler):
 
 class CHValueRange(BaseRecordHandler):
 
-    def parseBytes (self):
-        minVal = globals.getDouble(self.readBytes(8))
-        maxVal = globals.getDouble(self.readBytes(8))
-        majorStep = globals.getDouble(self.readBytes(8))
-        minorStep = globals.getDouble(self.readBytes(8))
-        cross = globals.getDouble(self.readBytes(8))
+    def __parseBytes (self):
+        self.minVal = globals.getDouble(self.readBytes(8))
+        self.maxVal = globals.getDouble(self.readBytes(8))
+        self.majorStep = globals.getDouble(self.readBytes(8))
+        self.minorStep = globals.getDouble(self.readBytes(8))
+        self.cross = globals.getDouble(self.readBytes(8))
         flags = globals.getSignedInt(self.readBytes(2))
 
-        autoMin   = (flags & 0x0001)
-        autoMax   = (flags & 0x0002)
-        autoMajor = (flags & 0x0004)
-        autoMinor = (flags & 0x0008)
-        autoCross = (flags & 0x0010)
-        logScale  = (flags & 0x0020)
-        reversed  = (flags & 0x0040)
-        maxCross  = (flags & 0x0080)
-        bit8      = (flags & 0x0100)
+        self.autoMin   = (flags & 0x0001) != 0
+        self.autoMax   = (flags & 0x0002) != 0
+        self.autoMajor = (flags & 0x0004) != 0
+        self.autoMinor = (flags & 0x0008) != 0
+        self.autoCross = (flags & 0x0010) != 0
+        self.logScale  = (flags & 0x0020) != 0
+        self.reversed  = (flags & 0x0040) != 0
+        self.maxCross  = (flags & 0x0080) != 0
+        self.bit8      = (flags & 0x0100) != 0
+        
+    def parseBytes (self):
 
-        self.appendLine("min: %g (auto min: %s)"%(minVal, self.getYesNo(autoMin)))
-        self.appendLine("max: %g (auto max: %s)"%(maxVal, self.getYesNo(autoMax)))
+        self.appendLine("min: %g (auto min: %s)"%(self.minVal, self.getYesNo(self.autoMin)))
+        self.appendLine("max: %g (auto max: %s)"%(self.maxVal, self.getYesNo(self.autoMax)))
         self.appendLine("major step: %g (auto major: %s)"%
-            (majorStep, self.getYesNo(autoMajor)))
+            (self.majorStep, self.getYesNo(self.autoMajor)))
         self.appendLine("minor step: %g (auto minor: %s)"%
-            (minorStep, self.getYesNo(autoMinor)))
+            (self.minorStep, self.getYesNo(self.autoMinor)))
         self.appendLine("cross: %g (auto cross: %s) (max cross: %s)"%
-            (cross, self.getYesNo(autoCross), self.getYesNo(maxCross)))
-        self.appendLine("biff5 or above: %s"%self.getYesNo(bit8))
+            (self.cross, self.getYesNo(self.autoCross), self.getYesNo(self.maxCross)))
+        self.appendLine("biff5 or above: %s"%self.getYesNo(self.bit8))
 
 
 class CHBar(BaseRecordHandler):
 
-    def parseBytes (self):
-        overlap = globals.getSignedInt(self.readBytes(2))
-        gap     = globals.getSignedInt(self.readBytes(2))
+    def __parseBytes (self):
+        self.overlap = globals.getSignedInt(self.readBytes(2))
+        self.gap     = globals.getSignedInt(self.readBytes(2))
         flags   = globals.getUnsignedInt(self.readBytes(2))
 
-        horizontal = (flags & 0x0001)
-        stacked    = (flags & 0x0002)
-        percent    = (flags & 0x0004)
-        shadow     = (flags & 0x0008)
-
-        self.appendLine("overlap width: %d"%overlap)
-        self.appendLine("gap: %d"%gap)
-        self.appendLine("horizontal: %s"%self.getYesNo(horizontal))
-        self.appendLine("stacked: %s"%self.getYesNo(stacked))
-        self.appendLine("percent: %s"%self.getYesNo(percent))
-        self.appendLine("shadow: %s"%self.getYesNo(shadow))
-
+        self.horizontal = (flags & 0x0001) != 0
+        self.stacked    = (flags & 0x0002) != 0
+        self.percent    = (flags & 0x0004) != 0
+        self.shadow     = (flags & 0x0008) != 0
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("overlap width: %d"%self.overlap)
+        self.appendLine("gap: %d"%self.gap)
+        self.appendLine("horizontal: %s"%self.getYesNo(self.horizontal))
+        self.appendLine("stacked: %s"%self.getYesNo(self.stacked))
+        self.appendLine("percent: %s"%self.getYesNo(self.percent))
+        self.appendLine("shadow: %s"%self.getYesNo(self.shadow))
+    
+    def fillModel(self, model):
+        self.__parseBytes()
+        sh = model.getCurrentSheet()
+        sh.setBar(self.overlap, self.gap, self.horizontal, self.stacked, self.percent, self.shadow)
 
 class CHLine(BaseRecordHandler):
 
@@ -3634,6 +3867,16 @@ class Brai(BaseRecordHandler):
         self.iFmt = self.readUnsignedInt(2)
         tokenBytes = self.readUnsignedInt(2)
         self.formulaBytes = self.readBytes(tokenBytes)
+        self.formula = None
+        self.formulaError = None
+        if len(self.formulaBytes) > 0:
+            parser = formula.FormulaParser(self.header, self.formulaBytes)
+            try:
+                parser.parse()
+                self.formula = parser.getText()
+            except formula.FormulaParserError as e:
+                self.formulaError = e.args[0]
+
 
     def parseBytes (self):
         self.__parseBytes()
@@ -3644,17 +3887,15 @@ class Brai(BaseRecordHandler):
             s += "custom format"
         else:
             s += "source data format"
-            self.appendLine(s)
+        self.appendLine(s)
 
         self.appendLine("number format ID: %d"%self.iFmt)
         self.appendLine("formula size (bytes): %d"%len(self.formulaBytes))
-        if len(self.formulaBytes) > 0:
-            parser = formula.FormulaParser(self.header, self.formulaBytes)
-            try:
-                parser.parse()
-                self.appendLine("formula: %s"%parser.getText())
-            except formula.FormulaParserError as e:
-                self.appendLine("formula parser error: %s"%e.args[0])
+        
+        if not self.formula is None:
+            self.appendLine("formula: %s"%self.formula)
+        else:
+            self.appendLine("formula parser error: %s"%self.formulaError)
 
 class MSODrawing(BaseRecordHandler):
     """Handler for the MSODRAWING record
