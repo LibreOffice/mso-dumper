@@ -94,6 +94,7 @@ class XLDumper(object):
             dirstrm = self.strm.getDirectoryStream(d)
             data = self.__readSubStreamXML(dirstrm)
             self.__dumpDataAsXML(data, root)
+        node.prettyPrint(sys.stdout, docroot)
 
     def dumpCanonicalXML (self):
         self.__parseFile()
@@ -173,7 +174,20 @@ class XLDumper(object):
             globals.error("failed to parse CompObj stream.\n")
 
     def __dumpDataAsXML(self, data, root):
-        print data
+        if isinstance(data, tuple):
+            newRoot = root.appendElement(data[0])
+            if isinstance(data[1], dict): # attrs
+                for key,val in data[1].iteritems():
+                    newRoot.setAttr(key, val)
+                if len(data) > 2: # data has a list of children
+                    self.__dumpDataAsXML(data[2], newRoot)
+            else:
+                self.__dumpDataAsXML(data[1], newRoot)
+        elif isinstance(data, list):
+            for x in data:
+                self.__dumpDataAsXML(x, root)
+        else:
+            pass # we're skipping all unknown elems
         
     def __readSubStreamXML (self, strm):
         handlers = []

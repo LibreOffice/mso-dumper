@@ -110,6 +110,9 @@ class ICV(object):
     def toString (self):
         return "color=0x%2.2X"%self.value
 
+def dumpIcv(icv):
+    return {'value': icv.value}
+    
 class BaseRecordHandler(globals.ByteStream):
 
     def __init__ (self, header, size, bytes, strmData):
@@ -3495,9 +3498,9 @@ class LineFormat(BaseRecordHandler):
                                 'we': self.we,
                                 'auto': self.auto,
                                 'axis-on': self.axisOn,
-                                'auto-co': self.autoCo,
-                                'icv': self.icv},
-                                [('rgb', dumpRgb(self.rgb))])
+                                'auto-co': self.autoCo},
+                                [('rgb', dumpRgb(self.rgb)),
+                                 ('icv', dumpIcv(self.icv))])
 
 class AreaFormat(BaseRecordHandler):
     def __parseBytes(self):
@@ -3518,11 +3521,11 @@ class AreaFormat(BaseRecordHandler):
         self.__parseBytes()
         return ('area-format', {'fls': self.fls,
                                 'auto': self.auto,
-                                'invert-neg': self.invertNeg,
-                                'icv-fore': self.icvFore,
-                                'icv-back': self.icvBack},
+                                'invert-neg': self.invertNeg},
                                 [('fore-color', dumpRgb(self.foreColor)),
-                                 ('back-color', dumpRgb(self.backColor))])
+                                 ('back-color', dumpRgb(self.backColor)),
+                                 ('icv-fore', dumpIcv(self.icvFore)),
+                                 ('icv-back', dumpIcv(self.icvBack))])
 
 class DataFormat(BaseRecordHandler):
     def __parseBytes(self):
@@ -3701,9 +3704,9 @@ class Tick(BaseRecordHandler):
                          'auto-mode': self.autoMode,
                          'rot': self.rot,
                          'reading-order': self.readingOrder,
-                         'icv': self.icv,
                          'trot': self.trot},
-                         [('rgb', dumpRgb(self.rgb))])
+                         [('rgb', dumpRgb(self.rgb)),
+                          ('icv', dumpIcv(self.icv))])
 
 class AxisLine(BaseRecordHandler):
     def __parseBytes(self):
@@ -3809,11 +3812,11 @@ class Text(BaseRecordHandler):
                          'show-percent': self.showPercent,
                          'show-bubble-sizes': self.showBubbleSizes,
                          'show-label': self.showLabel,
-                         'icv-text-color': self.icvTextColor,
                          'dlp': self.dlp,
                          'reading-order': self.readingOrder,
                          'trot': self.trot},
-                         [('text-color', dumpRgb(self.textColor))])
+                         [('text-color', dumpRgb(self.textColor)),
+                          ('icv-text-color', dumpIcv(self.icvTextColor))])
 
 class Series(BaseRecordHandler):
 
