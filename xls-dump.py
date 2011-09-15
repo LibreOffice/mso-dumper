@@ -29,6 +29,7 @@
 import sys, os.path, optparse
 sys.path.append(sys.path[0]+"/src")
 import ole, xlsstream, globals, node, xlsmodel, olestream
+import xlsparser
 
 from globals import error
 
@@ -81,15 +82,19 @@ class XLDumper(object):
 
     def dumpXML (self):
         self.__parseFile()
-        dirEntries = self.strm.getDirectoryEntries()
-        for entry in dirEntries:
-            dirname = entry.Name
-            if dirname != "Workbook":
+        dirs = self.strm.getDirectoryEntries()
+        docroot = node.Root()
+        root = docroot.appendElement('xls-dump')
+        
+        for d in dirs:
+            if d.Name != "Workbook":
                 # for now, we only dump the Workbook directory stream.
                 continue
 
-            dirstrm = self.strm.getDirectoryStream(entry)
-            self.__readSubStreamXML(dirstrm)
+            dirstrm = self.strm.getDirectoryStream(d)
+            data = self.__readSubStreamXML(dirstrm)
+            self.__dumpDataAsXML(data, root)
+        node.prettyPrint(sys.stdout, docroot)
 
     def dumpCanonicalXML (self):
         self.__parseFile()
@@ -169,12 +174,32 @@ class XLDumper(object):
         except olestream.CompObjStreamError:
             globals.error("failed to parse CompObj stream.\n")
 
+    def __dumpDataAsXML(self, data, root):
+        if isinstance(data, tuple):
+            newRoot = root.appendElement(data[0])
+            if isinstance(data[1], dict): # attrs
+                for key,val in data[1].iteritems():
+                    newRoot.setAttr(key, val)
+                if len(data) > 2: # data has a list of children
+                    self.__dumpDataAsXML(data[2], newRoot)
+            else:
+                self.__dumpDataAsXML(data[1], newRoot)
+        elif isinstance(data, list):
+            for x in data:
+                self.__dumpDataAsXML(x, root)
+        else:
+            pass # we're skipping all unknown elems
+        
     def __readSubStreamXML (self, strm):
+        handlers = []
         try:
             while True:
-                strm.readRecordXML()
+                handler = strm.getNextRecordHandler()
+                handlers.append(handler)
         except xlsstream.EndOfStream:
             pass
+        parser = xlsparser.XlsParser(handlers)
+        return parser.dumpData()
 
     def __buildWorkbookModel (self, strm):
         model = xlsmodel.Workbook()
