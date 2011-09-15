@@ -476,7 +476,8 @@ class XLDirStream(object):
             self.strmData.encrypted = True
 
     def fillModel (self, model):
-        handler = self.getNextRecordHandler()
+        pos, header, size, bytes = self.__readRecordBytes()
+        handler = self.__getRecordHandler(header, size, bytes)
         if handler != None:
             handler.fillModel(model)
         self.__postReadRecord(header)

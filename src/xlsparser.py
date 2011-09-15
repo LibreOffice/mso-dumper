@@ -524,7 +524,7 @@ class CRT(BaseParser):
 
 class AXISPARENT(BaseParser):
     #AXISPARENT = AxisParent Begin Pos [AXES] 1*4CRT End
-    PARSER = Group('axis-parent', Req(AxisParent()) << Req(Begin()) << Req(Pos()) <<
+    PARSER = Group('axis-root', Req(AxisParent()) << Req(Begin()) << Req(Pos()) <<
                                   Opt(AXES()) << Many('crt-list', CRT(), min=1, max=4) <<
                                   Req(End()))
 
@@ -540,7 +540,7 @@ class CHARTFORMATS(BaseParser):
     PARSER = Group('chart-fmt', Req(Chart()) << Req(Begin()) << Many('font-lists', FONTLIST(), max=2) <<
                 Req(Scl()) << Req(PlotGrowth()) << FRAME() << Many('series-fmt-list', SERIESFORMAT()) <<
                 Many('ss-list', SS()) << Req(ShtProps()) << Many('dft-texts', DFTTEXT(), max=2) <<
-                Req(AxesUsed()) << Many('axis-parents', AXISPARENT(), min=1, max=2) <<
+                Req(AxesUsed()) << Many('axis-roots', AXISPARENT(), min=1, max=2) <<
                 CrtLayout12A() << DAT() << Many('attached-labels', ATTACHEDLABEL()) <<
                 CRTMLFRT() << Many('datalab-exts', Seq(Seq(Req(DataLabExt()), 
                                                            Req(StartObject())), 

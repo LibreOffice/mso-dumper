@@ -3466,7 +3466,7 @@ class Frame(BaseRecordHandler):
         
     def parseBytes (self):
         self.__parseBytes()
-        self.appendLine("frame type: %s" % ChartFrame.__frt_table[self.frt])
+        self.appendLine("frame type: %s" % Frame.__frt_table[self.frt])
         self.appendLine("autoSize: %s" % self.autoSize)
         self.appendLine("autoPosition: %s" % self.autoPosition)
 
@@ -3937,6 +3937,7 @@ class CHLabelRange(BaseRecordHandler):
         self.reversed     = (flags & 0x0004) != 0
         
     def parseBytes (self):
+        self.__parseBytes()
         self.appendLine("axis crossing: %d"%self.axisCross)
         self.appendLine("label frequency: %d"%self.freqLabel)
         self.appendLine("tick frequency: %d"%self.freqTick)
@@ -4040,7 +4041,7 @@ class CHValueRange(BaseRecordHandler):
         self.bit8      = (flags & 0x0100) != 0
         
     def parseBytes (self):
-
+        self.__parseBytes()
         self.appendLine("min: %g (auto min: %s)"%(self.minVal, self.getYesNo(self.autoMin)))
         self.appendLine("max: %g (auto max: %s)"%(self.maxVal, self.getYesNo(self.autoMax)))
         self.appendLine("major step: %g (auto major: %s)"%
@@ -4088,11 +4089,6 @@ class CHBar(BaseRecordHandler):
         self.appendLine("stacked: %s"%self.getYesNo(self.stacked))
         self.appendLine("percent: %s"%self.getYesNo(self.percent))
         self.appendLine("shadow: %s"%self.getYesNo(self.shadow))
-    
-    def fillModel(self, model):
-        self.__parseBytes()
-        sh = model.getCurrentSheet()
-        sh.setBar(self.overlap, self.gap, self.horizontal, self.stacked, self.percent, self.shadow)
 
     def dumpData(self):
         self.__parseBytes()
