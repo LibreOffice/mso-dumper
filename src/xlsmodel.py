@@ -79,7 +79,7 @@ class Workbook(ModelBase):
         sheets = filter(lambda x: isinstance(x, Worksheet), self.__sheets)
         n = len(sheets)
         if n == 0:
-            return
+            return nd
 
         wbglobal = self.getWorkbookGlobal()
         nd.appendChild(wbglobal.createDOM(self))

@@ -119,8 +119,11 @@ class Req(BaseParser):
     def parse(self, stream):
         parsed = safeParse(self.__parser, stream)
         if parsed is None:
+            currentToken = "<<<End Of Token Stream>>>"
+            if stream.currentIndex < len(stream.tokens):
+                currentToken = stream.tokens[stream.currentIndex]
             raise ParseException("%s failed but it is required, next token is [%s]" % 
-                                 (str(self.__parser), str(stream.tokens[stream.currentIndex])))
+                                 (str(self.__parser), str(currentToken)))
         return parsed
     
     def __str__(self):
@@ -334,8 +337,14 @@ class PlotGrowth(BaseParser):
 class Series(BaseParser):
     PARSER = Term(xlsrecord.Series)
 
+class SeriesText(BaseParser):
+    PARSER = Term(xlsrecord.SeriesText)
+
+class BRAI(BaseParser):
+    PARSER = Term(xlsrecord.Brai)
+
 class AI(BaseParser):
-    PARSER = Term(xlsrecord.Brai) # TODO: we use Brai instead of AI now, fix it
+    PARSER = Req(BRAI()) << SeriesText()
 
 class SerParent(BaseParser): pass        
 class SerAuxTrend(BaseParser): pass        
@@ -351,9 +360,13 @@ class DataFormat(BaseParser):
 class Chart3DBarShape(BaseParser):
     PARSER = Term(xlsrecord.Chart3DBarShape)
 
-class PieFormat(BaseParser): pass        
-class SerFmt(BaseParser): pass        
-class MarkerFormat(BaseParser): pass
+class PieFormat(BaseParser): 
+    PARSER = Term(xlsrecord.PieFormat)
+
+class SerFmt(BaseParser): pass
+
+class MarkerFormat(BaseParser): 
+    PARSER = Term(xlsrecord.MarkerFormat)
 
 class Text(BaseParser):
     PARSER = Term(xlsrecord.Text)
@@ -487,7 +500,9 @@ class BobPopCustom(BaseParser): pass
 class Bar(BaseParser):
     PARSER = Term(xlsrecord.CHBar)
 
-class Line(BaseParser): pass
+class Line(BaseParser): 
+    PARSER = Term(xlsrecord.CHLine)
+    
 class Pie(BaseParser): pass
 class Area(BaseParser): pass
 class Scatter(BaseParser): pass
@@ -538,15 +553,15 @@ class CHARTFORMATS(BaseParser):
     #*2DFTTEXT AxesUsed 1*2AXISPARENT [CrtLayout12A] [DAT] *ATTACHEDLABEL [CRTMLFRT]
     #*([DataLabExt StartObject] ATTACHEDLABEL [EndObject]) [TEXTPROPS] *2CRTMLFRT End
     PARSER = Group('chart-fmt', Req(Chart()) << Req(Begin()) << Many('font-lists', FONTLIST(), max=2) <<
-                Req(Scl()) << Req(PlotGrowth()) << FRAME() << Many('series-fmt-list', SERIESFORMAT()) <<
+                Req(Scl()) << Req(PlotGrowth()) << Opt(FRAME()) << Many('series-fmt-list', SERIESFORMAT()) <<
                 Many('ss-list', SS()) << Req(ShtProps()) << Many('dft-texts', DFTTEXT(), max=2) <<
                 Req(AxesUsed()) << Many('axis-roots', AXISPARENT(), min=1, max=2) <<
-                CrtLayout12A() << DAT() << Many('attached-labels', ATTACHEDLABEL()) <<
-                CRTMLFRT() << Many('datalab-exts', Seq(Seq(Req(DataLabExt()), 
-                                                           Req(StartObject())), 
-                                                     Req(ATTACHEDLABEL()), 
-                                                     EndObject())) <<
-                TEXTPROPS() << Many('crtmlfrt-list', CRTMLFRT()) << Req(End()))
+                CrtLayout12A() << Opt(DAT()) << Many('attached-labels', ATTACHEDLABEL()) <<
+                Opt(CRTMLFRT()) << Many('datalab-exts', Seq(Opt(Seq(Req(DataLabExt()), 
+                                                                    Req(StartObject()))), 
+                                                            Req(ATTACHEDLABEL()), 
+                                                            EndObject())) <<
+                Opt(TEXTPROPS()) << Many('crtmlfrt-list', CRTMLFRT()) << Req(End()))
 
 class Dimensions(BaseParser):
     PARSER = Term(xlsrecord.Dimensions)
@@ -560,7 +575,9 @@ class Number(BaseParser):
 
 class BoolErr(BaseParser): pass
 class Blank(BaseParser): pass
-class Label(BaseParser): pass
+
+class Label(BaseParser):
+    PARSER = Term(xlsrecord.Label)
 
 class SERIESDATA(BaseParser):
     #SERIESDATA = Dimensions 3(SIIndex *(Number / BoolErr / Blank / Label))

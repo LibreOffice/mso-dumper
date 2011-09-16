@@ -1127,6 +1127,12 @@ class Label(BaseRecordHandler):
         self.appendLine("XF record ID: %d"%self.xfIdx)
         self.appendLine("label text: %s"%self.text)
 
+    def dumpData(self):
+        self.__parseBytes()
+        return ('label', {'col': self.col, 
+                          'row': self.row,
+                          'xf-idx': self.xfIdx,
+                          'text': self.text})
 
 class LabelSST(BaseRecordHandler):
 
@@ -3531,6 +3537,48 @@ class AreaFormat(BaseRecordHandler):
                                  ('icv-fore', dumpIcv(self.icvFore)),
                                  ('icv-back', dumpIcv(self.icvBack))])
 
+class PieFormat(BaseRecordHandler):
+    def __parseBytes(self):
+        self.pcExplode = self.readSignedInt(2)
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('pie-format', {'pc-explode': self.pcExplode})
+
+class MarkerFormat(BaseRecordHandler):
+    def __parseBytes(self):
+        self.rgbFore = self.readLongRGB()
+        self.rgbBack = self.readLongRGB()
+        self.imk = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(2)
+        self.auto = (flags & 0x001) != 0 # A
+        # next 3 bits are reserved
+        self.notShowInt = (flags & 0x010) != 0 # C 
+        self.notShowBrd = (flags & 0x020) != 0 # D 
+        self.icvFore = self.readICV()
+        self.icvBack = self.readICV()
+        self.miSize = self.readUnsignedInt(4)
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('marker-format', {'imk': self.imk,
+                                  'auto': self.auto,
+                                  'not-show-int': self.notShowInt,
+                                  'not-show-brd': self.notShowBrd,
+                                  'mi-size': self.miSize},
+                                [('rgb-fore', dumpRgb(self.rgbFore)),
+                                 ('rgb-back', dumpRgb(self.rgbBack)),
+                                 ('icv-fore', dumpIcv(self.icvFore)),
+                                 ('icv-back', dumpIcv(self.icvBack))])
+
 class DataFormat(BaseRecordHandler):
     def __parseBytes(self):
         self.xi = self.readUnsignedInt(2)
@@ -4104,15 +4152,24 @@ class CHBar(BaseRecordHandler):
 
 class CHLine(BaseRecordHandler):
 
-    def parseBytes (self):
+    def __parseBytes (self):
         flags   = globals.getUnsignedInt(self.readBytes(2))
-        stacked = (flags & 0x0001)
-        percent = (flags & 0x0002)
-        shadow  = (flags & 0x0004)
+        self.stacked = (flags & 0x0001)
+        self.percent = (flags & 0x0002)
+        self.shadow  = (flags & 0x0004)
 
-        self.appendLine("stacked: %s"%self.getYesNo(stacked))
-        self.appendLine("percent: %s"%self.getYesNo(percent))
-        self.appendLine("shadow: %s"%self.getYesNo(shadow))
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("stacked: %s"%self.getYesNo(self.stacked))
+        self.appendLine("percent: %s"%self.getYesNo(self.percent))
+        self.appendLine("shadow: %s"%self.getYesNo(self.shadow))
+    
+    def dumpData(self):
+        self.__parseBytes()
+        return ('line', {'stacked': self.stacked,
+                         'percent': self.percent,
+                         'shadow': self.shadow})
+        
 
 
 class Brai(BaseRecordHandler):
