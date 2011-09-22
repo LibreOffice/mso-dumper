@@ -73,7 +73,7 @@ recData = {
     0x0040: ["BACKUP", "Save Backup Version of the File"],
     0x0041: ["PANE", "Number of Panes and Their Position"],
     0x0042: ["CODEPAGE/CODENAME", "Default Code Page/VBE Object Name"],
-    0x004D: ["PLS", "Environment-Specific Print Record"],
+    0x004D: ["PLS", "Environment-Specific Print Record", xlsrecord.Pls],
     0x0050: ["DCON", "Data Consolidation Information"],
     0x0051: ["DCONREF", "Data Consolidation References", xlsrecord.DConRef],
     0x0052: ["DCONNAME", "Data Consolidation Named References", xlsrecord.DConName],
@@ -256,10 +256,10 @@ recData = {
     0x1015: ["LEGEND", "Legend Properties", xlsrecord.Legend],
     0x1017: ["CHBAR, CHCOLUMN", "?", xlsrecord.CHBar],
     0x1018: ["CHLINE", "?", xlsrecord.CHLine],
-    0x1019: ["CHPIE", "?"],
+    0x1019: ["CHPIE", "Pie/Doughnut chart group", xlsrecord.CHPie],
     0x101A: ["CHAREA", "?"],
     0x101B: ["CHSCATTER", "?"],
-    0x001C: ["CHCHARTLINE", "?"],
+    0x101C: ["CHCHARTLINE", "Specifies the presence of lines", xlsrecord.CrtLine],
     0x101D: ["CHAXIS", "Chart Axis", xlsrecord.CHAxis],
     0x101E: ["CHTICK", "Attributes of the axis labels and tick marks", xlsrecord.Tick],
     0x101F: ["CHVALUERANGE", "Chart Axis Value Range", xlsrecord.CHValueRange],
@@ -276,8 +276,8 @@ recData = {
     0x1035: ["CHPLOTFRAME", "Chart Plot Frame (indicates the frame that follows)", xlsrecord.PlotArea],
     0x103A: ["CHCHART3D", "Attributes of the 3-D plot area", xlsrecord.Chart3d],
     0x103C: ["CHPICFORMAT", "?"],
-    0x103D: ["CHDROPBAR", "?"],
-    0x103E: ["CHRADARLINE", "?"],
+    0x103D: ["CHDROPBAR", "Attributes of the up/down bars between multiple series", xlsrecord.DropBar],
+    0x103E: ["CHRADARLINE", "Radar chart group", xlsrecord.CHRadar],
     0x103F: ["CHSURFACE", "?"],
     0x1040: ["CHRADARAREA", "?"],
     0x1041: ["CHAXESSET", "Properties of an axis group", xlsrecord.AxisParent],
@@ -299,7 +299,7 @@ recData = {
     0x1062: ["AXCEXT", "Additional extension properties of a date axis(2.4.9)", xlsrecord.AxcExt],
     0x1064: ["PLOTGROWTH", "Font Scaling Information in the Plot Area", xlsrecord.PlotGrowth],
     0x1065: ["CHSIINDEX*", "Part of a group of records which specify the data of a chart", xlsrecord.SIIndex],
-    0x1066: ["CHESCHERFORMAT", "?"]
+    0x1066: ["CHESCHERFORMAT", "Properties of a fill pattern", xlsrecord.GelFrame]
 }
 
 recDataRev = {

@@ -3737,6 +3737,32 @@ class Chart3DBarShape(BaseRecordHandler):
         return ('chart-3dbar-shape', {'riser': self.riser,
                                       'taper': self.taper})
 
+class DropBar(BaseRecordHandler):
+    def __parseBytes(self):
+        self.gap = self.readSignedInt(2)
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine('Gap: %s' % str(self.gap))
+        # TODO: dump all data
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('drop-bar', {'gap': self.gap})
+
+class CrtLine(BaseRecordHandler):
+    def __parseBytes(self):
+        self.id = self.readUnsignedInt(2)
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine('ID: %s' % str(self.id))
+        # TODO: dump all data
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('crt-line', {'id': self.id})
+
 class Chart3d(BaseRecordHandler):
     def __parseBytes(self):
         self.rot = self.readSignedInt(2) 
@@ -4311,7 +4337,45 @@ class CHLine(BaseRecordHandler):
         return ('line', {'stacked': self.stacked,
                          'percent': self.percent,
                          'shadow': self.shadow})
+
+class CHRadar(BaseRecordHandler):
+    def __parseBytes (self):
+        flags   = self.readUnsignedInt(2)
+        self.rdrAxLab = (flags & 0x0001) != 0 # A
+        self.hasShadow = (flags & 0x0002) != 0 # B
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Display category labels: %s"%self.getYesNo(self.rdrAxLab))
+        self.appendLine("Data markers have shadow: %s"%self.getYesNo(self.hasShadow))
+    
+    def dumpData(self):
+        self.__parseBytes()
+        return ('radar', {'rdr-ax-lab': self.rdrAxLab,
+                          'has-shadow': self.hasShadow})
         
+
+class CHPie(BaseRecordHandler):
+    def __parseBytes (self):
+        self.start   = self.readUnsignedInt(2)
+        self.donut   = self.readUnsignedInt(2)
+        flags   = self.readUnsignedInt(2)
+        self.hasShadow = (flags & 0x0001) != 0 # A
+        self.showLdrLines = (flags & 0x0002) != 0 # B
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Start angle: %s"%self.getYesNo(self.start))
+        self.appendLine("Size of center hole: %s"%self.getYesNo(self.donut))
+        self.appendLine("Data points have shadow: %s"%self.getYesNo(self.hasShadow))
+        self.appendLine("Show leader lines: %s"%self.getYesNo(self.showLdrLines))
+    
+    def dumpData(self):
+        self.__parseBytes()
+        return ('pie', {'start': self.start,
+                        'donut': self.donut,
+                        'has-shadow': self.hasShadow,
+                        'show-ldr-Lines': self.showLdrLines})
 
 
 class Brai(BaseRecordHandler):
@@ -4420,3 +4484,27 @@ class MSODrawingSelection(BaseRecordHandler):
         self.__parseBytes()
         self.msodHdl.fillModel(model)
 
+class GelFrame(BaseRecordHandler):
+    def __parseBytes (self):
+        self.msodHdl = msodraw.MSODrawHandler(self.bytes, self)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        # it seems there are errors in msodraw parser :(
+        #self.msodHdl.parseBytes()
+        
+    def dumpData(self):
+        # we don't dump data!
+        return ('gel-frame', {'bytes': globals.getRawBytes(self.bytes, False, False)})
+
+
+class Pls(BaseRecordHandler):
+    def __parseBytes (self):
+        # DEVMODE is quite a big structure so we don't parse it
+        pass
+
+    def parseBytes (self):
+        self.__parseBytes()
+        
+    def dumpData(self):
+        return ('devmode', {'bytes': globals.getRawBytes(self.bytes, False, False)})
