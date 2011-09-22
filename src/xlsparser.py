@@ -67,7 +67,7 @@ class BaseParser(object):
             return Seq(self, other)
         
 def safeParse(parser, stream):
-    #print "TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex]))  
+    print "TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex]))  
 
     parsed = None
     try:
@@ -443,7 +443,8 @@ class CatSerRange(BaseParser):
 class AxcExt(BaseParser):
     PARSER = Term(xlsrecord.AxcExt)
 
-class CatLab(BaseParser): pass
+class CatLab(BaseParser): 
+    PARSER = Term(xlsrecord.CatLab)
 
 class IFmtRecord(BaseParser): pass
 
@@ -457,6 +458,15 @@ class AxisLine(BaseParser):
 class TextPropsStream(BaseParser): pass
 class ContinueFrt12(BaseParser): pass
 
+class ChartFrtInfo(BaseParser):
+    PARSER = Term(xlsrecord.ChartFrtInfo)
+
+class StartBlock(BaseParser):
+    PARSER = Term(xlsrecord.StartBlock)
+
+class EndBlock(BaseParser):
+    PARSER = Term(xlsrecord.EndBlock)
+
 class AXS(BaseParser):
     # AXS = [IFmtRecord] [Tick] [FontX] *4(AxisLine LineFormat) [AreaFormat] [GELFRAME]
     # *4SHAPEPROPS [TextPropsStream *ContinueFrt12]
@@ -466,9 +476,15 @@ class AXS(BaseParser):
                 Opt(Seq(Req(TextPropsStream()), Many('continue-frt12-list', ContinueFrt12()))))
 
 class IVAXIS(BaseParser):
+    # original ABNF:
     # IVAXIS = Axis Begin [CatSerRange] AxcExt [CatLab] AXS [CRTMLFRT] End
+    # it seems it's usual too have several future records indicators just after AxcExt and before the End:
+    # IVAXIS = Axis Begin [CatSerRange] AxcExt [ChartFrtInfo *StartBlock] [CatLab] AXS [CRTMLFRT] [EndBlock] End
+    
     PARSER = Group('ivaxis', Req(Axis()) << Req(Begin()) << CatSerRange() << Req(AxcExt()) << 
-                CatLab() << Req(AXS()) << CRTMLFRT() << Req(End()))
+                Group('future', Opt(Seq(Req(ChartFrtInfo()), 
+                                        Many('start-blocks', StartBlock())))) << CatLab() << 
+                Req(AXS()) << CRTMLFRT() << EndBlock() << Req(End()))
 
 class ValueRange(BaseParser):
     PARSER = Term(xlsrecord.CHValueRange)
@@ -510,7 +526,10 @@ class Radar(BaseParser): pass
 class RadarArea(BaseParser): pass
 class Surf(BaseParser): pass
 class SeriesList(BaseParser): pass
-class Chart3d(BaseParser): pass
+
+class Chart3d(BaseParser): 
+    PARSER = Term(xlsrecord.Chart3d)
+
 
 class Legend(BaseParser):
     PARSER = Term(xlsrecord.Legend)
@@ -538,9 +557,13 @@ class CRT(BaseParser):
                 DataLabExtContents() << Opt(SS()) << Many('shape-props-list', SHAPEPROPS(), max=4) << Req(End()))
 
 class AXISPARENT(BaseParser):
-    #AXISPARENT = AxisParent Begin Pos [AXES] 1*4CRT End
+    # Original:
+    # AXISPARENT = AxisParent Begin Pos [AXES] 1*4CRT End
+    # It seems AXISPARENT can have EndBlock before End:
+    # AXISPARENT = AxisParent Begin Pos [AXES] 1*4CRT [EndBlock] End
     PARSER = Group('axis-root', Req(AxisParent()) << Req(Begin()) << Req(Pos()) <<
                                   Opt(AXES()) << Many('crt-list', CRT(), min=1, max=4) <<
+                                  EndBlock() <<
                                   Req(End()))
 
 
@@ -552,6 +575,7 @@ class CHARTFORMATS(BaseParser):
     #CHARTFOMATS = Chart Begin *2FONTLIST Scl PlotGrowth [FRAME] *SERIESFORMAT *SS ShtProps
     #*2DFTTEXT AxesUsed 1*2AXISPARENT [CrtLayout12A] [DAT] *ATTACHEDLABEL [CRTMLFRT]
     #*([DataLabExt StartObject] ATTACHEDLABEL [EndObject]) [TEXTPROPS] *2CRTMLFRT End
+    # It seems it is possible to have optional EndBlock just before an end
     PARSER = Group('chart-fmt', Req(Chart()) << Req(Begin()) << Many('font-lists', FONTLIST(), max=2) <<
                 Req(Scl()) << Req(PlotGrowth()) << Opt(FRAME()) << Many('series-fmt-list', SERIESFORMAT()) <<
                 Many('ss-list', SS()) << Req(ShtProps()) << Many('dft-texts', DFTTEXT(), max=2) <<
@@ -561,7 +585,7 @@ class CHARTFORMATS(BaseParser):
                                                                     Req(StartObject()))), 
                                                             Req(ATTACHEDLABEL()), 
                                                             EndObject())) <<
-                Opt(TEXTPROPS()) << Many('crtmlfrt-list', CRTMLFRT()) << Req(End()))
+                Opt(TEXTPROPS()) << Many('crtmlfrt-list', CRTMLFRT()) << EndBlock() << Req(End()))
 
 class Dimensions(BaseParser):
     PARSER = Term(xlsrecord.Dimensions)

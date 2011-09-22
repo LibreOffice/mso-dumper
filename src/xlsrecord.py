@@ -112,7 +112,18 @@ class ICV(object):
 
 def dumpIcv(icv):
     return {'value': icv.value}
-    
+
+class CFRTID(object):
+    def __init__ (self, start, end):
+        self.start = start
+        self.end = end
+
+
+def dumpCfrtid(cfrtid):
+    return {'start': cfrtid.start,
+            'end': cfrtid.end}
+
+
 class BaseRecordHandler(globals.ByteStream):
 
     def __init__ (self, header, size, bytes, strmData):
@@ -220,6 +231,9 @@ Like parseBytes(), the derived classes must overwrite this method."""
 
     def readICV (self):
         return ICV(self.readUnsignedInt(2))
+
+    def readCFRTID (self):
+        return CFRTID(self.readUnsignedInt(2),self.readUnsignedInt(2))
 
 class AutofilterInfo(BaseRecordHandler):
 
@@ -3606,7 +3620,7 @@ class ChartFormat(BaseRecordHandler):
         flags = self.readUnsignedInt(2)
         self.varied = (flags & 0x001) != 0 # A
         self.icrt = self.readUnsignedInt(2)
-        
+
     def parseBytes (self):
         self.__parseBytes()
         # TODO: dump all data
@@ -3615,6 +3629,99 @@ class ChartFormat(BaseRecordHandler):
         self.__parseBytes()
         return ('chart-format', {'varied': self.varied,
                                  'icrt': self.icrt})
+
+class ChartFrtInfo(BaseRecordHandler):
+    def __parseBytes(self):
+        self.headerOld = self.readUnsignedInt(4)
+        self.verOriginator = self.readUnsignedInt(1)
+        self.verWriter = self.readUnsignedInt(1)
+        self.cCFRTID = self.readUnsignedInt(2)
+        self.cfrtids = []
+        for x in xrange(self.cCFRTID):
+            self.cfrtids.append(self.readCFRTID())
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Header old: %s" % str(self.headerOld))
+        self.appendLine("verOriginator (version of app that created the file): %s" % str(self.verOriginator))
+        self.appendLine("verWriter (version of app that last saved the file): %s" % str(self.verWriter))
+        self.appendLine("Count of CFRTID records: %s" % str(self.cCFRTID))
+        for cfrtid in self.cfrtids:
+            self.appendLine("CFRTID: [%s, %s]" % (cfrtid.start, cfrtid.end))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('chart-frt-info', {'header-old': self.headerOld,
+                                   'ver-originator': self.verOriginator,
+                                   'ver-writer': self.verWriter,
+                                   'cfrtid-count': self.cCFRTID}, 
+                                   [('cfrtid-list', map(lambda x: ('cfrtid', dumpCfrtid(x)), 
+                                                           self.cfrtids))])
+
+class StartBlock(BaseRecordHandler):
+    def __parseBytes(self):
+        self.headerOld = self.readUnsignedInt(4)
+        self.objectKind = self.readUnsignedInt(2)
+        self.objectContext = self.readUnsignedInt(2)
+        self.objectInstance1 = self.readUnsignedInt(2)
+        self.objectInstance2 = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Header old: %s" % str(self.headerOld))
+        self.appendLine("Object kind: %s" % str(self.objectKind))
+        self.appendLine("Object context: %s" % str(self.objectContext))
+        self.appendLine("Object instance 1: %s" % str(self.objectInstance1))
+        self.appendLine("Object instance 2: %s" % str(self.objectInstance2))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('start-block', {'header-old': self.headerOld,
+                                'object-kind': self.objectKind,
+                                'object-context': self.objectContext,
+                                'object-instance1': self.objectInstance1,
+                                'object-instance2': self.objectInstance2})
+
+class EndBlock(BaseRecordHandler):
+    def __parseBytes(self):
+        self.headerOld = self.readUnsignedInt(4)
+        self.objectKind = self.readUnsignedInt(2)
+        unused = self.readUnsignedInt(2)
+        unused = self.readUnsignedInt(2)
+        unused = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Header old: %s" % str(self.headerOld))
+        self.appendLine("Object kind: %s" % str(self.objectKind))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('end-block', {'header-old': self.headerOld,
+                                'object-kind': self.objectKind})
+
+class CatLab(BaseRecordHandler):
+    def __parseBytes(self):
+        self.headerOld = self.readUnsignedInt(4)
+        self.offset = self.readUnsignedInt(2)
+        self.at = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(2)
+        self.autoCatLabelReal        = (flags & 0x0001) != 0 # A
+        reserved = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Header old: %s" % str(self.headerOld))
+        self.appendLine("Offset: %s" % str(self.offset))
+        self.appendLine("At(alignment): %s" % str(self.at))
+        self.appendLine("Auto category label real: %s" % str(self.autoCatLabelReal))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('catlab', {'header-old': self.headerOld,
+                           'offset': self.offset,
+                           'at': self.at,
+                           'auto-catlabel-real': self.autoCatLabelReal})
 
 class Chart3DBarShape(BaseRecordHandler):
     def __parseBytes(self):
@@ -3629,6 +3736,41 @@ class Chart3DBarShape(BaseRecordHandler):
         self.__parseBytes()
         return ('chart-3dbar-shape', {'riser': self.riser,
                                       'taper': self.taper})
+
+class Chart3d(BaseRecordHandler):
+    def __parseBytes(self):
+        self.rot = self.readSignedInt(2) 
+        self.elev = self.readSignedInt(2) 
+        self.dist = self.readSignedInt(2) 
+        self.height = self.readUnsignedInt(2) # TODO: it can be a signed int too
+        self.depth = self.readUnsignedInt(2) 
+        self.gap = self.readUnsignedInt(2)
+
+        flag = self.readUnsignedInt(2)
+        self.perspective        = (flag & 0x0001) != 0 # A
+        self.cluster          = (flag & 0x0002) != 0 # B
+        self.scaling        = (flag & 0x0004) != 0 # C 
+        reserved        = (flag & 0x0008) != 0 # D 
+        self.notPieChart         = (flag & 0x0010) != 0 # E
+        self.walls2D        = (flag & 0x0020) != 0 # F
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        # TODO: dump all data
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('chart-3d', {'rot': self.rot,
+                             'elev': self.elev,
+                             'dist': self.dist,
+                             'height': self.height,
+                             'depth': self.depth,
+                             'gap': self.gap,
+                             'perspective': self.perspective,
+                             'cluster': self.cluster,
+                             'scaling': self.scaling,
+                             'not-pie-chart': self.notPieChart,
+                             'walls-2d': self.walls2D})
 
 class SerToCrt(BaseRecordHandler):
     def __parseBytes(self):
