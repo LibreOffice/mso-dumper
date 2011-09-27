@@ -67,7 +67,7 @@ class BaseParser(object):
             return Seq(self, other)
         
 def safeParse(parser, stream):
-    print "TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex]))  
+    #print "TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex]))  
 
     parsed = None
     try:
@@ -178,7 +178,7 @@ class OneOf(BaseParser):
         
     def parse(self, stream):
         for parser in self.__parsers:
-            parsed = safeParse(parser, stream)
+            parsed = getParsedOrNone(parser, stream)
             if not parsed is None:
                 return parsed
         raise ParseException("No suitable options: [%s]" % ','.join(str(x) for x in self.__parsers))
@@ -374,7 +374,8 @@ class Chart3DBarShape(BaseParser):
 class PieFormat(BaseParser): 
     PARSER = Term(xlsrecord.PieFormat)
 
-class SerFmt(BaseParser): pass
+class SerFmt(BaseParser):  
+    PARSER = Term(xlsrecord.SerFmt)
 
 class MarkerFormat(BaseParser): 
     PARSER = Term(xlsrecord.MarkerFormat)
@@ -389,17 +390,25 @@ class FontX(BaseParser):
     PARSER = Term(xlsrecord.FontX)
 
 class AlRuns(BaseParser): pass
-class ObjectLink(BaseParser): pass
-class DataLabExtContents(BaseParser): pass
+
+class ObjectLink(BaseParser): 
+    PARSER = Term(xlsrecord.ObjectLink)
+    
+class DataLabExtContents(BaseParser): 
+    PARSER = Term(xlsrecord.DataLabExtContents)
+
 class CrtLayout12(BaseParser): pass
 class CRTMLFRT(BaseParser): pass
 class TEXTPROPS(BaseParser): pass
 
 
+class AttachedLabel(BaseParser):
+    PARSER = Term(xlsrecord.AttachedLabel)
+
 class ATTACHEDLABEL(BaseParser):
     #ATTACHEDLABEL = Text Begin Pos [FontX] [AlRuns] AI [FRAME] [ObjectLink] [DataLabExtContents]
     #[CrtLayout12] [TEXTPROPS] [CRTMLFRT] End
-    PARSER = Group('attached-label', Req(Text()) << Req(Begin()) << Req(Pos()) << FontX() << AlRuns() << Req(AI()) <<
+    PARSER = Group('attached-label-struct', Req(Text()) << Req(Begin()) << Req(Pos()) << FontX() << AlRuns() << Req(AI()) <<
                 Opt(FRAME()) << ObjectLink() << DataLabExtContents() << CrtLayout12() << TEXTPROPS() << CRTMLFRT() << Req(End()))
 
 class SS(BaseParser):
@@ -407,9 +416,15 @@ class SS(BaseParser):
     #[GELFRAME] [MarkerFormat] [AttachedLabel] *2SHAPEPROPS [CRTMLFRT] End
     PARSER = Group('ss', Seq(Req(DataFormat()), Req(Begin()), Chart3DBarShape(), 
                              Opt(Seq(Req(LineFormat()), Req(AreaFormat()), Req(PieFormat()))),
-                             SerFmt(), Opt(GELFRAME()), MarkerFormat(), Opt(ATTACHEDLABEL()), # ATTACHEDLABEL was used instead of AttachedLabel 
+                             SerFmt(), Opt(GELFRAME()), MarkerFormat(), AttachedLabel(), 
                              Many('shape-props-list', SHAPEPROPS(), max=2), CRTMLFRT(),
                              Req(End())))
+
+class StartBlock(BaseParser):
+    PARSER = Term(xlsrecord.StartBlock)
+
+class EndBlock(BaseParser):
+    PARSER = Term(xlsrecord.EndBlock)
 
 class SERIESFORMAT(BaseParser):
     #SERIESFORMAT = Series Begin 4AI *SS (SerToCrt / (SerParent (SerAuxTrend / SerAuxErrBar)))
@@ -419,7 +434,7 @@ class SERIESFORMAT(BaseParser):
                 Many('legend-exceptions', Group('legend-exception-root', 
                                                 Seq(Req(LegendException()), 
                                                     Seq(Req(Begin()), Req(ATTACHEDLABEL()), TEXTPROPS(), Req(End()))))) <<
-                Req(End()))
+                EndBlock() << Req(End()))
 
 
         
@@ -472,11 +487,6 @@ class ContinueFrt12(BaseParser): pass
 class ChartFrtInfo(BaseParser):
     PARSER = Term(xlsrecord.ChartFrtInfo)
 
-class StartBlock(BaseParser):
-    PARSER = Term(xlsrecord.StartBlock)
-
-class EndBlock(BaseParser):
-    PARSER = Term(xlsrecord.EndBlock)
 
 class AXS(BaseParser):
     # AXS = [IFmtRecord] [Tick] [FontX] *4(AxisLine LineFormat) [AreaFormat] [GELFRAME]
@@ -524,7 +534,9 @@ class AXES(BaseParser):
 class ChartFormat(BaseParser):
     PARSER = Term(xlsrecord.ChartFormat)
 
-class BobPop(BaseParser): pass
+class BobPop(BaseParser): 
+    PARSER = Term(xlsrecord.BobPop)
+
 class BobPopCustom(BaseParser): pass
 
 class Bar(BaseParser):
@@ -533,18 +545,26 @@ class Bar(BaseParser):
 class Line(BaseParser): 
     PARSER = Term(xlsrecord.CHLine)
     
-class Pie(BaseParser): 
+class Pie(BaseParser):
     PARSER = Term(xlsrecord.CHPie)
     
-class Area(BaseParser): pass
-class Scatter(BaseParser): pass
+class Area(BaseParser):
+    PARSER = Term(xlsrecord.CHArea)
+    
+class Scatter(BaseParser): 
+    PARSER = Term(xlsrecord.CHScatter)
+    
 class Radar(BaseParser): 
     PARSER = Term(xlsrecord.CHRadar)
     
 class RadarArea(BaseParser): pass
-class Surf(BaseParser): pass
-class SeriesList(BaseParser): pass
 
+class Surf(BaseParser): 
+     PARSER = Term(xlsrecord.CHSurf)
+
+class SeriesList(BaseParser):  
+     PARSER = Term(xlsrecord.SeriesList)
+     
 class Chart3d(BaseParser): 
     PARSER = Term(xlsrecord.Chart3d)
 
@@ -569,20 +589,32 @@ class CrtLine(BaseParser):
     PARSER = Term(xlsrecord.CrtLine)
     
 class CrtLayout12A(BaseParser): pass
-class DAT(BaseParser): pass
+
+class Dat(BaseParser): 
+    PARSER = Term(xlsrecord.Dat)
+
+class DAT(BaseParser): 
+    #DAT = Dat Begin LD End
+    PARSER = Group('dat-root', Req(Dat()) << Req(Begin()) << Req(LD()) << Req(End()))
+
 
 class CRT(BaseParser):
     # It seems 2DROPBAR should be considered *2DROPBAR
     #CRT = ChartFormat Begin (Bar / Line / (BopPop [BopPopCustom]) / Pie / Area / Scatter / Radar /
     #RadarArea / Surf) CrtLink [SeriesList] [Chart3d] [LD] [*2DROPBAR] *4(CrtLine LineFormat)
     #*2DFTTEXT [DataLabExtContents] [SS] *4SHAPEPROPS End
+    # It seems there are optional StartBlock and EndBlock on the last line:
+    #*2DFTTEXT [StartBlock] [DataLabExtContents]  [SS] *4SHAPEPROPS [EndBlock] End
+    
+    
     PARSER = Group('crt', Req(ChartFormat()) << Req(Begin()) << OneOf(Bar(), Line(), Opt(Seq(Req(BobPop()), BobPopCustom())),
                                                                   Pie(), Area(), Scatter(), Radar(),
                                                                   RadarArea(), Surf()) <<
                 Req(CrtLink()) << SeriesList() << Chart3d() << Opt(LD()) << Many('drop-bars', DROPBAR(), max=2) << 
                 Many('crt-lines', Seq(Req(CrtLine()), 
                                       Req(LineFormat()))) << Many('dft-texts', DFTTEXT()) <<
-                DataLabExtContents() << Opt(SS()) << Many('shape-props-list', SHAPEPROPS(), max=4) << Req(End()))
+                StartBlock() << DataLabExtContents() << Opt(SS()) << 
+                Many('shape-props-list', SHAPEPROPS(), max=4) << EndBlock() << Req(End()))
 
 class AXISPARENT(BaseParser):
     # Original:

@@ -124,6 +124,15 @@ def dumpCfrtid(cfrtid):
             'end': cfrtid.end}
 
 
+class FrtHeader(object):
+    def __init__ (self, rt, flags):
+        self.rt = rt
+        self.flags = flags
+
+def dumpFrtHeader(header):
+    return {'rt': header.rt,
+            'flags': header.flags}
+
 class BaseRecordHandler(globals.ByteStream):
 
     def __init__ (self, header, size, bytes, strmData):
@@ -234,6 +243,9 @@ Like parseBytes(), the derived classes must overwrite this method."""
 
     def readCFRTID (self):
         return CFRTID(self.readUnsignedInt(2),self.readUnsignedInt(2))
+
+    def readFrtHeader (self):
+        return FrtHeader(self.readUnsignedInt(2), self.readUnsignedInt(2))
 
 class AutofilterInfo(BaseRecordHandler):
 
@@ -3611,6 +3623,25 @@ class DataFormat(BaseRecordHandler):
                                 'yi': self.yi,
                                 'iss': self.iss})
 
+class SerFmt(BaseRecordHandler):
+    def __parseBytes(self):
+        flags = self.readUnsignedInt(2)
+        self.smoothedLine = (flags & 0x001) != 0 
+        self.bubbles3D = (flags & 0x002) != 0 
+        self.arShadow = (flags & 0x004) != 0 
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Smoothed line: %s" % self.getTrueFalse(self.smoothedLine))
+        self.appendLine("3D bubbles: %s" % self.getTrueFalse(self.bubbles3D))
+        self.appendLine("With shadow: %s" % self.getTrueFalse(self.arShadow))
+        
+    def dumpData(self):
+        self.__parseBytes()
+        return ('ser-fmt', {'smoothed-line': self.smoothedLine,
+                            'bubbles-3d': self.bubbles3D,
+                            'ar-shadow': self.arShadow})
+
 class ChartFormat(BaseRecordHandler):
     def __parseBytes(self):
         reserved1 = self.readUnsignedInt(4)
@@ -3629,6 +3660,37 @@ class ChartFormat(BaseRecordHandler):
         self.__parseBytes()
         return ('chart-format', {'varied': self.varied,
                                  'icrt': self.icrt})
+
+class DataLabExtContents(BaseRecordHandler):
+    def __parseBytes(self):
+        self.header = self.readFrtHeader()
+        flags = self.readUnsignedInt(2)
+        self.serName = (flags & 0x001) != 0 # A
+        self.catName = (flags & 0x002) != 0 # B 
+        self.value = (flags & 0x004) != 0 # C 
+        self.percent = (flags & 0x008) != 0 # D 
+        self.bubSizes = (flags & 0x010) != 0 # E 
+        self.sep = self.readUnicodeString()
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Header: %s, %s" % (str(self.header.rt), str(self.header.flags)))
+        self.appendLine("Display series name: %s" % self.getTrueFalse(self.serName))
+        self.appendLine("Display categories name: %s" % self.getTrueFalse(self.catName))
+        self.appendLine("Display value: %s" % self.getTrueFalse(self.value))
+        self.appendLine("Is a percent: %s" % self.getTrueFalse(self.percent))
+        self.appendLine("Display bubble size: %s" % self.getTrueFalse(self.bubSizes))
+        self.appendLine("Separator: %s" % str(self.sep))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('datalab-ext-contents', {'ser-name': self.serName,
+                                         'cat-name': self.catName,
+                                         'value': self.value,
+                                         'percent': self.percent,
+                                         'bub-sizes': self.bubSizes,
+                                         'sep': self.sep}, 
+                                        [('header', dumpFrtHeader(self.header))])
 
 class ChartFrtInfo(BaseRecordHandler):
     def __parseBytes(self):
@@ -3744,7 +3806,6 @@ class DropBar(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         self.appendLine('Gap: %s' % str(self.gap))
-        # TODO: dump all data
 
     def dumpData(self):
         self.__parseBytes()
@@ -3757,11 +3818,57 @@ class CrtLine(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         self.appendLine('ID: %s' % str(self.id))
-        # TODO: dump all data
 
     def dumpData(self):
         self.__parseBytes()
         return ('crt-line', {'id': self.id})
+
+class ObjectLink(BaseRecordHandler):
+    def __parseBytes(self):
+        self.linkObj = self.readUnsignedInt(2)
+        self.linkVar1 = self.readUnsignedInt(2)
+        self.linkVar2 = self.readUnsignedInt(2)
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine('Link object: %s' % str(self.linkObj))
+        self.appendLine('Link var1: %s' % str(self.linkVar1))
+        self.appendLine('Link var2: %s' % str(self.linkVar2))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('object-link', {'link-obj': self.linkObj,
+                                'link-var1': self.linkVar1,
+                                'link-var2': self.linkVar2})
+
+class AttachedLabel(BaseRecordHandler):
+    def __parseBytes(self):
+        flag = self.readUnsignedInt(2)
+        self.showValue        = (flag & 0x0001) != 0 # A
+        self.showPercent          = (flag & 0x0002) != 0 # B
+        self.showLabelAndPerc        = (flag & 0x0004) != 0 # C 
+        unused        = (flag & 0x0008) != 0 # D 
+        self.showLabel         = (flag & 0x0010) != 0 # E
+        self.showBubbleSizes        = (flag & 0x0020) != 0 # F
+        self.showSeriesName        = (flag & 0x0040) != 0 # G
+        
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Show value: %s" % self.getTrueFalse(self.showValue))
+        self.appendLine("Show percent: %s" % self.getTrueFalse(self.showPercent))
+        self.appendLine("Show label and percent: %s" % self.getTrueFalse(self.showLabelAndPerc))
+        self.appendLine("Show bubble sizes: %s" % self.getTrueFalse(self.showBubbleSizes))
+        self.appendLine("Show series name: %s" % self.getTrueFalse(self.showSeriesName))
+        # TODO: dump all data
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('attached-label', {'show-value': self.showValue,
+                                   'show-percent': self.showPercent,
+                                   'show-label-and-perc': self.showLabelAndPerc,
+                                   'show-label': self.showLabel,
+                                   'show-bubble-sizes': self.showBubbleSizes,
+                                   'show-series-name': self.showSeriesName})
 
 class Chart3d(BaseRecordHandler):
     def __parseBytes(self):
@@ -3853,6 +3960,74 @@ class AxisParent(BaseRecordHandler):
         self.__parseBytes()
         return ('axis-parent', {'iax': self.iax})
 
+class BobPop(BaseRecordHandler):
+    def __parseBytes(self):
+        self.pst = self.readUnsignedInt(1)
+        self.autoSplit = self.readUnsignedInt(1)
+        self.split = self.readUnsignedInt(2)
+        self.splitPos = self.readSignedInt(2)
+        self.splitPercent = self.readSignedInt(2)
+        self.pie2Size = self.readSignedInt(2)
+        self.gap = self.readSignedInt(1)
+        self.splitValue = self.readDouble()
+        
+        flag = self.readUnsignedInt(2)
+        self.hasShadow        = (flag & 0x0001) != 0 # A
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('bobpop', {'pst': self.pst,
+                           'auto-split': self.autoSplit,
+                           'split': self.split,
+                           'split-pos': self.splitPos,
+                           'split-percent': self.splitPercent,
+                           'pie-2-size': self.pie2Size,
+                           'gap': self.gap,
+                           'split-balue': self.splitValue,
+                           'has-shadow': self.hasShadow})
+
+    def parseBytes (self):
+        self.__parseBytes()
+
+        self.appendLine("Chart group type: %s" % str(self.pst))
+        self.appendLine("Auto split: %s" % self.getTrueFalse(self.autoSplit))
+        self.appendLine("Split type: %s" % str(self.split))
+        if self.split == 0x0: # pos
+            self.appendLine("Split pos: %s" % str(self.splitPos))
+        elif self.split == 0x1: # value
+            self.appendLine("Split value: %s" % str(self.splitValue))
+        elif self.split == 0x2: # percent
+            self.appendLine("Split percent: %s" % str(self.splitPercent))
+        else:
+            self.appendLine("Custom split is specified in BopPopCustom record that follows")
+            
+        self.appendLine("Size of a secondary pie/bar: %s" % str(self.pie2Size))
+        self.appendLine("Gap: %s" % str(self.gap))
+        self.appendLine("Has shadow: %s" % self.getTrueFalse(self.hasShadow))
+
+class Dat(BaseRecordHandler):
+    def __parseBytes(self):
+        flag = self.readUnsignedInt(2)
+        self.hasBordHorz        = (flag & 0x0001) != 0 # A
+        self.hasBordVert          = (flag & 0x0002) != 0 # B
+        self.hasBordOutline        = (flag & 0x0004) != 0 # C 
+        self.showSeriesKey        = (flag & 0x0008) != 0 # D 
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('dat', {'has-bord-horz': self.hasBordHorz,
+                        'has-bord-vert': self.hasBordVert,
+                        'has-bord-outline': self.hasBordOutline,
+                        'show-series-key': self.showSeriesKey})
+
+    def parseBytes (self):
+        self.__parseBytes()
+
+        self.appendLine("Has horizontal borders: %s" % self.getTrueFalse(self.hasBordHorz))
+        self.appendLine("Has vertical borders: %s" % self.getTrueFalse(self.hasBordVert))
+        self.appendLine("Has outline borders: %s" % self.getTrueFalse(self.hasBordOutline))
+        self.appendLine("Show series key: %s" % self.getTrueFalse(self.showSeriesKey))
+
 class AxcExt(BaseRecordHandler):
     def __parseBytes (self):
         self.catMin = self.readUnsignedInt(2)
@@ -3927,6 +4102,26 @@ class Tick(BaseRecordHandler):
                          'trot': self.trot},
                          [('rgb', dumpRgb(self.rgb)),
                           ('icv', dumpIcv(self.icv))])
+
+class SeriesList(BaseRecordHandler):
+    def __parseBytes(self):        
+        self.cser = self.readUnsignedInt(2)
+        self.series = []
+        for x in xrange(self.cser):
+            self.series.append(self.readUnsignedInt(2))
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Series count : %s" % str(self.cser))
+        for x in self.series:
+            self.appendLine("Series id : %s" % str(x))
+
+    def dumpData(self):
+        self.__parseBytes()
+        return ('series-list', 
+                {'cser': self.cser}, 
+                map(lambda x: ('series-index',x), 
+                    self.series))
 
 class AxisLine(BaseRecordHandler):
     def __parseBytes(self):
@@ -4353,7 +4548,67 @@ class CHRadar(BaseRecordHandler):
         self.__parseBytes()
         return ('radar', {'rdr-ax-lab': self.rdrAxLab,
                           'has-shadow': self.hasShadow})
+
+class CHSurf(BaseRecordHandler):
+    def __parseBytes (self):
+        flags   = self.readUnsignedInt(2)
+        self.fillSurface = (flags & 0x0001) != 0 # A
+        self.phongShade3D = (flags & 0x0002) != 0 # B
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Surface has a fill: %s"%self.getYesNo(self.fillSurface))
+        self.appendLine("3D Phong shading: %s"%self.getYesNo(self.phongShade3D))
+    
+    def dumpData(self):
+        self.__parseBytes()
+        return ('surf', {'fill-surface': self.fillSurface,
+                         'phong-shade-3d': self.phongShade3D})
         
+
+class CHArea(BaseRecordHandler):
+    def __parseBytes (self):
+        flags   = self.readUnsignedInt(2)
+        self.stacked = (flags & 0x0001) != 0 # A
+        self.f100 = (flags & 0x0002) != 0 # B
+        self.hasShadow = (flags & 0x0002) != 0 # B
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Is stacked: %s"%self.getYesNo(self.stacked))
+        self.appendLine("Data points are percentage of sum: %s"%self.getYesNo(self.f100))
+        self.appendLine("Has shadow: %s"%self.getYesNo(self.hasShadow))
+    
+    def dumpData(self):
+        self.__parseBytes()
+        return ('surf', {'stacked': self.stacked,
+                         'f100': self.f100,
+                         'has-shadow': self.hasShadow})
+
+class CHScatter(BaseRecordHandler):
+    def __parseBytes (self):
+        self.bubbleSizeRatio   = self.readUnsignedInt(2)
+        self.bubbleSize   = self.readUnsignedInt(2)
+        flags   = self.readUnsignedInt(2)
+        self.bubbles = (flags & 0x0001) != 0 # A
+        self.showNegBubbles = (flags & 0x0002) != 0 # B
+        self.hasShadow = (flags & 0x0004) != 0 # C
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("Bubble size ratio: %s" % str(self.bubbleSizeRatio))
+        self.appendLine("Bubble size: %s" % str(self.bubbleSize))
+        self.appendLine("Is a bubble chart group: %s"%self.getYesNo(self.bubbles))
+        self.appendLine("Show negative bubbles: %s"%self.getYesNo(self.showNegBubbles))
+        self.appendLine("Data points have shadow: %s"%self.getYesNo(self.hasShadow))
+        
+    def dumpData(self):
+        self.__parseBytes()
+        return ('pie', {'bubble-size-ratio': self.bubbleSizeRatio,
+                        'bubble-size': self.bubbleSize,
+                        'bubble': self.bubbles,
+                        'show-neg-bubbles': self.showNegBubbles,
+                        'has-shadow': self.hasShadow})
 
 class CHPie(BaseRecordHandler):
     def __parseBytes (self):
