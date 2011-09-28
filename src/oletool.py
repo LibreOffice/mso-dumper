@@ -26,7 +26,7 @@
 #
 ########################################################################
 
-import sys, os.path, optparse
+import sys, os.path, optparse, struct
 
 sys.path.append(sys.path[0]+"/src")
 
@@ -42,10 +42,11 @@ class DateTime:
 
 class DirNode:
 
-    def __init__(self, entry):
+    def __init__(self, entry, index):
         self.Nodes = []
         self.Entry = entry;
         self.HierachicalName = ''
+        self.Index = index
 
     def isStorage():
         return entry.Type == Directory.Type.RootStorage
@@ -54,10 +55,25 @@ class OleContainer:
 
     def __init__(self,filePath, params ):
         self.filePath = filePath
-        self.header = None
         self.params = params
-        self.pos = None
+        self.chars = ''
+        self.file = open(self.filePath, 'rb')
+        self.chars = self.file.read()
+        self.file.close()
+        self.header = ole.Header(self.chars, self.params)
+        self.pos = self.header.parse()
+        self.outputBytes = None;
+
+    def output (self):
         
+        # #FIXME common initialisation code
+        self.header.output() 
+
+        obj =  self.header.getDirectory()
+        if obj != None:
+            obj.parseDirEntries()
+            obj.output()
+
     def __getModifiedTime(self, entry):
         # need parse/decode Entry.TimeModified
         # ( although the documentation indicates that it might not be
@@ -70,16 +86,11 @@ class OleContainer:
         modified.second = 0
         return modified
 
-    def __parseFile (self):
-        file = open(self.filePath, 'rb')
-        self.chars = file.read()
-        file.close()    
-
     def __addSiblings( self, entries, parent, child ):
         # add left siblings
         nextLeft = child.Entry.DirIDLeft
         if ( nextLeft > 0 ):
-            newEntry = DirNode( entries[ nextLeft ] )
+            newEntry = DirNode( entries[ nextLeft ], nextLeft )
             newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             if  newEntry.Entry.DirIDRoot > 0:
                 newEntry.HierachicalName = newEntry.HierachicalName + '/'
@@ -90,7 +101,7 @@ class OleContainer:
         nextRight = child.Entry.DirIDRight
         # add children to the right 
         if ( nextRight > 0 ):
-            newEntry = DirNode( entries[ nextRight ] )
+            newEntry = DirNode( entries[ nextRight ], nextRight )
             newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             if  newEntry.Entry.DirIDRoot > 0:
                 newEntry.HierachicalName = newEntry.HierachicalName + '/'
@@ -100,7 +111,7 @@ class OleContainer:
     def __buildTreeImpl(self, entries, parent ):
 
         if ( parent.Entry.DirIDRoot > 0 ):
-            newEntry = DirNode( entries[ parent.Entry.DirIDRoot ] )
+            newEntry = DirNode( entries[ parent.Entry.DirIDRoot ], parent.Entry.DirIDRoot )
             newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             if ( newEntry.Entry.DirIDRoot > 0 ):
                 newEntry.HierachicalName =  newEntry.HierachicalName + '/'
@@ -113,16 +124,16 @@ class OleContainer:
                 self.__buildTreeImpl( entries, child )
 
     def __buildTree(self, entries ):
-        treeRoot = DirNode( entries[0] ) 
+        treeRoot = DirNode( entries[0], 0 ) 
         self.__buildTreeImpl( entries, treeRoot )
         return treeRoot
 
-    def __findEntryByHierachicalName( self, node, name ):
+    def __findNodeByHierachicalName( self, node, name ):
         if node.HierachicalName == name:
-            return node.Entry
+            return node
         else:
             for child in node.Nodes:
-                result = self.__findEntryByHierachicalName( child, name )
+                result = self.__findNodeByHierachicalName( child, name )
                 if result != None:
                     return result 
         return None 
@@ -144,12 +155,6 @@ class OleContainer:
         print ("--------    ----   ----    ----")
 
     def listEntries(self):
-        self.__parseFile()
-        #if self.header == None:
-        #    self.header = ole.Header(self.chars, self.params)
-        #    self.pos = self.header.parse()
-        self.header = ole.Header(self.chars, self.params)
-        self.pos = self.header.parse()
         obj =  self.header.getDirectory()
         if obj != None:
             obj.parseDirEntries()
@@ -158,11 +163,6 @@ class OleContainer:
                 print("Entry [0x%x] Name %s  Root 0x%x Left 0x%x Right %x")%( count, entry.Name, entry.DirIDRoot, entry.DirIDLeft, entry.DirIDRight )
                 count = count + 1
     def list(self):
-        # need to share the inititialisation and parse stuff between the different options
-        self.__parseFile()
-        if self.header == None:
-            self.header = ole.Header(self.chars, self.params)
-            self.pos = self.header.parse()
         obj =  self.header.getDirectory()
         if obj != None:
             obj.parseDirEntries()
@@ -174,18 +174,16 @@ class OleContainer:
             # need to print a footer ( total bytes, total files like unzip )
 
     def extract(self, name):
-        if  self.header == None:
-            self.__parseFile()
-            self.header = ole.Header(self.chars, self.params)
-            self.pos = self.header.parse()
 
         obj =  self.header.getDirectory()
         if obj != None:
             obj.parseDirEntries()
      
         root = self.__buildTree( obj.entries )
-        entry = self.__findEntryByHierachicalName( root, name )
-
+        node = self.__findNodeByHierachicalName( root, name )
+        entry = None
+        if node != None:
+            entry = node.Entry 
         if  entry == None or entry.DirIDRoot > 0 :
             print "can't extract %s"%name
             return
@@ -193,13 +191,122 @@ class OleContainer:
         bytes = obj.getRawStream( entry )
 
         file = open(entry.Name, 'wb') 
-        file.write( bytes )
+        file.write( bytes[ 0:entry.StreamSize] )
         file.close
 
+    def deleteEntry(self, directory, node, tree ):
+        entry = node.Entry
+        if ( entry == None or entry.DirIDRoot > 0 ):
+            print "can't extract %s"%entry.Name
+            return
+        #find the chain associated with the entry
+        dirEntryOffset = node.Index * 128
+        sectorOffset = int( dirEntryOffset % directory.sectorSize )
+        chainIndex = int( dirEntryOffset / directory.sectorSize )
+                
+        chainSID = directory.sectorIDs[ chainIndex ];
+        pos = globals.getSectorPos(chainSID, directory.sectorSize) 
+        #point at entry
+        pos += sectorOffset 
+
+        print "dirEntryOffset %d, chainIndex %d, sectorOffset %d, chainSID %d, pos %d"%(dirEntryOffset, chainIndex, sectorOffset, chainSID, pos)
+        #mark the Entry as empty
+        # we should make the ole class use bytearray so we can modify the inmemory model
+        # instead of doing a copy here
+        self.outputBytes = bytearray( self.header.bytes )
+        
+        nFreeSecID = struct.pack( '<l', -1 )
+
+
+        self.outputBytes[pos : pos + 68] = bytearray( 68 );
+        #DirIDLeft
+        self.outputBytes[pos + 68:pos + 72] = nFreeSecID
+        #DirIDRight
+        self.outputBytes[pos + 72:pos + 76] = nFreeSecID
+        #DirIDRoot
+        self.outputBytes[pos + 76:pos + 80] = nFreeSecID
+        self.outputBytes[pos + 80:pos + 128] = bytearray( 48 )
+   
+         
+        #we should make the associated SAT or SSAT array entries as emtpy
+        
+    def delete(self, name, directory ):
+        print("attempting to delete %s !!")%name
+        #we'll do an inefficient delete e.g. no attempt to reclaim space 
+        #in the Directory stream/sectors
+
+        #first find the Entry for name
+        root = self.__buildTree( directory.entries )
+        node = self.__findNodeByHierachicalName( root, name ) 
+        if node != None:
+            self.deleteEntry( directory, node, root )
+        self.writeDoc("/home/npower/testComp.xls", self.outputBytes)
+        print("** attempting to write out compound document")
+                      
+    def writeDoc( self, filePath, contents ):
+        out = open( filePath, 'wb' );
+
+        if len( contents  ):
+            print ("using in memory model") 
+            out.write( contents )
+            return
+        out.write( self.header.docId )
+        out.write( self.header.uId )
+         
+        out.write( struct.pack( '<h',self.header.revision ) )
+        out.write( struct.pack( '<h',self.header.version ) )
+
+        if self.header.byteOrder ==  ole.ByteOrder.LittleEndian:
+            out.write( struct.pack( '<h', 0xFFFE ) )
+        else:
+            out.write( struct.pack( '>h', 0xFFFE ) )
+      
+        # sector size (usually 512 bytes)
+        out.write( struct.pack( '<h',self.header.secSize ) )
+        # short sector size (usually 64 bytes)
+        out.write( struct.pack( '<h', self.header.secSizeShort ) )
+        # padding
+        out.write( bytearray(10) ) 
+        # total number of sectors in SAT (equals the number of sector IDs 
+        # stored in the MSAT).
+        out.write( struct.pack( '<l', self.header.numSecSAT ) )
+
+        out.write( struct.pack( '<l', self.header.secIDFirstDirStrm ) )
+        out.write( bytearray(4) ) 
+        out.write( struct.pack( '<l', self.header.minStreamSize ) )
+        out.write( struct.pack( '<l', self.header.secIDFirstSSAT ) )
+        out.write( struct.pack( '<l', self.header.numSecSSAT ) )
+        out.write( struct.pack( '<l', self.header.secIDFirstMSAT ) )
+        out.write( struct.pack( '<l', self.header.numSecMSAT ) )
+
+        # now for the MSAT
+        self.writeMSAT( self.header, out )
+        out.flush()
+        out.close()
+                
+    def writeMSAT( self, header, outFile ):
+        # write the first 109 id(s) straight into the header
+        msatArray  = header.getMSAT().secIDs
+        nMSATWritten = 0 
+        nTotalSecIDs = len( msatArray )
+        nFreeSecID = struct.pack( '<l', -1 )
+        for i in xrange( 0, 109 ):
+            if i < nTotalSecIDs:
+                nMSATWritten += 1
+                outFile.write( struct.pack( '<l', msatArray[ i ] ) )
+            else:
+                outFile.write( nFreeSecID )         
+#        if nTotalSecIDs > 109:
+            # MSAT extends past the header
+#            for i in xrange( 109, nTotalSecIDs );
+             
+        
 def main ():
     parser = optparse.OptionParser()
     parser.add_option("-l", "--list", action="store_true", dest="list", default=False, help="lists ole contents")
     parser.add_option("-x", "--extract", action="store_true", dest="extract", default=False, help="extract file")
+    parser.add_option("-D", "--Delete", action="store_true", dest="delete", default=False, help="delete file from document")
+    parser.add_option("-d", "--debug", action="store_true", dest="debug", default=False, help="spew debug and dump file format")
 
 
     options, args = parser.parse_args()
@@ -208,6 +315,8 @@ def main ():
 
     params.list =  options.list
     params.extract =  options.extract
+    params.debug =  options.debug
+    params.delete =  options.delete
 
     if len(args) < 1:
         globals.error("takes at least one arguments\n")
@@ -218,13 +327,22 @@ def main ():
 
     if params.list == True:
         container.list() 
-    if params.extract:
+    if params.extract or params.delete:
        files = args
        files.pop(0)
            
        for file in files:
-           container.extract( file ) 
+           if params.extract:
+               container.extract( file ) 
+           else:
+               obj = container.header.getDirectory()
+               if obj != None:
+                   print "parsing dir entries"
+                   obj.parseDirEntries()
+               container.delete( file, obj ) 
 #        container.listEntries() 
+    if params.debug == True:
+        container.output()
 
 if __name__ == '__main__':
     main()
