@@ -196,9 +196,10 @@ class OleContainer:
 
     def deleteEntry(self, directory, node, tree ):
         entry = node.Entry
-        if ( entry == None or entry.DirIDRoot > 0 ):
+        if ( entry.Type == None ):
             print "can't extract %s"%entry.Name
             return
+        print("** attempting to delete %s"%entry.Name)
         #find the chain associated with the entry
         dirEntryOffset = node.Index * 128
         sectorOffset = int( dirEntryOffset % directory.sectorSize )
@@ -209,11 +210,7 @@ class OleContainer:
         #point at entry
         pos += sectorOffset 
 
-        print "dirEntryOffset %d, chainIndex %d, sectorOffset %d, chainSID %d, pos %d"%(dirEntryOffset, chainIndex, sectorOffset, chainSID, pos)
         #mark the Entry as empty
-        # we should make the ole class use bytearray so we can modify the inmemory model
-        # instead of doing a copy here
-        self.outputBytes = bytearray( self.header.bytes )
         
         nFreeSecID = struct.pack( '<l', -1 )
 
@@ -226,12 +223,42 @@ class OleContainer:
         #DirIDRoot
         self.outputBytes[pos + 76:pos + 80] = nFreeSecID
         self.outputBytes[pos + 80:pos + 128] = bytearray( 48 )
-   
-         
-        #we should make the associated SAT or SSAT array entries as emtpy
-        
+
+        # #FIXME we should make the associated SAT or SSAT array entries as emtpy
+       
+        if entry.StreamLocation == ole.StreamLocation.SAT:
+           print "%s entry is in SAT"%entry.Name 
+
+        if entry.StreamLocation == ole.StreamLocation.SSAT:
+           print "%s entry is in SSAT"%entry.Name
+           chain = self.header.getSSAT().getSectorIDChain(entry.StreamSectorID) 
+           #we need to calculate the position in the file stream that each array
+           #position in the stream corrosponds to
+           for entry in chain:
+               #each index takes up 4 bytes so sat[ entry ] would be at 
+               #position ( 4 * entry )
+               entryPos = 4 * entry
+               #calculate the offset into a sector
+               sectorOffset = entryPos %  self.header.getSSAT().sectorSize
+               sectorIndex = int(  entryPos /  self.header.getSSAT().sectorSize )
+               sectorSize = self.header.getSSAT().sectorSize
+               #now point to the offset in the sector this array position lives
+               #in
+               pos = 512 + ( self.header.getSSAT().sectorIDs[ sectorIndex ] * self.header.getSSAT().sectorSize ) + sectorOffset
+               self.outputBytes[pos:pos + 4] = nFreeSecID
+               
+ 
+        # #FIXME what about references ( e.g. parent of this entry should we 
+        # blank the associated left/right id  
+
+        #if this node has children then I suppose we need to delete them too
+        for child in node.Nodes: 
+            self.deleteEntry( directory, child, tree )
+
     def delete(self, name, directory ):
-        print("attempting to delete %s !!")%name
+        # we should make the ole class use bytearray so we can modify the 
+        #inmemory model directly instead of doing a copy here
+        self.outputBytes = bytearray( self.header.bytes )
         #we'll do an inefficient delete e.g. no attempt to reclaim space 
         #in the Directory stream/sectors
 
