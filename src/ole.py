@@ -81,9 +81,9 @@ class Header(object):
         self.numSecSSAT = 0
         self.numSecSAT = 0
 
-        self.__secIDFirstMSAT = -2
-        self.__secIDFirstDirStrm = -2
-        self.__secIDFirstSSAT = -2
+        self.secIDFirstMSAT = -2
+        self.secIDFirstDirStrm = -2
+        self.secIDFirstSSAT = -2
 
         self.secSize = 512
         self.secSizeShort = 64
@@ -100,11 +100,11 @@ class Header(object):
 
     def getFirstSectorID (self, blockType):
         if blockType == BlockType.MSAT:
-            return self.__secIDFirstMSAT
+            return self.secIDFirstMSAT
         elif blockType == BlockType.SSAT:
-            return self.__secIDFirstSSAT
+            return self.secIDFirstSSAT
         elif blockType == BlockType.Directory:
-            return self.__secIDFirstDirStrm
+            return self.secIDFirstDirStrm
         return -2
 
 
@@ -155,23 +155,23 @@ class Header(object):
         print("Total number of sectors used in SAT: %d"%self.numSecSAT)
 
         print("Sector ID of the first sector of the directory stream: %d"%
-              self.__secIDFirstDirStrm)
+              self.secIDFirstDirStrm)
 
         print("Minimum stream size: %d"%self.minStreamSize)
 
-        if self.__secIDFirstSSAT == -2:
+        if self.secIDFirstSSAT == -2:
             print("Sector ID of the first SSAT sector: [none]")
         else:
-            print("Sector ID of the first SSAT sector: %d"%self.__secIDFirstSSAT)
+            print("Sector ID of the first SSAT sector: %d"%self.secIDFirstSSAT)
 
         print("Total number of sectors used in SSAT: %d"%self.numSecSSAT)
 
-        if self.__secIDFirstMSAT == -2:
+        if self.secIDFirstMSAT == -2:
             # There is no more sector ID stored outside the header.
             print("Sector ID of the first MSAT sector: [end of chain]")
         else:
             # There is more sector IDs than 109 IDs stored in the header.
-            print("Sector ID of the first MSAT sector: %d"%(self.__secIDFirstMSAT))
+            print("Sector ID of the first MSAT sector: %d"%(self.secIDFirstMSAT))
 
         print("Total number of sectors used to store additional MSAT: %d"%self.numSecMSAT)
 
@@ -199,11 +199,11 @@ class Header(object):
         # stored in the MSAT).
         self.numSecSAT = getSignedInt(self.bytes[44:48])
 
-        self.__secIDFirstDirStrm = getSignedInt(self.bytes[48:52])
+        self.secIDFirstDirStrm = getSignedInt(self.bytes[48:52])
         self.minStreamSize = getSignedInt(self.bytes[56:60])
-        self.__secIDFirstSSAT = getSignedInt(self.bytes[60:64])
+        self.secIDFirstSSAT = getSignedInt(self.bytes[60:64])
         self.numSecSSAT = getSignedInt(self.bytes[64:68])
-        self.__secIDFirstMSAT = getSignedInt(self.bytes[68:72])
+        self.secIDFirstMSAT = getSignedInt(self.bytes[68:72])
         self.numSecMSAT = getSignedInt(self.bytes[72:76])
 
         # master sector allocation table
@@ -219,9 +219,9 @@ class Header(object):
 
             self.MSAT.appendSectorID(id)
 
-        if self.__secIDFirstMSAT != -2:
+        if self.secIDFirstMSAT != -2:
             # additional sectors are used to store more SAT sector IDs.
-            secID = self.__secIDFirstMSAT
+            secID = self.secIDFirstMSAT
             size = self.getSectorSize()
             inLoop = True
             while inLoop:
@@ -593,8 +593,10 @@ entire file stream.
                 print("-"*globals.OutputWidth)
                 pos = globals.getSectorPos(secID, self.sectorSize)
                 globals.dumpBytes(self.bytes[pos:pos+self.sectorSize], 128)
-
+        dirID = 0
         for entry in self.entries:
+            print("DirId[%d]"%dirID)
+            dirID += 1
             self.__outputEntry(entry, debug)
 
     def __outputEntry (self, entry, debug):
