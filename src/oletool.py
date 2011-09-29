@@ -62,15 +62,11 @@ class OleContainer:
         self.pos = self.header.parse()
         self.outputBytes = None;
 
-    def output (self):
+    def output (self, directory):
         
         # #FIXME common initialisation code
         self.header.output() 
-
-        obj =  self.header.getDirectory()
-        if obj != None:
-            obj.parseDirEntries()
-            obj.output()
+        directory.output()
 
     def __getModifiedTime(self, entry):
         # need parse/decode Entry.TimeModified
@@ -163,24 +159,20 @@ class OleContainer:
             for entry in obj.entries:
                 print("Entry [0x%x] Name %s  Root 0x%x Left 0x%x Right %x")%( count, entry.Name, entry.DirIDRoot, entry.DirIDLeft, entry.DirIDRight )
                 count = count + 1
-    def list(self):
-        obj =  self.header.getDirectory()
-        if obj != None:
-            obj.parseDirEntries()
+    def list(self, directory):
+        if directory != None:
             count = 0
-            rootNode = self.__buildTree( obj.entries )            
+            rootNode = self.__buildTree( directory.entries )            
 
             self.__printHeader()
-            self.__printListReport( rootNode, obj.entries )
+            self.__printListReport( rootNode, directory.entries )
             # need to print a footer ( total bytes, total files like unzip )
 
-    def extract(self, name):
-
-        obj =  self.header.getDirectory()
-        if obj != None:
-            obj.parseDirEntries()
-     
-        root = self.__buildTree( obj.entries )
+    def extract(self, name, directory):
+        if ( directory == None ):
+            print "failed to extract %s"%name
+            return
+        root = self.__buildTree( directory.entries )
         node = self.__findNodeByHierachicalName( root, name )
         entry = None
         if node != None:
@@ -189,7 +181,7 @@ class OleContainer:
             print "can't extract %s"%name
             return
 
-        bytes = obj.getRawStream( entry )
+        bytes = directory.getRawStream( entry )
 
         file = open(entry.Name, 'wb') 
         file.write( bytes[ 0:entry.StreamSize] )
@@ -258,6 +250,9 @@ class OleContainer:
         #if this node has children then I suppose we need to delete them too
         for child in node.Nodes: 
             self.deleteEntry( directory, child, tree )
+
+    def add(self, name, directory):
+        print "Add %s"%name
 
     def delete(self, name, directory ):
         # we should make the ole class use bytearray so we can modify the 
@@ -337,6 +332,7 @@ def main ():
     parser.add_option("-l", "--list", action="store_true", dest="list", default=False, help="lists ole contents")
     parser.add_option("-x", "--extract", action="store_true", dest="extract", default=False, help="extract file")
     parser.add_option("-D", "--Delete", action="store_true", dest="delete", default=False, help="delete file from document")
+    parser.add_option("-a", "--add", action="store_true", dest="add", default=False, help="adds or updates entry")
     parser.add_option("-d", "--debug", action="store_true", dest="debug", default=False, help="spew debug and dump file format")
 
 
@@ -348,6 +344,7 @@ def main ():
     params.extract =  options.extract
     params.debug =  options.debug
     params.delete =  options.delete
+    params.add =  options.add
 
     if len(args) < 1:
         globals.error("takes at least one arguments\n")
@@ -355,25 +352,24 @@ def main ():
         sys.exit(1)
 
     container =  OleContainer( args[ 0 ], params )
+    directory = container.header.getDirectory()
+    if directory != None:
+        directory.parseDirEntries()
 
     if params.list == True:
-        container.list() 
-    if params.extract or params.delete:
+        container.list( directory ) 
+    if params.extract or params.delete or params.add:
        files = args
        files.pop(0)
            
        for file in files:
            if params.extract:
-               container.extract( file ) 
+               container.extract( file, directory ) 
            else:
-               obj = container.header.getDirectory()
-               if obj != None:
-                   print "parsing dir entries"
-                   obj.parseDirEntries()
-               container.delete( file, obj ) 
-#        container.listEntries() 
+               container.delete( file, directory ) 
     if params.debug == True:
-        container.output()
+#        container.listEntries() 
+        container.output( directory )
 
 if __name__ == '__main__':
     main()
