@@ -225,27 +225,30 @@ class OleContainer:
         self.outputBytes[pos + 80:pos + 128] = bytearray( 48 )
 
         # #FIXME we should make the associated SAT or SSAT array entries as emtpy
-       
-        if entry.StreamLocation == ole.StreamLocation.SAT:
-           print "%s entry is in SAT"%entry.Name 
+      
+        theSAT =   self.header.getSAT()
 
         if entry.StreamLocation == ole.StreamLocation.SSAT:
-           print "%s entry is in SSAT"%entry.Name
-           chain = self.header.getSSAT().getSectorIDChain(entry.StreamSectorID) 
-           #we need to calculate the position in the file stream that each array
-           #position in the stream corrosponds to
-           for entry in chain:
-               #each index takes up 4 bytes so sat[ entry ] would be at 
-               #position ( 4 * entry )
-               entryPos = 4 * entry
-               #calculate the offset into a sector
-               sectorOffset = entryPos %  self.header.getSSAT().sectorSize
-               sectorIndex = int(  entryPos /  self.header.getSSAT().sectorSize )
-               sectorSize = self.header.getSSAT().sectorSize
-               #now point to the offset in the sector this array position lives
-               #in
-               pos = 512 + ( self.header.getSSAT().sectorIDs[ sectorIndex ] * self.header.getSSAT().sectorSize ) + sectorOffset
-               self.outputBytes[pos:pos + 4] = nFreeSecID
+            print ("using SSAT")
+            theSAT = self.header.getSSAT()
+        elif entry.StreamLocation == ole.StreamLocation.SSAT:
+            print ("using SAT")
+        
+        chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
+        #we need to calculate the position in the file stream that each array
+        #position in the stream corrosponds to
+        for entry in chain:
+            #each index takes up 4 bytes so sat[ entry ] would be at 
+            #position ( 4 * entry )
+            entryPos = 4 * entry
+            #calculate the offset into a sector
+            sectorOffset = entryPos %  theSAT.sectorSize
+            sectorIndex = int(  entryPos /  theSAT.sectorSize )
+            sectorSize = theSAT.sectorSize
+            #now point to the offset in the sector this array position lives
+            #in
+            pos = 512 + ( theSAT.sectorIDs[ sectorIndex ] * theSAT.sectorSize ) + sectorOffset
+            self.outputBytes[pos:pos + 4] = nFreeSecID
                
  
         # #FIXME what about references ( e.g. parent of this entry should we 
