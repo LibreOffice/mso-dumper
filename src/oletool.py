@@ -187,12 +187,104 @@ class OleContainer:
         file.write( bytes[ 0:entry.StreamSize] )
         file.close
 
-    def deleteEntry(self, directory, node, tree ):
+    def updateEntry( self, directory, node, filePath ):
+        file = open( filePath, 'rb' )
+        bytes = file.read();
         entry = node.Entry
-        if ( entry.Type == None ):
-            print "can't extract %s"%entry.Name
-            return
-        print("** attempting to delete %s"%entry.Name)
+        
+        theSAT = self.header.getSAT()
+        sectorSize = self.header.getSectorSize()
+        # do we need to change the filestream location ?
+        if entry.StreamLocation == ole.StreamLocation.SSAT:
+            print ("updateEntry using SSAT")
+            theSAT = self.header.getSSAT()
+            sectorSize = self.header.getShortSectorSize()
+        elif entry.StreamLocation == ole.StreamLocation.SAT:
+            print ("updateEntry using SAT")         
+
+        #ok, find out how many sectors to store the data from the file
+        streamSize = len(bytes)
+        sectorOffset = streamSize % sectorSize
+        sectorIndex = int(  streamSize / sectorSize )            
+
+        #compare with the existing number of sectors
+        chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
+        oldNumChainEntries = len( chain )
+        print "chain contains ", chain
+        print "size of stream to update %d size of existing entry %d size of sectors %d"%(streamSize, entry.StreamSize, len(chain) * sectorSize )
+        print "new stream will take %d sectors to store %d bytes"%(sectorIndex+1,(sectorIndex+1)* sectorSize )
+        newNumChainEntries = sectorIndex + 1
+        if newNumChainEntries > oldNumChainEntries:
+            neededEntries =  newNumChainEntries - oldNumChainEntries
+            newChain = self.getFreeSATChainEntries( theSAT, neededEntries, 0 )
+            print "received %d of %d chain entries needed"%(len(newChain), neededEntries ) 
+            if len(newChain) < neededEntries:
+                # create enough sectors to increase SAT table to accomadate new entries
+                numEntriesPerSector = int( theSAT.sectorSize / 4 )
+                numExtraEntriesNeeded = neededEntries - len( newChain )
+                numNeededSectors = int ( ( numExtraEntriesNeeded + ( numExtraEntriesNeeded % numEntriesPerSector ) ) / numEntriesPerSector )
+                self.expandSAT( numNeededSectors, entry.StreamLocation == ole.StreamLocation.SAT )
+
+    def getFreeSATChainEntries( self, theSAT, numNeeded, searchFrom ):
+        freeSATChain = []
+        maxEntries = ( len( theSAT.sectorIDs ) * theSAT.sectorSize ) / 4
+        for i in xrange( 0, len( theSAT.array ) ):
+            if numNeeded == 0:
+                break
+            nSecID = theSAT.array[i];
+            if nSecID == -1: 
+                #have we exceeded the allocated size of the SAT table ?
+                if i < maxEntries:
+                    freeSATChain.append( i )
+                    numNeeded -= 1
+                else:
+                    break;
+        return freeSATChain
+
+    def appendFreeChain( self, chain1, chain2, theSAT ):
+        #chain2 is a list of free indexes 
+        #change the list in memory as well as internal structures
+        lastIndex =  chain1[ len( chain1 ) - 1 ]
+        if len( chain2 ):
+            #modify memory
+            pos = self.memPosOfSATChainIndex( lastIndex, theSAT ) 
+            for entry in chain2:
+                self.outputBytes[ pos : pos + 4 ] = struct.pack( '<l', entry )
+                pos = self.memPosOfSATChainIndex( entry, theSAT )
+            pos = self.memPosOfSATChainIndex(  chain2[ len( chain2 ) - 1 ], theSAT )
+            self.outputBytes[ pos : pos + 4 ] = struct.pack( '<l', -2 )
+
+            #modify model
+            for entry in chain2:
+                print "array[%d] assingin value %d"%( lastIndex, entry )
+                theSAT.array[ lastIndex ] = entry
+                lastIndex = entry
+                theSAT.sectorIDs.append( entry )
+        theSAT.array[ chain2[ len( chain2 ) - 1 ] ] = -2
+
+    def memPosOfSATChainIndex( self, index, theSAT ):
+        #find the position in memory of the index into the SAT table
+        #each index takes up 4 bytes so sat[ entry ] would be at 
+        #position ( 4 * index )
+        entryPos = 4 * index
+        #calculate the offset into a sector
+        sectorOffset = entryPos %  theSAT.sectorSize
+        sectorIndex = int(  entryPos /  theSAT.sectorSize )
+        sectorSize = theSAT.sectorSize
+        #now point to the offset in the sector this array position lives
+        #in
+        pos = 512 + ( theSAT.sectorIDs[ sectorIndex ] * theSAT.sectorSize ) + sectorOffset
+        return pos
+                
+    def freeSATChainEntries( self, chain, theSAT, mem ):
+        #we need to calculate the position in the file stream that each array
+        #position in the stream corrosponds to
+        nFreeSecID = struct.pack( '<l', -1 )
+        for entry in chain:
+            pos = self.memPosOfSATChainIndex( entry, theSAT )
+            mem[pos:pos + 4] = nFreeSecID
+
+    def findEntryMemPos( self, node, directory ):
         #find the chain associated with the entry
         dirEntryOffset = node.Index * 128
         sectorOffset = int( dirEntryOffset % directory.sectorSize )
@@ -202,11 +294,50 @@ class OleContainer:
         pos = globals.getSectorPos(chainSID, directory.sectorSize) 
         #point at entry
         pos += sectorOffset 
+        return pos
+
+    def expandSAT( self, numSectors, isSAT ):
+        #theSAT could be the SSAT or the SAT, doesn't matter we 
+        #still need a new sector to extend whichever SAT table
+        print "Attempt to expand SAT by %d sectors"%numSectors
+        # are there any available entries in the SAT ?
+        newChain = self.getFreeSATChainEntries( self.header.getSAT(), numSectors, 0 ) 
+
+        if len( newChain ) == 0:
+            print "Error, we need don't support extending the MSAT yet"
+            return 
+        print "received %d of %d chain entries needed"%(len(newChain), numSectors ) 
+        print "-> ", newChain 
+      
+        oldChain = [] 
+        if isSAT:
+            #modify SAT chain to incorporate new secID
+            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SAT) )
+            print "old SAT chain -> ", oldChain 
+        else:
+            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SSAT) )
+            print "old SSAT chain -> ", oldChain 
+
+        self.appendFreeChain( oldChain, newChain, self.header.getSAT() )
+        
+        if isSAT:
+            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SAT) )
+            print "new SAT chain -> ", oldChain 
+        else:
+            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SSAT) )
+            print "new SSAT chain -> ", oldChain 
+
+    def deleteEntry(self, directory, node, tree ):
+        entry = node.Entry
+        if ( entry.Type == None ):
+            print "can't extract %s"%entry.Name
+            return
+        print("** attempting to delete %s"%entry.Name)
+        #point at entry
+        pos = self.findEntryMemPos( node, directory )
 
         #mark the Entry as empty
-        
         nFreeSecID = struct.pack( '<l', -1 )
-
 
         self.outputBytes[pos : pos + 68] = bytearray( 68 );
         #DirIDLeft
@@ -217,9 +348,8 @@ class OleContainer:
         self.outputBytes[pos + 76:pos + 80] = nFreeSecID
         self.outputBytes[pos + 80:pos + 128] = bytearray( 48 )
 
-        # #FIXME we should make the associated SAT or SSAT array entries as emtpy
-      
-        theSAT =   self.header.getSAT()
+        #  make the associated SAT or SSAT array entries as emtpy
+        theSAT = self.header.getSAT()
 
         if entry.StreamLocation == ole.StreamLocation.SSAT:
             print ("using SSAT")
@@ -228,24 +358,10 @@ class OleContainer:
             print ("using SAT")
         
         chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
-        #we need to calculate the position in the file stream that each array
-        #position in the stream corrosponds to
-        for entry in chain:
-            #each index takes up 4 bytes so sat[ entry ] would be at 
-            #position ( 4 * entry )
-            entryPos = 4 * entry
-            #calculate the offset into a sector
-            sectorOffset = entryPos %  theSAT.sectorSize
-            sectorIndex = int(  entryPos /  theSAT.sectorSize )
-            sectorSize = theSAT.sectorSize
-            #now point to the offset in the sector this array position lives
-            #in
-            pos = 512 + ( theSAT.sectorIDs[ sectorIndex ] * theSAT.sectorSize ) + sectorOffset
-            self.outputBytes[pos:pos + 4] = nFreeSecID
-               
+        self.freeSATChainEntries( chain, theSAT, self.outputBytes )               
  
         # #FIXME what about references ( e.g. parent of this entry should we 
-        # blank the associated left/right id  
+        # blank the associated left/right id(s) ) - leave for now  
 
         #if this node has children then I suppose we need to delete them too
         for child in node.Nodes: 
@@ -276,9 +392,13 @@ class OleContainer:
 
         root= self.__buildTree( directory.entries )            
         node = self.__findNodeByHierachicalName( root, nodePath )
+        # we should make the ole class use bytearray so we can modify the 
+        #in memory model directly instead of doing a copy here
+        self.outputBytes = bytearray( self.header.bytes )
         if  node != None:
             #update a file
             print "updating %s"%fileLeafName
+            self.updateEntry( directory, node, filePath )
         else:
             #new file or storage
             node = self.__findNodeByHierachicalName( root, dirPath )
@@ -286,9 +406,10 @@ class OleContainer:
                 print "error: %s does not exist"%dirPath
                 return
             print "adding a new file to %s"%dirPath
+
     def delete(self, name, directory ):
         # we should make the ole class use bytearray so we can modify the 
-        #inmemory model directly instead of doing a copy here
+        #in memory model directly instead of doing a copy here
         self.outputBytes = bytearray( self.header.bytes )
         #we'll do an inefficient delete e.g. no attempt to reclaim space 
         #in the Directory stream/sectors
