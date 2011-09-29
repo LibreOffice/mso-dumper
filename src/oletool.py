@@ -48,8 +48,6 @@ class DirNode:
         self.HierachicalName = ''
         self.Index = index
 
-    def isStorage():
-        return entry.Type == Directory.Type.RootStorage
 
 class OleContainer:
 
@@ -91,9 +89,9 @@ class OleContainer:
         nextLeft = child.Entry.DirIDLeft
         if ( nextLeft > 0 ):
             newEntry = DirNode( entries[ nextLeft ], nextLeft )
-            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
-            if  newEntry.Entry.DirIDRoot > 0:
-                newEntry.HierachicalName = newEntry.HierachicalName + '/'
+            newEntry.HierachicalName = globals.encodeName( newEntry.Entry.Name )
+            if len(  parent.HierachicalName ):
+                newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
 
             self.__addSiblings( entries, parent, newEntry ) 
             parent.Nodes.insert( 0, newEntry )
@@ -102,9 +100,9 @@ class OleContainer:
         # add children to the right 
         if ( nextRight > 0 ):
             newEntry = DirNode( entries[ nextRight ], nextRight )
-            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
-            if  newEntry.Entry.DirIDRoot > 0:
-                newEntry.HierachicalName = newEntry.HierachicalName + '/'
+            newEntry.HierachicalName = globals.encodeName( newEntry.Entry.Name )
+            if len(  parent.HierachicalName ):
+                newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
             self.__addSiblings( entries, parent, newEntry ) 
             parent.Nodes.append( newEntry )
 
@@ -114,7 +112,7 @@ class OleContainer:
             newEntry = DirNode( entries[ parent.Entry.DirIDRoot ], parent.Entry.DirIDRoot )
             newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             if ( newEntry.Entry.DirIDRoot > 0 ):
-                newEntry.HierachicalName =  newEntry.HierachicalName + '/'
+                newEntry.HierachicalName =  newEntry.HierachicalName 
 
             self.__addSiblings( entries, parent, newEntry )
             parent.Nodes.append( newEntry )
@@ -143,7 +141,10 @@ class OleContainer:
         dateInfo = self.__getModifiedTime( treeNode.Entry )
 
         if len( treeNode.HierachicalName ) > 0 :
-            print '{0:8d}  {1:0<2d}-{2:0<2d}-{3:0<2d} {4:0<2d}:{5:0<2d}   {6}'.format(treeNode.Entry.StreamSize, dateInfo.day, dateInfo.month, dateInfo.year, dateInfo.hour, dateInfo.second, treeNode.HierachicalName )
+            aflag = "f"
+            if treeNode.Entry.isStorage():
+                aflag = "d"
+            print '{0} {1:8d}  {2:0<2d}-{3:0<2d}-{4:0<2d} {5:0<2d}:{6:0<2d}   {7}'.format( aflag,treeNode.Entry.StreamSize, dateInfo.day, dateInfo.month, dateInfo.year, dateInfo.hour, dateInfo.second, treeNode.HierachicalName )
      
         for node in treeNode.Nodes:
             # ignore the root
@@ -151,8 +152,8 @@ class OleContainer:
 
     def __printHeader(self):
         print ("OLE: %s")%self.filePath
-        print (" Length     Date   Time    Name")
-        print ("--------    ----   ----    ----")
+        print ("   Length     Date   Time    Name")
+        print ("  --------    ----   ----    ----")
 
     def listEntries(self):
         obj =  self.header.getDirectory()
