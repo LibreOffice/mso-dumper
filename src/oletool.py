@@ -251,9 +251,41 @@ class OleContainer:
         for child in node.Nodes: 
             self.deleteEntry( directory, child, tree )
 
-    def add(self, name, directory):
-        print "Add %s"%name
+    def add(self, filePath, directory):
+        if os.path.isabs( filePath ) != True:
+            filePath = os.path.abspath( filePath )
+        print "Add %s"%filePath
 
+        if os.path.isdir( filePath ):
+           print "can't yet handle adding storage for dir %s"%filePath
+           return;
+        if os.path.isfile( filePath ) != True:
+           print "%s is not a file, bailing out"%filePath
+           return
+        nodePath = os.path.relpath( filePath )
+        fileLeafName =  os.path.basename(nodePath)
+        print "node path is %s"%nodePath
+        print "basename is %s"%fileLeafName
+        if nodePath[0] == ".":
+            print "warning path %s is not relative to current path, using %s instead"%(nodePath,fileLeafName)
+            dirPath = ''
+        else:
+            dirPath = os.path.dirname(nodePath)
+
+        print "dirname is %s"%dirPath
+
+        root= self.__buildTree( directory.entries )            
+        node = self.__findNodeByHierachicalName( root, nodePath )
+        if  node != None:
+            #update a file
+            print "updating %s"%fileLeafName
+        else:
+            #new file or storage
+            node = self.__findNodeByHierachicalName( root, dirPath )
+            if node == None: 
+                print "error: %s does not exist"%dirPath
+                return
+            print "adding a new file to %s"%dirPath
     def delete(self, name, directory ):
         # we should make the ole class use bytearray so we can modify the 
         #inmemory model directly instead of doing a copy here
@@ -365,8 +397,10 @@ def main ():
        for file in files:
            if params.extract:
                container.extract( file, directory ) 
-           else:
+           elif params.delete:
                container.delete( file, directory ) 
+           else:
+               container.add( file, directory )
     if params.debug == True:
 #        container.listEntries() 
         container.output( directory )
