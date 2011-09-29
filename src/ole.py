@@ -57,7 +57,7 @@ class Header(object):
 
     @staticmethod
     def byteOrder (chars):
-        b1, b2 = ord(chars[0]), ord(chars[1])
+        b1, b2 = chars[0], chars[1]
         if b1 == 0xFE and b2 == 0xFF:
             return ByteOrder.LittleEndian
         elif b1 == 0xFF and b2 == 0xFE:
@@ -67,7 +67,7 @@ class Header(object):
 
 
     def __init__ (self, bytes, params):
-        self.bytes = bytes
+        self.bytes = bytearray(bytes)
         self.MSAT = None
 
         self.docId = None
@@ -111,6 +111,7 @@ class Header(object):
     def output (self):
 
         def printRawBytes (bytes):
+            bytes = bytes.decode('windows-1252')
             for b in bytes:
                 output("%2.2X "%ord(b))
             output("\n")
@@ -123,7 +124,7 @@ class Header(object):
         printSep('-', globals.OutputWidth)
 
         if self.params.debug:
-            globals.dumpBytes(self.bytes[0:512])
+            globals.dumpBytes(self.bytes[0:512].decode('windows-1252'))
             printSep('-', globals.OutputWidth)
 
         # document ID and unique ID
@@ -611,7 +612,7 @@ entire file stream.
 
         if self.params.debug:
             print("-"*globals.OutputWidth)
-            globals.dumpBytes(entry.bytes)
+            globals.dumpBytes(entry.bytes.decode('windows-1252'))
             print("-"*globals.OutputWidth)
 
         output("type: ")
@@ -693,6 +694,7 @@ entire file stream.
 
 
     def __outputRaw (self, name, bytes):
+        bytes = bytes.decode('windows-1252')
         if bytes == None:
             return
 
@@ -732,11 +734,20 @@ entire file stream.
             pos = i*128
             self.entries.append(self.parseDirEntry(bytes[pos:pos+128]))
 
+    def _terminateUTF16String( self, bytes ):
+        count = 0
+        for c in bytes:
+            if ord(c) == 0:
+                break
+            count += 1
+        name = bytes[0 : count ]
+        return name
 
     def parseDirEntry (self, bytes):
         entry = Directory.Entry()
         entry.bytes = bytes
-        name = globals.getUTF8FromUTF16(bytes[0:64])
+        name = bytes[0:64].decode("utf-16")
+        name = self._terminateUTF16String( name )
         entry.Name = name
         entry.CharBufferSize = getSignedInt(bytes[64:66])
         entry.Type = getSignedInt(bytes[66:67])
