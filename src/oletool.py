@@ -202,9 +202,13 @@ class OleContainer:
         streamSize = len(bytes)
         sectorOffset = streamSize % sectorSize
         sectorIndex = int(  streamSize / sectorSize )            
+        entryID = entry.StreamSectorID
+        #from here will do for a new entry also, just need to assign entryID from
+        #a free SAT id
         #compare with the existing number of sectors
-        chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
+        chain = theSAT.getSectorIDChain(entryID) 
         oldNumChainEntries = len( chain )
+        #FIXME we need to free the old entries
         print "chain contains ", chain
         print "size of stream to update %d size of existing entry %d size of sectors %d"%(streamSize, entry.StreamSize, len(chain) * sectorSize )
         print "new stream will take %d sectors to store %d bytes"%(sectorIndex+1,(sectorIndex+1)* sectorSize )
@@ -224,13 +228,17 @@ class OleContainer:
                    if i == 0:
                        maxIndex = current
                    else:
-                       if maxIndex > current:
+                       if current > maxIndex:
                            maxIndex = current 
+                #numer of sectors the maxIndex represents is + 1 ( e,g, and index of 0
+                #means at least one sector
+                maxIndex += 1
                 print "maxIndex =", maxIndex
-                if directory.hasRootStorageCapacity( maxIndex ):
-                    print "we can fit it"
+                if directory.ensureRootStorageCapacity( maxIndex * self.header.getShortSectorSize() ):
+                    print "we can fit it ", newChain
+                    directory.writeToShortSectors( newChain, bytes )
                 else:
-                    print "we can't fit it need to extend RootStorage"
+                    print "we failed"
 
     def getFreeSATChainEntries( self, theSAT, numNeeded, searchFrom ):
         freeSATChain = []

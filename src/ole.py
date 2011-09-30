@@ -356,6 +356,7 @@ class Header(object):
         # terminate the chain
         self.getSAT().array[ newSATSectors[ len( newSATSectors ) - 1 ] ] = -2
 
+             
     def getOrAllocateFreeSSATChainEntries (self, numNeeded):
         chain = []
         #see how many free chains we can get
@@ -369,7 +370,7 @@ class Header(object):
             chain = self.getSSAT().getFreeChainEntries( numNeeded, 0 )
         return chain
 
-    def createSATSectors( self, sectorIDs ):
+    def createSATSectors( self, sectorIDs, initWithFreeId = True ):
         for secID in sectorIDs:
             pos = globals.getSectorPos(secID, self.getSAT().sectorSize)
             if pos > len( self.bytes ):
@@ -378,10 +379,10 @@ class Header(object):
                 # sector doesn't yet exist in memory allocate it
                 sector = bytearray( self.getSAT().sectorSize )
                 self.bytes += sector
- 
-            for i in xrange( 0, self.getSAT().sectorSize / 4 ):
-                beginpos = pos + (i * 4 )
-                self.bytes[ beginpos : beginpos + 4 ] = TypeValue.minusOne
+            if  initWithFreeId:
+                for i in xrange( 0, self.getSAT().sectorSize / 4 ):
+                    beginpos = pos + (i * 4 )
+                    self.bytes[ beginpos : beginpos + 4 ] = TypeValue.minusOne
          
     def getDirectory (self):
         dirID = self.getFirstSectorID(BlockType.Directory)
@@ -708,15 +709,41 @@ entire file stream.
 
         return bytes
 
-    def hasRootStorageCapacity(self, sssecID ):
-        ssStreamStartPos = self.header.getShortSectorSize() * sssecID
+    def writeToShortSectors (self, targetChain, bytes ):
+        print "about to write to short sectors"
+        #targetChain is a short sector chain
+        rootChain = self.header.getSAT().getSectorIDChain( self.RootStorage.StreamSectorID )
+        shortSectorSize = self.header.getShortSectorSize()
+        sectorSize = self.header.getSectorSize()
+        sourcePos = 0
+        for entry in targetChain:
+            shortSecPos = entry * shortSectorSize
+            #calculate the offset into a sector
+            rootSectorOffset = shortSecPos %  sectorSize
+            rootSectorIndex = int(  shortSecPos /  sectorSize )            
+            targetPos = 512 + rootChain[ rootSectorIndex ] + rootSectorOffset
+            self.header.bytes[targetPos : targetPos +  shortSecPos ] = bytes[ sourcePos : sourcePos + shortSectorSize ]
+    def ensureRootStorageCapacity(self, size ):
         chain = self.header.getSAT().getSectorIDChain( self.RootStorage.StreamSectorID )
-        sectorSize = self.header.getSAT().getSectorSize()
-        sectorIndex = int(  ssStreamStartPos / sectorSize )         
-        if ( sectorIndex + 1 < len(chain) ):
-            print "No capacity"
-            return False            
-        sectorOffset = ssStreamStartPos %  sectorSize
+        capacity = len(chain) *  self.header.getSAT().getSectorSize()
+        sectorsNeeded = int( size / self.header.getSAT().getSectorSize() ) + 1
+        if ( size >= capacity ):
+            # get a new SAT sector
+            newSATSectors = self.header.getSAT().getFreeChainEntries( sectorsNeeded - len(chain) , 0 )
+            self.header.createSATSectors( newSATSectors, False ) 
+            #rechain RootStorage SATChain
+            lastIndex =  chain[ len( chain ) - 1 ]
+            for entry in newSATSectors:
+                self.header.getSAT().array[ lastIndex ] = entry
+                lastIndex = entry
+            # terminate the chain
+            self.header.getSAT().array[ newSATSectors[ len( newSATSectors ) - 1 ] ] = -2           
+            newchain = self.header.getSAT().getSectorIDChain( self.RootStorage.StreamSectorID )
+            print "ensureRootStorageCapacity ole chain -", newchain
+             
+            return True            
+        return True
+
     def getRawStream (self, entry):
         bytes = self.__getRawStream(entry)
         return bytes
