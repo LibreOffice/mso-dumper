@@ -36,6 +36,9 @@ from globals import getSignedInt
 from globals import output
 import struct
 
+class TypeValue:
+        minusOne = struct.pack( '<l', -1 )
+
 class NoRootStorage(Exception): pass
 
 class ByteOrder:
@@ -282,7 +285,7 @@ class Header(object):
     def writeMSAT (self): 
         # part of MSAT in header
         numIds = len( self.MSAT.secIDs )
-        minusOne = struct.pack( '<l', -1 )
+        TypeValue.minusOne = struct.pack( '<l', -1 )
         for i in xrange(0, 109):
             pos = 76 + i*4
             if i < numIds:
@@ -329,6 +332,57 @@ class Header(object):
         obj.buildArray()
         return obj
 
+    def expandSSAT( self, numExtraEntriesNeeded ):
+        # create enough sectors to increase SAT table to accomadate new entries
+        numEntriesPerSector = int( self.getSSAT().sectorSize / 4 )
+        numNeededSectors = int ( numExtraEntriesNeeded / numEntriesPerSector ) + 1              
+        # need to get free sector(s) from SAT to expand the SSAT
+        newSATSectors = self.getSAT().getFreeChainEntries( numNeededSectors, 0 )
+        if len( newSATSectors ) == 0:
+            # looks like we need to expand the MSAT to expand the SAT array
+            raise Exception("expanding MSAT not supported yet")
+        self.createSATSectors( newSATSectors ) 
+        # add the sectors into the SSAT
+        for sectorID in newSATSectors:
+            self.getSSAT().sectorIDs.append( sectorID )
+        # expand SSAT array with the contens of the new SATSectors
+        self.getSSAT().appendArray( newSATSectors )
+        # need to update the SectorIDChain for the SSAT
+        oldSSATChain = self.getSAT().getSectorIDChain( self.getFirstSectorID(BlockType.SSAT) )
+        lastIndex =  oldSSATChain[ len( oldSSATChain ) - 1 ]
+        for entry in newSATSectors:
+            self.getSAT().array[ lastIndex ] = entry
+            lastIndex = entry
+        # terminate the chain
+        self.getSAT().array[ newSATSectors[ len( newSATSectors ) - 1 ] ] = -2
+
+    def getOrAllocateFreeSSATChainEntries (self, numNeeded):
+        chain = []
+        #see how many free chains we can get
+        chain = self.getSSAT().getFreeChainEntries( numNeeded, 0 )
+        currentFree = len(chain)
+        print "*** here needed %d got %d"%(numNeeded, currentFree )
+        if currentFree < numNeeded:
+            #need to allocate a number of sectors to expand the SSAT table
+            numExtraEntriesNeeded =  numNeeded - currentFree
+            self.expandSSAT( numExtraEntriesNeeded )
+            chain = self.getSSAT().getFreeChainEntries( numNeeded, 0 )
+        return chain
+
+    def createSATSectors( self, sectorIDs ):
+        for secID in sectorIDs:
+            pos = globals.getSectorPos(secID, self.getSAT().sectorSize)
+            if pos > len( self.bytes ):
+                raise Exception("illegal sector, non contiguous")
+            if pos == len( self.bytes ):
+                # sector doesn't yet exist in memory allocate it
+                sector = bytearray( self.getSAT().sectorSize )
+                self.bytes += sector
+ 
+            for i in xrange( 0, self.getSAT().sectorSize / 4 ):
+                beginpos = pos + (i * 4 )
+                self.bytes[ beginpos : beginpos + 4 ] = TypeValue.minusOne
+         
     def getDirectory (self):
         dirID = self.getFirstSectorID(BlockType.Directory)
         if dirID < 0:
@@ -405,6 +459,23 @@ class SAT(object):
         self.params = params
 
 
+    def getFreeChainEntries (self, numNeeded, startIndex ):
+        freeSATChain = []
+        maxEntries = len( self.array )
+        print "getFreeChainEntries looking for %d in array of maxEntries %d"%( numNeeded, maxEntries )
+        for i in xrange( startIndex, maxEntries ):
+            if numNeeded == 0:
+                break
+            nSecID = self.array[i];
+            if nSecID == -1: 
+                #have we exceeded the allocated size of the SAT table ?
+                if i < maxEntries:
+                    freeSATChain.append( i )
+                    numNeeded -= 1
+                else:
+                    break;
+        return freeSATChain        
+
     def getSectorSize (self):
         return self.sectorSize
 
@@ -420,7 +491,12 @@ class SAT(object):
 
         numItems = int(self.sectorSize/4)
         self.array = []
-        for secID in self.sectorIDs:
+        self.appendArray( self.sectorIDs )
+
+    def appendArray( self, sectorIDs ):
+        print "appendArray ", sectorIDs
+        numItems = self.sectorSize / 4
+        for secID in sectorIDs:
             pos = 512 + secID*self.sectorSize
             for i in xrange(0, numItems):
                 beginPos = pos + i*4
@@ -603,7 +679,6 @@ entire file stream.
             pos = 512 + secID*self.sectorSize
             self.RootStorageBytes += self.header.bytes[pos:pos+self.sectorSize]
 
-
     def __getRawStream (self, entry):
         chain = []
         if entry.StreamLocation == StreamLocation.SAT:
@@ -633,6 +708,15 @@ entire file stream.
 
         return bytes
 
+    def hasRootStorageCapacity(self, sssecID ):
+        ssStreamStartPos = self.header.getShortSectorSize() * sssecID
+        chain = self.header.getSAT().getSectorIDChain( self.RootStorage.StreamSectorID )
+        sectorSize = self.header.getSAT().getSectorSize()
+        sectorIndex = int(  ssStreamStartPos / sectorSize )         
+        if ( sectorIndex + 1 < len(chain) ):
+            print "No capacity"
+            return False            
+        sectorOffset = ssStreamStartPos %  sectorSize
     def getRawStream (self, entry):
         bytes = self.__getRawStream(entry)
         return bytes
@@ -796,7 +880,6 @@ entire file stream.
         bytes = ""
         for secID in self.sectorIDs:
             pos = globals.getSectorPos(secID, self.sectorSize)
-            print"reading dir sector at pos 0x%x"%pos
             bytes += self.bytes[pos:pos+self.sectorSize]
 
         self.entries = []

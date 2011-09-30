@@ -190,7 +190,7 @@ class OleContainer:
         
         theSAT = self.header.getSAT()
         sectorSize = self.header.getSectorSize()
-        # do we need to change the filestream location ?
+        # #FIXME we need to change the filestream location ?
         if entry.StreamLocation == ole.StreamLocation.SSAT:
             print ("updateEntry using SSAT")
             theSAT = self.header.getSSAT()
@@ -202,7 +202,6 @@ class OleContainer:
         streamSize = len(bytes)
         sectorOffset = streamSize % sectorSize
         sectorIndex = int(  streamSize / sectorSize )            
-
         #compare with the existing number of sectors
         chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
         oldNumChainEntries = len( chain )
@@ -212,15 +211,26 @@ class OleContainer:
         newNumChainEntries = sectorIndex + 1
         if newNumChainEntries > oldNumChainEntries:
             neededEntries =  newNumChainEntries - oldNumChainEntries
-            newChain = self.getFreeSATChainEntries( theSAT, neededEntries, 0 )
+            newChain = self.header.getOrAllocateFreeSSATChainEntries( neededEntries )
+            neededEntries =  newNumChainEntries - oldNumChainEntries
             print "received %d of %d chain entries needed"%(len(newChain), neededEntries ) 
-            if len(newChain) < neededEntries:
-                # create enough sectors to increase SAT table to accomadate new entries
-                numEntriesPerSector = int( theSAT.sectorSize / 4 )
-                numExtraEntriesNeeded = neededEntries - len( newChain )
-                numNeededSectors = int ( ( numExtraEntriesNeeded + ( numExtraEntriesNeeded % numEntriesPerSector ) ) / numEntriesPerSector )
-                self.expandSAT( numNeededSectors, entry.StreamLocation == ole.StreamLocation.SAT )
-                
+            if (  neededEntries == len(newChain) ):
+                print "we can save the file!!" 
+                #find the highest index to see if we need to expand the root
+                #storage
+                maxIndex = 0
+                for i in xrange(0,len(newChain) ):
+                   current = newChain[ i ]
+                   if i == 0:
+                       maxIndex = current
+                   else:
+                       if maxIndex > current:
+                           maxIndex = current 
+                print "maxIndex =", maxIndex
+                if directory.hasRootStorageCapacity( maxIndex ):
+                    print "we can fit it"
+                else:
+                    print "we can't fit it need to extend RootStorage"
 
     def getFreeSATChainEntries( self, theSAT, numNeeded, searchFrom ):
         freeSATChain = []
@@ -273,26 +283,6 @@ class OleContainer:
         pos = 512 + ( theSAT.sectorIDs[ sectorIndex ] * theSAT.sectorSize ) + sectorOffset
         return pos
                 
-    def freeSATChainEntries( self, chain, theSAT, mem ):
-        #we need to calculate the position in the file stream that each array
-        #position in the stream corrosponds to
-        nFreeSecID = struct.pack( '<l', -1 )
-        for entry in chain:
-            pos = self.memPosOfSATChainIndex( entry, theSAT )
-            mem[pos:pos + 4] = nFreeSecID
-
-    def findEntryMemPos( self, node, directory ):
-        #find the chain associated with the entry
-        dirEntryOffset = node.Index * 128
-        sectorOffset = int( dirEntryOffset % directory.sectorSize )
-        chainIndex = int( dirEntryOffset / directory.sectorSize )
-                
-        chainSID = directory.sectorIDs[ chainIndex ];
-        pos = globals.getSectorPos(chainSID, directory.sectorSize) 
-        #point at entry
-        pos += sectorOffset 
-        return pos
-
     def expandSAT( self, numSectors, isSAT ):
         #theSAT could be the SSAT or the SAT, doesn't matter we 
         #still need a new sector to extend whichever SAT table
@@ -429,22 +419,6 @@ class OleContainer:
         out.flush()
         out.close()
                 
-    def writeMSAT( self, header, outFile ):
-        # write the first 109 id(s) straight into the header
-        msatArray  = header.getMSAT().secIDs
-        nMSATWritten = 0 
-        nTotalSecIDs = len( msatArray )
-        nFreeSecID = struct.pack( '<l', -1 )
-        for i in xrange( 0, 109 ):
-            if i < nTotalSecIDs:
-                nMSATWritten += 1
-                outFile.write( struct.pack( '<l', msatArray[ i ] ) )
-            else:
-                outFile.write( nFreeSecID )         
-#        if nTotalSecIDs > 109:
-            # MSAT extends past the header
-#            for i in xrange( 109, nTotalSecIDs );
-             
         
 def main ():
     parser = optparse.OptionParser()
