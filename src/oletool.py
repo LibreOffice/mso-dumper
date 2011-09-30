@@ -103,10 +103,9 @@ class OleContainer:
 
         if ( parent.Entry.DirIDRoot > 0 ):
             newEntry = DirNode( entries[ parent.Entry.DirIDRoot ], parent.Entry.DirIDRoot )
-            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
-            if ( newEntry.Entry.DirIDRoot > 0 ):
-                newEntry.HierachicalName =  newEntry.HierachicalName 
-
+            newEntry.HierachicalName = globals.encodeName( newEntry.Entry.Name )
+            if len(  parent.HierachicalName ):
+                newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
             self.__addSiblings( entries, parent, newEntry )
             parent.Nodes.append( newEntry )
             
@@ -326,29 +325,29 @@ class OleContainer:
             oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SSAT) )
             print "new SSAT chain -> ", oldChain 
 
+    def makeEntryEmpty( self, entry ):
+        # #FIXME can we clone an Entry somehow <sigh> python knowledge fail
+        # clear entry
+        entry.Name = ''
+        entry.CharBufferSize = 0
+        entry.Type = ole.Directory.Type.Empty
+        entry.NodeColor = ole.Directory.NodeColor.Unknown
+        entry.DirIDLeft = -1
+        entry.DirIDRight = -1
+        entry.DirIDRoot = -1
+        entry.UniqueID = bytearray(4) 
+        entry.UserFlags =  bytearray(4)
+        entry.TimeCreated =  bytearray(4)
+        entry.TimeModified =  bytearray(4)
+        entry.StreamSectorID = -2
+        entry.StreamSize = 0
     def deleteEntry(self, directory, node, tree ):
         entry = node.Entry
         if ( entry.Type == None ):
             print "can't extract %s"%entry.Name
             return
-        print("** attempting to delete %s"%entry.Name)
-        #point at entry
-        pos = self.findEntryMemPos( node, directory )
-
-        #mark the Entry as empty
-        nFreeSecID = struct.pack( '<l', -1 )
-
-        self.header.bytes[pos : pos + 68] = bytearray( 68 );
-        #DirIDLeft
-        self.header.bytes[pos + 68:pos + 72] = nFreeSecID
-        #DirIDRight
-        self.header.bytes[pos + 72:pos + 76] = nFreeSecID
-        #DirIDRoot
-        self.header.bytes[pos + 76:pos + 80] = nFreeSecID
-        self.header.bytes[pos + 80:pos + 128] = bytearray( 48 )
-
-        #  make the associated SAT or SSAT array entries as emtpy
-        theSAT = self.header.getSAT()
+        chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
+        self.makeEntryEmpty( entry )
 
         if entry.StreamLocation == ole.StreamLocation.SSAT:
             print ("using SSAT")
@@ -356,8 +355,7 @@ class OleContainer:
         elif entry.StreamLocation == ole.StreamLocation.SSAT:
             print ("using SAT")
         
-        chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
-        self.freeSATChainEntries( chain, theSAT, self.header.bytes )               
+        theSAT.freeSATChainEntries( chain )
  
         # #FIXME what about references ( e.g. parent of this entry should we 
         # blank the associated left/right id(s) ) - leave for now  
@@ -413,6 +411,12 @@ class OleContainer:
         node = self.__findNodeByHierachicalName( root, name ) 
         if node != None:
             self.deleteEntry( directory, node, root )
+        directory.write()
+        if node.entry.StreamLocation == ole.StreamLocation.SSAT:
+            self.header.getSSAT().write()
+        elif node.entry.StreamLocation == ole.StreamLocation.SAT:
+            self.header.getSAT().write()
+         
         self.writeDoc("/home/npower/testComp.xls", self.header.bytes)
         print("** attempting to write out compound document")
                       
