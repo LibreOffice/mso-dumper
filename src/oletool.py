@@ -54,13 +54,10 @@ class OleContainer:
     def __init__(self,filePath, params ):
         self.filePath = filePath
         self.params = params
-        self.chars = ''
         self.file = open(self.filePath, 'rb')
-        self.chars = self.file.read()
+        self.header = ole.Header(self.file.read(), self.params)
         self.file.close()
-        self.header = ole.Header(self.chars, self.params)
         self.pos = self.header.parse()
-        self.outputBytes = None;
 
     def output (self, directory):
         
@@ -224,6 +221,7 @@ class OleContainer:
                 numExtraEntriesNeeded = neededEntries - len( newChain )
                 numNeededSectors = int ( ( numExtraEntriesNeeded + ( numExtraEntriesNeeded % numEntriesPerSector ) ) / numEntriesPerSector )
                 self.expandSAT( numNeededSectors, entry.StreamLocation == ole.StreamLocation.SAT )
+                
 
     def getFreeSATChainEntries( self, theSAT, numNeeded, searchFrom ):
         freeSATChain = []
@@ -249,10 +247,10 @@ class OleContainer:
             #modify memory
             pos = self.memPosOfSATChainIndex( lastIndex, theSAT ) 
             for entry in chain2:
-                self.outputBytes[ pos : pos + 4 ] = struct.pack( '<l', entry )
+                self.header.bytes[ pos : pos + 4 ] = struct.pack( '<l', entry )
                 pos = self.memPosOfSATChainIndex( entry, theSAT )
             pos = self.memPosOfSATChainIndex(  chain2[ len( chain2 ) - 1 ], theSAT )
-            self.outputBytes[ pos : pos + 4 ] = struct.pack( '<l', -2 )
+            self.header.bytes[ pos : pos + 4 ] = struct.pack( '<l', -2 )
 
             #modify model
             for entry in chain2:
@@ -308,7 +306,8 @@ class OleContainer:
             return 
         print "received %d of %d chain entries needed"%(len(newChain), numSectors ) 
         print "-> ", newChain 
-      
+     
+        #new sectors implies we need to fill them with -1(s) ( or even create the sector if it doesn't exist ) 
         oldChain = [] 
         if isSAT:
             #modify SAT chain to incorporate new secID
@@ -339,14 +338,14 @@ class OleContainer:
         #mark the Entry as empty
         nFreeSecID = struct.pack( '<l', -1 )
 
-        self.outputBytes[pos : pos + 68] = bytearray( 68 );
+        self.header.bytes[pos : pos + 68] = bytearray( 68 );
         #DirIDLeft
-        self.outputBytes[pos + 68:pos + 72] = nFreeSecID
+        self.header.bytes[pos + 68:pos + 72] = nFreeSecID
         #DirIDRight
-        self.outputBytes[pos + 72:pos + 76] = nFreeSecID
+        self.header.bytes[pos + 72:pos + 76] = nFreeSecID
         #DirIDRoot
-        self.outputBytes[pos + 76:pos + 80] = nFreeSecID
-        self.outputBytes[pos + 80:pos + 128] = bytearray( 48 )
+        self.header.bytes[pos + 76:pos + 80] = nFreeSecID
+        self.header.bytes[pos + 80:pos + 128] = bytearray( 48 )
 
         #  make the associated SAT or SSAT array entries as emtpy
         theSAT = self.header.getSAT()
@@ -358,7 +357,7 @@ class OleContainer:
             print ("using SAT")
         
         chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
-        self.freeSATChainEntries( chain, theSAT, self.outputBytes )               
+        self.freeSATChainEntries( chain, theSAT, self.header.bytes )               
  
         # #FIXME what about references ( e.g. parent of this entry should we 
         # blank the associated left/right id(s) ) - leave for now  
@@ -392,9 +391,7 @@ class OleContainer:
 
         root= self.__buildTree( directory.entries )            
         node = self.__findNodeByHierachicalName( root, nodePath )
-        # we should make the ole class use bytearray so we can modify the 
-        #in memory model directly instead of doing a copy here
-        self.outputBytes = bytearray( self.header.bytes )
+
         if  node != None:
             #update a file
             print "updating %s"%fileLeafName
@@ -408,9 +405,6 @@ class OleContainer:
             print "adding a new file to %s"%dirPath
 
     def delete(self, name, directory ):
-        # we should make the ole class use bytearray so we can modify the 
-        #in memory model directly instead of doing a copy here
-        self.outputBytes = bytearray( self.header.bytes )
         #we'll do an inefficient delete e.g. no attempt to reclaim space 
         #in the Directory stream/sectors
 
@@ -419,7 +413,7 @@ class OleContainer:
         node = self.__findNodeByHierachicalName( root, name ) 
         if node != None:
             self.deleteEntry( directory, node, root )
-        self.writeDoc("/home/npower/testComp.xls", self.outputBytes)
+        self.writeDoc("/home/npower/testComp.xls", self.header.bytes)
         print("** attempting to write out compound document")
                       
     def writeDoc( self, filePath, contents ):
