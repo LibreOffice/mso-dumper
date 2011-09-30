@@ -346,8 +346,6 @@ class OleContainer:
         if ( entry.Type == None ):
             print "can't extract %s"%entry.Name
             return
-        chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
-        self.makeEntryEmpty( entry )
 
         if entry.StreamLocation == ole.StreamLocation.SSAT:
             print ("using SSAT")
@@ -355,7 +353,10 @@ class OleContainer:
         elif entry.StreamLocation == ole.StreamLocation.SSAT:
             print ("using SAT")
         
-        theSAT.freeSATChainEntries( chain )
+        chain = theSAT.getSectorIDChain(entry.StreamSectorID) 
+        self.makeEntryEmpty( entry )
+
+        theSAT.freeChainEntries( chain )
  
         # #FIXME what about references ( e.g. parent of this entry should we 
         # blank the associated left/right id(s) ) - leave for now  
@@ -411,12 +412,9 @@ class OleContainer:
         node = self.__findNodeByHierachicalName( root, name ) 
         if node != None:
             self.deleteEntry( directory, node, root )
-        directory.write()
-        if node.entry.StreamLocation == ole.StreamLocation.SSAT:
-            self.header.getSSAT().write()
-        elif node.entry.StreamLocation == ole.StreamLocation.SAT:
-            self.header.getSAT().write()
-         
+
+        self.header.write() 
+        directory.write() 
         self.writeDoc("/home/npower/testComp.xls", self.header.bytes)
         print("** attempting to write out compound document")
                       
@@ -426,38 +424,8 @@ class OleContainer:
         if len( contents  ):
             print ("using in memory model") 
             out.write( contents )
-            return
-        out.write( self.header.docId )
-        out.write( self.header.uId )
-         
-        out.write( struct.pack( '<h',self.header.revision ) )
-        out.write( struct.pack( '<h',self.header.version ) )
-
-        if self.header.byteOrder ==  ole.ByteOrder.LittleEndian:
-            out.write( struct.pack( '<h', 0xFFFE ) )
         else:
-            out.write( struct.pack( '>h', 0xFFFE ) )
-      
-        # sector size (usually 512 bytes)
-        out.write( struct.pack( '<h',self.header.secSize ) )
-        # short sector size (usually 64 bytes)
-        out.write( struct.pack( '<h', self.header.secSizeShort ) )
-        # padding
-        out.write( bytearray(10) ) 
-        # total number of sectors in SAT (equals the number of sector IDs 
-        # stored in the MSAT).
-        out.write( struct.pack( '<l', self.header.numSecSAT ) )
-
-        out.write( struct.pack( '<l', self.header.secIDFirstDirStrm ) )
-        out.write( bytearray(4) ) 
-        out.write( struct.pack( '<l', self.header.minStreamSize ) )
-        out.write( struct.pack( '<l', self.header.secIDFirstSSAT ) )
-        out.write( struct.pack( '<l', self.header.numSecSSAT ) )
-        out.write( struct.pack( '<l', self.header.secIDFirstMSAT ) )
-        out.write( struct.pack( '<l', self.header.numSecMSAT ) )
-
-        # now for the MSAT
-        self.writeMSAT( self.header, out )
+            print ("failed to write document") 
         out.flush()
         out.close()
                 

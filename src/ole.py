@@ -34,7 +34,7 @@ from globals import getSignedInt
 # ----------------------------------------------------------------------------
 
 from globals import output
-
+import struct
 
 class NoRootStorage(Exception): pass
 
@@ -244,6 +244,69 @@ class Header(object):
 
         return 512 
 
+    def write (self):
+
+        self.bytes[0:8] = self.docId
+        self.bytes[8:24] = self.uId
+         
+        self.bytes[24:26] = struct.pack( '<h',self.revision )
+        self.bytes[26:28] = struct.pack( '<h',self.version )
+
+        byteOrder = struct.pack( '>h', 0xFFFE )
+        if self.byteOrder ==  ByteOrder.LittleEndian:
+            byteOrder = struct.pack( '<h', 0xFFFE )
+        self.bytes[28:30] = byteOrder  
+
+        # sector size (usually 512 bytes)
+        self.bytes[30:32] = struct.pack( '<h',self.secSize )
+        # short sector size (usually 64 bytes)
+        self.bytes[32:34] = struct.pack( '<h', self.secSizeShort )
+        # padding
+        self.bytes[34:44] = bytearray(10)
+        # total number of sectors in SAT (equals the number of sector IDs 
+        # stored in the MSAT).
+        self.bytes[44:48] = struct.pack( '<l', self.numSecSAT )
+
+        self.bytes[48:52] = struct.pack( '<l', self.secIDFirstDirStrm )
+        self.bytes[52:56] = bytearray(4)
+        self.bytes[56:60] = struct.pack( '<l', self.minStreamSize )
+	self.bytes[60:64] = struct.pack( '<l', self.secIDFirstSSAT )
+        self.bytes[64:68] = struct.pack( '<l', self.numSecSSAT )
+        self.bytes[68:72] = struct.pack( '<l', self.secIDFirstMSAT )
+        self.bytes[72:76] = struct.pack( '<l', self.numSecMSAT )
+        # write the MSAT, SAT & SSAT
+        self.writeMSAT()
+        self.getSAT().write()
+        self.getSSAT().write()
+   
+    def writeMSAT (self): 
+        # part of MSAT in header
+        numIds = len( self.MSAT.secIDs )
+        minusOne = struct.pack( '<l', -1 )
+        for i in xrange(0, 109):
+            pos = 76 + i*4
+            if i < numIds:
+                self.bytes[pos:pos+4] = struct.pack( '<l', self.MSAT.secIDs[ i ] )
+            else:
+                self.bytes[pos:pos+4] = minusOne
+        # are additional sectors are used to store more SAT sector IDs.
+        if self.secIDFirstMSAT != -2:
+            secID = self.secIDFirstMSAT
+            size = self.getSectorSize()
+            # we have to assume if the MSAT has been grown that the memory has
+            # been kept up to date, e.g. that the nextMSAT entry has been updated
+            # in the previous MSAT sector
+            entriesPerSector = int ( size / 4  )  - 1
+            previousSectorIndex = 0
+            for i in xrange( 109, len( self.secIDs ) ):
+                sectorIndex = int( i/entriesPerSector )
+                sectorOffSet = ( i % entriesPerSector ) * 4
+                pos = 512 + secID*size + sectorOffSet
+                if previousSectorIndex != sectorIndex:
+                    secID = getSignedInt(self.bytes[pos:pos+4])
+                    pos = 512 + secID*size + sectorOffSet
+                self.bytes[pos:pos+4] = self.secIDs[ i ]
+                previousSectorIndex = sectorIndex
 
     def getMSAT (self):
         return self.MSAT
@@ -265,7 +328,6 @@ class Header(object):
             obj.addSector(secID)
         obj.buildArray()
         return obj
-
 
     def getDirectory (self):
         dirID = self.getFirstSectorID(BlockType.Directory)
@@ -332,7 +394,6 @@ all the sectors pointed by the sector IDs in order of occurrence.
         self.__SAT = obj
         return self.__SAT
 
-
 class SAT(object):
     """Sector Allocation Table (SAT)
 """
@@ -366,6 +427,20 @@ class SAT(object):
                 id = getSignedInt(self.bytes[beginPos:beginPos+4])
                 self.array.append(id)
 
+    def write (self):
+        #writes the contents of the SAT array to memory sectors
+        for index in xrange(0, len( self.array )):
+            entryPos = 4 * index
+            #calculate the offset into a sector
+            sectorOffset = entryPos %  self.sectorSize
+            sectorIndex = int(  entryPos /  self.sectorSize )
+            sectorSize = self.sectorSize
+            pos = 512 + ( self.sectorIDs[ sectorIndex ] * self.sectorSize ) + sectorOffset
+            self.bytes[pos:pos+4] =  struct.pack( '<l', self.array[ index ] )
+
+    def freeChainEntries (self, chain):
+        for index in chain:
+            self.array[ index ] = -1
 
     def outputRawBytes (self):
         bytes = ""
@@ -516,7 +591,6 @@ entire file stream.
         self.RootStorage = None
         self.RootStorageBytes = ""
         self.params = params
-
 
     def __buildRootStorageBytes (self):
         if self.RootStorage == None:
@@ -722,6 +796,7 @@ entire file stream.
         bytes = ""
         for secID in self.sectorIDs:
             pos = globals.getSectorPos(secID, self.sectorSize)
+            print"reading dir sector at pos 0x%x"%pos
             bytes += self.bytes[pos:pos+self.sectorSize]
 
         self.entries = []
@@ -734,22 +809,21 @@ entire file stream.
             pos = i*128
             self.entries.append(self.parseDirEntry(bytes[pos:pos+128]))
 
-    def _terminateUTF16String( self, bytes ):
-        count = 0
-        for c in bytes:
-            if ord(c) == 0:
-                break
-            count += 1
-        name = bytes[0 : count ]
-        return name
+    def write(self):
+        #write the entries directly to the sectors
+        entriesPerSector = int( self.sectorSize / 128 )
+        for i in xrange(0, len( self.entries )):
+            sectorIndex = int( i/entriesPerSector )
+            pos = globals.getSectorPos(  self.sectorIDs[ sectorIndex ], self.sectorSize)
+            pos = pos + ( ( i % entriesPerSector ) * 128 )
+            self.writeDirEntry( pos, self.entries[i] )
 
     def parseDirEntry (self, bytes):
         entry = Directory.Entry()
         entry.bytes = bytes
         name = bytes[0:64].decode("utf-16")
-        name = self._terminateUTF16String( name )
-        entry.Name = name
         entry.CharBufferSize = getSignedInt(bytes[64:66])
+        entry.Name = name[0:( entry.CharBufferSize -1 )/2 ]
         entry.Type = getSignedInt(bytes[66:67])
         entry.NodeColor = getSignedInt(bytes[67:68])
 
@@ -774,4 +848,23 @@ entire file stream.
             self.RootStorage = entry
 
         return entry
+    
+    def writeDirEntry(self, pos, entry):
+        nameBytes = ( len( entry.Name) + 1 ) * 2
+        self.bytes[pos + 0: pos + nameBytes + 1 ] = entry.Name.encode( 'utf-16' )
+        self.bytes[pos + nameBytes : pos + 64 ] = bytearray( 64 - nameBytes )
+        self.bytes[pos + 64: pos + 66] = struct.pack( '<h', ( len( entry.Name) + 1 ) *2 )
+        self.bytes[pos + 66: pos + 67] = struct.pack( '<b', entry.Type )
+        self.bytes[pos + 67: pos + 68]= struct.pack( '<b',entry.NodeColor )
 
+        self.bytes[pos + 68: pos + 72] = struct.pack( '<l',entry.DirIDLeft )
+        self.bytes[pos + 72: pos + 76] = struct.pack( '<l', entry.DirIDRight )
+        self.bytes[pos + 76: pos + 80] = struct.pack('<l', entry.DirIDRoot )
+
+        self.bytes[pos + 80:pos + 96] = entry.UniqueID
+	self.bytes[pos + 96:pos + 100] = entry.UserFlags
+        self.bytes[pos + 100:pos + 108] = entry.TimeCreated
+        self.bytes[pos + 108:pos + 116] = entry.TimeModified
+
+        self.bytes[pos + 116: pos + 120] = struct.pack('<l', entry.StreamSectorID )
+        self.bytes[pos + 120: pos + 124] = struct.pack('<l', entry.StreamSize )
