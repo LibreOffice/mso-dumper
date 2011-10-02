@@ -355,7 +355,36 @@ class Header(object):
         # terminate the chain
         self.getSAT().array[ newSATSectors[ len( newSATSectors ) - 1 ] ] = -2
 
+    def getOrAllocateFreeSATChainEntries( self, numNeeded ):
+        chain = []
+        #see how many free chains we can get
+        chain = self.getSAT().getFreeChainEntries( numNeeded, 0 )
+        currentFree = len(chain)
+        print "*** here needed %d got %d"%(numNeeded, currentFree )
+        if currentFree < numNeeded:
+            #need to allocate a number of sectors to expand the SAT table
+            numSATEntriesPerSector = ( self.getSAT().getSectorSize() / 4 )
+            numNeededSectors =  int(numNeeded/numSATEntriesPerSector) + 1
+            print "need",numNeeded,"/",numSATEntriesPerSector,"=",numNeededSectors,"from MSAT"
+            #try and allocate sector to use from the SAT
+            MSATSectors = self.getSAT().getFreeChainEntries( numNeededSectors, 0 )
+            if len(MSATSectors) != numNeededSectors:
+                print "Error: haven't implemented expanding the SAT to allow more sectors to be allocated for the MSAT"
+                return chain
+            self.createSATSectors( MSATSectors )
+
+            #is there room in the MSAT table header part
+            if len( self.getMSAT().secIDs ) + len( MSATSectors ) < 109:
+                for sector in MSATSectors:
+                    self.getMSAT().appendSectorID( sector )
+                    self.getSAT().appendArray( MSATSectors )
+            else:
+                print "*** extending the MSAT not supported yes"
+            #try again
+            chain = self.getSAT().getFreeChainEntries( numNeeded, 0 )
+                     
              
+        return chain
     def getOrAllocateFreeSSATChainEntries (self, numNeeded):
         chain = []
         #see how many free chains we can get
@@ -442,7 +471,9 @@ all the sectors pointed by the sector IDs in order of occurrence.
             return self.__SAT
 
         obj = SAT(self.sectorSize, self.bytes, self.params)
+        print "**** creating  SAT "
         for id in self.secIDs:
+            print "**** adding %d to SAT sectors"%id
             obj.addSector(id)
         obj.buildArray()
         self.__SAT = obj
@@ -509,6 +540,7 @@ class SAT(object):
             sectorOffset = entryPos %  self.sectorSize
             sectorIndex = int(  entryPos /  self.sectorSize )
             sectorSize = self.sectorSize
+            print "index %d, sectorOffset %d, sectorIndex %d, len(self.sectorIDs) %d"%(index , sectorOffset , sectorIndex , len(self.sectorIDs))
             pos = 512 + ( self.sectorIDs[ sectorIndex ] * self.sectorSize ) + sectorOffset
             self.bytes[pos:pos+4] =  struct.pack( '<l', self.array[ index ] )
 
@@ -710,15 +742,18 @@ entire file stream.
         srcPos = 0
         secSize = self.header.getSectorSize()
         numSectors = len(targetChain)
+        print "writing out %d sectors"%(numSectors)
         for i in xrange(0, numSectors ):
-            srcPos += i * secSize
+            srcPos = ( i * secSize )
             targetPos = 512 + ( targetChain[ i ] * secSize )
             #bytearray behaves strangely if we try and assign a slice
             #not as big as we are addressing     
             if i == numSectors - 1:
-                endPos = len(bytes) - ( secSize * numSectors )
+                endPos = len(bytes) - ( secSize * ( numSectors  - 1 ))
+                print "sector %d writing %d bytes as pos %d srcpos %d"%(i, endPos , targetPos, srcPos )
                 self.bytes[ targetPos : targetPos + endPos ] = bytes[ srcPos : srcPos + endPos ]
             else:
+                print "sector %d writing %d bytes as pos %d srcpos %d"%(i, secSize , targetPos, srcPos )
                 self.bytes[ targetPos : targetPos + secSize ] = bytes[ srcPos : srcPos + secSize ]
             
     def writeToShortSectors (self, targetChain, bytes ):
@@ -998,8 +1033,6 @@ entire file stream.
         self.bytes[pos + 96:pos + 100] = entry.UserFlags
         self.bytes[pos + 100:pos + 108] = entry.TimeCreated
         self.bytes[pos + 108:pos + 116] = entry.TimeModified
-#        self.bytes[pos + 80: pos + 116] = bytearray(36) 
-
 
         self.bytes[pos + 116: pos + 120] = struct.pack('<l', entry.StreamSectorID )
         self.bytes[pos + 120: pos + 124] = struct.pack('<l', entry.StreamSize )

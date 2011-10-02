@@ -215,7 +215,7 @@ class OleContainer:
         sectorOffset = entry.StreamSize % sectorSize
         sectorIndex = int(  entry.StreamSize / sectorSize )            
         newNumChainEntries = sectorIndex + 1
-
+        print " new stream will take %d sectors to store %d bytes"%(sectorIndex+1,(sectorIndex+1)* sectorSize )
         if ( entry.StreamLocation == ole.StreamLocation.SSAT ):
             oldNumChainEntries = len( oldChain )
             print "[ssat] new stream will take %d sectors to store %d bytes"%(sectorIndex+1,(sectorIndex+1)* sectorSize )
@@ -245,7 +245,13 @@ class OleContainer:
                 raise Exception("no space available")
             entry.StreamSectorID = newChain[ 0 ]
         else:
-            chain = self.header.getSAT().getFreeChainEntries( newNumChainEntries, 0 )
+            #chain = self.header.getSAT().getFreeChainEntries( newNumChainEntries, 0 )
+            chain = self.header.getOrAllocateFreeSATChainEntries( newNumChainEntries )
+            if ( len( chain ) < newNumChainEntries ): 
+                print "got ",len( chain ),"of",newNumChainEntries,"sectors"
+                raise Exception("couldn't allocate enough sectors")
+
+            print "got ",len( chain ),"of",newNumChainEntries,"sectors"
             # populate and terminate the chain
             lastIndex =  chain[ len( chain ) - 1 ]
             self.header.getSAT().array[ lastIndex ] = -2
