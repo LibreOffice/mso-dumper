@@ -248,7 +248,6 @@ class Header(object):
         return 512 
 
     def write (self):
-
         self.bytes[0:8] = self.docId
         self.bytes[8:24] = self.uId
          
@@ -291,7 +290,7 @@ class Header(object):
             if i < numIds:
                 self.bytes[pos:pos+4] = struct.pack( '<l', self.MSAT.secIDs[ i ] )
             else:
-                self.bytes[pos:pos+4] = minusOne
+                self.bytes[pos:pos+4] = TypeValue.minusOne
         # are additional sectors are used to store more SAT sector IDs.
         if self.secIDFirstMSAT != -2:
             secID = self.secIDFirstMSAT
@@ -301,7 +300,7 @@ class Header(object):
             # in the previous MSAT sector
             entriesPerSector = int ( size / 4  )  - 1
             previousSectorIndex = 0
-            for i in xrange( 109, len( self.secIDs ) ):
+            for i in xrange( 0, len( self.secIDs ) ):
                 sectorIndex = int( i/entriesPerSector )
                 sectorOffSet = ( i % entriesPerSector ) * 4
                 pos = 512 + secID*size + sectorOffSet
@@ -463,7 +462,6 @@ class SAT(object):
     def getFreeChainEntries (self, numNeeded, startIndex ):
         freeSATChain = []
         maxEntries = len( self.array )
-        print "getFreeChainEntries looking for %d in array of maxEntries %d"%( numNeeded, maxEntries )
         for i in xrange( startIndex, maxEntries ):
             if numNeeded == 0:
                 break
@@ -495,7 +493,6 @@ class SAT(object):
         self.appendArray( self.sectorIDs )
 
     def appendArray( self, sectorIDs ):
-        print "appendArray ", sectorIDs
         numItems = self.sectorSize / 4
         for secID in sectorIDs:
             pos = 512 + secID*self.sectorSize
@@ -709,20 +706,43 @@ entire file stream.
 
         return bytes
 
+    def writeToStdSectors (self, targetChain, bytes ):
+        srcPos = 0
+        secSize = self.header.getSectorSize()
+        numSectors = len(targetChain)
+        for i in xrange(0, numSectors ):
+            srcPos += i * secSize
+            targetPos = 512 + ( targetChain[ i ] * secSize )
+            #bytearray behaves strangely if we try and assign a slice
+            #not as big as we are addressing     
+            if i == numSectors - 1:
+                endPos = len(bytes) - ( secSize * numSectors )
+                self.bytes[ targetPos : targetPos + endPos ] = bytes[ srcPos : srcPos + endPos ]
+            else:
+                self.bytes[ targetPos : targetPos + secSize ] = bytes[ srcPos : srcPos + secSize ]
+            
     def writeToShortSectors (self, targetChain, bytes ):
-        print "about to write to short sectors"
         #targetChain is a short sector chain
+        bytesSize = len(bytes)
         rootChain = self.header.getSAT().getSectorIDChain( self.RootStorage.StreamSectorID )
         shortSectorSize = self.header.getShortSectorSize()
         sectorSize = self.header.getSectorSize()
-        sourcePos = 0
         for entry in targetChain:
             shortSecPos = entry * shortSectorSize
             #calculate the offset into a sector
             rootSectorOffset = shortSecPos %  sectorSize
             rootSectorIndex = int(  shortSecPos /  sectorSize )            
-            targetPos = 512 + rootChain[ rootSectorIndex ] + rootSectorOffset
-            self.header.bytes[targetPos : targetPos +  shortSecPos ] = bytes[ sourcePos : sourcePos + shortSectorSize ]
+            targetPos = 512 + ( rootChain[ rootSectorIndex ] * sectorSize ) + rootSectorOffset
+            # FIXME bytes ( from the source file ) probably isn't a full short
+            # sector in size, we need to make sure we only write what we have
+            # e.g. target[x:y] = src[ x:y ] might not give the expected result
+            # otherwise, e.g. can get truncated etc.
+            if ( bytesSize - shortSecPos < shortSectorSize ):
+                endPos = bytesSize - shortSecPos
+                self.header.bytes[targetPos : targetPos +  endPos ] = bytes[ shortSecPos : shortSecPos + endPos ]
+            else:
+                self.header.bytes[targetPos : targetPos +  shortSecPos ] = bytes[ shortSecPos : shortSecPos + shortSectorSize ]
+
     def ensureRootStorageCapacity(self, size ):
         chain = self.header.getSAT().getSectorIDChain( self.RootStorage.StreamSectorID )
         capacity = len(chain) *  self.header.getSAT().getSectorSize()
@@ -908,7 +928,6 @@ entire file stream.
         for secID in self.sectorIDs:
             pos = globals.getSectorPos(secID, self.sectorSize)
             bytes += self.bytes[pos:pos+self.sectorSize]
-
         self.entries = []
 
         # each directory entry is exactly 128 bytes.
@@ -931,8 +950,9 @@ entire file stream.
     def parseDirEntry (self, bytes):
         entry = Directory.Entry()
         entry.bytes = bytes
-        name = bytes[0:64].decode("utf-16")
+
         entry.CharBufferSize = getSignedInt(bytes[64:66])
+        name = bytes[0:entry.CharBufferSize].decode("utf-16")
         entry.Name = name[0:( entry.CharBufferSize -1 )/2 ]
         entry.Type = getSignedInt(bytes[66:67])
         entry.NodeColor = getSignedInt(bytes[67:68])
@@ -961,8 +981,11 @@ entire file stream.
     
     def writeDirEntry(self, pos, entry):
         nameBytes = ( len( entry.Name) + 1 ) * 2
-        self.bytes[pos + 0: pos + nameBytes + 1 ] = entry.Name.encode( 'utf-16' )
-        self.bytes[pos + nameBytes : pos + 64 ] = bytearray( 64 - nameBytes )
+        sizeBefore = len( self.header.bytes )
+        #self.bytes[pos + 0: pos + nameBytes + 1 ] = entry.Name.encode( 'utf-16' )
+        for i in xrange(0,len(entry.Name) ):
+            cPos = pos + i * 2
+            self.bytes[cPos : cPos +2 ] = struct.pack( '<h', ord( entry.Name[i] ) )
         self.bytes[pos + 64: pos + 66] = struct.pack( '<h', ( len( entry.Name) + 1 ) *2 )
         self.bytes[pos + 66: pos + 67] = struct.pack( '<b', entry.Type )
         self.bytes[pos + 67: pos + 68]= struct.pack( '<b',entry.NodeColor )
@@ -972,9 +995,14 @@ entire file stream.
         self.bytes[pos + 76: pos + 80] = struct.pack('<l', entry.DirIDRoot )
 
         self.bytes[pos + 80:pos + 96] = entry.UniqueID
-	self.bytes[pos + 96:pos + 100] = entry.UserFlags
+        self.bytes[pos + 96:pos + 100] = entry.UserFlags
         self.bytes[pos + 100:pos + 108] = entry.TimeCreated
         self.bytes[pos + 108:pos + 116] = entry.TimeModified
+#        self.bytes[pos + 80: pos + 116] = bytearray(36) 
+
 
         self.bytes[pos + 116: pos + 120] = struct.pack('<l', entry.StreamSectorID )
         self.bytes[pos + 120: pos + 124] = struct.pack('<l', entry.StreamSize )
+        sizeAfter = len( self.header.bytes  )
+        if sizeBefore != sizeAfter:
+            raise  Exception("Record size changed")

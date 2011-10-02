@@ -82,7 +82,7 @@ class OleContainer:
         nextLeft = child.Entry.DirIDLeft
         if ( nextLeft > 0 ):
             newEntry = DirNode( entries[ nextLeft ], nextLeft )
-            newEntry.HierachicalName = globals.encodeName( newEntry.Entry.Name )
+            newEntry.HierachicalName = newEntry.Entry.Name
             if len(  parent.HierachicalName ):
                 newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
 
@@ -93,7 +93,7 @@ class OleContainer:
         # add children to the right 
         if ( nextRight > 0 ):
             newEntry = DirNode( entries[ nextRight ], nextRight )
-            newEntry.HierachicalName = globals.encodeName( newEntry.Entry.Name )
+            newEntry.HierachicalName = newEntry.Entry.Name
             if len(  parent.HierachicalName ):
                 newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
             self.__addSiblings( entries, parent, newEntry ) 
@@ -103,7 +103,6 @@ class OleContainer:
 
         if ( parent.Entry.DirIDRoot > 0 ):
             newEntry = DirNode( entries[ parent.Entry.DirIDRoot ], parent.Entry.DirIDRoot )
-            newEntry.HierachicalName = globals.encodeName( newEntry.Entry.Name )
             if len(  parent.HierachicalName ):
                 newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
             self.__addSiblings( entries, parent, newEntry )
@@ -183,145 +182,80 @@ class OleContainer:
         file.write( bytes[ 0:entry.StreamSize] )
         file.close
 
-    def updateEntry( self, directory, node, filePath ):
+    def updateEntry( self, directory, entry, filePath ):
         file = open( filePath, 'rb' )
         bytes = file.read();
-        entry = node.Entry
-        
+        print "Entry is ",entry.Name 
         theSAT = self.header.getSAT()
         sectorSize = self.header.getSectorSize()
-        # #FIXME we need to change the filestream location ?
-        if entry.StreamLocation == ole.StreamLocation.SSAT:
-            print ("updateEntry using SSAT")
+        entry.StreamSize = len(bytes)
+        print "stream size %d min streamsize %d"%( entry.StreamSize, self.header.minStreamSize )
+
+        entryID = entry.StreamSectorID
+
+        oldChain = []
+        if ( entry.StreamLocation == ole.StreamLocation.SSAT ):
             theSAT = self.header.getSSAT()
+        else:
+            theSAT = self.header.getSAT()
+        if ( entryID > -1 ):
+            oldChain = theSAT.getSectorIDChain(entryID) 
+            theSAT.freeChainEntries( oldChain )
+
+        if entry.StreamSize < self.header.minStreamSize:
+            print "going to use ssat"
+            theSAT = self.header.getSSAT()
+            entry.StreamLocation = ole.StreamLocation.SSAT
             sectorSize = self.header.getShortSectorSize()
-        elif entry.StreamLocation == ole.StreamLocation.SAT:
-            print ("updateEntry using SAT")         
+        else:
+            theSAT = self.header.getSAT()
+            entry.StreamLocation = ole.StreamLocation.SAT
 
         #ok, find out how many sectors to store the data from the file
-        streamSize = len(bytes)
-        sectorOffset = streamSize % sectorSize
-        sectorIndex = int(  streamSize / sectorSize )            
-        entryID = entry.StreamSectorID
-        #from here will do for a new entry also, just need to assign entryID from
-        #a free SAT id
-        #compare with the existing number of sectors
-        chain = theSAT.getSectorIDChain(entryID) 
-        oldNumChainEntries = len( chain )
-        #FIXME we need to free the old entries
-        print "chain contains ", chain
-        print "size of stream to update %d size of existing entry %d size of sectors %d"%(streamSize, entry.StreamSize, len(chain) * sectorSize )
-        print "new stream will take %d sectors to store %d bytes"%(sectorIndex+1,(sectorIndex+1)* sectorSize )
+        sectorOffset = entry.StreamSize % sectorSize
+        sectorIndex = int(  entry.StreamSize / sectorSize )            
         newNumChainEntries = sectorIndex + 1
-        if newNumChainEntries > oldNumChainEntries:
-            neededEntries =  newNumChainEntries - oldNumChainEntries
-            newChain = self.header.getOrAllocateFreeSSATChainEntries( neededEntries )
-            neededEntries =  newNumChainEntries - oldNumChainEntries
-            print "received %d of %d chain entries needed"%(len(newChain), neededEntries ) 
-            if (  neededEntries == len(newChain) ):
-                print "we can save the file!!" 
-                #find the highest index to see if we need to expand the root
-                #storage
-                maxIndex = 0
-                for i in xrange(0,len(newChain) ):
-                   current = newChain[ i ]
-                   if i == 0:
-                       maxIndex = current
-                   else:
-                       if current > maxIndex:
-                           maxIndex = current 
-                #numer of sectors the maxIndex represents is + 1 ( e,g, and index of 0
-                #means at least one sector
-                maxIndex += 1
-                print "maxIndex =", maxIndex
-                if directory.ensureRootStorageCapacity( maxIndex * self.header.getShortSectorSize() ):
-                    print "we can fit it ", newChain
-                    directory.writeToShortSectors( newChain, bytes )
-                else:
-                    print "we failed"
 
-    def getFreeSATChainEntries( self, theSAT, numNeeded, searchFrom ):
-        freeSATChain = []
-        maxEntries = ( len( theSAT.sectorIDs ) * theSAT.sectorSize ) / 4
-        for i in xrange( 0, len( theSAT.array ) ):
-            if numNeeded == 0:
-                break
-            nSecID = theSAT.array[i];
-            if nSecID == -1: 
-                #have we exceeded the allocated size of the SAT table ?
-                if i < maxEntries:
-                    freeSATChain.append( i )
-                    numNeeded -= 1
-                else:
-                    break;
-        return freeSATChain
-
-    def appendFreeChain( self, chain1, chain2, theSAT ):
-        #chain2 is a list of free indexes 
-        #change the list in memory as well as internal structures
-        lastIndex =  chain1[ len( chain1 ) - 1 ]
-        if len( chain2 ):
-            #modify memory
-            pos = self.memPosOfSATChainIndex( lastIndex, theSAT ) 
-            for entry in chain2:
-                self.header.bytes[ pos : pos + 4 ] = struct.pack( '<l', entry )
-                pos = self.memPosOfSATChainIndex( entry, theSAT )
-            pos = self.memPosOfSATChainIndex(  chain2[ len( chain2 ) - 1 ], theSAT )
-            self.header.bytes[ pos : pos + 4 ] = struct.pack( '<l', -2 )
-
-            #modify model
-            for entry in chain2:
-                print "array[%d] assingin value %d"%( lastIndex, entry )
-                theSAT.array[ lastIndex ] = entry
-                lastIndex = entry
-                theSAT.sectorIDs.append( entry )
-        theSAT.array[ chain2[ len( chain2 ) - 1 ] ] = -2
-
-    def memPosOfSATChainIndex( self, index, theSAT ):
-        #find the position in memory of the index into the SAT table
-        #each index takes up 4 bytes so sat[ entry ] would be at 
-        #position ( 4 * index )
-        entryPos = 4 * index
-        #calculate the offset into a sector
-        sectorOffset = entryPos %  theSAT.sectorSize
-        sectorIndex = int(  entryPos /  theSAT.sectorSize )
-        sectorSize = theSAT.sectorSize
-        #now point to the offset in the sector this array position lives
-        #in
-        pos = 512 + ( theSAT.sectorIDs[ sectorIndex ] * theSAT.sectorSize ) + sectorOffset
-        return pos
+        if ( entry.StreamLocation == ole.StreamLocation.SSAT ):
+            oldNumChainEntries = len( oldChain )
+            print "[ssat] new stream will take %d sectors to store %d bytes"%(sectorIndex+1,(sectorIndex+1)* sectorSize )
+            if newNumChainEntries > oldNumChainEntries:
+                neededEntries =  newNumChainEntries - oldNumChainEntries
+                newChain = self.header.getOrAllocateFreeSSATChainEntries( neededEntries )
                 
-    def expandSAT( self, numSectors, isSAT ):
-        #theSAT could be the SSAT or the SAT, doesn't matter we 
-        #still need a new sector to extend whichever SAT table
-        print "Attempt to expand SAT by %d sectors"%numSectors
-        # are there any available entries in the SAT ?
-        newChain = self.getFreeSATChainEntries( self.header.getSAT(), numSectors, 0 ) 
-
-        if len( newChain ) == 0:
-            print "Error, we need don't support extending the MSAT yet"
-            return 
-        print "received %d of %d chain entries needed"%(len(newChain), numSectors ) 
-        print "-> ", newChain 
-     
-        #new sectors implies we need to fill them with -1(s) ( or even create the sector if it doesn't exist ) 
-        oldChain = [] 
-        if isSAT:
-            #modify SAT chain to incorporate new secID
-            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SAT) )
-            print "old SAT chain -> ", oldChain 
+            neededEntries =  newNumChainEntries - oldNumChainEntries
+            if (  neededEntries != len(newChain) ):
+                raise Exception("no space available")
+            #find the highest index to see if we need to expand the root
+            #storage
+            maxIndex = 0
+            for i in xrange(0,len(newChain) ):
+                current = newChain[ i ]
+                if i == 0:
+                    maxIndex = current
+                else:
+                    if current > maxIndex:
+                        maxIndex = current 
+            #numer of sectors the maxIndex represents is + 1 ( e,g, and index of 0
+            #means at least one sector
+            maxIndex += 1
+            if directory.ensureRootStorageCapacity( maxIndex * self.header.getShortSectorSize() ):
+                directory.writeToShortSectors( newChain, bytes )
+            else:
+                raise Exception("no space available")
+            entry.StreamSectorID = newChain[ 0 ]
         else:
-            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SSAT) )
-            print "old SSAT chain -> ", oldChain 
-
-        self.appendFreeChain( oldChain, newChain, self.header.getSAT() )
-        
-        if isSAT:
-            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SAT) )
-            print "new SAT chain -> ", oldChain 
-        else:
-            oldChain = self.header.getSAT().getSectorIDChain( self.header.getFirstSectorID(ole.BlockType.SSAT) )
-            print "new SSAT chain -> ", oldChain 
+            chain = self.header.getSAT().getFreeChainEntries( newNumChainEntries, 0 )
+            # populate and terminate the chain
+            lastIndex =  chain[ len( chain ) - 1 ]
+            self.header.getSAT().array[ lastIndex ] = -2
+            for i in xrange(0,len(chain) ):
+                if i > 0:
+                    self.header.getSAT().array[ chain[ i-1 ] ] = chain[ i ]
+            
+            # updating normal sectors
+            directory.writeToStdSectors( chain, bytes )
+            entry.StreamSectorID = chain[ 0 ]
 
     def makeEntryEmpty( self, entry ):
         # #FIXME can we clone an Entry somehow <sigh> python knowledge fail
@@ -329,22 +263,24 @@ class OleContainer:
         entry.Name = ''
         entry.CharBufferSize = 0
         entry.Type = ole.Directory.Type.Empty
-        entry.NodeColor = ole.Directory.NodeColor.Unknown
+        entry.NodeColor = ole.Directory.NodeColor.Red
         entry.DirIDLeft = -1
         entry.DirIDRight = -1
         entry.DirIDRoot = -1
-        entry.UniqueID = bytearray(4) 
+        entry.UniqueID = bytearray(16) 
         entry.UserFlags =  bytearray(4)
-        entry.TimeCreated =  bytearray(4)
-        entry.TimeModified =  bytearray(4)
-        entry.StreamSectorID = -2
+        entry.TimeCreated =  bytearray(8)
+        entry.TimeModified =  bytearray(8)
+        entry.StreamSectorID = 0
         entry.StreamSize = 0
+
     def deleteEntry(self, directory, node, tree ):
         entry = node.Entry
         if ( entry.Type == None ):
             print "can't extract %s"%entry.Name
             return
 
+        theSAT = self.header.getSAT()
         if entry.StreamLocation == ole.StreamLocation.SSAT:
             print ("using SSAT")
             theSAT = self.header.getSSAT()
@@ -362,6 +298,78 @@ class OleContainer:
         #if this node has children then I suppose we need to delete them too
         for child in node.Nodes: 
             self.deleteEntry( directory, child, tree )
+    def compareNodes( self, lhs, rhs ):
+        if len( lhs.Name ) > len( rhs.Name ):
+            return 1
+        elif len( lhs.Name ) > len ( rhs.Name ):
+            return 0
+        else: #equal
+            if lhs.Name > rhs.Name:
+                return  1
+            else:
+                return  0
+
+    def insertSiblingInTree ( self, directory, dirID, node, otherNode ) :
+        if self.compareNodes( node, otherNode ):
+            if otherNode.DirIDRight > 0:
+                if ( self.compareNodes( node, directory.entries[ otherNode.DirIDRight ] ) ):
+                    self.insertSiblingInTree( directory, dirID, node, directory.entries[ otherNode.DirIDRight ] )
+                else:
+                    self.insertSiblingInTree( directory, dirID, node, directory.entries[ otherNode.DirIDLeft ] )
+            else:           
+                otherNode.DirIDRight = dirID
+        else:
+            if otherNode.DirIDLeft > 0:
+                if ( self.compareNodes( node, directory.entries[ otherNode.DirIDLeft ] ) ):
+                    self.insertSiblingInTree( directory, dirID, node, directory.entries[ otherNode.DirIDLeft ] )
+                else:
+                    self.insertSiblingInTree( directory, dirID, node, directory.entries[ otherNode.DirIDRight ] )
+            else:           
+                otherNode.DirIDLeft = dirID
+
+    def insertDirEntry( self, directory, root, childName ):
+        # have we space for a new entry
+        if len( directory.entries ) + 1 > ( ( len( directory.sectorIDs ) * directory.sectorSize ) ) / 128:
+            # allocate a new SAT sector to increase the size of Directory
+            oldChain = directory.header.getSAT().getSectorIDChain( directory.header.getFirstSectorID(ole.BlockType.Directory) )
+            newChainEntries = directory.header.getSAT().getFreeChainEntries( 1,0 )
+            directory.header.createSATSectors( newChainEntries, False )
+
+            if len( newChainEntries ) == 0:
+                # looks like we need to expand the MSAT to expand the SAT array
+                raise Exception("expanding MSAT not supported yet")
+            directory.addSector(newChainEntries[0])
+            # add newChain to old chain
+            lastIndex =  oldChain[ len( oldChain ) - 1 ]
+            for satID in newChainEntries:
+                directory.header.getSAT().array[ lastIndex ] = satID
+                lastIndex = satID
+            # terminate the chain
+            directory.header.getSAT().array[ newChainEntries[ len( newChainEntries ) - 1 ] ] = -2
+            
+        # create new DirEntry
+        lastEntry = directory.entries[ len( directory.entries ) - 1]
+        entry = ole.Directory.Entry()
+        self.makeEntryEmpty( entry )
+        directory.entries.append( entry )
+        dirID = len( directory.entries) - 1 
+        # if the old last entry was empty use that other wise use
+        # the new one
+        if lastEntry.Type == ole.Directory.Type.Empty:
+            dirID = len( directory.entries ) - 2
+            entry = lastEntry
+
+        entry.Name = childName
+        self.insertSiblingInTree ( directory, dirID, entry, directory.entries[ root.Entry.DirIDRoot ] ) 
+        # fill with empty entries to fill the sector
+        mod = len(directory.entries ) % 4
+        if mod:
+            for i in xrange(0,4-mod):
+                empty = ole.Directory.Entry()
+                self.makeEntryEmpty( empty )
+                directory.entries.append( empty )
+                 
+        return entry
 
     def add(self, filePath, directory):
         if os.path.isabs( filePath ) != True:
@@ -371,7 +379,10 @@ class OleContainer:
         if os.path.isdir( filePath ):
            print "can't yet handle adding storage for dir %s"%filePath
            return;
-        if os.path.isfile( filePath ) != True:
+
+        storageTestCreate = False
+
+        if os.path.isfile( filePath ) != True and storageTestCreate !=True:
            print "%s is not a file, bailing out"%filePath
            return
         nodePath = os.path.relpath( filePath )
@@ -392,14 +403,25 @@ class OleContainer:
         if  node != None:
             #update a file
             print "updating %s"%fileLeafName
-            self.updateEntry( directory, node, filePath )
+            self.updateEntry( directory, node.Entry, filePath )
         else:
-            #new file or storage
+            #storage
             node = self.__findNodeByHierachicalName( root, dirPath )
-            if node == None: 
-                print "error: %s does not exist"%dirPath
-                return
             print "adding a new file to %s"%dirPath
+            entry = self.insertDirEntry( directory, node, fileLeafName )
+            if  storageTestCreate:
+                entry.NodeColor = ole.Directory.NodeColor.Black
+                entry.Type = directory.Type.UserStorage
+            else:
+                #FIXME how to allocate the NodeColor
+                entry.NodeColor = node.Entry.NodeColor
+                entry.NodeColor = node.Entry.NodeColor
+                entry.Type = directory.Type.UserStream
+                self.updateEntry( directory, entry, filePath )
+            
+        self.header.write() 
+        directory.write() 
+        self.writeDoc("/home/npower/testComp.xls", self.header.bytes)
 
     def delete(self, name, directory ):
         #we'll do an inefficient delete e.g. no attempt to reclaim space 
@@ -411,16 +433,16 @@ class OleContainer:
         if node != None:
             self.deleteEntry( directory, node, root )
 
-        self.header.write() 
+        sizeBefore = len( self.header.bytes )
+        #self.header.write() 
         directory.write() 
+        sizeAfter = len( self.header.bytes )
         self.writeDoc("/home/npower/testComp.xls", self.header.bytes)
-        print("** attempting to write out compound document")
                       
     def writeDoc( self, filePath, contents ):
         out = open( filePath, 'wb' );
 
         if len( contents  ):
-            print ("using in memory model") 
             out.write( contents )
         else:
             print ("failed to write document") 
