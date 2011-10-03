@@ -219,13 +219,21 @@ class OleContainer:
         if ( entry.StreamLocation == ole.StreamLocation.SSAT ):
             oldNumChainEntries = len( oldChain )
             print "[ssat] new stream will take %d sectors to store %d bytes"%(sectorIndex+1,(sectorIndex+1)* sectorSize )
-            if newNumChainEntries > oldNumChainEntries:
-                neededEntries =  newNumChainEntries - oldNumChainEntries
-                newChain = self.header.getOrAllocateFreeSSATChainEntries( neededEntries )
-                
-            neededEntries =  newNumChainEntries - oldNumChainEntries
-            if (  neededEntries != len(newChain) ):
+            newChain = self.header.getOrAllocateFreeSSATChainEntries( newNumChainEntries )
+            if (  newNumChainEntries != len(newChain) ):
                 raise Exception("no space available")
+            entryID = newChain[ 0 ]
+            # populate and terminate the chain - #FIXME move to be a common
+            # routine
+            lastIndex =  newChain[ len( newChain ) - 1 ]
+            self.header.getSSAT().array[ lastIndex ] = -2
+            for i in xrange(0,len(newChain) ):
+                if i > 0:
+                    self.header.getSSAT().array[ newChain[ i-1 ] ] = newChain[ i ]
+            #OMG - the assignment above ( to put in the -2 ) doesn't seem to work
+            #FIXME find out what is wrong, because the assignment of the end of
+            #chain ID above doesn't seem to work the line below loops :-/ 
+            print "newChain (SSAT) (retrieved)",  theSAT.getSectorIDChain( entryID )
             #find the highest index to see if we need to expand the root
             #storage
             maxIndex = 0
@@ -252,7 +260,8 @@ class OleContainer:
                 raise Exception("couldn't allocate enough sectors")
 
             print "got ",len( chain ),"of",newNumChainEntries,"sectors"
-            # populate and terminate the chain
+            # populate and terminate the chain - #FIXME move to be a common
+            # routine
             lastIndex =  chain[ len( chain ) - 1 ]
             self.header.getSAT().array[ lastIndex ] = -2
             for i in xrange(0,len(chain) ):

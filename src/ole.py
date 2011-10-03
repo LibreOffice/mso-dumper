@@ -540,8 +540,8 @@ class SAT(object):
             sectorOffset = entryPos %  self.sectorSize
             sectorIndex = int(  entryPos /  self.sectorSize )
             sectorSize = self.sectorSize
-            print "index %d, sectorOffset %d, sectorIndex %d, len(self.sectorIDs) %d"%(index , sectorOffset , sectorIndex , len(self.sectorIDs))
             pos = 512 + ( self.sectorIDs[ sectorIndex ] * self.sectorSize ) + sectorOffset
+            print "index %d, sectorOffset %d, sectorIndex %d, len(self.sectorIDs) %d sectorID %d pos %d value %d"%(index , sectorOffset , sectorIndex , len(self.sectorIDs),self.sectorIDs[ sectorIndex ], pos, self.array[ index ] )
             self.bytes[pos:pos+4] =  struct.pack( '<l', self.array[ index ] )
 
     def freeChainEntries (self, chain):
