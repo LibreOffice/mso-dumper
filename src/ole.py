@@ -92,6 +92,7 @@ class Header(object):
         self.secSizeShort = 64
 
         self.params = params
+        self.__SSAT = None
 
     def getSectorSize (self):
         return 2**self.secSize
@@ -277,8 +278,11 @@ class Header(object):
         self.bytes[68:72] = struct.pack( '<l', self.secIDFirstMSAT )
         self.bytes[72:76] = struct.pack( '<l', self.numSecMSAT )
         # write the MSAT, SAT & SSAT
+        print "*** writing MSAT"
         self.writeMSAT()
+        print "*** writing SAT"
         self.getSAT().write()
+        print "*** writing SSAT"
         self.getSSAT().write()
    
     def writeMSAT (self): 
@@ -319,17 +323,19 @@ class Header(object):
 
 
     def getSSAT (self):
+        if self.__SSAT != None:
+            return self.__SSAT
         ssatID = self.getFirstSectorID(BlockType.SSAT)
         if ssatID < 0:
             return None
         chain = self.getSAT().getSectorIDChain(ssatID)
         if len(chain) == 0:
             return None
-        obj = SSAT(2**self.secSize, self.bytes, self.params)
+        self.__SSAT = SSAT(2**self.secSize, self.bytes, self.params)
         for secID in chain:
-            obj.addSector(secID)
-        obj.buildArray()
-        return obj
+            self.__SSAT.addSector(secID)
+        self.__SSAT.buildArray()
+        return self.__SSAT
 
     def expandSSAT( self, numExtraEntriesNeeded ):
         # create enough sectors to increase SAT table to accomadate new entries
@@ -344,6 +350,8 @@ class Header(object):
         # add the sectors into the SSAT
         for sectorID in newSATSectors:
             self.getSSAT().sectorIDs.append( sectorID )
+            #mark the sectors as used by the SAT table
+            self.getSAT().array[ sectorID ] = -2
         # expand SSAT array with the contens of the new SATSectors
         self.getSSAT().appendArray( newSATSectors )
         # need to update the SectorIDChain for the SSAT
@@ -372,14 +380,17 @@ class Header(object):
                 print "Error: haven't implemented expanding the SAT to allow more sectors to be allocated for the MSAT"
                 return chain
             self.createSATSectors( MSATSectors )
-
+            self.getSAT().appendArray( MSATSectors )
             #is there room in the MSAT table header part
             if len( self.getMSAT().secIDs ) + len( MSATSectors ) < 109:
                 for sector in MSATSectors:
                     self.getMSAT().appendSectorID( sector )
-                    self.getSAT().appendArray( MSATSectors )
+                    self.getSAT().addSector( sector )
+                    #mark MSAT sectors in SAT array as in use by MSAT
+                    self.getSAT().array[ sector ] = -4
             else:
                 print "*** extending the MSAT not supported yes"
+
             #try again
             chain = self.getSAT().getFreeChainEntries( numNeeded, 0 )
                      
@@ -524,16 +535,20 @@ class SAT(object):
         self.appendArray( self.sectorIDs )
 
     def appendArray( self, sectorIDs ):
+        print "reading sectors", sectorIDs
         numItems = self.sectorSize / 4
         for secID in sectorIDs:
             pos = 512 + secID*self.sectorSize
             for i in xrange(0, numItems):
                 beginPos = pos + i*4
                 id = getSignedInt(self.bytes[beginPos:beginPos+4])
+                print "index %d,  len(self.sectorIDs) %d sectorID %d pos %d value %d"%(len(self.array) , len(self.sectorIDs),secID, beginPos, id )
                 self.array.append(id)
+                
 
     def write (self):
         #writes the contents of the SAT array to memory sectors
+        print "sectors making up the SAT or SAT are ",self.sectorIDs
         for index in xrange(0, len( self.array )):
             entryPos = 4 * index
             #calculate the offset into a sector
@@ -716,6 +731,8 @@ entire file stream.
         elif entry.StreamLocation == StreamLocation.SSAT:
             chain = self.header.getSSAT().getSectorIDChain(entry.StreamSectorID)
 
+        print "__getRawStream extracting from chain ", chain
+
         if entry.StreamLocation == StreamLocation.SSAT:
             # Get the root storage stream.
             if self.RootStorage == None:
@@ -743,6 +760,7 @@ entire file stream.
         secSize = self.header.getSectorSize()
         numSectors = len(targetChain)
         print "writing out %d sectors"%(numSectors)
+        print "chain is ", targetChain
         for i in xrange(0, numSectors ):
             srcPos = ( i * secSize )
             targetPos = 512 + ( targetChain[ i ] * secSize )

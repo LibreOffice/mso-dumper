@@ -185,7 +185,7 @@ class OleContainer:
     def updateEntry( self, directory, entry, filePath ):
         file = open( filePath, 'rb' )
         bytes = file.read();
-        print "Entry is ",entry.Name 
+        print "Entry is ",entry.Name,"StreamSectorID ",entry.StreamSectorID 
         theSAT = self.header.getSAT()
         sectorSize = self.header.getSectorSize()
         entry.StreamSize = len(bytes)
@@ -195,13 +195,16 @@ class OleContainer:
 
         oldChain = []
         if ( entry.StreamLocation == ole.StreamLocation.SSAT ):
+            print"using SSAT"
             theSAT = self.header.getSSAT()
         else:
+            print"using SAT"
             theSAT = self.header.getSAT()
         if ( entryID > -1 ):
             oldChain = theSAT.getSectorIDChain(entryID) 
             theSAT.freeChainEntries( oldChain )
 
+        print "** debug self.header.getSSAT().array[0] = ",self.header.getSSAT().array[0]
         if entry.StreamSize < self.header.minStreamSize:
             print "going to use ssat"
             theSAT = self.header.getSSAT()
@@ -222,15 +225,19 @@ class OleContainer:
             newChain = self.header.getOrAllocateFreeSSATChainEntries( newNumChainEntries )
             if (  newNumChainEntries != len(newChain) ):
                 raise Exception("no space available")
-            entryID = newChain[ 0 ]
             # populate and terminate the chain - #FIXME move to be a common
             # routine
+            print "newChain (SSAT) ",  newChain
+            for i in xrange(0,len(newChain)):
+                print "getSSAT().array[ %d ] = %d"%( newChain[i], directory.header.getSSAT().array[ newChain[i] ] )
+            entryID = newChain[ 0 ]
             lastIndex =  newChain[ len( newChain ) - 1 ]
-            self.header.getSSAT().array[ lastIndex ] = -2
+            directory.header.getSSAT().array[ lastIndex ] = -2
             for i in xrange(0,len(newChain) ):
                 if i > 0:
-                    self.header.getSSAT().array[ newChain[ i-1 ] ] = newChain[ i ]
-            #OMG - the assignment above ( to put in the -2 ) doesn't seem to work
+                    directory.header.getSSAT().array[ newChain[ i - 1 ] ] = newChain[ i ]
+            for i in xrange(0,len(newChain)):
+                print "after pop getSSAT().array[ %d ] = %d"%( newChain[i], directory.header.getSSAT().array[ newChain[i] ] )
             #FIXME find out what is wrong, because the assignment of the end of
             #chain ID above doesn't seem to work the line below loops :-/ 
             print "newChain (SSAT) (retrieved)",  theSAT.getSectorIDChain( entryID )
@@ -286,8 +293,9 @@ class OleContainer:
         entry.UserFlags =  bytearray(4)
         entry.TimeCreated =  bytearray(8)
         entry.TimeModified =  bytearray(8)
-        entry.StreamSectorID = 0
+        entry.StreamSectorID = -1
         entry.StreamSize = 0
+        entry.StreamLocation = ole.StreamLocation.SSAT 
 
     def deleteEntry(self, directory, node, tree ):
         entry = node.Entry
@@ -366,13 +374,9 @@ class OleContainer:
         lastEntry = directory.entries[ len( directory.entries ) - 1]
         entry = ole.Directory.Entry()
         self.makeEntryEmpty( entry )
+        
         directory.entries.append( entry )
         dirID = len( directory.entries) - 1 
-        # if the old last entry was empty use that other wise use
-        # the new one
-        if lastEntry.Type == ole.Directory.Type.Empty:
-            dirID = len( directory.entries ) - 2
-            entry = lastEntry
 
         entry.Name = childName
         self.insertSiblingInTree ( directory, dirID, entry, directory.entries[ root.Entry.DirIDRoot ] ) 
@@ -422,7 +426,6 @@ class OleContainer:
         else:
             #storage
             node = self.__findNodeByHierachicalName( root, dirPath )
-            print "adding a new file to %s"%dirPath
             entry = self.insertDirEntry( directory, node, fileLeafName )
             if  storageTestCreate:
                 entry.NodeColor = ole.Directory.NodeColor.Black
@@ -430,8 +433,8 @@ class OleContainer:
             else:
                 #FIXME how to allocate the NodeColor
                 entry.NodeColor = node.Entry.NodeColor
-                entry.NodeColor = node.Entry.NodeColor
                 entry.Type = directory.Type.UserStream
+                
                 self.updateEntry( directory, entry, filePath )
             
         self.header.write() 
