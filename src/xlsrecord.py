@@ -1482,6 +1482,41 @@ class String(BaseRecordHandler):
             cell.cachedResult = self.name
 
 
+class Style(BaseRecordHandler):
+
+    BuiltInStyleNames = [
+        "Normal",
+        "RowLevel_#",
+        "ColLevel_#",
+        "Comma",
+        "Currency",
+        "Percent",
+        "Comma[0]",
+        "Currency[0]",
+        "Hyperlink",
+        "Followed Hyperlink",
+        "Note",
+        "Warning Text"
+    ]
+
+    def __parseBytes (self):
+        flags = self.readUnsignedInt(2)
+        self.Xf = (flags & 0x0FFF)
+        self.builtIn = (flags & 0x8000) != 0
+        self.builtInType = self.readUnsignedInt(1)
+        self.builtInLevel = self.readUnsignedInt(1)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("XF record ID: %d"%self.Xf)
+        self.appendLineBoolean("built-in", self.builtIn)
+        if self.builtIn:
+            self.appendLine("built-in type: %d (%s)"%(
+                self.builtInType, globals.getValueOrUnknown(Style.BuiltInStyleNames, self.builtInType)))
+            if self.builtInType == 1 or self.builtInType == 2:
+                self.appendLine("built-in level: %d"%self.builtInLevel)
+
+
 class SST(BaseRecordHandler):
 
     def __parseBytes (self):
