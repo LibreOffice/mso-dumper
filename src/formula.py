@@ -198,6 +198,27 @@ class PtgStr(PtgBase):
     def getText (self):
         return "(str: '%s')"%self.value
 
+class PtgAtt(PtgBase):
+    def parseBytes (self):
+        attType = self.strm.readUnsignedInt(1)
+        if attType == 0x01:
+            # PtgAttSemi: volatile
+            self.attName = 'volatile'
+            self.strm.readBytes(2) # ignore bytes
+        else:
+            raise FormulaParserError("unknown attribute token type (0x%2.2X)"%attType)
+
+    def getText (self):
+        return "(att: %s)"%self.attName
+
+class PtgName(PtgBase):
+    def parseBytes (self):
+        self.nameIdx = self.strm.readUnsignedInt(4)
+
+    def getText (self):
+        return "(name: %d)"%self.nameIdx
+
+
 class PtgNameX(PtgBase):
     def parseBytes (self):
         self.xti = self.strm.readUnsignedInt(2)
@@ -643,10 +664,13 @@ _tokenMap = {
     0x15: PtgParen,
     0x16: PtgMissArg,
     0x17: PtgStr,
+    0x19: PtgAtt,
     0x1E: PtgInt,
+    0x22: PtgFuncVar,
     0x24: PtgRef,
     0x29: PtgMemFunc,
     0x3B: _Area3d,
+    0x43: PtgName,
     0x59: PtgNameX,
     0x5B: _Area3d,
     0x7B: _Area3d,

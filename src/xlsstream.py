@@ -50,7 +50,7 @@ recData = {
     0x0015: ["FOOTER", "Print Footer on Each Page", xlsrecord.Footer],
     0x0016: ["EXTERNCOUNT", "Number of External References"],
     0x0017: ["EXTERNSHEET", "External Reference", xlsrecord.ExternSheet],
-    0x0018: ["NAME", "Internal Defined Name", xlsrecord.Name],
+    0x0018: ["LBL", "Internal Defined Name", xlsrecord.Name],
     0x0019: ["WINDOWPROTECT", "Windows Are Protected"],
     0x0021: ["ARRAY", "Array-Entered Formula", xlsrecord.Array], # undocumented, but identical to 0x0221 ?
     0x001A: ["VERTICALPAGEBREAKS", "Explicit Column Page Breaks"],

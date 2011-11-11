@@ -1811,10 +1811,6 @@ class Name(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
 
-        tokenText = globals.getRawBytes(self.tokenBytes, True, False)
-        o = formula.FormulaParser(self.header, self.tokenBytes)
-        o.parse()
-        formulaText = o.getText()
         self.appendLine("name: %s"%globals.encodeName(self.name))
 
         # is this name global or sheet-local?
@@ -1835,9 +1831,19 @@ class Name(BaseRecordHandler):
 #       self.appendLine("description length: %d"%self.descTextLen)
 #       self.appendLine("help tip text length: %d"%self.helpTextLen)
 #       self.appendLine("status bar text length: %d"%self.statTextLen)
+
+        tokenText = globals.getRawBytes(self.tokenBytes, True, False)
+        o = formula.FormulaParser(self.header, self.tokenBytes)
         self.appendLine("formula length: %d"%self.formulaLen)
         self.appendLine("formula bytes: " + tokenText)
-        self.appendLine("formula: " + formulaText)
+        try:
+            o.parse()
+            formulaText = o.getText()
+            self.appendLine("formula: " + formulaText)
+        except formula.FormulaParserError as e:
+            self.appendLine("Error while parsing the formula tokens (%s)"%e.args[0])
+
+
 
     def fillModel (self, model):
         self.__parseBytes()
