@@ -231,6 +231,9 @@ Like parseBytes(), the derived classes must overwrite this method."""
         cch = self.readUnsignedInt(1)
         return self.readUnicodeString(cch)
 
+    def readXLUnicodeStringNoCch (self, cch):
+        return self.readUnicodeString(cch)
+
     def readLongRGB (self):
         r = self.readUnsignedInt(1)
         g = self.readUnsignedInt(1)
@@ -412,11 +415,11 @@ class Autofilter(BaseRecordHandler):
         # pick up string(s)
         self.string1 = None
         if self.doper1.dataType == Autofilter.DoperType.String:
-            self.string1 = globals.getTextBytes(self.readBytes(self.doper1.strLen))
+            self.string1 = self.readXLUnicodeStringNoCch(self.doper1.strLen)
 
         self.string2 = None
         if self.doper2.dataType == Autofilter.DoperType.String:
-            self.string2 = globals.getTextBytes(self.readBytes(self.doper2.strLen))
+            self.string2 = self.readXLUnicodeStringNoCch(self.doper2.strLen)
 
     def parseBytes (self):
         self.__parseBytes()
