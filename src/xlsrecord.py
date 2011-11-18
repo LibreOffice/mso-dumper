@@ -396,7 +396,7 @@ class Autofilter(BaseRecordHandler):
             self.readBytes(6) # ignore 6 bytes
         else:
             doper = Autofilter.Doper()
-            self.readBytes(10) # ignore the entire 10 bytes
+            self.readBytes(9) # ignore the entire 10 bytes
         return doper
 
     def __parseBytes (self):
@@ -414,16 +414,19 @@ class Autofilter(BaseRecordHandler):
 
         # pick up string(s)
         self.string1 = None
-        if self.doper1.dataType == Autofilter.DoperType.String:
-            self.string1 = self.readXLUnicodeStringNoCch(self.doper1.strLen)
-
         self.string2 = None
-        if self.doper2.dataType == Autofilter.DoperType.String:
-            self.string2 = self.readXLUnicodeStringNoCch(self.doper2.strLen)
+        try:
+            if self.doper1.dataType == Autofilter.DoperType.String:
+                self.string1 = self.readXLUnicodeStringNoCch(self.doper1.strLen)
+
+            if self.doper2.dataType == Autofilter.DoperType.String:
+                self.string2 = self.readXLUnicodeStringNoCch(self.doper2.strLen)
+        except:
+            pass
 
     def parseBytes (self):
         self.__parseBytes()
-        self.appendLine("filter index (= column ID): %d"%self.filterIndex)
+        self.appendLine("filter index (relative column ID): %d"%self.filterIndex)
         self.appendLine("joining: %s"%self.getBoolVal(self.join, "AND", "OR"))
         self.appendLineBoolean("1st condition is simple equality", self.simple1)
         self.appendLineBoolean("2nd condition is simple equality", self.simple2)
