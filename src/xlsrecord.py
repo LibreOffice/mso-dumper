@@ -2347,6 +2347,44 @@ class Font(BaseRecordHandler):
         self.appendLine("font family: %s"%Font.getFontFamily(fontFamily))
         self.appendLine("font name: %s (%d)"%(fontName, nameLen))
 
+class Window2(BaseRecordHandler):
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(2)
+        self.displayFormula =  (flag & 0x0001) != 0
+        self.displayGrid =     (flag & 0x0002) != 0
+        self.displayHeadings = (flag & 0x0004) != 0
+        self.frozen =          (flag & 0x0008) != 0
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineBoolean("display formula", self.displayFormula)
+        self.appendLineBoolean("display grid", self.displayGrid)
+        self.appendLineBoolean("display headings", self.displayHeadings)
+        self.appendLineBoolean("frozen window", self.frozen)
+
+class Pane(BaseRecordHandler):
+
+    activePanes = [
+        "bottom-right",
+        "top-right",
+        "bottom-left",
+        "top-left"
+    ]
+
+    def __parseBytes (self):
+        self.x = self.readUnsignedInt(2)
+        self.y = self.readUnsignedInt(2)
+        self.bottomRow = self.readUnsignedInt(2)
+        self.rightCol  = self.readUnsignedInt(2)
+        self.activePane = self.readUnsignedInt(1)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("split position: (x=%d,y=%d)"%(self.x,self.y))
+        self.appendLine("top-left position of SE pane: (row=%d,col=%d)"%
+            (self.bottomRow,self.rightCol))
+        self.appendLine("active pane: %s"%
+            globals.getValueOrUnknown(Pane.activePanes, self.activePane))
 
 class XF(BaseRecordHandler):
 
