@@ -1,6 +1,6 @@
 ########################################################################
 #
-#  Copyright (c) 2010 Kohei Yoshida
+#  Copyright (c) 2010-2012 Kohei Yoshida
 #  
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
@@ -2630,6 +2630,34 @@ class FeatureHeader(BaseRecordHandler):
             self.appendLine("  select unlocked cells:   %s"%self.getEnabledDisabled(optSelectUnlockedCells))
 
         return
+
+class ShrFmla(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.ref = RefU(self)
+        self.readBytes(1) # 8-bits reserved
+        self.cUse = self.readUnsignedInt(1)
+        lenFormula = self.readUnsignedInt(2)
+        self.tokens = self.readBytes(lenFormula)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("range: %s"%self.ref.toString())
+        self.appendLine("cell count: %d"%self.cUse)
+        self.appendLine("formula token length: %d"%len(self.tokens))
+        if len(self.tokens):
+            ftext = None
+            try:
+                parser = formula.FormulaParser(self.header, self.tokens)
+                parser.parse()
+                ftext = parser.getText()
+            except formula.FormulaParserError as e:
+                ftext = "(Error: %s)"%e.args[0]
+            if ftext != None:
+                self.appendLine("formula: %s"%ftext)
+
+
+
 
 # -------------------------------------------------------------------
 # SX - Pivot Table

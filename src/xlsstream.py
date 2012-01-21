@@ -1,6 +1,6 @@
 ########################################################################
 #
-#  Copyright (c) 2010 Kohei Yoshida
+#  Copyright (c) 2010-2012 Kohei Yoshida
 #  
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
@@ -220,6 +220,7 @@ recData = {
     0x027E: ["RK", "Cell with Encoded Integer or Floating-Point", xlsrecord.RK],
     0x0293: ["STYLE", "Style Information", xlsrecord.Style],
     0x041E: ["FORMAT", "Number Format", xlsrecord.Format],
+    0x04BC: ["SHRFMLA", "Shared Formula", xlsrecord.ShrFmla],
     0x0802: ["QSISXTAG", "Pivot Table and Query Table Extensions", xlsrecord.PivotQueryTableEx],
     0x0809: ["BOF", "Beginning of File", xlsrecord.BOF],
     0x0810: ["SXVIEWEX9", "Pivot Table Extensions", xlsrecord.SXViewEx9],
