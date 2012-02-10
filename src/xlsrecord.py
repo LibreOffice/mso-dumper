@@ -2914,6 +2914,40 @@ class SXDbEx(BaseRecordHandler):
         self.appendLine("last changed: %g"%lastChanged)
         self.appendLine("count of SXFORMULA records for this cache: %d"%sxFmlaRecs)
 
+class SXDtr(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.yr = self.readUnsignedInt(2)
+        self.mon = self.readUnsignedInt(2)
+        self.dom = self.readUnsignedInt(1)
+
+    def parseBytes (self):
+        self.__parseBytes()
+
+class SXFDBType(BaseRecordHandler):
+
+    types = {
+        0x0000: "SQL_TYPE_NULL",
+        0x0001: "SQL_CHAR",
+        0x0003: "SQL_DECIMAL",
+        0x0004: "SQL_INTEGER",
+        0x0005: "SQL_SMALLINT",
+        0x0006: "SQL_FLOAT",
+        0x0007: "SQL_REAL",
+        0x0008: "SQL_DOUBLE",
+        0x000B: "SQL_TIMESTAMP",
+        0x000C: "SQL_VARCHAR",
+        0xFFF9: "SQL_BIT",
+        0xFFFE: "SQL_BINARY"
+    }
+
+    def __parseBytes (self):
+        self.wTypeSql = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        s = globals.getValueOrUnknown(SXFDBType.types, self.wTypeSql)
+        self.appendLine("ODBC Type: %s"%s)
 
 class SXField(BaseRecordHandler):
 
