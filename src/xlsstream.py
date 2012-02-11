@@ -137,7 +137,7 @@ recData = {
     0x00C5: ["SXDI", "Data Item", xlsrecord.SXDataItem],
     0x00C6: ["SXDB", "PivotTable Cache Data", xlsrecord.SXDb],
     0x00C7: ["SXFDB", "Pivot Field", xlsrecord.SXFDB],
-    0x00C8: ["SXINDEXLIST", "Indices to Source Data"],
+    0x00C8: ["SXDBB", "Indices to Source Data", xlsrecord.SXDBB],
     0x00C9: ["SXDOUBLE", "Double Value", xlsrecord.SXDouble],
     0x00CA: ["SXBOOLEAN", "Boolean Value", xlsrecord.SXBoolean],
     0x00CB: ["SXERROR", "Error Code", xlsrecord.SXError],
@@ -319,11 +319,13 @@ recDataRev = {
     0x0151: ["EONB*", "Change Track End of Nested Block"]
 }
 
+
 class StreamData(object):
     """run-time stream data."""
     def __init__ (self):
         self.encrypted = False
         self.pivotCacheIDs = {}
+        self.pivotCacheFields = []
 
     def appendPivotCacheId (self, newId):
         # must be 4-digit with leading '0's.

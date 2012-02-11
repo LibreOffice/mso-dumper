@@ -133,6 +133,16 @@ def dumpFrtHeader(header):
     return {'rt': header.rt,
             'flags': header.flags}
 
+
+class PivotField(object):
+    """Data about pivot cache field.
+
+This is to be stored in the persistent stream data, to be used in the SXDBB
+records."""
+    def __init__ (self):
+        self.hasMoreThan255 = False
+        self.values = []
+
 class BaseRecordHandler(globals.ByteStream):
 
     def __init__ (self, header, size, bytes, strmData):
@@ -2917,6 +2927,24 @@ class SXDb(BaseRecordHandler):
         self.appendLine("changed by: %s"%changedBy)
 
 
+class SXDBB(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.items = []
+        for fld in self.strmData.pivotCacheFields:
+            if fld.hasMoreThan255:
+                # read 2 bytes
+                idx = self.readUnsignedInt(2)
+            else:
+                idx = self.readUnsignedInt(1)
+            s = fld.values[idx]
+            self.items.append(s)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        for item in self.items:
+            self.appendLine(item)
+
 class SXDbEx(BaseRecordHandler):
 
     def parseBytes (self):
@@ -2935,6 +2963,8 @@ class SXDtr(BaseRecordHandler):
         self.hr = self.readUnsignedInt(1)
         self.min = self.readUnsignedInt(1)
         self.sec = self.readUnsignedInt(1)
+        s = "%d-%d-%dT%2.2d-%2.2d-%2.2d"%(self.yr, self.mon, self.dom, self.hr, self.min, self.sec)
+        self.strmData.pivotCacheFields[-1].values.append(s)
 
     def parseBytes (self):
         self.__parseBytes()
@@ -3015,6 +3045,13 @@ class SXFDB(BaseRecordHandler):
         self.cisxoper = self.readUnsignedInt(2)
         self.catm = self.readUnsignedInt(2)
         self.stFieldName = self.readXLUnicodeString()
+
+        if self.fAllAtoms:
+            # this cached field has a collection of items in the following
+            # SXDBB records.
+            obj = PivotField()
+            obj.hasMoreThan255 = self.fShortIitms
+            self.strmData.pivotCacheFields.append(obj)
 
     def parseBytes (self):
         self.__parseBytes()
@@ -3481,9 +3518,14 @@ class PivotQueryTableEx(BaseRecordHandler):
 
 
 class SXDouble(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.val = self.readDouble()
+        self.strmData.pivotCacheFields[-1].values.append("%g"%self.val)
+
     def parseBytes (self):
-        val = self.readDouble()
-        self.appendLine("value: %g"%val)
+        self.__parseBytes()
+        self.appendLine("value: %g"%self.val)
 
 
 class SXBoolean(BaseRecordHandler):
@@ -3501,10 +3543,14 @@ class SXInteger(BaseRecordHandler):
 
 
 class SXString(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.text = self.readXLUnicodeString()
+        self.strmData.pivotCacheFields[-1].values.append(self.text)
+
     def parseBytes (self):
-        textLen = self.readUnsignedInt(2)
-        text, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
-        self.appendLine("value: %s"%text)
+        self.__parseBytes()
+        self.appendLineString("value", self.text)
 
 # -------------------------------------------------------------------
 # CT - Change Tracking
