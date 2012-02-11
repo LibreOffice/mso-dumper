@@ -2960,7 +2960,7 @@ class SXFDBType(BaseRecordHandler):
         s = globals.getValueOrUnknown(SXFDBType.types, self.wTypeSql)
         self.appendLine("ODBC Type: %s"%s)
 
-class SXField(BaseRecordHandler):
+class SXFDB(BaseRecordHandler):
 
     dataTypeNames = {
         0x0000: 'spc',
@@ -2989,8 +2989,8 @@ class SXField(BaseRecordHandler):
         self.appendLine("num group: %s"%self.getYesNo(numGroup))
         self.appendLine("long index: %s"%self.getYesNo(longIndex))
         dataType = (flags & 0x0DE0)
-        if SXField.dataTypeNames.has_key(dataType):
-            self.appendLine("data type: %s (%4.4Xh)"%(SXField.dataTypeNames[dataType], dataType))
+        if SXFDB.dataTypeNames.has_key(dataType):
+            self.appendLine("data type: %s (%4.4Xh)"%(SXFDB.dataTypeNames[dataType], dataType))
         else:
             self.appendLine("data type: unknown (%4.4Xh)"%dataType)
 

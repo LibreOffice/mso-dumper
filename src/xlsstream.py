@@ -1,7 +1,7 @@
 ########################################################################
 #
 #  Copyright (c) 2010-2012 Kohei Yoshida
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -136,15 +136,15 @@ recData = {
     0x00C3: ["DELMENU", "Menu Deletion"],
     0x00C5: ["SXDI", "Data Item", xlsrecord.SXDataItem],
     0x00C6: ["SXDB", "PivotTable Cache Data", xlsrecord.SXDb],
-    0x00C7: ["SXFIELD", "Pivot Field", xlsrecord.SXField],
-    0x00C8: ["SXINDEXLIST", "Indices to Source Data"],       
-    0x00C9: ["SXDOUBLE", "Double Value", xlsrecord.SXDouble],                    
-    0x00CA: ["SXBOOLEAN", "Boolean Value", xlsrecord.SXBoolean],                  
-    0x00CB: ["SXERROR", "Error Code", xlsrecord.SXError],                       
-    0x00CC: ["SXINTEGER", "Integer Value", xlsrecord.SXInteger],                  
+    0x00C7: ["SXFDB", "Pivot Field", xlsrecord.SXFDB],
+    0x00C8: ["SXINDEXLIST", "Indices to Source Data"],
+    0x00C9: ["SXDOUBLE", "Double Value", xlsrecord.SXDouble],
+    0x00CA: ["SXBOOLEAN", "Boolean Value", xlsrecord.SXBoolean],
+    0x00CB: ["SXERROR", "Error Code", xlsrecord.SXError],
+    0x00CC: ["SXINTEGER", "Integer Value", xlsrecord.SXInteger],
     0x00CD: ["SXSTRING", "String", xlsrecord.SXString],
     0x00CE: ["SXDTR", "Date & Time Special Format", xlsrecord.SXDtr],
-    0x00CF: ["SXEMPTY", "Empty Value"],                      
+    0x00CF: ["SXEMPTY", "Empty Value"],
     0x00D0: ["SXTBL", "Multiple Consolidation Source Info"],
     0x00D1: ["SXTBRGIITM", "Page Item Name Count"],
     0x00D2: ["SXTBPG", "Page Item Indexes"],
@@ -464,14 +464,14 @@ class XLDirStream(object):
         return pos, header, size, bytes
 
     def __getRecordHandler (self, header, size, bytes):
-        # record handler that parses the raw bytes and displays more 
+        # record handler that parses the raw bytes and displays more
         # meaningful information.
-        handler = None 
+        handler = None
         if recData.has_key(header) and len(recData[header]) >= 3:
             handler = recData[header][2](header, size, bytes, self.strmData)
 
         if handler != None and self.strmData.encrypted:
-            # record handler exists.  Parse the record and display more info 
+            # record handler exists.  Parse the record and display more info
             # unless the stream is encrypted.
             handler = None
 
@@ -479,7 +479,7 @@ class XLDirStream(object):
 
     def __postReadRecord (self, header):
         if recData.has_key(header) and recData[header][0] == "FILEPASS":
-            # presence of FILEPASS record indicates that the stream is 
+            # presence of FILEPASS record indicates that the stream is
             # encrypted.
             self.strmData.encrypted = True
 
@@ -498,10 +498,10 @@ class XLDirStream(object):
     def readRecord (self):
         pos, header, size, bytes = self.__readRecordBytes()
 
-        # record handler that parses the raw bytes and displays more 
+        # record handler that parses the raw bytes and displays more
         # meaningful information.
-        handler = None 
-        
+        handler = None
+
         print("")
         headerStr = "%4.4Xh: "%header
         self.__printSep('=', globals.OutputWidth-len(headerStr), headerStr)
@@ -534,7 +534,7 @@ class XLDirStream(object):
             print("")
 
         if handler != None and not self.strmData.encrypted:
-            # record handler exists.  Parse the record and display more info 
+            # record handler exists.  Parse the record and display more info
             # unless the stream is encrypted.
             handler.output()
 
