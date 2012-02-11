@@ -195,6 +195,14 @@ Like parseBytes(), the derived classes must overwrite this method."""
         if len(singleLine) > 0:
             self.lines.append(singleLine)
 
+    def appendLineString (self, name, value):
+        text = "%s: %s"%(name, value)
+        self.appendLine(text)
+
+    def appendLineInt (self, name, value):
+        text = "%s: %d"%(name, value)
+        self.appendLine(text)
+
     def appendLineBoolean (self, name, value):
         text = "%s: %s"%(name, self.getYesNo(value))
         self.appendLine(text)
@@ -226,6 +234,9 @@ Like parseBytes(), the derived classes must overwrite this method."""
             return trueStr
         else:
             return falseStr
+
+    def readXLUnicodeString (self):
+        return self.readUnicodeString()
 
     def readShortXLUnicodeString (self):
         cch = self.readUnsignedInt(1)
@@ -2914,6 +2925,7 @@ class SXDbEx(BaseRecordHandler):
         self.appendLine("last changed: %g"%lastChanged)
         self.appendLine("count of SXFORMULA records for this cache: %d"%sxFmlaRecs)
 
+
 class SXDtr(BaseRecordHandler):
 
     def __parseBytes (self):
@@ -2934,6 +2946,7 @@ class SXDtr(BaseRecordHandler):
         self.appendLine("seconds (0-59)      : %d"%self.sec)
         self.appendLine("")
         self.appendMultiLine("The month value must be 1 if the day of month value is 0.")
+
 
 class SXFDBType(BaseRecordHandler):
 
@@ -2960,6 +2973,7 @@ class SXFDBType(BaseRecordHandler):
         s = globals.getValueOrUnknown(SXFDBType.types, self.wTypeSql)
         self.appendLine("ODBC Type: %s"%s)
 
+
 class SXFDB(BaseRecordHandler):
 
     dataTypeNames = {
@@ -2974,43 +2988,54 @@ class SXFDB(BaseRecordHandler):
         0x0D80: 'dat+str[+int/dbl]'
     }
 
+    def __parseBytes (self):
+        # parse flag
+        bits = self.readUnsignedInt(2)
+        self.fAllAtoms           = (bits & 0x0001) != 0 # A
+        self.fSomeUnhashed       = (bits & 0x0002) != 0 # B (undefined, must be ignored)
+        self.fUsed               = (bits & 0x0004) != 0 # C (undefined, must be ignored)
+        self.fHasParent          = (bits & 0x0008) != 0 # D
+        self.fRangeGroup         = (bits & 0x0010) != 0 # E
+        self.fNumField           = (bits & 0x0020) != 0 # F
+        unused                   = (bits & 0x0040) != 0 # G (unused)
+        self.fTextEtcField       = (bits & 0x0080) != 0 # H
+        self.fnumMinMaxValid     = (bits & 0x0100) != 0 # I
+        self.fShortIitms         = (bits & 0x0200) != 0 # J
+        self.fNonDates           = (bits & 0x0400) != 0 # K
+        self.fDateInField        = (bits & 0x0800) != 0 # L
+        unused                   = (bits & 0x1000) != 0 # M
+        self.fServerBased        = (bits & 0x2000) != 0 # N
+        self.fCantGetUniqueItems = (bits & 0x4000) != 0 # O
+        self.fCalculatedField    = (bits & 0x8000) != 0 # P
+
+        self.ifdbParent = self.readUnsignedInt(2)
+        self.ifdbBase = self.readUnsignedInt(2)
+        self.citmUnq = self.readUnsignedInt(2)          # (undefined, must be ignored)
+        self.csxoper = self.readUnsignedInt(2)
+        self.cisxoper = self.readUnsignedInt(2)
+        self.catm = self.readUnsignedInt(2)
+        self.stFieldName = self.readXLUnicodeString()
+
     def parseBytes (self):
-        flags = self.readUnsignedInt(2)
-        origItems  = (flags & 0x0001)
-        postponed  = (flags & 0x0002)
-        calculated = (flags & 0x0004)
-        groupChild = (flags & 0x0008)
-        numGroup   = (flags & 0x0010)
-        longIndex  = (flags & 0x0200)
-        self.appendLine("original items: %s"%self.getYesNo(origItems))
-        self.appendLine("postponed: %s"%self.getYesNo(postponed))
-        self.appendLine("calculated: %s"%self.getYesNo(calculated))
-        self.appendLine("group child: %s"%self.getYesNo(groupChild))
-        self.appendLine("num group: %s"%self.getYesNo(numGroup))
-        self.appendLine("long index: %s"%self.getYesNo(longIndex))
-        dataType = (flags & 0x0DE0)
-        if SXFDB.dataTypeNames.has_key(dataType):
-            self.appendLine("data type: %s (%4.4Xh)"%(SXFDB.dataTypeNames[dataType], dataType))
-        else:
-            self.appendLine("data type: unknown (%4.4Xh)"%dataType)
-
-        grpSubField = self.readUnsignedInt(2)
-        grpBaseField = self.readUnsignedInt(2)
-        itemCount = self.readUnsignedInt(2)
-        grpItemCount = self.readUnsignedInt(2)
-        baseItemCount = self.readUnsignedInt(2)
-        srcItemCount = self.readUnsignedInt(2)
-        self.appendLine("group sub-field: %d"%grpSubField)
-        self.appendLine("group base-field: %d"%grpBaseField)
-        self.appendLine("item count: %d"%itemCount)
-        self.appendLine("group item count: %d"%grpItemCount)
-        self.appendLine("base item count: %d"%baseItemCount)
-        self.appendLine("source item count: %d"%srcItemCount)
-
-        # field name
-        textLen = self.readUnsignedInt(2)
-        name, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
-        self.appendLine("field name: %s"%name)
+        self.__parseBytes()
+        self.appendLineBoolean("collection of items", self.fAllAtoms)
+        self.appendLineBoolean("has parent grouping cache field", self.fHasParent)
+        self.appendLineBoolean("numeric or date grouping", self.fRangeGroup)
+        self.appendLineBoolean("has numeric cache item", self.fNumField)
+        self.appendLineBoolean("has text data", self.fTextEtcField)
+        self.appendLineBoolean("min/max values can be computed", self.fnumMinMaxValid)
+        self.appendLineBoolean("has more than 255 items", self.fShortIitms)
+        self.appendLineBoolean("has non-date values", self.fNonDates)
+        self.appendLineBoolean("has date item", self.fDateInField)
+        self.appendLineBoolean("server-based page field (for ODBC PivotCache)", self.fServerBased)
+        self.appendLineBoolean("unique values unavailable (for ODBC source data)", self.fCantGetUniqueItems)
+        self.appendLineBoolean("calculated field", self.fCalculatedField)
+        self.appendLineInt("field index of parent (for grouped field)", self.ifdbParent)
+        self.appendLineInt("field index of base (for grouped field)", self.ifdbBase)
+        self.appendLineInt("number of cache items (for grouped field)", self.csxoper)
+        self.appendLineInt("number of cache items in base field (for grouped field)", self.cisxoper)
+        self.appendLineInt("number of cache items in collection", self.catm)
+        self.appendLineString("field name", self.stFieldName)
 
 
 class SXStreamID(BaseRecordHandler):
