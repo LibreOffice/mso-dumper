@@ -2920,9 +2920,20 @@ class SXDtr(BaseRecordHandler):
         self.yr = self.readUnsignedInt(2)
         self.mon = self.readUnsignedInt(2)
         self.dom = self.readUnsignedInt(1)
+        self.hr = self.readUnsignedInt(1)
+        self.min = self.readUnsignedInt(1)
+        self.sec = self.readUnsignedInt(1)
 
     def parseBytes (self):
         self.__parseBytes()
+        self.appendLine("year (1900-9999)    : %d"%self.yr)
+        self.appendLine("month (1-12)        : %d"%self.mon)
+        self.appendLine("day of month (0-31) : %d"%self.dom)
+        self.appendLine("hour (0-23)         : %d"%self.hr)
+        self.appendLine("minutes (0-59)      : %d"%self.min)
+        self.appendLine("seconds (0-59)      : %d"%self.sec)
+        self.appendLine("")
+        self.appendMultiLine("The month value must be 1 if the day of month value is 0.")
 
 class SXFDBType(BaseRecordHandler):
 
