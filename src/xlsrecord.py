@@ -3381,8 +3381,8 @@ class SXVI(BaseRecordHandler):
     itemTypes = {
         0xFE: 'Page',
         0xFF: 'Null',
-        0x00: 'Data',
-        0x01: 'Default',
+        0x00: 'Data value',
+        0x01: 'Default subtotal',
         0x02: 'SUM',
         0x03: 'COUNTA',
         0x04: 'COUNT',
@@ -3398,40 +3398,34 @@ class SXVI(BaseRecordHandler):
         0x0E: 'blank'
     }
 
+    def __parseBytes (self):
+        self.itmType = self.readSignedInt(2)
+        flag = self.readUnsignedInt(1)
+
+        self.fHidden     = (flag & 0x01) != 0
+        self.fHideDetail = (flag & 0x02) != 0
+        reserved         = (flag & 0x04) != 0
+        self.fFormula    = (flag & 0x08) != 0
+        self.fMissing    = (flag & 0x10) != 0
+
+        self.readBytes(1) # reserved
+
+        self.iCache = self.readSignedInt(2)
+        cch = self.readSignedInt(2)
+        if cch > 0:
+            self.name = self.readXLUnicodeStringNoCch()
+        else:
+            self.name = "null (use name in the cache)"
+
     def parseBytes (self):
-        itemType = self.readSignedInt(2)
-        grbit    = self.readSignedInt(2)
-        iCache   = self.readSignedInt(2)
-        nameLen  = self.readSignedInt(2)
-
-        itemTypeName = 'unknown'
-        if SXVI.itemTypes.has_key(itemType):
-            itemTypeName = SXVI.itemTypes[itemType]
-
-        flags = ''
-        if (grbit & 0x0001):
-            flags += 'hidden, '
-        if (grbit & 0x0002):
-            flags += 'detail hidden, '
-        if (grbit & 0x0008):
-            flags += 'formula, '
-        if (grbit & 0x0010):
-            flags += 'missing, '
-
-        if len(flags) > 0:
-            # strip the trailing ', '
-            flags = flags[:-2]
-        else:
-            flags = '(none)'
-
-        self.appendLine("item type: %s"%itemTypeName)
-        self.appendLine("flags: %s"%flags)
-        self.appendLine("pivot cache index: %d"%iCache)
-        if nameLen == -1:
-            self.appendLine("name: null (use name in the cache)")
-        else:
-            name, nameLen = globals.getRichText(self.readRemainingBytes(), nameLen)
-            self.appendLine("name: %s"%name)
+        self.__parseBytes()
+        self.appendLineString("item type", globals.getValueOrUnknown(SXVI.itemTypes, self.itmType))
+        self.appendLineBoolean("hidden", self.fHidden)
+        self.appendLineBoolean("collapsed", self.fHideDetail)
+        self.appendLineBoolean("calcualted", self.fFormula)
+        self.appendLineBoolean("missing in data source", self.fMissing)
+        self.appendLineInt("pivot cache index", self.iCache)
+        self.appendLineString("name", self.name)
 
 
 class PivotQueryTableEx(BaseRecordHandler):
