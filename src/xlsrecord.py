@@ -3424,7 +3424,10 @@ class SXVI(BaseRecordHandler):
         self.appendLineBoolean("collapsed", self.fHideDetail)
         self.appendLineBoolean("calcualted", self.fFormula)
         self.appendLineBoolean("missing in data source", self.fMissing)
-        self.appendLineInt("pivot cache index", self.iCache)
+        if self.iCache >= 0:
+            self.appendLineInt("cache item index", self.iCache)
+        else:
+            self.appendLine("cache item index: %d (no cache item is referenced)"%self.iCache)
         self.appendLineString("name", self.name)
 
 
