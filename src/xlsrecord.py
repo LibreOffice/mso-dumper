@@ -2714,7 +2714,7 @@ class DConRef(BaseRecordHandler):
         self.appendLine("range: %s"%self.ref.toString())
         self.appendLine("sheet name: %s"%self.sheetName)
 
-class SXIvd(BaseRecordHandler):
+class SxIvd(BaseRecordHandler):
 
     def __parseBytes (self):
         self.ids = []

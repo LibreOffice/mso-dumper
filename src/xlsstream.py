@@ -123,7 +123,7 @@ recData = {
     0x00B0: ["SXVIEW", "View Definition", xlsrecord.SXView],
     0x00B1: ["SXVD", "View Fields", xlsrecord.SXViewFields],
     0x00B2: ["SXVI", "View Item", xlsrecord.SXVI],
-    0x00B4: ["SXIVD", "Row/Column Field IDs", xlsrecord.SXIvd],
+    0x00B4: ["SXIVD", "Row/Column Field IDs", xlsrecord.SxIvd],
     0x00B5: ["SXLI", "Line Item Array"],
     0x00B6: ["SXPI", "Page Item"],
     0x00B8: ["DOCROUTE", "Routing Slip Information"],
