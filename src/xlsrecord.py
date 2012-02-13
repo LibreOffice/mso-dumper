@@ -2725,7 +2725,13 @@ class SxIvd(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         for id in self.ids:
-            self.appendLine("field value: %d"%id)
+            if id == -2:
+                self.appendLine("pivot field index: %d (data layout field)"%id)
+            else:
+                self.appendLineInt("pivot field index", id)
+
+        self.appendLine("")
+        self.appendMultiLine("NOTE: The first one of this record is for row fields, whereas the second one is for column fields.")
 
 class SXViewEx9(BaseRecordHandler):
 
