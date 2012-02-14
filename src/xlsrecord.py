@@ -2733,6 +2733,7 @@ class SxIvd(BaseRecordHandler):
         self.appendLine("")
         self.appendMultiLine("NOTE: The first one of this record is for row fields, whereas the second one is for column fields.")
 
+
 class SXViewEx9(BaseRecordHandler):
 
     def parseBytes (self):
@@ -2951,6 +2952,7 @@ class SXDBB(BaseRecordHandler):
         for item in self.items:
             self.appendLine(item)
 
+
 class SXDbEx(BaseRecordHandler):
 
     def parseBytes (self):
@@ -3079,6 +3081,86 @@ class SXFDB(BaseRecordHandler):
         self.appendLineInt("number of cache items in base field (for grouped field)", self.cisxoper)
         self.appendLineInt("number of cache items in collection", self.catm)
         self.appendLineString("field name", self.stFieldName)
+
+
+class SXLI(BaseRecordHandler):
+
+    itemTypes = {
+        0x00: 'value in the data',
+        0x01: 'automatic subtotal selection',
+        0x02: 'SUM',
+        0x03: 'COUNTA',
+        0x04: 'COUNT',
+        0x05: 'AVERAGE',
+        0x06: 'MAX',
+        0x07: 'MIN',
+        0x08: 'PRODUCT',
+        0x09: 'STDEV',
+        0x0A: 'STDEVP',
+        0x0B: 'VAR',
+        0x0C: 'VARP',
+        0x0D: 'grand total',
+        0x0E: 'blank line'
+    }
+
+    class Item(object):
+        def __init__ (self, strm):
+            self.cSic = strm.readSignedInt(2)
+            flag = strm.readUnsignedInt(2)
+            self.itmType = (flag & 0x7FFF)
+            self.isxviMac = strm.readSignedInt(2)
+            flag = strm.readUnsignedInt(2)
+            self.fMultiDataName   = (flag & 0x0001) != 0
+            self.iData            = (flag & 0x01FE) / 2
+            self.fSbt             = (flag & 0x0200) != 0
+            self.fBlock           = (flag & 0x0400) != 0
+            self.fGrand           = (flag & 0x0800) != 0
+            self.fMultiDataOnAxis = (flag & 0x1000) != 0
+            G                     = (flag & 0x2000) != 0 # unused
+            H                     = (flag & 0x4000) != 0 # unused
+            I                     = (flag & 0x8000) != 0 # reserved
+            self.rgisxvi = []
+            if self.isxviMac > 0:
+                for i in xrange(0, self.isxviMac):
+                    id = strm.readSignedInt(2)
+                    self.rgisxvi.append(id)
+
+        def appendLines (self, parent):
+            parent.appendLine("------------")
+            parent.appendLine(" pivot line")
+            parent.appendLine("------------")
+            parent.appendLineInt("pivot item index count", self.cSic)
+            parent.appendLineString("item type", globals.getValueOrUnknown(SXLI.itemTypes, self.itmType))
+            parent.appendLineInt("number of elements", self.isxviMac)
+            if self.fMultiDataName:
+                parent.appendLineString("data field name", "subtotal")
+            else:
+                parent.appendLineString("data field name", "total")
+            parent.appendLineInt("data item index", self.iData)
+            parent.appendLineBoolean("subtotal", self.fSbt)
+            parent.appendLineBoolean("block total", self.fBlock)
+            parent.appendLineBoolean("grand total", self.fGrand)
+            parent.appendLineBoolean("multi data on axis", self.fMultiDataOnAxis)
+            s = ""
+            first = True
+            for id in self.rgisxvi:
+                if first:
+                    first = False
+                else:
+                    s += ","
+                s += "%d"%id
+            parent.appendLineString("pivot line entry", s)
+
+    def __parseBytes (self):
+        self.items = []
+        while not self.isEndOfRecord():
+            obj = SXLI.Item(self)
+            self.items.append(obj)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        for item in self.items:
+            item.appendLines(self)
 
 
 class SXStreamID(BaseRecordHandler):

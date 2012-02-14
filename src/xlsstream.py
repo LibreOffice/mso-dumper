@@ -124,7 +124,7 @@ recData = {
     0x00B1: ["SXVD", "View Fields", xlsrecord.SXViewFields],
     0x00B2: ["SXVI", "View Item", xlsrecord.SXVI],
     0x00B4: ["SXIVD", "Row/Column Field IDs", xlsrecord.SxIvd],
-    0x00B5: ["SXLI", "Line Item Array"],
+    0x00B5: ["SXLI", "Line Item Array", xlsrecord.SXLI],
     0x00B6: ["SXPI", "Page Item"],
     0x00B8: ["DOCROUTE", "Routing Slip Information"],
     0x00B9: ["RECIPNAME", "Recipient Name"],
@@ -335,6 +335,7 @@ class StreamData(object):
     def isPivotCacheStream (self, name):
         return self.pivotCacheIDs.has_key(name)
 
+
 class XLStream(object):
 
     def __init__ (self, chars, params, strmData):
@@ -411,10 +412,12 @@ class XLStream(object):
         strm = XLDirStream(bytes, self.params, self.strmData)
         return strm
 
+
 class DirType:
     Workbook = 0
     RevisionLog = 1
     PivotTableCache = 2
+
 
 class XLDirStream(object):
 
