@@ -3872,6 +3872,8 @@ class AreaFormat(BaseRecordHandler):
         self.__parseBytes()
         self.appendLineString("foreground color", self.foreColor.toString())
         self.appendLineString("background color", self.backColor.toString())
+        self.appendLineBoolean("automatic fill color", self.auto)
+        self.appendLineBoolean("foreground and background colors inverted", self.invertNeg)
 
     def dumpData(self):
         self.__parseBytes()
