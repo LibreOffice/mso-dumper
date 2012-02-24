@@ -92,11 +92,16 @@ def decodeRK (rkval, auxData = None):
 
     return realVal
 
+
 class LongRGB(object):
     def __init__ (self, r, g, b):
         self.red = r
         self.green = g
         self.blue = b
+
+    def toString (self):
+        return "(R=%d,G=%d,B=%d)"%(self.red, self.green, self.blue)
+
 
 def dumpRgb(rgb):
     return {'r': rgb.red,
@@ -3865,7 +3870,8 @@ class AreaFormat(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
-        # TODO: dump all data
+        self.appendLineString("foreground color", self.foreColor.toString())
+        self.appendLineString("background color", self.backColor.toString())
 
     def dumpData(self):
         self.__parseBytes()
