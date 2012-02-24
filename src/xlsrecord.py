@@ -3832,6 +3832,19 @@ class Frame(BaseRecordHandler):
                           'auto-position': self.autoPosition})
 
 class LineFormat(BaseRecordHandler):
+
+    lineStyles = [
+        'Solid',               # 0x0000
+        'Dash',                # 0x0001
+        'Dot',                 # 0x0002
+        'Dash-dot',            # 0x0003
+        'Dash dot-dot ',       # 0x0004
+        'None',                # 0x0005
+        'Dark gray pattern',   # 0x0006
+        'Medium gray pattern', # 0x0007
+        'Light gray pattern '  # 0x0008
+    ]
+
     def __parseBytes(self):
         self.rgb = self.readLongRGB()
         self.lns = self.readUnsignedInt(2)
@@ -3845,7 +3858,9 @@ class LineFormat(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
-        # TODO: dump all data
+        self.appendLineString("line color", self.rgb.toString())
+        self.appendLineString("line style",
+            globals.getValueOrUnknown(LineFormat.lineStyles, self.lns))
 
     def dumpData(self):
         self.__parseBytes()
@@ -3913,7 +3928,8 @@ class MarkerFormat(BaseRecordHandler):
 
     def parseBytes (self):
         self.__parseBytes()
-        # TODO: dump all data
+        self.appendLineString("foreground color", self.rgbFore.toString())
+        self.appendLineString("background color", self.rgbBack.toString())
 
     def dumpData(self):
         self.__parseBytes()
@@ -4108,13 +4124,20 @@ class CatLab(BaseRecordHandler):
                            'auto-catlabel-real': self.autoCatLabelReal})
 
 class Chart3DBarShape(BaseRecordHandler):
+
     def __parseBytes(self):
         self.riser = self.readUnsignedInt(1)
         self.taper = self.readUnsignedInt(1)
 
     def parseBytes (self):
         self.__parseBytes()
-        # TODO: dump all data
+        s = ''
+        if self.riser:
+            s = 'ellipse'
+        else:
+            s = 'rectangle'
+        self.appendLineString("base shape of data points", s)
+        self.appendLineInt("taper style", self.taper)
 
     def dumpData(self):
         self.__parseBytes()
