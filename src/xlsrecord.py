@@ -3306,7 +3306,7 @@ class Sxvd(BaseRecordHandler):
         self.appendLineBoolean("  stdevp", self.fStdevp)
         self.appendLineBoolean("  variance", self.fVariance)
         self.appendLineBoolean("  variancep", self.fVariancep)
-        self.appendLineInt("number of pivot items", self.cItm)
+        self.appendLineInt("number of SXVI records that follow", self.cItm)
         self.appendLineString("caption", self.stName)
 
 class SXViewFieldsEx(BaseRecordHandler):
