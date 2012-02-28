@@ -3258,66 +3258,56 @@ class SXViewSource(BaseRecordHandler):
         self.appendLine("data source type: %s"%srcType)
 
 
-class SXViewFields(BaseRecordHandler):
+class Sxvd(BaseRecordHandler):
+
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(2)
+        self.sxaxisRw   = (flag & 0x0001) != 0
+        self.sxaxisCol  = (flag & 0x0002) != 0
+        self.sxaxisPage = (flag & 0x0004) != 0
+        self.sxaxisData = (flag & 0x0008) != 0
+        self.cSub = self.readUnsignedInt(2)
+        flag = self.readUnsignedInt(2)
+        self.fDefault   = (flag & 0x0001) != 0 # A
+        self.fSum       = (flag & 0x0002) != 0 # B
+        self.fCounta    = (flag & 0x0004) != 0 # C
+        self.fAverage   = (flag & 0x0008) != 0 # D
+        self.fMax       = (flag & 0x0010) != 0 # E
+        self.fMin       = (flag & 0x0020) != 0 # F
+        self.fProduct   = (flag & 0x0040) != 0 # G
+        self.fCount     = (flag & 0x0080) != 0 # H
+        self.fStdev     = (flag & 0x0100) != 0 # I
+        self.fStdevp    = (flag & 0x0200) != 0 # J
+        self.fVariance  = (flag & 0x0400) != 0 # K
+        self.fVariancep = (flag & 0x0800) != 0 # L
+        self.cItm = self.readSignedInt(2)
+        cchName = self.readUnsignedInt(2)
+        self.stName = '(null)'
+        if cchName != 0xFFFF:
+            self.stName = self.readXLUnicodeStringNoCch(cchName)
 
     def parseBytes (self):
-        axis          = globals.getSignedInt(self.readBytes(2))
-        subtotalCount = globals.getSignedInt(self.readBytes(2))
-        subtotalType  = globals.getSignedInt(self.readBytes(2))
-        itemCount     = globals.getSignedInt(self.readBytes(2))
-        nameLen       = globals.getSignedInt(self.readBytes(2))
-
-        axisType = 'unknown'
-        if axis == 0:
-            axisType = 'no axis'
-        elif axis == 1:
-            axisType = 'row'
-        elif axis == 2:
-            axisType = 'column'
-        elif axis == 4:
-            axisType = 'page'
-        elif axis == 8:
-            axisType = 'data'
-
-        subtotalTypeName = 'unknown'
-        if subtotalType == 0x0000:
-            subtotalTypeName = 'None'
-        elif subtotalType == 0x0001:
-            subtotalTypeName = 'Default'
-        elif subtotalType == 0x0002:
-            subtotalTypeName = 'Sum'
-        elif subtotalType == 0x0004:
-            subtotalTypeName = 'CountA'
-        elif subtotalType == 0x0008:
-            subtotalTypeName = 'Average'
-        elif subtotalType == 0x0010:
-            subtotalTypeName = 'Max'
-        elif subtotalType == 0x0020:
-            subtotalTypeName = 'Min'
-        elif subtotalType == 0x0040:
-            subtotalTypeName = 'Product'
-        elif subtotalType == 0x0080:
-            subtotalTypeName = 'Count'
-        elif subtotalType == 0x0100:
-            subtotalTypeName = 'Stdev'
-        elif subtotalType == 0x0200:
-            subtotalTypeName = 'StdevP'
-        elif subtotalType == 0x0400:
-            subtotalTypeName = 'Var'
-        elif subtotalType == 0x0800:
-            subtotalTypeName = 'VarP'
-
-        self.appendLine("axis type: %s"%axisType)
-        self.appendLine("number of subtotals: %d"%subtotalCount)
-        self.appendLine("subtotal type: %s"%subtotalTypeName)
-        self.appendLine("number of items: %d"%itemCount)
-
-        if nameLen == -1:
-            self.appendLine("name: null (use name in the cache)")
-        else:
-            name, nameLen = globals.getRichText(self.readRemainingBytes(), nameLen)
-            self.appendLine("name: %s"%name)
-
+        self.__parseBytes()
+        self.appendLine("axes type")
+        self.appendLineBoolean("  row", self.sxaxisRw)
+        self.appendLineBoolean("  column", self.sxaxisCol)
+        self.appendLineBoolean("  page", self.sxaxisPage)
+        self.appendLineBoolean("  data", self.sxaxisData)
+        self.appendLineInt("subtotal count", self.cSub)
+        self.appendLineBoolean("  default", self.fDefault)
+        self.appendLineBoolean("  sum", self.fSum)
+        self.appendLineBoolean("  counta", self.fCounta)
+        self.appendLineBoolean("  average", self.fAverage)
+        self.appendLineBoolean("  max", self.fMax)
+        self.appendLineBoolean("  min", self.fMin)
+        self.appendLineBoolean("  product", self.fProduct)
+        self.appendLineBoolean("  count", self.fCount)
+        self.appendLineBoolean("  stdev", self.fStdev)
+        self.appendLineBoolean("  stdevp", self.fStdevp)
+        self.appendLineBoolean("  variance", self.fVariance)
+        self.appendLineBoolean("  variancep", self.fVariancep)
+        self.appendLineInt("number of pivot items", self.cItm)
+        self.appendLineString("caption", self.stName)
 
 class SXViewFieldsEx(BaseRecordHandler):
 

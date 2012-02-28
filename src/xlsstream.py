@@ -121,7 +121,7 @@ recData = {
     0x00AE: ["SCENMAN", "Scenario Output Data"],
     0x00AF: ["SCENARIO", "Scenario Data"],
     0x00B0: ["SXVIEW", "View Definition", xlsrecord.SXView],
-    0x00B1: ["SXVD", "View Fields", xlsrecord.SXViewFields],
+    0x00B1: ["SXVD", "View Fields", xlsrecord.Sxvd],
     0x00B2: ["SXVI", "View Item", xlsrecord.SXVI],
     0x00B4: ["SXIVD", "Row/Column Field IDs", xlsrecord.SxIvd],
     0x00B5: ["SXLI", "Line Item Array", xlsrecord.SXLI],
