@@ -3617,9 +3617,14 @@ class SXError(BaseRecordHandler):
         pass
 
 
-class SXInteger(BaseRecordHandler):
+class SXInt(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.num = self.readSignedInt(2)
+
     def parseBytes (self):
-        pass
+        self.__parseBytes()
+        self.appendLineInt("value", self.num)
 
 
 class SXString(BaseRecordHandler):
@@ -3631,6 +3636,32 @@ class SXString(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         self.appendLineString("value", self.text)
+
+
+class SXRng(BaseRecordHandler):
+
+    groupTypes = [
+        "numeric value",
+        "seconds",
+        "minutes",
+        "hours",
+        "days",
+        "months",
+        "quarters",
+        "years"
+    ]
+
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(2)
+        self.fAutoStart = (flag & 0x0001) != 0 # A
+        self.fAutoEnd   = (flag & 0x0002) != 0 # B
+        self.iByType    = (flag & 0x001C) / 4  # C
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineBoolean("auto start", self.fAutoStart)
+        self.appendLineBoolean("auto end", self.fAutoEnd)
+        self.appendLineString("group type", globals.getValueOrUnknown(SXRng.groupTypes, self.iByType))
 
 # -------------------------------------------------------------------
 # CT - Change Tracking
