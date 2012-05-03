@@ -101,6 +101,15 @@ append a line to be displayed.
         bytes = self.readBytes(8)
         return globals.getDouble(bytes)
 
+    def readRatio (self):
+        numer = self.readSignedInt(4)
+        denom = self.readSignedInt(4)
+        return "%d/%d"%(numer, denom)
+    
+    def readScaling (self):
+        xratio = self.readRatio()
+        yratio = self.readRatio()
+        return "(%s,%s)"%(xratio, yratio)
 
 class String(BaseRecordHandler):
     """Textual content."""
@@ -431,6 +440,18 @@ class SlideViewInfoAtom(BaseRecordHandler):
         self.appendLine("guides visible: %s"%(self.readUnsignedInt(1)!=0))
         self.appendLine("snap to grid: %s"%(self.readUnsignedInt(1)!=0))
         self.appendLine("snap to shape: %s"%(self.readUnsignedInt(1)!=0))
+
+# -------------------------------------------------------------------
+# special record handler: view info atom
+
+class ViewInfoAtom(BaseRecordHandler):
+    """View Info atom."""
+
+    def parseBytes (self):
+        self.appendLine("current scale: %s"%self.readScaling())
+        self.readBytes(24)
+        self.appendLine("origin: (%d,%d)"%(self.readSignedInt(4), self.readSignedInt(4)))
+        self.appendLine("zoom to fit: %s"%(self.readUnsignedInt(1)!=0))
 
 # -------------------------------------------------------------------
 # special record handlers: ppt97 animation info
