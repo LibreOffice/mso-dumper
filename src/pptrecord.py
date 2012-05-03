@@ -1,3 +1,4 @@
+# -*- tab-width: 4; indent-tabs-mode: nil -*-
 ########################################################################
 #
 #    OpenOffice.org - a multi-platform office productivity suite
@@ -404,6 +405,21 @@ class SlideInfo(BaseRecordHandler):
         self.appendLine("transition type: %d"%(ttype & 0xff00))
         self.appendLine("flags: %d"%self.readUnsignedInt(2))
         self.appendLine("speed: %d"%self.readUnsignedInt(1))
+
+# -------------------------------------------------------------------
+# special record handler: slide persist atom
+
+class SlidePersistAtom(BaseRecordHandler):
+    """Slide Persist atom."""
+
+    def parseBytes (self):
+        slideref=self.readUnsignedInt(4)
+        self.appendLine("logical slide reference: %4.4Xh (%d)"%(slideref, slideref))
+        flags=self.readUnsignedInt(4)
+        self.appendLine("outline view is collapsed: %s"%((flags & 0x02)!=0))
+        self.appendLine("slide contains shapes other than placeholders: %s"%((flags & 0x04)!=0))
+        self.appendLine("number of placeholder texts: %d"%self.readUnsignedInt(4))
+        self.appendLine("unique slide id: %d"%self.readUnsignedInt(4))
 
 # -------------------------------------------------------------------
 # special record handlers: ppt97 animation info

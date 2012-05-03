@@ -1,3 +1,4 @@
+# -*- tab-width: 4; indent-tabs-mode: nil -*-
 ########################################################################
 #
 #    OpenOffice.org - a multi-platform office productivity suite
@@ -217,7 +218,7 @@ recData = {
  1008:  ["DFF_PST_Notes"],
  1009:  ["DFF_PST_NotesAtom"],
  1010:  ["DFF_PST_Environment"],
- 1011:  ["DFF_PST_SlidePersistAtom"],
+ 1011:  ["DFF_PST_SlidePersistAtom", pptrecord.SlidePersistAtom],
  1012:  ["DFF_PST_Scheme"],
  1013:  ["DFF_PST_SchemeAtom"],
  1014:  ["DFF_PST_DocViewInfo"],
