@@ -422,6 +422,17 @@ class SlidePersistAtom(BaseRecordHandler):
         self.appendLine("unique slide id: %d"%self.readUnsignedInt(4))
 
 # -------------------------------------------------------------------
+# special record handler: slide view info atom
+
+class SlideViewInfoAtom(BaseRecordHandler):
+    """Slide View Info atom."""
+
+    def parseBytes (self):
+        self.appendLine("guides visible: %s"%(self.readUnsignedInt(1)!=0))
+        self.appendLine("snap to grid: %s"%(self.readUnsignedInt(1)!=0))
+        self.appendLine("snap to shape: %s"%(self.readUnsignedInt(1)!=0))
+
+# -------------------------------------------------------------------
 # special record handlers: ppt97 animation info
 
 class AnimationInfo(BaseRecordHandler):
