@@ -125,8 +125,8 @@ class PPTDirStream(object):
             self.__print("[%s]"%recData[recordType][0])
         else:
             self.__print("[anon record]")
-        self.__print("(type: %4.4Xh inst: %4.4Xh, vers: %4.4Xh, start: %d, size: %d)"%
-              (recordType, recordInstance, recordVersion, startPos, size))
+        self.__print("(type: %4.4Xh (%d) inst: %4.4Xh (%d), vers: %4.4Xh, start: %d, size: %d)"%
+              (recordType, recordType, recordInstance, recordInstance, recordVersion, startPos, size))
         self.__printSep('=')
 
 
