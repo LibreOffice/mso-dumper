@@ -214,7 +214,7 @@ recData = {
  1004:  ["DFF_PST_SlideBase"],
  1005:  ["DFF_PST_SlideBaseAtom"],
  1006:  ["DFF_PST_Slide"],
- 1007:  ["DFF_PST_SlideAtom"],
+ 1007:  ["DFF_PST_SlideAtom", pptrecord.SlideAtom],
  1008:  ["DFF_PST_Notes"],
  1009:  ["DFF_PST_NotesAtom"],
  1010:  ["DFF_PST_Environment"],
