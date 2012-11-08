@@ -56,7 +56,11 @@ class PLC:
         return (self.totalSize - 4) / (4 + self.structSize) # defined by 2.2.2
 
     def getOffset(self, pos, i):
-        return pos + (4 * (self.getElements() + 1)) + (self.structSize * i)
+        return self.getPLCOffset(pos, self.getElements(), self.structSize, i)
+
+    @staticmethod
+    def getPLCOffset(pos, elements, structSize, i):
+        return pos + (4 * (elements + 1)) + (structSize * i)
 
 class PlcPcd(DOCDirStream, PLC):
     """The PlcPcd structure is a PLC whose data elements are Pcds (8 bytes each)."""
@@ -188,18 +192,21 @@ class PapxInFkp(DOCDirStream):
     
 class BxPap(DOCDirStream):
     """The BxPap structure specifies the offset of a PapxInFkp in PapxFkp."""
-    def __init__(self, bytes, mainStream, offset, size, parentoffset):
+    def __init__(self, bytes, mainStream, offset, parentoffset):
         DOCDirStream.__init__(self, bytes)
         self.pos = offset
-        self.size = size
         self.parentpos = parentoffset
 
     def dump(self):
-        print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.getSize())
         self.printAndSet("bOffset", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
         papxInFkp = PapxInFkp(self.bytes, self.mainStream, self.parentpos + self.bOffset*2)
         papxInFkp.dump()
         print '</bxPap>'
+
+    @staticmethod
+    def getSize():
+        return 13 # in bytes, see 2.9.23
 
 class PapxFkp(DOCDirStream):
     """The PapxFkp structure maps paragraphs, table rows, and table cells to their properties."""
@@ -221,8 +228,8 @@ class PapxFkp(DOCDirStream):
             pos += 4
 
             # rgbx
-            offset = self.pos + ( 4 * ( self.cpara + 1 ) ) + ( 13 * i ) # TODO, 13 is hardwired here
-            bxPap = BxPap(self.bytes, self.mainStream, offset, 13, self.pos) # TODO 13 hardwired
+            offset = PLC.getPLCOffset(self.pos, self.cpara, BxPap.getSize(), i)
+            bxPap = BxPap(self.bytes, self.mainStream, offset, self.pos)
             bxPap.dump()
             print '</rgfc>'
 
