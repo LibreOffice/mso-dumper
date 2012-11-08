@@ -24,7 +24,7 @@ class FcCompressed(DOCDirStream):
         if self.fCompressed:
             return self.fc/2
         else:
-            print "TODO FcCompressed: fCompressed = 0 not supported"
+            print '<todo what="FcCompressed: fCompressed = 0 not supported"/>'
 
 class Pcd(DOCDirStream):
     """The Pcd structure specifies the location of text in the WordDocument Stream and additional properties for this text."""
@@ -46,18 +46,30 @@ class Pcd(DOCDirStream):
         self.pos += 4
         print '</pcd>'
 
-class PlcPcd(DOCDirStream):
+class PLC:
+    """The PLC structure is an array of character positions followed by an array of data elements."""
+    def __init__(self, totalSize, structSize):
+        self.totalSize = totalSize
+        self.structSize = structSize
+
+    def getElements(self):
+        return (self.totalSize - 4) / (4 + self.structSize) # defined by 2.2.2
+
+    def getOffset(self, pos, i):
+        return pos + (4 * (self.getElements() + 1)) + (self.structSize * i)
+
+class PlcPcd(DOCDirStream, PLC):
     """The PlcPcd structure is a PLC whose data elements are Pcds (8 bytes each)."""
     def __init__(self, bytes, mainStream, offset, size):
         DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        PLC.__init__(self, size, 8) # 8 is defined by 2.8.35
         self.pos = offset
         self.size = size
 
     def dump(self):
         print '<plcPcd type="PlcPcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        elements = (self.size - 4) / (4 + 8) # 8 is defined by 2.8.35, the rest is defined by 2.2.2
         pos = self.pos
-        for i in range(elements):
+        for i in range(self.getElements()):
             # aCp
             start = struct.unpack("<I", self.bytes[pos:pos+4])[0]
             end = struct.unpack("<I", self.bytes[pos+4:pos+8])[0]
@@ -65,8 +77,7 @@ class PlcPcd(DOCDirStream):
             pos += 4
 
             # aPcd
-            offset = self.pos + ( 4 * ( elements + 1 ) ) + ( 8 * i ) # 8 as defined by 2.8.35
-            aPcd = Pcd(self.bytes, self.mainStream, offset, 8)
+            aPcd = Pcd(self.bytes, self.mainStream, self.getOffset(self.pos, i), 8)
             aPcd.dump()
 
             offset = aPcd.fc.getTransformedAddress()
@@ -235,18 +246,18 @@ class PnFkpPapx(DOCDirStream):
         papxFkp.dump()
         print '</%s>' % self.name
 
-class PlcBtePapx(DOCDirStream):
+class PlcBtePapx(DOCDirStream, PLC):
     """The PlcBtePapx structure is a PLC that specifies paragraph, table row, or table cell properties."""
     def __init__(self, bytes, mainStream, offset, size):
         DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        PLC.__init__(self, size, 4)
         self.pos = offset
         self.size = size
 
     def dump(self):
         print '<plcBtePapx type="PlcBtePapx" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        elements = (self.size - 4) / (4 + 4) # TODO dedicated PLC class
         pos = self.pos
-        for i in range(elements):
+        for i in range(self.getElements()):
             # aFC
             start = struct.unpack("<I", self.bytes[pos:pos+4])[0]
             end = struct.unpack("<I", self.bytes[pos+4:pos+8])[0]
@@ -254,8 +265,7 @@ class PlcBtePapx(DOCDirStream):
             pos += 4
 
             # aPnBtePapx
-            offset = self.pos + ( 4 * ( elements + 1 ) ) + ( 4 * i ) # TODO, the last "4" is the size of PnFkpPapx
-            aPnBtePapx = PnFkpPapx(self.bytes, self.mainStream, offset, 4, "aPnBtePapx")
+            aPnBtePapx = PnFkpPapx(self.bytes, self.mainStream, self.getOffset(self.pos, i), 4, "aPnBtePapx")
             aPnBtePapx.dump()
             print '</aFC>'
         print '</plcBtePapx>'
