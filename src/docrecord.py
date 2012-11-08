@@ -13,7 +13,7 @@ class FcCompressed(DOCDirStream):
 
     def dump(self):
         print '<fcCompressed type="FcCompressed" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = struct.unpack("<I", self.bytes[self.pos:self.pos+4])[0]
+        buf = self.getInt32()
         self.pos += 4
         self.printAndSet("fc", buf & ((2**32-1) >> 2)) # bits 0..29
         self.printAndSet("fCompressed", self.getBit(buf, 30))
@@ -35,7 +35,7 @@ class Pcd(DOCDirStream):
 
     def dump(self):
         print '<pcd type="Pcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = struct.unpack("<H", self.bytes[self.pos:self.pos+2])[0]
+        buf = self.getInt16()
         self.pos += 2
         self.printAndSet("fNoParaLast", self.getBit(buf, 0))
         self.printAndSet("fR1", self.getBit(buf, 1))
@@ -75,8 +75,8 @@ class PlcPcd(DOCDirStream, PLC):
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
-            start = struct.unpack("<I", self.bytes[pos:pos+4])[0]
-            end = struct.unpack("<I", self.bytes[pos+4:pos+8])[0]
+            start = self.getInt32(pos = pos)
+            end = self.getInt32(pos = pos + 4)
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
             pos += 4
 
@@ -105,7 +105,7 @@ class Sprm(DOCDirStream):
                 7: 3,
                 }
 
-        self.sprm = struct.unpack("<H", self.bytes[self.pos:self.pos+2])[0]
+        self.sprm = self.getInt16()
         self.pos += 2
 
         self.ispmd = (self.sprm & 0x1ff)        # 1-9th bits
@@ -114,11 +114,11 @@ class Sprm(DOCDirStream):
         self.spra  = (self.sprm & 0xe000) >> 13 # 14-16th bits
 
         if self.operandSizeMap[self.spra] == 1:
-            self.operand = ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0])
+            self.operand = self.getInt8()
         elif self.operandSizeMap[self.spra] == 2:
-            self.operand = struct.unpack("<H", self.bytes[self.pos:self.pos+2])[0]
+            self.operand = self.getInt16()
         elif self.operandSizeMap[self.spra] == 4:
-            self.operand = struct.unpack("<I", self.bytes[self.pos:self.pos+4])[0] # TODO generalize this
+            self.operand = self.getInt32()
         else:
             self.operand = "todo"
 
@@ -163,7 +163,7 @@ class GrpPrlAndIstd(DOCDirStream):
     def dump(self):
         print '<grpPrlAndIstd type="GrpPrlAndIstd" offset="%d" size="%d bytes">' % (self.pos, self.size)
         pos = self.pos
-        self.printAndSet("istd", struct.unpack("<H", self.bytes[self.pos:self.pos+2])[0])
+        self.printAndSet("istd", self.getInt16())
         pos += 2
         while (self.size - (pos - self.pos)) > 0:
             prl = Prl(self.bytes, pos)
@@ -179,10 +179,10 @@ class PapxInFkp(DOCDirStream):
 
     def dump(self):
         print '<papxInFkp type="PapxInFkp" offset="%d">' % self.pos
-        self.printAndSet("cb", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
+        self.printAndSet("cb", self.getInt8())
         self.pos += 1
         if self.cb == 0:
-            self.printAndSet("cb_", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
+            self.printAndSet("cb_", self.getInt8())
             self.pos += 1
             grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_)
             grpPrlAndIstd.dump()
@@ -199,7 +199,7 @@ class BxPap(DOCDirStream):
 
     def dump(self):
         print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.getSize())
-        self.printAndSet("bOffset", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
+        self.printAndSet("bOffset", self.getInt8())
         papxInFkp = PapxInFkp(self.bytes, self.mainStream, self.parentpos + self.bOffset*2)
         papxInFkp.dump()
         print '</bxPap>'
@@ -217,12 +217,12 @@ class PapxFkp(DOCDirStream):
 
     def dump(self):
         print '<papxFkp type="PapxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.cpara = ord(struct.unpack("<c", self.bytes[self.pos+self.size-1:self.pos+self.size-1+1])[0])
+        self.cpara = self.getInt8(pos = self.pos + self.size - 1)
         pos = self.pos
         for i in range(self.cpara):
             # rgfc
-            start = struct.unpack("<I", self.bytes[pos:pos+4])[0]
-            end = struct.unpack("<I", self.bytes[pos+4:pos+8])[0]
+            start = self.getInt32(pos = pos)
+            end = self.getInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
             print '<transformed value="%s"/>' % globals.encodeName(self.bytes[start:end])
             pos += 4
@@ -246,7 +246,7 @@ class PnFkpPapx(DOCDirStream):
 
     def dump(self):
         print '<%s type="PnFkpPapx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
-        buf = struct.unpack("<I", self.bytes[self.pos:self.pos+4])[0]
+        buf = self.getInt32()
         self.pos += 4
         self.printAndSet("pn", buf & (2**22-1))
         papxFkp = PapxFkp(self.bytes, self.mainStream, self.pn*512, 512)
@@ -266,8 +266,8 @@ class PlcBtePapx(DOCDirStream, PLC):
         pos = self.pos
         for i in range(self.getElements()):
             # aFC
-            start = struct.unpack("<I", self.bytes[pos:pos+4])[0]
-            end = struct.unpack("<I", self.bytes[pos+4:pos+8])[0]
+            start = self.getInt32(pos = pos)
+            end = self.getInt32(pos = pos + 4)
             print '<aFC index="%d" start="%d" end="%d">' % (i, start, end)
             pos += 4
 
@@ -286,9 +286,9 @@ class Pcdt(DOCDirStream):
 
     def dump(self):
         print '<pcdt type="Pcdt" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("clxt", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
+        self.printAndSet("clxt", self.getInt8())
         self.pos += 1
-        self.printAndSet("lcb", struct.unpack("<I", self.bytes[self.pos:self.pos+4])[0])
+        self.printAndSet("lcb", self.getInt32())
         self.pos += 4
         PlcPcd(self.bytes, self.mainStream, self.pos, self.lcb).dump()
         print '</pcdt>'
@@ -301,7 +301,7 @@ class Clx(DOCDirStream):
 
     def dump(self):
         print '<clx type="Clx" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        firstByte = ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0])
+        firstByte = self.getInt8()
         if firstByte == 0x02:
             print '<info what="Array of Prc, 0 elements"/>'
             Pcdt(self.bytes, self.mainStream, self.pos, self.size).dump()

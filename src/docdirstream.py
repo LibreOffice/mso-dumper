@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import globals
+import struct
 
 class DOCDirStream:
     """Represents one single word file subdirectory, like e.g. 'WordDocument'."""
@@ -22,6 +23,27 @@ class DOCDirStream:
             print '<%s value="%s"/>' % (key, value)
         else:
             print '<%s value="%s">' % (key, value)
+
+    def getInt8(self, bytes = None, pos = None):
+        if not bytes:
+            bytes = self.bytes
+        if not pos:
+            pos = self.pos
+        return ord(struct.unpack("<c", bytes[pos:pos+1])[0])
+
+    def getInt16(self, bytes = None, pos = None):
+        if not bytes:
+            bytes = self.bytes
+        if not pos:
+            pos = self.pos
+        return struct.unpack("<H", bytes[pos:pos+2])[0]
+
+    def getInt32(self, bytes = None, pos = None):
+        if not bytes:
+            bytes = self.bytes
+        if not pos:
+            pos = self.pos
+        return struct.unpack("<I", bytes[pos:pos+4])[0]
 
     def getBit(self, byte, bitNumber):
         return (byte & (1 << bitNumber)) >> bitNumber
