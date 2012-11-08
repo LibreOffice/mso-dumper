@@ -74,6 +74,122 @@ class PlcPcd(DOCDirStream):
             print '</aCP>'
         print '</plcPcd>'
 
+class Sprm(DOCDirStream):
+    """The Sprm structure specifies a modification to a property of a character, paragraph, table, or section."""
+    def __init__(self, bytes, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+        self.operandSizeMap = {
+                0: 1,
+                1: 1,
+                2: 2,
+                3: 4,
+                4: 2,
+                5: 2,
+                # 6: variable,
+                7: 3,
+                }
+
+        self.sprm = struct.unpack("<H", self.bytes[self.pos:self.pos+2])[0]
+        self.pos += 2
+
+        self.ispmd = (self.sprm & 0x1ff)        # 1-9th bits
+        self.fSpec = (self.sprm & 0x200)  >> 9  # 10th bit
+        self.sgc   = (self.sprm & 0x1c00) >> 10 # 11-13th bits
+        self.spra  = (self.sprm & 0xe000) >> 13 # 14-16th bits
+
+        if self.operandSizeMap[self.spra] == 1:
+            self.operand = ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0])
+        elif self.operandSizeMap[self.spra] == 2:
+            self.operand = struct.unpack("<H", self.bytes[self.pos:self.pos+2])[0]
+        elif self.operandSizeMap[self.spra] == 4:
+            self.operand = struct.unpack("<I", self.bytes[self.pos:self.pos+4])[0] # TODO generalize this
+        else:
+            self.operand = "todo"
+
+    def dump(self):
+        sgcmap = {
+                1: 'paragraph',
+                2: 'character',
+                3: 'picture',
+                4: 'section',
+                5: 'table'
+                }
+        print '<sprm value="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s" operand="%s"/>' % (
+                hex(self.sprm), hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), hex(self.operand)
+                )
+
+    def getOperandSize(self):
+        return self.operandSizeMap[self.spra]
+
+class Prl(DOCDirStream):
+    """The Prl structure is a Sprm that is followed by an operand."""
+    def __init__(self, bytes, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<prl type="Prl" offset="%d">' % self.pos
+        self.sprm = Sprm(self.bytes, self.pos)
+        self.pos += 2
+        self.sprm.dump()
+        print '</prl>'
+
+    def getSize(self):
+        return 2 + self.sprm.getOperandSize()
+
+class GrpPrlAndIstd(DOCDirStream):
+    """The GrpPrlAndIstd structure specifies the style and properties that are applied to a paragraph, a table row, or a table cell."""
+    def __init__(self, bytes, offset, size):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<grpPrlAndIstd type="GrpPrlAndIstd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        pos = self.pos
+        self.printAndSet("istd", struct.unpack("<H", self.bytes[self.pos:self.pos+2])[0])
+        pos += 2
+        while (self.size - (pos - self.pos)) > 0:
+            prl = Prl(self.bytes, pos)
+            prl.dump()
+            pos += prl.getSize()
+        print '</grpPrlAndIstd>'
+
+class PapxInFkp(DOCDirStream):
+    """The PapxInFkp structure specifies a set of text properties."""
+    def __init__(self, bytes, mainStream, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<papxInFkp type="PapxInFkp" offset="%d">' % self.pos
+        self.printAndSet("cb", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
+        self.pos += 1
+        if self.cb == 0:
+            self.printAndSet("cb_", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
+            self.pos += 1
+            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_)
+            grpPrlAndIstd.dump()
+        else:
+            print '<todo what="PapxInFkp::dump() first byte is not 0"/>'
+        print '</papxInFkp>'
+    
+class BxPap(DOCDirStream):
+    """The BxPap structure specifies the offset of a PapxInFkp in PapxFkp."""
+    def __init__(self, bytes, mainStream, offset, size, parentoffset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+        self.size = size
+        self.parentpos = parentoffset
+
+    def dump(self):
+        print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("bOffset", ord(struct.unpack("<c", self.bytes[self.pos:self.pos+1])[0]))
+        papxInFkp = PapxInFkp(self.bytes, self.mainStream, self.parentpos + self.bOffset*2)
+        papxInFkp.dump()
+        print '</bxPap>'
+
 class PapxFkp(DOCDirStream):
     """The PapxFkp structure maps paragraphs, table rows, and table cells to their properties."""
     def __init__(self, bytes, mainStream, offset, size):
@@ -86,13 +202,18 @@ class PapxFkp(DOCDirStream):
         self.cpara = ord(struct.unpack("<c", self.bytes[self.pos+self.size-1:self.pos+self.size-1+1])[0])
         pos = self.pos
         for i in range(self.cpara):
-            # aFC
+            # rgfc
             start = struct.unpack("<I", self.bytes[pos:pos+4])[0]
             end = struct.unpack("<I", self.bytes[pos+4:pos+8])[0]
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
             print '<transformed value="%s"/>' % globals.encodeName(self.bytes[start:end])
-            print '</rgfc>'
             pos += 4
+
+            # rgbx
+            offset = self.pos + ( 4 * ( self.cpara + 1 ) ) + ( 13 * i ) # TODO, 13 is hardwired here
+            bxPap = BxPap(self.bytes, self.mainStream, offset, 13, self.pos) # TODO 13 hardwired
+            bxPap.dump()
+            print '</rgfc>'
 
         self.printAndSet("cpara", self.cpara)
         print '</papxFkp>'
@@ -133,7 +254,7 @@ class PlcBtePapx(DOCDirStream):
             pos += 4
 
             # aPnBtePapx
-            offset = self.pos + ( 4 * ( elements + 1 ) ) + ( 4 * i )
+            offset = self.pos + ( 4 * ( elements + 1 ) ) + ( 4 * i ) # TODO, the last "4" is the size of PnFkpPapx
             aPnBtePapx = PnFkpPapx(self.bytes, self.mainStream, offset, 4, "aPnBtePapx")
             aPnBtePapx.dump()
             print '</aFC>'
