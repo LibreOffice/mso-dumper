@@ -57,22 +57,21 @@ class PlcPcd(DOCDirStream):
         print '<plcPcd type="PlcPcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
         elements = (self.size - 4) / (4 + 8) # 8 is defined by 2.8.35, the rest is defined by 2.2.2
         pos = self.pos
-        self.ranges = []
-        self.aPcds = []
         for i in range(elements):
+            # aCp
             start = struct.unpack("<I", self.bytes[pos:pos+4])[0]
             end = struct.unpack("<I", self.bytes[pos+4:pos+8])[0]
-            print '<aCP index="%d" start="%d" end="%d"/>' % (i, start, end)
-            self.ranges.append((start, end))
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
             pos += 4
-        for i in range(elements):
+
+            # aPcd
             offset = self.pos + ( 4 * ( elements + 1 ) ) + ( 8 * i ) # 8 as defined by 2.8.35
-            self.aPcds.append(Pcd(self.bytes, self.mainStream, offset, 8))
-            self.aPcds[-1].dump()
-        for i, item in enumerate(self.ranges):
-            start, end = item
-            offset = self.aPcds[i].fc.getTransformedAddress()
-            print '<aCPTransformed index="%d" value="%s"/>' % (i, globals.encodeName(self.mainStream.bytes[offset:offset+end-start]))
+            aPcd = Pcd(self.bytes, self.mainStream, offset, 8)
+            aPcd.dump()
+
+            offset = aPcd.fc.getTransformedAddress()
+            print '<transformed value="%s"/>' % globals.encodeName(self.mainStream.bytes[offset:offset+end-start])
+            print '</aCP>'
         print '</plcPcd>'
 
 class Pcdt(DOCDirStream):
