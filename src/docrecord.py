@@ -237,6 +237,21 @@ class PapxFkp(DOCDirStream):
         self.printAndSet("cpara", self.cpara)
         print '</papxFkp>'
 
+class PnFkpChpx(DOCDirStream):
+    """The PnFkpChpx structure specifies the location in the WordDocument Stream of a ChpxFkp structure."""
+    def __init__(self, bytes, mainStream, offset, size, name):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+        self.size = size
+        self.name = name
+
+    def dump(self):
+        print '<%s type="PnFkpChpx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
+        buf = self.getInt32()
+        self.pos += 4
+        self.printAndSet("pn", buf & (2**22-1))
+        print '</%s>' % self.name
+
 class PnFkpPapx(DOCDirStream):
     """The PnFkpPapx structure specifies the offset of a PapxFkp in the WordDocument Stream."""
     def __init__(self, bytes, mainStream, offset, size, name):
@@ -253,6 +268,30 @@ class PnFkpPapx(DOCDirStream):
         papxFkp = PapxFkp(self.bytes, self.mainStream, self.pn*512, 512)
         papxFkp.dump()
         print '</%s>' % self.name
+
+class PlcBteChpx(DOCDirStream, PLC):
+    """The PlcBteChpx structure is a PLC that maps the offsets of text in the WordDocument stream to the character properties of that text."""
+    def __init__(self, bytes, mainStream, offset, size):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        PLC.__init__(self, size, 4)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<plcBteChpx type="PlcBteChpx" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aFC
+            start = self.getInt32(pos = pos)
+            end = self.getInt32(pos = pos + 4)
+            print '<aFC index="%d" start="%d" end="%d">' % (i, start, end)
+            pos += 4
+
+            # aPnBteChpx
+            aPnBteChpx = PnFkpChpx(self.bytes, self.mainStream, self.getOffset(self.pos, i), 4, "aPnBteChpx")
+            aPnBteChpx.dump()
+            print '</aFC>'
+        print '</plcBteChpx>'
 
 class PlcBtePapx(DOCDirStream, PLC):
     """The PlcBtePapx structure is a PLC that specifies paragraph, table row, or table cell properties."""
