@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import struct
-from docdirstream import DOCDirStream
 import globals
+from docdirstream import DOCDirStream
+import docsprm
 
 class FcCompressed(DOCDirStream):
     """The FcCompressed structure specifies the location of text in the WordDocument Stream."""
@@ -130,8 +131,8 @@ class Sprm(DOCDirStream):
                 4: 'section',
                 5: 'table'
                 }
-        print '<sprm value="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s" operand="%s"/>' % (
-                hex(self.sprm), hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), hex(self.operand)
+        print '<sprm value="%s" name="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s" operand="%s"/>' % (
+                hex(self.sprm), docsprm.parMap[self.sprm], hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), hex(self.operand)
                 )
 
     def getOperandSize(self):
