@@ -209,6 +209,31 @@ class BxPap(DOCDirStream):
     def getSize():
         return 13 # in bytes, see 2.9.23
 
+class ChpxFkp(DOCDirStream):
+    """The ChpxFkp structure maps text to its character properties."""
+    def __init__(self, bytes, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.bytes)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<chpxFkp type="ChpxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.crun = self.getInt8(pos = self.pos + self.size - 1)
+        pos = self.pos
+        for i in range(self.crun):
+            # rgfc
+            start = self.getInt32(pos = pos)
+            end = self.getInt32(pos = pos + 4)
+            print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
+            print '<transformed value="%s"/>' % globals.encodeName(self.bytes[start:end])
+            pos += 4
+
+            # rgbx
+            print '</rgfc>'
+
+        self.printAndSet("crun", self.crun)
+        print '</chpxFkp>'
+
 class PapxFkp(DOCDirStream):
     """The PapxFkp structure maps paragraphs, table rows, and table cells to their properties."""
     def __init__(self, bytes, mainStream, offset, size):
@@ -250,6 +275,8 @@ class PnFkpChpx(DOCDirStream):
         buf = self.getInt32()
         self.pos += 4
         self.printAndSet("pn", buf & (2**22-1))
+        chpxFkp = ChpxFkp(self.bytes, self.mainStream, self.pn*512, 512)
+        chpxFkp.dump()
         print '</%s>' % self.name
 
 class PnFkpPapx(DOCDirStream):
