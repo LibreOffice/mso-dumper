@@ -131,8 +131,12 @@ class Sprm(DOCDirStream):
                 4: 'section',
                 5: 'table'
                 }
+        nameMap = {
+                1: docsprm.parMap,
+                2: docsprm.chrMap,
+                }
         print '<sprm value="%s" name="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s" operand="%s"/>' % (
-                hex(self.sprm), docsprm.parMap[self.sprm], hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), hex(self.operand)
+                hex(self.sprm), nameMap[self.sgc][self.sprm], hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), hex(self.operand)
                 )
 
     def getOperandSize(self):
@@ -172,6 +176,23 @@ class GrpPrlAndIstd(DOCDirStream):
             pos += prl.getSize()
         print '</grpPrlAndIstd>'
 
+class Chpx(DOCDirStream):
+    """The Chpx structure specifies a set of properties for text."""
+    def __init__(self, bytes, mainStream, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<chpx type="Chpx" offset="%d">' % self.pos
+        self.printAndSet("cb", self.getInt8())
+        self.pos += 1
+        pos = self.pos
+        while (self.cb - (pos - self.pos)) > 0:
+            prl = Prl(self.bytes, pos)
+            prl.dump()
+            pos += prl.getSize()
+        print '</chpx>'
+    
 class PapxInFkp(DOCDirStream):
     """The PapxInFkp structure specifies a set of text properties."""
     def __init__(self, bytes, mainStream, offset):
@@ -229,6 +250,10 @@ class ChpxFkp(DOCDirStream):
             pos += 4
 
             # rgbx
+            offset = PLC.getPLCOffset(self.pos, self.crun, 1, i)
+            chpxOffset = self.getInt8(pos = offset) * 2
+            chpx = Chpx(self.bytes, self.mainStream, self.pos + chpxOffset)
+            chpx.dump()
             print '</rgfc>'
 
         self.printAndSet("crun", self.crun)

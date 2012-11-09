@@ -95,4 +95,15 @@ parMap = {
     0x2471: "sprmPTtwo",
         }
 
+# TODO incomplete
+chrMap = {
+    0x4A43: "sprmCHps",
+    0x6816: "sprmCRsidText",
+    0x4A4F: "sprmCRgFtc0",
+    0x4A51: "sprmCRgFtc2",
+    0x4A61: "sprmCHpsBi",
+    0x0835: "sprmCFBold",
+    0x085C: "sprmCFBoldBi",
+        }
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
