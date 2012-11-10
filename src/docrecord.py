@@ -14,7 +14,7 @@ class FcCompressed(DOCDirStream):
 
     def dump(self):
         print '<fcCompressed type="FcCompressed" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.getInt32()
+        buf = self.getuInt32()
         self.pos += 4
         self.printAndSet("fc", buf & ((2**32-1) >> 2)) # bits 0..29
         self.printAndSet("fCompressed", self.getBit(buf, 30))
@@ -36,7 +36,7 @@ class Pcd(DOCDirStream):
 
     def dump(self):
         print '<pcd type="Pcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.getInt16()
+        buf = self.getuInt16()
         self.pos += 2
         self.printAndSet("fNoParaLast", self.getBit(buf, 0))
         self.printAndSet("fR1", self.getBit(buf, 1))
@@ -76,8 +76,8 @@ class PlcPcd(DOCDirStream, PLC):
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
-            start = self.getInt32(pos = pos)
-            end = self.getInt32(pos = pos + 4)
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
             pos += 4
 
@@ -106,7 +106,7 @@ class Sprm(DOCDirStream):
                 7: 3,
                 }
 
-        self.sprm = self.getInt16()
+        self.sprm = self.getuInt16()
         self.pos += 2
 
         self.ispmd = (self.sprm & 0x1ff)        # 1-9th bits
@@ -115,11 +115,11 @@ class Sprm(DOCDirStream):
         self.spra  = (self.sprm & 0xe000) >> 13 # 14-16th bits
 
         if self.operandSizeMap[self.spra] == 1:
-            self.operand = self.getInt8()
+            self.operand = self.getuInt8()
         elif self.operandSizeMap[self.spra] == 2:
-            self.operand = self.getInt16()
+            self.operand = self.getuInt16()
         elif self.operandSizeMap[self.spra] == 4:
-            self.operand = self.getInt32()
+            self.operand = self.getuInt32()
         else:
             self.operand = "todo"
 
@@ -168,7 +168,7 @@ class GrpPrlAndIstd(DOCDirStream):
     def dump(self):
         print '<grpPrlAndIstd type="GrpPrlAndIstd" offset="%d" size="%d bytes">' % (self.pos, self.size)
         pos = self.pos
-        self.printAndSet("istd", self.getInt16())
+        self.printAndSet("istd", self.getuInt16())
         pos += 2
         while (self.size - (pos - self.pos)) > 0:
             prl = Prl(self.bytes, pos)
@@ -184,7 +184,7 @@ class Chpx(DOCDirStream):
 
     def dump(self):
         print '<chpx type="Chpx" offset="%d">' % self.pos
-        self.printAndSet("cb", self.getInt8())
+        self.printAndSet("cb", self.getuInt8())
         self.pos += 1
         pos = self.pos
         while (self.cb - (pos - self.pos)) > 0:
@@ -201,10 +201,10 @@ class PapxInFkp(DOCDirStream):
 
     def dump(self):
         print '<papxInFkp type="PapxInFkp" offset="%d">' % self.pos
-        self.printAndSet("cb", self.getInt8())
+        self.printAndSet("cb", self.getuInt8())
         self.pos += 1
         if self.cb == 0:
-            self.printAndSet("cb_", self.getInt8())
+            self.printAndSet("cb_", self.getuInt8())
             self.pos += 1
             grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_)
             grpPrlAndIstd.dump()
@@ -221,7 +221,7 @@ class BxPap(DOCDirStream):
 
     def dump(self):
         print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.getSize())
-        self.printAndSet("bOffset", self.getInt8())
+        self.printAndSet("bOffset", self.getuInt8())
         papxInFkp = PapxInFkp(self.bytes, self.mainStream, self.parentpos + self.bOffset*2)
         papxInFkp.dump()
         print '</bxPap>'
@@ -239,19 +239,19 @@ class ChpxFkp(DOCDirStream):
 
     def dump(self):
         print '<chpxFkp type="ChpxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.crun = self.getInt8(pos = self.pos + self.size - 1)
+        self.crun = self.getuInt8(pos = self.pos + self.size - 1)
         pos = self.pos
         for i in range(self.crun):
             # rgfc
-            start = self.getInt32(pos = pos)
-            end = self.getInt32(pos = pos + 4)
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
             print '<transformed value="%s"/>' % globals.encodeName(self.bytes[start:end])
             pos += 4
 
             # rgbx
             offset = PLC.getPLCOffset(self.pos, self.crun, 1, i)
-            chpxOffset = self.getInt8(pos = offset) * 2
+            chpxOffset = self.getuInt8(pos = offset) * 2
             chpx = Chpx(self.bytes, self.mainStream, self.pos + chpxOffset)
             chpx.dump()
             print '</rgfc>'
@@ -268,12 +268,12 @@ class PapxFkp(DOCDirStream):
 
     def dump(self):
         print '<papxFkp type="PapxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.cpara = self.getInt8(pos = self.pos + self.size - 1)
+        self.cpara = self.getuInt8(pos = self.pos + self.size - 1)
         pos = self.pos
         for i in range(self.cpara):
             # rgfc
-            start = self.getInt32(pos = pos)
-            end = self.getInt32(pos = pos + 4)
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
             print '<transformed value="%s"/>' % globals.encodeName(self.bytes[start:end])
             pos += 4
@@ -297,7 +297,7 @@ class PnFkpChpx(DOCDirStream):
 
     def dump(self):
         print '<%s type="PnFkpChpx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
-        buf = self.getInt32()
+        buf = self.getuInt32()
         self.pos += 4
         self.printAndSet("pn", buf & (2**22-1))
         chpxFkp = ChpxFkp(self.bytes, self.mainStream, self.pn*512, 512)
@@ -314,7 +314,7 @@ class PnFkpPapx(DOCDirStream):
 
     def dump(self):
         print '<%s type="PnFkpPapx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
-        buf = self.getInt32()
+        buf = self.getuInt32()
         self.pos += 4
         self.printAndSet("pn", buf & (2**22-1))
         papxFkp = PapxFkp(self.bytes, self.mainStream, self.pn*512, 512)
@@ -334,8 +334,8 @@ class PlcBteChpx(DOCDirStream, PLC):
         pos = self.pos
         for i in range(self.getElements()):
             # aFC
-            start = self.getInt32(pos = pos)
-            end = self.getInt32(pos = pos + 4)
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
             print '<aFC index="%d" start="%d" end="%d">' % (i, start, end)
             pos += 4
 
@@ -358,8 +358,8 @@ class PlcBtePapx(DOCDirStream, PLC):
         pos = self.pos
         for i in range(self.getElements()):
             # aFC
-            start = self.getInt32(pos = pos)
-            end = self.getInt32(pos = pos + 4)
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
             print '<aFC index="%d" start="%d" end="%d">' % (i, start, end)
             pos += 4
 
@@ -378,9 +378,9 @@ class Pcdt(DOCDirStream):
 
     def dump(self):
         print '<pcdt type="Pcdt" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("clxt", self.getInt8())
+        self.printAndSet("clxt", self.getuInt8())
         self.pos += 1
-        self.printAndSet("lcb", self.getInt32())
+        self.printAndSet("lcb", self.getuInt32())
         self.pos += 4
         PlcPcd(self.bytes, self.mainStream, self.pos, self.lcb).dump()
         print '</pcdt>'
@@ -393,13 +393,91 @@ class Clx(DOCDirStream):
 
     def dump(self):
         print '<clx type="Clx" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        firstByte = self.getInt8()
+        firstByte = self.getuInt8()
         if firstByte == 0x02:
             print '<info what="Array of Prc, 0 elements"/>'
             Pcdt(self.bytes, self.mainStream, self.pos, self.size).dump()
         else:
             print '<todo what="Clx::dump() first byte is not 0x02"/>'
         print '</clx>'
+
+class FFID(DOCDirStream):
+    """The FFID structure specifies the font family and character pitch for a font."""
+    def __init__(self, bytes, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+
+    def dump(self):
+        self.ffid = self.getuInt8()
+        self.pos += 1
+
+        self.prq =       (self.ffid & 0x3)       # first two bits
+        self.fTrueType = (self.ffid & 0x4) >> 2  # 3rd bit
+        self.unused1 =   (self.ffid & 0x8) >> 3  # 4th bit
+        self.ff =        (self.ffid & 0x70) >> 4 # 5-7th bits
+        self.unused2 =   (self.ffid & 0x80) >> 7 # 8th bit
+
+        print '<ffid value="%s" prq="%s" fTrueType="%s" ff="%s"/>' % (hex(self.ffid), hex(self.prq), self.fTrueType, hex(self.ff))
+
+class PANOSE(DOCDirStream):
+    """The PANOSE structure defines the PANOSE font classification values for a TrueType font."""
+    def __init__(self, bytes, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<panose type="PANOSE" offset="%s" size="10 bytes">' % self.pos
+        for i in ["bFamilyType", "bSerifStyle", "bWeight", "bProportion", "bContrast", "bStrokeVariation", "bArmStyle", "bLetterform", "bMidline", "bHeight"]:
+            self.printAndSet(i, self.getuInt8())
+            self.pos += 1
+        print '</panose>'
+
+class FontSignature(DOCDirStream):
+    """Contains information identifying the code pages and Unicode subranges for which a given font provides glyphs."""
+    def __init__(self, bytes, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+
+    def dump(self):
+        fsUsb1 = self.getuInt32()
+        self.pos += 4
+        fsUsb2 = self.getuInt32()
+        self.pos += 4
+        fsUsb3 = self.getuInt32()
+        self.pos += 4
+        fsUsb4 = self.getuInt32()
+        self.pos += 4
+        fsCsb1 = self.getuInt32()
+        self.pos += 4
+        fsCsb2 = self.getuInt32()
+        self.pos += 4
+        print '<fontSignature fsUsb1="%s" fsUsb2="%s" fsUsb3="%s" fsUsb4="%s" fsCsb1="%s" fsCsb2="%s"/>' % (
+                hex(fsUsb1), hex(fsUsb2), hex(fsUsb3), hex(fsUsb4), hex(fsCsb1), hex(fsCsb2)
+                )
+
+class FFN(DOCDirStream):
+    """The FFN structure specifies information about a font that is used in the document."""
+    def __init__(self, bytes, mainStream, offset, size):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<ffn type="FFN" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        FFID(self.bytes, self.pos).dump()
+        self.pos += 1
+        self.printAndSet("wWeight", self.getInt16(), hexdump = False)
+        self.pos += 2
+        self.printAndSet("chs", self.getuInt8(), hexdump = False)
+        self.pos += 1
+        self.printAndSet("ixchSzAlt", self.getuInt8())
+        self.pos += 1
+        PANOSE(self.bytes, self.pos).dump()
+        self.pos += 10
+        FontSignature(self.bytes, self.pos).dump()
+        self.pos += 24
+        print '<xszFfn value="%s"/>' % self.getString()
+        print '</ffn>'
 
 class SttbfFfn(DOCDirStream):
     """The SttbfFfn structure is an STTB whose strings are FFN records that specify details of system fonts."""
@@ -410,14 +488,15 @@ class SttbfFfn(DOCDirStream):
 
     def dump(self):
         print '<sttbfFfn type="SttbfFfn" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("cData", self.getInt16())
+        self.printAndSet("cData", self.getuInt16())
         self.pos += 2
-        self.printAndSet("cbExtra", self.getInt16())
+        self.printAndSet("cbExtra", self.getuInt16())
         self.pos += 2
         for i in range(self.cData):
-            cchData = self.getInt8()
+            cchData = self.getuInt8()
             self.pos += 1
             print '<cchData index="%d" ofset="%d" size="%d bytes">' % (i, self.pos, cchData)
+            FFN(self.bytes, self.mainStream, self.pos, cchData).dump()
             self.pos += cchData
             print '</cchData>'
         print '</sttbfFfn>'

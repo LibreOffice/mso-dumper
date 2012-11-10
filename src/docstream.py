@@ -52,38 +52,38 @@ class WordDocumentStream(DOCDirStream):
     def dumpFib(self):
         print '<fib>'
         self.dumpFibBase("base")
-        self.printAndSet("csw", self.getInt16())
+        self.printAndSet("csw", self.getuInt16())
         self.pos += 2
         self.dumpFibRgW97("fibRgW")
-        self.printAndSet("cslw", self.getInt16())
+        self.printAndSet("cslw", self.getuInt16())
         self.pos += 2
         self.dumpFibRgLw97("fibRgLw")
-        self.printAndSet("cbRgFcLcb", self.getInt16())
+        self.printAndSet("cbRgFcLcb", self.getuInt16())
         self.pos += 2
         self.dumpFibRgFcLcb("fibRgFcLcbBlob")
-        self.printAndSet("cswNew", self.getInt16())
+        self.printAndSet("cswNew", self.getuInt16())
         self.pos += 2
         print '</fib>'
 
     def dumpFibBase(self, name):
         print '<%s type="FibBase" size="32 bytes">' % name
 
-        self.printAndSet("wIndent", self.getInt16())
+        self.printAndSet("wIndent", self.getuInt16())
         self.pos += 2
 
-        self.printAndSet("nFib", self.getInt16())
+        self.printAndSet("nFib", self.getuInt16())
         self.pos += 2
 
-        self.printAndSet("unused", self.getInt16())
+        self.printAndSet("unused", self.getuInt16())
         self.pos += 2
 
-        self.printAndSet("lid", self.getInt16())
+        self.printAndSet("lid", self.getuInt16())
         self.pos += 2
 
-        self.printAndSet("pnNext", self.getInt16())
+        self.printAndSet("pnNext", self.getuInt16())
         self.pos += 2
 
-        buf = self.getInt16()
+        buf = self.getuInt16()
         self.pos += 2
         self.printAndSet("fDot", self.getBit(buf, 0))
         self.printAndSet("fGlsy", self.getBit(buf, 1))
@@ -102,16 +102,16 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("fFarEast", self.getBit(buf, 14))
         self.printAndSet("fObfuscated", self.getBit(buf, 15))
 
-        self.printAndSet("nFibBack", self.getInt16())
+        self.printAndSet("nFibBack", self.getuInt16())
         self.pos += 2
 
-        self.printAndSet("lKey", self.getInt32())
+        self.printAndSet("lKey", self.getuInt32())
         self.pos += 4
 
-        self.printAndSet("envr", self.getInt8())
+        self.printAndSet("envr", self.getuInt8())
         self.pos += 1
 
-        buf = self.getInt8()
+        buf = self.getuInt8()
         self.pos += 1
 
         self.printAndSet("fMac", self.getBit(buf, 0))
@@ -121,13 +121,13 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("reserved2", self.getBit(buf, 4))
         self.printAndSet("fSpare0",  (buf & (2**3-1)))
 
-        self.printAndSet("reserved3", self.getInt16())
+        self.printAndSet("reserved3", self.getuInt16())
         self.pos += 2
-        self.printAndSet("reserved4", self.getInt16())
+        self.printAndSet("reserved4", self.getuInt16())
         self.pos += 2
-        self.printAndSet("reserved5", self.getInt32())
+        self.printAndSet("reserved5", self.getuInt32())
         self.pos += 4
-        self.printAndSet("reserved6", self.getInt32())
+        self.printAndSet("reserved6", self.getuInt32())
         self.pos += 4
 
         print '</%s>' % name
@@ -136,9 +136,9 @@ class WordDocumentStream(DOCDirStream):
         print '<%s type="FibRgW97" size="28 bytes">' % name
 
         for i in range(13):
-            self.printAndSet("reserved%d" % (i + 1), self.getInt16())
+            self.printAndSet("reserved%d" % (i + 1), self.getuInt16())
             self.pos += 2
-        self.printAndSet("lidFE", self.getInt16())
+        self.printAndSet("lidFE", self.getuInt16())
         self.pos += 2
 
         print '</%s>' % name
@@ -171,7 +171,7 @@ class WordDocumentStream(DOCDirStream):
                 "reserved14",
                 ]
         for i in fields:
-            self.printAndSet(i, self.getInt32())
+            self.printAndSet(i, self.getuInt32())
             self.pos += 4
 
         print '</%s>' % name
@@ -375,7 +375,7 @@ class WordDocumentStream(DOCDirStream):
             ["lcbSttbfUssr"],
                 ]
         for i in fields:
-            self.printAndSet(i[0], self.getInt32(), end = len(i) == 1)
+            self.printAndSet(i[0], self.getuInt32(), end = len(i) == 1)
             self.pos += 4
             if len(i) > 1:
                 i[1]()
@@ -445,7 +445,7 @@ class WordDocumentStream(DOCDirStream):
             "lcbBkdEdnOld", 
                 ]
         for i in fields:
-            self.printAndSet(i, self.getInt32())
+            self.printAndSet(i, self.getuInt32())
             self.pos += 4
 
     def __dumpFibRgFcLcb2002(self):
@@ -509,7 +509,7 @@ class WordDocumentStream(DOCDirStream):
             "lcbPlcflvcMixedXP",
                 ]
         for i in fields:
-            self.printAndSet(i, self.getInt32())
+            self.printAndSet(i, self.getuInt32())
             self.pos += 4
 
     def dumpFibRgFcLcb2002(self, name):

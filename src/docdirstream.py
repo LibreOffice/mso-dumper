@@ -24,26 +24,47 @@ class DOCDirStream:
         else:
             print '<%s value="%s">' % (key, value)
 
-    def getInt8(self, bytes = None, pos = None):
+    def getuInt8(self, bytes = None, pos = None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
-        return ord(struct.unpack("<c", bytes[pos:pos+1])[0])
+        return struct.unpack("<B", bytes[pos:pos+1])[0]
 
-    def getInt16(self, bytes = None, pos = None):
+    def getuInt16(self, bytes = None, pos = None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
         return struct.unpack("<H", bytes[pos:pos+2])[0]
 
-    def getInt32(self, bytes = None, pos = None):
+    def getInt16(self, bytes = None, pos = None):
+        if not bytes:
+            bytes = self.bytes
+        if not pos:
+            pos = self.pos
+        return struct.unpack("<h", bytes[pos:pos+2])[0]
+
+    def getuInt32(self, bytes = None, pos = None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
         return struct.unpack("<I", bytes[pos:pos+4])[0]
+
+    def getString(self):
+        bytes = []
+        while True:
+            i = self.getuInt8()
+            self.pos += 1
+            j = self.getuInt8()
+            self.pos += 1
+            if i != 0 or j != 0:
+                bytes.append(i)
+                bytes.append(j)
+            else:
+                break
+        return globals.getUTF8FromUTF16("".join(map(lambda x: chr(x), bytes)))
 
     def getBit(self, byte, bitNumber):
         return (byte & (1 << bitNumber)) >> bitNumber
