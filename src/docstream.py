@@ -218,7 +218,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcPlcfSea"],
             ["lcbPlcfSea"],
             ["fcSttbfFfn"],
-            ["lcbSttbfFfn"],
+            ["lcbSttbfFfn", self.handleLcbSttbfFfn],
             ["fcPlcfFldMom"],
             ["lcbPlcfFldMom"],
             ["fcPlcfFldHdr"],
@@ -398,6 +398,12 @@ class WordDocumentStream(DOCDirStream):
         size = self.lcbPlcfBtePapx
         plcBtePapx = docrecord.PlcBtePapx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
         plcBtePapx.dump()
+
+    def handleLcbSttbfFfn(self):
+        offset = self.fcSttbfFfn
+        size = self.lcbSttbfFfn
+        sttbfFfn = docrecord.SttbfFfn(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        sttbfFfn.dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

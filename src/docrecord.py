@@ -401,4 +401,25 @@ class Clx(DOCDirStream):
             print '<todo what="Clx::dump() first byte is not 0x02"/>'
         print '</clx>'
 
+class SttbfFfn(DOCDirStream):
+    """The SttbfFfn structure is an STTB whose strings are FFN records that specify details of system fonts."""
+    def __init__(self, bytes, mainStream, offset, size):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<sttbfFfn type="SttbfFfn" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("cData", self.getInt16())
+        self.pos += 2
+        self.printAndSet("cbExtra", self.getInt16())
+        self.pos += 2
+        for i in range(self.cData):
+            cchData = self.getInt8()
+            self.pos += 1
+            print '<cchData index="%d" ofset="%d" size="%d bytes">' % (i, self.pos, cchData)
+            self.pos += cchData
+            print '</cchData>'
+        print '</sttbfFfn>'
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
