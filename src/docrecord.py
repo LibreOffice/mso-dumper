@@ -534,6 +534,41 @@ class Stshif(DOCDirStream):
     def getSize(self):
         return 18
 
+class LSD(DOCDirStream):
+    """The LSD structure specifies the properties to be used for latent application-defined styles (see StshiLsd) when they are created."""
+    def __init__(self, bytes, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.pos = offset
+
+    def dump(self):
+        buf = self.getuInt16()
+        self.printAndSet("fLocked", self.getBit(buf, 1))
+        self.printAndSet("fSemiHidden", self.getBit(buf, 2))
+        self.printAndSet("fUnhideWhenUsed", self.getBit(buf, 3))
+        self.printAndSet("fQFormat", self.getBit(buf, 4))
+        self.printAndSet("iPriority", (buf & 0xfff0) >> 4) # 5-16th bits
+        self.pos += 2
+        self.printAndSet("fReserved", self.getuInt16())
+        self.pos += 2
+
+class StshiLsd(DOCDirStream):
+    """The StshiLsd structure specifies latent style data for application-defined styles."""
+    def __init__(self, bytes, stshi, offset):
+        DOCDirStream.__init__(self, bytes)
+        self.stshi = stshi
+        self.pos = offset
+    
+    def dump(self):
+        print '<stshiLsd type="StshiLsd" offset="%d">' % (self.pos)
+        self.printAndSet("cbLSD", self.getuInt16())
+        self.pos += 2
+        for i in range(self.stshi.stshif.stiMaxWhenSaved):
+            print '<mpstiilsd index="%d" type="LSD">' % i
+            LSD(self.bytes, self.pos).dump()
+            print '</mpstiilsd>'
+            self.pos += self.cbLSD
+        print '</stshiLsd>'
+
 class STSHI(DOCDirStream):
     """The STSHI structure specifies general stylesheet and related information."""
     def __init__(self, bytes, mainStream, offset, size):
@@ -543,9 +578,13 @@ class STSHI(DOCDirStream):
 
     def dump(self):
         print '<stshi type="STSHI" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        stshif = Stshif(self.bytes, self.mainStream, self.pos)
-        stshif.dump()
-        self.pos += stshif.getSize()
+        self.stshif = Stshif(self.bytes, self.mainStream, self.pos)
+        self.stshif.dump()
+        self.pos += self.stshif.getSize()
+        self.printAndSet("ftcBi", self.getuInt16())
+        self.pos += 2
+        stshiLsd = StshiLsd(self.bytes, self, self.pos)
+        stshiLsd.dump()
         print '</stshi>'
 
 class LPStshi(DOCDirStream):
@@ -558,9 +597,153 @@ class LPStshi(DOCDirStream):
         print '<lpstshi type="LPStshi" offset="%d">' % self.pos
         self.printAndSet("cbStshi", self.getuInt16(), hexdump = False)
         self.pos += 2
-        stshi = STSHI(self.bytes, self.mainStream, self.pos, self.cbStshi)
-        stshi.dump()
+        self.stshi = STSHI(self.bytes, self.mainStream, self.pos, self.cbStshi)
+        self.stshi.dump()
+        self.pos += self.cbStshi
         print '</lpstshi>'
+
+class StdfBase(DOCDirStream):
+    """The Stdf structure specifies general information about the style."""
+    def __init__(self, bytes, mainStream, offset):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+        self.size = 10
+
+    def dump(self):
+        print '<stdfBase type="StdfBase" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("sti", buf & 0x0fff) # 1..12th bits
+        self.printAndSet("fScratch", self.getBit(buf, 13))
+        self.printAndSet("fInvalHeight", self.getBit(buf, 14))
+        self.printAndSet("fHasUpe", self.getBit(buf, 15))
+        self.printAndSet("fMassCopy", self.getBit(buf, 16))
+        buf = self.getuInt16()
+        self.pos += 2
+        self.stk = buf & 0x000f # 1..4th bits
+        stkmap = {
+                1: "paragraph",
+                2: "character",
+                3: "table",
+                4: "numbering"
+                }
+        print '<stk value="%d" name="%s"/>' % (self.stk, stkmap[self.stk])
+        self.printAndSet("istdBase", (buf & 0xfff0) >> 4) # 5..16th bits
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("cupx", buf & 0x000f) # 1..4th bits
+        self.printAndSet("istdNext", (buf & 0xfff0) >> 4) # 5..16th bits
+        self.printAndSet("bchUpe", self.getuInt16(), hexdump = False)
+        self.pos += 2
+        self.printAndSet("grfstd", self.getuInt16()) # TODO dedicated GRFSTD class
+        self.pos += 2
+        print '</stdfBase>'
+
+class StdfPost2000(DOCDirStream):
+    """The StdfPost2000 structure specifies general information about a style."""
+    def __init__(self, stdf):
+        DOCDirStream.__init__(self, stdf.bytes, mainStream = stdf.mainStream)
+        self.pos = stdf.pos
+        self.size = 8
+
+    def dump(self):
+        print '<stdfPost2000 type="StdfPost2000" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("istdLink", buf & 0xfff) # 1..12th bits
+        self.printAndSet("fHasOriginalStyle", self.getBit(buf, 13)) # 13th bit
+        self.printAndSet("fSpare", (buf & 0xe000) >> 13) # 14..16th bits
+        self.printAndSet("rsid", self.getuInt32())
+        self.pos += 4
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("iftcHtml", buf & 0x7) # 1..3rd bits
+        self.printAndSet("unused", self.getBit(buf, 4))
+        self.printAndSet("iPriority", (buf & 0xfff0) >> 4) # 5..16th bits
+        print '</stdfPost2000>'
+
+class Stdf(DOCDirStream):
+    """The Stdf structure specifies general information about the style."""
+    def __init__(self, std):
+        DOCDirStream.__init__(self, std.bytes, mainStream = std.mainStream)
+        self.std = std
+        self.pos = std.pos
+
+    def dump(self):
+        print '<stdf type="Stdf" offset="%d">' % self.pos
+        stdfBase = StdfBase(self.bytes, self.mainStream, self.pos)
+        stdfBase.dump()
+        self.pos += stdfBase.size
+        stsh = self.std.lpstd.stsh # root of the stylesheet table
+        cbSTDBaseInFile = stsh.lpstshi.stshi.stshif.cbSTDBaseInFile
+        print '<stdfPost2000OrNone cbSTDBaseInFile="%s">' % hex(cbSTDBaseInFile)
+        if cbSTDBaseInFile == 0x0012:
+            stdfPost2000 = StdfPost2000(self)
+            stdfPost2000.dump()
+            self.pos = stdfPost2000.pos
+        print '</stdfPost2000OrNone>'
+        print '</stdf>'
+
+class Xst(DOCDirStream):
+    """The Xst structure is a string. The string is prepended by its length and is not null-terminated."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<xst type="Xst" offset="%d">' % self.pos
+        self.printAndSet("cch", self.getuInt16())
+        self.pos += 2
+        print '<rgtchar value="%s"/>' % self.getString()
+        self.pos -= 2 # TODO this will break if not inside an Xstz, use self.cch instead
+        print '</xst>'
+
+class Xstz(DOCDirStream):
+    """The Xstz structure is a string. The string is prepended by its length and is null-terminated."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<xstz type="Xstz" offset="%d">' % self.pos
+        xst = Xst(self)
+        xst.dump()
+        self.pos = xst.pos
+        self.printAndSet("chTerm", self.getuInt16())
+        self.pos += 2
+        print '</xstz>'
+
+class STD(DOCDirStream):
+    """The STD structure specifies a style definition."""
+    def __init__(self, lpstd):
+        DOCDirStream.__init__(self, lpstd.bytes, mainStream = lpstd.mainStream)
+        self.lpstd = lpstd
+        self.pos = lpstd.pos
+        self.size = lpstd.cbStd
+
+    def dump(self):
+        print '<std type="STD" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        stdf = Stdf(self)
+        stdf.dump()
+        self.pos = stdf.pos
+        xstzName = Xstz(self)
+        xstzName.dump()
+        self.pos = xstzName.pos
+        print '</std>'
+
+class LPStd(DOCDirStream):
+    """The LPStd structure specifies a length-prefixed style definition."""
+    def __init__(self, stsh):
+        DOCDirStream.__init__(self, stsh.bytes, mainStream = stsh.mainStream)
+        self.stsh = stsh
+        self.pos = stsh.pos
+
+    def dump(self):
+        self.printAndSet("cbStd", self.getuInt16())
+        self.pos += 2
+        std = STD(self)
+        std.dump()
+        self.pos = std.pos
 
 class STSH(DOCDirStream):
     """The STSH structure specifies the stylesheet for a document."""
@@ -571,8 +754,16 @@ class STSH(DOCDirStream):
 
     def dump(self):
         print '<stsh type="STSH" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        lpstshi = LPStshi(self.bytes, self.mainStream, self.pos)
-        lpstshi.dump()
+        self.lpstshi = LPStshi(self.bytes, self.mainStream, self.pos)
+        self.lpstshi.dump()
+        self.pos = self.lpstshi.pos
+        for i in range(self.lpstshi.stshi.stshif.cstd):
+            print '<rglpstd index="%d" type="LPStd">' % i
+            lpstd = LPStd(self)
+            lpstd.dump()
+            self.pos = lpstd.pos
+            print '</rglpstd>'
+            break # FIXME
         print '</stsh>'
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
