@@ -190,7 +190,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcStshfOrig"],
             ["lcbStshfOrig"],
             ["fcStshf"],
-            ["lcbStshf"],
+            ["lcbStshf", self.handleLcbStshf],
             ["fcPlcffndRef"],
             ["lcbPlcffndRef"],
             ["fcPlcffndTxt"],
@@ -404,6 +404,12 @@ class WordDocumentStream(DOCDirStream):
         size = self.lcbSttbfFfn
         sttbfFfn = docrecord.SttbfFfn(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
         sttbfFfn.dump()
+
+    def handleLcbStshf(self):
+        offset = self.fcStshf
+        size = self.lcbStshf
+        stsh = docrecord.STSH(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        stsh.dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

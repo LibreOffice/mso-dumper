@@ -495,10 +495,84 @@ class SttbfFfn(DOCDirStream):
         for i in range(self.cData):
             cchData = self.getuInt8()
             self.pos += 1
-            print '<cchData index="%d" ofset="%d" size="%d bytes">' % (i, self.pos, cchData)
+            print '<cchData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
             FFN(self.bytes, self.mainStream, self.pos, cchData).dump()
             self.pos += cchData
             print '</cchData>'
         print '</sttbfFfn>'
+
+class Stshif(DOCDirStream):
+    """The Stshif structure specifies general stylesheet information."""
+    def __init__(self, bytes, mainStream, offset):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+
+    def dump(self):
+        print '<stshif type="Stshif" offset="%d" size="%d bytes">' % (self.pos, self.getSize())
+        self.printAndSet("cstd", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("cbSTDBaseInFile", self.getuInt16())
+        self.pos += 2
+        buf = self.getuInt16()
+        self.printAndSet("fStdStylenamesWritten", buf & 1) # first bit
+        self.printAndSet("fReserved", (buf & 0xfe) >> 1) # 2..16th bits
+        self.pos += 2
+        self.printAndSet("stiMaxWhenSaved", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("istdMaxFixedWhenSaved", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("nVerBuiltInNamesWhenSaved", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("ftcAsci", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("ftcFE", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("ftcOther", self.getuInt16())
+        self.pos += 2
+        print '</stshif>'
+
+    def getSize(self):
+        return 18
+
+class STSHI(DOCDirStream):
+    """The STSHI structure specifies general stylesheet and related information."""
+    def __init__(self, bytes, mainStream, offset, size):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<stshi type="STSHI" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        stshif = Stshif(self.bytes, self.mainStream, self.pos)
+        stshif.dump()
+        self.pos += stshif.getSize()
+        print '</stshi>'
+
+class LPStshi(DOCDirStream):
+    """The LPStshi structure specifies general stylesheet information."""
+    def __init__(self, bytes, mainStream, offset):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+
+    def dump(self):
+        print '<lpstshi type="LPStshi" offset="%d">' % self.pos
+        self.printAndSet("cbStshi", self.getuInt16(), hexdump = False)
+        self.pos += 2
+        stshi = STSHI(self.bytes, self.mainStream, self.pos, self.cbStshi)
+        stshi.dump()
+        print '</lpstshi>'
+
+class STSH(DOCDirStream):
+    """The STSH structure specifies the stylesheet for a document."""
+    def __init__(self, bytes, mainStream, offset, size):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<stsh type="STSH" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        lpstshi = LPStshi(self.bytes, self.mainStream, self.pos)
+        lpstshi.dump()
+        print '</stsh>'
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
