@@ -799,6 +799,19 @@ class LPUpxChpx(DOCDirStream):
         self.pos = uPXPadding.pos
         print '</lPUpxChpx>'
 
+class StkParaLpUpxGrLpUpxRM(DOCDirStream):
+    """The StkParaLPUpxGrLPUpxRM structure specifies revision-marking information and formatting for paragraph styles."""
+    def __init__(self, stkParaGRLPUPX):
+        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
+        self.pos = stkParaGRLPUPX.pos
+
+    def dump(self):
+        print '<stkParaLpUpxGrLpUpxRM type="StkParaLpUpxGrLpUpxRM" offset="%d">' % self.pos
+        self.printAndSet("cbStkParaUpxGrLpUpxRM", self.getuInt16())
+        if self.cbStkParaUpxGrLpUpxRM != 0:
+            print '<todo what="StkParaLpUpxGrLpUpxRM: cbStkParaUpxGrLpUpxRM != 0 not implemented"/>'
+        print '</stkParaLpUpxGrLpUpxRM>'
+
 class StkParaGRLPUPX(DOCDirStream):
     """The StkParaGRLPUPX structure that specifies the formatting properties for a paragraph style."""
     def __init__(self, grLPUpxSw):
@@ -814,6 +827,9 @@ class StkParaGRLPUPX(DOCDirStream):
         lpUpxChpx = LPUpxChpx(self)
         lpUpxChpx.dump()
         self.pos = lpUpxChpx.pos
+        stkParaLpUpxGrLpUpxRM = StkParaLpUpxGrLpUpxRM(self)
+        stkParaLpUpxGrLpUpxRM.dump()
+        self.pos = stkParaLpUpxGrLpUpxRM.pos
         print '</stkParaGRLPUPX>'
 
 class GrLPUpxSw(DOCDirStream):
