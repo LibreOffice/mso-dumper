@@ -671,9 +671,9 @@ class Stdf(DOCDirStream):
 
     def dump(self):
         print '<stdf type="Stdf" offset="%d">' % self.pos
-        stdfBase = StdfBase(self.bytes, self.mainStream, self.pos)
-        stdfBase.dump()
-        self.pos += stdfBase.size
+        self.stdfBase = StdfBase(self.bytes, self.mainStream, self.pos)
+        self.stdfBase.dump()
+        self.pos += self.stdfBase.size
         stsh = self.std.lpstd.stsh # root of the stylesheet table
         cbSTDBaseInFile = stsh.lpstshi.stshi.stshif.cbSTDBaseInFile
         print '<stdfPost2000OrNone cbSTDBaseInFile="%s">' % hex(cbSTDBaseInFile)
@@ -713,6 +713,33 @@ class Xstz(DOCDirStream):
         self.pos += 2
         print '</xstz>'
 
+class StkParaGRLPUPX(DOCDirStream):
+    """The StkParaGRLPUPX structure that specifies the formatting properties for a paragraph style."""
+    def __init__(self, grLPUpxSw):
+        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        self.grLPUpxSw = grLPUpxSw
+        self.pos = grLPUpxSw.pos
+
+    def dump(self):
+        print '<stkParaGRLPUPX type="StkParaGRLPUPX" offset="%d">' % self.pos
+        elements = self.grLPUpxSw.std.stdf.stdfBase.cupx
+        print '</stkParaGRLPUPX>'
+
+class GrLPUpxSw(DOCDirStream):
+    """The GrLPUpxSw structure is an array of variable-size structures that specify the formatting of the style."""
+    def __init__(self, std):
+        DOCDirStream.__init__(self, std.bytes)
+        self.std = std
+        self.pos = std.pos
+
+    def dump(self):
+        stkMap = {
+                1: StkParaGRLPUPX
+                }
+        child = stkMap[self.std.stdf.stdfBase.stk](self)
+        child.dump()
+        self.pos = child.pos
+
 class STD(DOCDirStream):
     """The STD structure specifies a style definition."""
     def __init__(self, lpstd):
@@ -723,12 +750,15 @@ class STD(DOCDirStream):
 
     def dump(self):
         print '<std type="STD" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        stdf = Stdf(self)
-        stdf.dump()
-        self.pos = stdf.pos
+        self.stdf = Stdf(self)
+        self.stdf.dump()
+        self.pos = self.stdf.pos
         xstzName = Xstz(self)
         xstzName.dump()
         self.pos = xstzName.pos
+        grLPUpxSw = GrLPUpxSw(self)
+        grLPUpxSw.dump()
+        self.pos = grLPUpxSw.pos
         print '</std>'
 
 class LPStd(DOCDirStream):
