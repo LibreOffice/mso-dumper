@@ -713,6 +713,92 @@ class Xstz(DOCDirStream):
         self.pos += 2
         print '</xstz>'
 
+class UpxPapx(DOCDirStream):
+    """The UpxPapx structure specifies the paragraph formatting properties that differ from the parent"""
+    def __init__(self, lPUpxPapx):
+        DOCDirStream.__init__(self, lPUpxPapx.bytes)
+        self.lPUpxPapx = lPUpxPapx
+        self.pos = lPUpxPapx.pos
+
+    def dump(self):
+        print '<upxPapx type="UpxPapx" offset="%d">' % self.pos
+        self.printAndSet("istd", self.getuInt16())
+        self.pos += 2
+        size = self.lPUpxPapx.cbUpx - 2
+        pos = 0
+        print '<grpprlPapx offset="%d" size="%d bytes">' % (self.pos, size)
+        while size - pos > 0:
+            prl = Prl(self.bytes, self.pos + pos)
+            prl.dump()
+            pos += prl.getSize()
+        print '</grpprlPapx>'
+        print '</upxPapx>'
+
+class UpxChpx(DOCDirStream):
+    """The UpxChpx structure specifies the character formatting properties that differ from the parent"""
+    def __init__(self, lPUpxChpx):
+        DOCDirStream.__init__(self, lPUpxChpx.bytes)
+        self.lPUpxChpx = lPUpxChpx
+        self.pos = lPUpxChpx.pos
+
+    def dump(self):
+        print '<upxChpx type="UpxChpx" offset="%d">' % self.pos
+        size = self.lPUpxChpx.cbUpx
+        pos = 0
+        print '<grpprlChpx offset="%d" size="%d bytes">' % (self.pos, size)
+        while size - pos > 0:
+            prl = Prl(self.bytes, self.pos + pos)
+            prl.dump()
+            pos += prl.getSize()
+        print '</grpprlChpx>'
+        print '</upxChpx>'
+
+class UPXPadding:
+    """The UPXPadding structure specifies the padding that is used to pad the UpxPapx/Chpx/Tapx structures if any of them are an odd number of bytes in length."""
+    def __init__(self, parent):
+        self.parent = parent
+        self.pos = parent.pos
+
+    def pad(self):
+        if self.parent.cbUpx % 2 == 1:
+            self.pos += 1
+
+class LPUpxPapx(DOCDirStream):
+    """The LPUpxPapx structure specifies paragraph formatting properties."""
+    def __init__(self, stkParaGRLPUPX):
+        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
+        self.pos = stkParaGRLPUPX.pos
+
+    def dump(self):
+        print '<lPUpxPapx type="LPUpxPapx" offset="%d">' % self.pos
+        self.printAndSet("cbUpx", self.getuInt16())
+        self.pos += 2
+        upxPapx = UpxPapx(self)
+        upxPapx.dump()
+        self.pos += self.cbUpx
+        uPXPadding = UPXPadding(self)
+        uPXPadding.pad()
+        self.pos = uPXPadding.pos
+        print '</lPUpxPapx>'
+
+class LPUpxChpx(DOCDirStream):
+    """The LPUpxChpx structure specifies character formatting properties."""
+    def __init__(self, stkParaGRLPUPX):
+        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
+        self.pos = stkParaGRLPUPX.pos
+
+    def dump(self):
+        print '<lPUpxChpx type="LPUpxChpx" offset="%d">' % self.pos
+        self.printAndSet("cbUpx", self.getuInt16())
+        self.pos += 2
+        upxChpx = UpxChpx(self)
+        upxChpx.dump()
+        self.pos += self.cbUpx
+        uPXPadding = UPXPadding(self)
+        uPXPadding.pad()
+        self.pos = uPXPadding.pos
+        print '</lPUpxChpx>'
+
 class StkParaGRLPUPX(DOCDirStream):
     """The StkParaGRLPUPX structure that specifies the formatting properties for a paragraph style."""
     def __init__(self, grLPUpxSw):
@@ -722,7 +808,12 @@ class StkParaGRLPUPX(DOCDirStream):
 
     def dump(self):
         print '<stkParaGRLPUPX type="StkParaGRLPUPX" offset="%d">' % self.pos
-        elements = self.grLPUpxSw.std.stdf.stdfBase.cupx
+        lPUpxPapx = LPUpxPapx(self)
+        lPUpxPapx.dump()
+        self.pos = lPUpxPapx.pos
+        lpUpxChpx = LPUpxChpx(self)
+        lpUpxChpx.dump()
+        self.pos = lpUpxChpx.pos
         print '</stkParaGRLPUPX>'
 
 class GrLPUpxSw(DOCDirStream):
