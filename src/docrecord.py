@@ -102,7 +102,6 @@ class Sprm(DOCDirStream):
                 3: 4,
                 4: 2,
                 5: 2,
-                # 6: variable,
                 7: 3,
                 }
 
@@ -114,12 +113,16 @@ class Sprm(DOCDirStream):
         self.sgc   = (self.sprm & 0x1c00) >> 10 # 11-13th bits
         self.spra  = (self.sprm & 0xe000) >> 13 # 14-16th bits
 
-        if self.operandSizeMap[self.spra] == 1:
+        if self.getOperandSize() == 1:
             self.operand = self.getuInt8()
-        elif self.operandSizeMap[self.spra] == 2:
+        elif self.getOperandSize() == 2:
             self.operand = self.getuInt16()
-        elif self.operandSizeMap[self.spra] == 4:
+        elif self.getOperandSize() == 3:
+            self.operand = self.getuInt32() & 0x0fff
+        elif self.getOperandSize() == 4:
             self.operand = self.getuInt32()
+        elif self.getOperandSize() == 7:
+            self.operand = self.getuInt64() & 0x0fffffff
         else:
             self.operand = "todo"
 
@@ -134,12 +137,17 @@ class Sprm(DOCDirStream):
         nameMap = {
                 1: docsprm.parMap,
                 2: docsprm.chrMap,
+                5: docsprm.tblMap,
                 }
         print '<sprm value="%s" name="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s" operand="%s"/>' % (
                 hex(self.sprm), nameMap[self.sgc][self.sprm], hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), hex(self.operand)
                 )
 
     def getOperandSize(self):
+        if self.spra == 6: # variable
+            if self.sprm == 0xd634:
+                return 7
+            raise Exception()
         return self.operandSizeMap[self.spra]
 
 class Prl(DOCDirStream):
@@ -753,6 +761,25 @@ class UpxChpx(DOCDirStream):
         print '</grpprlChpx>'
         print '</upxChpx>'
 
+class UpxTapx(DOCDirStream):
+    """The UpxTapx structure specifies the table formatting properties that differ from the parent"""
+    def __init__(self, lPUpxTapx):
+        DOCDirStream.__init__(self, lPUpxTapx.bytes)
+        self.lPUpxTapx = lPUpxTapx
+        self.pos = lPUpxTapx.pos
+
+    def dump(self):
+        print '<upxTapx type="UpxTapx" offset="%d">' % self.pos
+        size = self.lPUpxTapx.cbUpx
+        pos = 0
+        print '<grpprlTapx offset="%d" size="%d bytes">' % (self.pos, size)
+        while size - pos > 0:
+            prl = Prl(self.bytes, self.pos + pos)
+            prl.dump()
+            pos += prl.getSize()
+        print '</grpprlTapx>'
+        print '</upxTapx>'
+
 class UPXPadding:
     """The UPXPadding structure specifies the padding that is used to pad the UpxPapx/Chpx/Tapx structures if any of them are an odd number of bytes in length."""
     def __init__(self, parent):
@@ -799,6 +826,37 @@ class LPUpxChpx(DOCDirStream):
         self.pos = uPXPadding.pos
         print '</lPUpxChpx>'
 
+class LPUpxTapx(DOCDirStream):
+    """The LPUpxTapx structure specifies table formatting properties."""
+    def __init__(self, stkParaGRLPUPX):
+        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
+        self.pos = stkParaGRLPUPX.pos
+
+    def dump(self):
+        print '<lPUpxTapx type="LPUpxTapx" offset="%d">' % self.pos
+        self.printAndSet("cbUpx", self.getuInt16())
+        self.pos += 2
+        upxTapx = UpxTapx(self)
+        upxTapx.dump()
+        self.pos += self.cbUpx
+        uPXPadding = UPXPadding(self)
+        uPXPadding.pad()
+        self.pos = uPXPadding.pos
+        print '</lPUpxChpx>'
+
+class StkCharLpUpxGrLpUpxRM(DOCDirStream):
+    """The StkCharLPUpxGrLPUpxRM structure specifies revision-marking information and formatting for character styles."""
+    def __init__(self, stkCharGRLPUPX):
+        DOCDirStream.__init__(self, stkCharGRLPUPX.bytes)
+        self.pos = stkCharGRLPUPX.pos
+
+    def dump(self):
+        print '<stkCharLpUpxGrLpUpxRM type="StkCharLpUpxGrLpUpxRM" offset="%d">' % self.pos
+        self.printAndSet("cbStkCharUpxGrLpUpxRM", self.getuInt16())
+        if self.cbStkCharUpxGrLpUpxRM != 0:
+            print '<todo what="StkCharLpUpxGrLpUpxRM: cbStkCharUpxGrLpUpxRM != 0 not implemented"/>'
+        print '</stkCharLpUpxGrLpUpxRM>'
+
 class StkParaLpUpxGrLpUpxRM(DOCDirStream):
     """The StkParaLPUpxGrLPUpxRM structure specifies revision-marking information and formatting for paragraph styles."""
     def __init__(self, stkParaGRLPUPX):
@@ -811,6 +869,57 @@ class StkParaLpUpxGrLpUpxRM(DOCDirStream):
         if self.cbStkParaUpxGrLpUpxRM != 0:
             print '<todo what="StkParaLpUpxGrLpUpxRM: cbStkParaUpxGrLpUpxRM != 0 not implemented"/>'
         print '</stkParaLpUpxGrLpUpxRM>'
+
+class StkListGRLPUPX(DOCDirStream):
+    """The StkListGRLPUPX structure that specifies the formatting properties for a list style."""
+    def __init__(self, grLPUpxSw):
+        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        self.grLPUpxSw = grLPUpxSw
+        self.pos = grLPUpxSw.pos
+
+    def dump(self):
+        print '<stkListGRLPUPX type="StkListGRLPUPX" offset="%d">' % self.pos
+        lpUpxPapx = LPUpxPapx(self)
+        lpUpxPapx.dump()
+        self.pos = lpUpxPapx.pos
+        print '</stkListGRLPUPX>'
+
+class StkTableGRLPUPX(DOCDirStream):
+    """The StkTableGRLPUPX structure that specifies the formatting properties for a table style."""
+    def __init__(self, grLPUpxSw):
+        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        self.grLPUpxSw = grLPUpxSw
+        self.pos = grLPUpxSw.pos
+
+    def dump(self):
+        print '<stkTableGRLPUPX type="StkTableGRLPUPX" offset="%d">' % self.pos
+        lpUpxTapx = LPUpxTapx(self)
+        lpUpxTapx.dump()
+        self.pos = lpUpxTapx.pos
+        lpUpxPapx = LPUpxPapx(self)
+        lpUpxPapx.dump()
+        self.pos = lpUpxPapx.pos
+        lpUpxChpx = LPUpxChpx(self)
+        lpUpxChpx.dump()
+        self.pos = lpUpxChpx.pos
+        print '</stkTableGRLPUPX>'
+
+class StkCharGRLPUPX(DOCDirStream):
+    """The StkCharGRLPUPX structure that specifies the formatting properties for a character style."""
+    def __init__(self, grLPUpxSw):
+        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        self.grLPUpxSw = grLPUpxSw
+        self.pos = grLPUpxSw.pos
+
+    def dump(self):
+        print '<stkCharGRLPUPX type="StkCharGRLPUPX" offset="%d">' % self.pos
+        lpUpxChpx = LPUpxChpx(self)
+        lpUpxChpx.dump()
+        self.pos = lpUpxChpx.pos
+        stkCharLpUpxGrLpUpxRM = StkCharLpUpxGrLpUpxRM(self)
+        stkCharLpUpxGrLpUpxRM.dump()
+        self.pos = stkCharLpUpxGrLpUpxRM.pos
+        print '</stkCharGRLPUPX>'
 
 class StkParaGRLPUPX(DOCDirStream):
     """The StkParaGRLPUPX structure that specifies the formatting properties for a paragraph style."""
@@ -841,7 +950,10 @@ class GrLPUpxSw(DOCDirStream):
 
     def dump(self):
         stkMap = {
-                1: StkParaGRLPUPX
+                1: StkParaGRLPUPX,
+                2: StkCharGRLPUPX,
+                3: StkTableGRLPUPX,
+                4: StkListGRLPUPX
                 }
         child = stkMap[self.std.stdf.stdfBase.stk](self)
         child.dump()
@@ -878,9 +990,10 @@ class LPStd(DOCDirStream):
     def dump(self):
         self.printAndSet("cbStd", self.getuInt16())
         self.pos += 2
-        std = STD(self)
-        std.dump()
-        self.pos = std.pos
+        if self.cbStd > 0:
+            std = STD(self)
+            std.dump()
+            self.pos = std.pos
 
 class STSH(DOCDirStream):
     """The STSH structure specifies the stylesheet for a document."""
@@ -895,12 +1008,11 @@ class STSH(DOCDirStream):
         self.lpstshi.dump()
         self.pos = self.lpstshi.pos
         for i in range(self.lpstshi.stshi.stshif.cstd):
-            print '<rglpstd index="%d" type="LPStd">' % i
+            print '<rglpstd index="%d" type="LPStd" offset="%d">' % (i, self.pos)
             lpstd = LPStd(self)
             lpstd.dump()
             self.pos = lpstd.pos
             print '</rglpstd>'
-            break # FIXME
         print '</stsh>'
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

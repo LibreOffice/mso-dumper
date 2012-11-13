@@ -52,6 +52,13 @@ class DOCDirStream:
             pos = self.pos
         return struct.unpack("<I", bytes[pos:pos+4])[0]
 
+    def getuInt64(self, bytes = None, pos = None):
+        if not bytes:
+            bytes = self.bytes
+        if not pos:
+            pos = self.pos
+        return struct.unpack("<Q", bytes[pos:pos+8])[0]
+
     def getString(self):
         bytes = []
         while True:
