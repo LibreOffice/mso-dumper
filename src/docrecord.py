@@ -842,7 +842,7 @@ class LPUpxTapx(DOCDirStream):
         uPXPadding = UPXPadding(self)
         uPXPadding.pad()
         self.pos = uPXPadding.pos
-        print '</lPUpxChpx>'
+        print '</lPUpxTapx>'
 
 class StkCharLpUpxGrLpUpxRM(DOCDirStream):
     """The StkCharLPUpxGrLPUpxRM structure specifies revision-marking information and formatting for character styles."""
