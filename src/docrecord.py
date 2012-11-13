@@ -222,21 +222,18 @@ class PapxInFkp(DOCDirStream):
     
 class BxPap(DOCDirStream):
     """The BxPap structure specifies the offset of a PapxInFkp in PapxFkp."""
+    size = 13 # in bytes, see 2.9.23
     def __init__(self, bytes, mainStream, offset, parentoffset):
         DOCDirStream.__init__(self, bytes)
         self.pos = offset
         self.parentpos = parentoffset
 
     def dump(self):
-        print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.getSize())
+        print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.size)
         self.printAndSet("bOffset", self.getuInt8())
         papxInFkp = PapxInFkp(self.bytes, self.mainStream, self.parentpos + self.bOffset*2)
         papxInFkp.dump()
         print '</bxPap>'
-
-    @staticmethod
-    def getSize():
-        return 13 # in bytes, see 2.9.23
 
 class ChpxFkp(DOCDirStream):
     """The ChpxFkp structure maps text to its character properties."""
@@ -287,7 +284,7 @@ class PapxFkp(DOCDirStream):
             pos += 4
 
             # rgbx
-            offset = PLC.getPLCOffset(self.pos, self.cpara, BxPap.getSize(), i)
+            offset = PLC.getPLCOffset(self.pos, self.cpara, BxPap.size, i)
             bxPap = BxPap(self.bytes, self.mainStream, offset, self.pos)
             bxPap.dump()
             print '</rgfc>'
@@ -514,9 +511,10 @@ class Stshif(DOCDirStream):
     def __init__(self, bytes, mainStream, offset):
         DOCDirStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
+        self.size = 18
 
     def dump(self):
-        print '<stshif type="Stshif" offset="%d" size="%d bytes">' % (self.pos, self.getSize())
+        print '<stshif type="Stshif" offset="%d" size="%d bytes">' % (self.pos, self.size)
         self.printAndSet("cstd", self.getuInt16())
         self.pos += 2
         self.printAndSet("cbSTDBaseInFile", self.getuInt16())
@@ -538,9 +536,6 @@ class Stshif(DOCDirStream):
         self.printAndSet("ftcOther", self.getuInt16())
         self.pos += 2
         print '</stshif>'
-
-    def getSize(self):
-        return 18
 
 class LSD(DOCDirStream):
     """The LSD structure specifies the properties to be used for latent application-defined styles (see StshiLsd) when they are created."""
@@ -588,7 +583,7 @@ class STSHI(DOCDirStream):
         print '<stshi type="STSHI" offset="%d" size="%d bytes">' % (self.pos, self.size)
         self.stshif = Stshif(self.bytes, self.mainStream, self.pos)
         self.stshif.dump()
-        self.pos += self.stshif.getSize()
+        self.pos += self.stshif.size
         self.printAndSet("ftcBi", self.getuInt16())
         self.pos += 2
         stshiLsd = StshiLsd(self.bytes, self, self.pos)
