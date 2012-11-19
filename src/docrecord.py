@@ -21,11 +21,21 @@ class FcCompressed(DOCDirStream):
         self.printAndSet("r1", self.getBit(buf, 31))
         print '</fcCompressed>'
 
-    def getTransformedAddress(self):
-        if self.fCompressed:
-            return self.fc/2
-        else:
-            print '<todo what="FcCompressed: fCompressed = 0 not supported"/>'
+    def getTransformedValue(self, start, end):
+            if self.fCompressed:
+                offset = self.fc/2
+                return globals.encodeName(self.mainStream.bytes[offset:offset+end-start])
+            else:
+                offset = self.fc
+                return globals.encodeName(self.mainStream.bytes[offset:offset+end*2-start].decode('utf-16'), lowOnly = True)
+
+    @staticmethod
+    def getFCTransformedValue(bytes, start, end):
+        # This is a bit ugly, but at this state we don't know yet if the text is compressed or not.
+        try:
+            return globals.encodeName(bytes[start:end].decode('utf-16'), lowOnly = True)
+        except UnicodeDecodeError:
+            return globals.encodeName(bytes[start:end])
 
 class Pcd(DOCDirStream):
     """The Pcd structure specifies the location of text in the WordDocument Stream and additional properties for this text."""
@@ -85,8 +95,7 @@ class PlcPcd(DOCDirStream, PLC):
             aPcd = Pcd(self.bytes, self.mainStream, self.getOffset(self.pos, i), 8)
             aPcd.dump()
 
-            offset = aPcd.fc.getTransformedAddress()
-            print '<transformed value="%s"/>' % globals.encodeName(self.mainStream.bytes[offset:offset+end-start])
+            print '<transformed value="%s"/>' % aPcd.fc.getTransformedValue(start, end)
             print '</aCP>'
         print '</plcPcd>'
 
@@ -251,7 +260,7 @@ class ChpxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % globals.encodeName(self.bytes[start:end])
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.bytes, start, end)
             pos += 4
 
             # rgbx
@@ -280,7 +289,7 @@ class PapxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % globals.encodeName(self.bytes[start:end])
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.bytes, start, end)
             pos += 4
 
             # rgbx

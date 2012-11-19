@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import sys
+sys = reload(sys)
+sys.setdefaultencoding("utf-8")
 sys.path.append(sys.path[0]+"/src")
 import globals
 import docstream
