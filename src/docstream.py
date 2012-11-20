@@ -125,7 +125,8 @@ class WordDocumentStream(DOCDirStream):
         self.pos += 2
         self.printAndSet("reserved4", self.getuInt16())
         self.pos += 2
-        self.printAndSet("reserved5", self.getuInt32())
+        # reserved5 in the spec, offset of first character of text according to LO ww8 import filter
+        self.printAndSet("fcMin", self.getuInt32())
         self.pos += 4
         self.printAndSet("reserved6", self.getuInt32())
         self.pos += 4
@@ -198,7 +199,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcPlcfandRef"],
             ["lcbPlcfandRef"],
             ["fcPlcfandTxt"],
-            ["lcbPlcfandTxt"],
+            ["lcbPlcfandTxt", self.handleLcbPlcfandTxt],
             ["fcPlcfSed"],
             ["lcbPlcfSed"],
             ["fcPlcPad"],
@@ -410,6 +411,12 @@ class WordDocumentStream(DOCDirStream):
         size = self.lcbStshf
         stsh = docrecord.STSH(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
         stsh.dump()
+
+    def handleLcbPlcfandTxt(self):
+        offset = self.fcPlcfandTxt
+        size = self.lcbPlcfandTxt
+        plcfandTxt = docrecord.PlcfandTxt(self, offset, size)
+        plcfandTxt.dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

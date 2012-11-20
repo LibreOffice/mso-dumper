@@ -359,6 +359,27 @@ class PlcBteChpx(DOCDirStream, PLC):
             print '</aFC>'
         print '</plcBteChpx>'
 
+class PlcfandTxt(DOCDirStream, PLC):
+    """The PlcfandTxt structure is a PLC that contains only CPs and no additional data."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        PLC.__init__(self, size, 0)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<plcfandTxt type="PlcfandTxt" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin + self.mainStream.ccpText + self.mainStream.ccpFtn + self.mainStream.ccpHdd # TODO do this in a better way when headers are handled
+        pos = self.pos
+        for i in range(self.getElements() - 1):
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, offset+start, offset+end)
+            pos += 4
+            print '</aCP>'
+        print '</plcfandTxt>'
+
 class PlcBtePapx(DOCDirStream, PLC):
     """The PlcBtePapx structure is a PLC that specifies paragraph, table row, or table cell properties."""
     def __init__(self, bytes, mainStream, offset, size):
