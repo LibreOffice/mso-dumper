@@ -380,6 +380,27 @@ class PlcfandTxt(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcfandTxt>'
 
+class PlcfandRef(DOCDirStream, PLC):
+    """The PlcfandRef structure is a PLC whose data elements are ATRDPre10 structures."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        PLC.__init__(self, size, 30)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<plcfandRef type="PlcfandRef" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin
+        pos = self.pos
+        for i in range(self.getElements()):
+            start = offset + self.getuInt32(pos = pos)
+            print '<aCP index="%d" commentEndOffset="%d">' % (i, start)
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, start + 1)
+            pos += 4
+
+            print '</aCP>'
+        print '</plcfandRef>'
+
 class PlcBtePapx(DOCDirStream, PLC):
     """The PlcBtePapx structure is a PLC that specifies paragraph, table row, or table cell properties."""
     def __init__(self, bytes, mainStream, offset, size):
