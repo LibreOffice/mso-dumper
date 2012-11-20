@@ -318,6 +318,16 @@ class PnFkpChpx(DOCDirStream):
         chpxFkp.dump()
         print '</%s>' % self.name
 
+class ATRDPre10(DOCDirStream):
+    """The ATRDPre10 structure contains information about a comment in the document."""
+    def __init__(self, aPlcfandRef, offset):
+        DOCDirStream.__init__(self, aPlcfandRef.bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<aATRDPre10 type="ATRDPre10" offset="%d" size="30 bytes">' % self.pos
+        print '</aATRDPre10>'
+
 class PnFkpPapx(DOCDirStream):
     """The PnFkpPapx structure specifies the offset of a PapxFkp in the WordDocument Stream."""
     def __init__(self, bytes, mainStream, offset, size, name):
@@ -398,6 +408,9 @@ class PlcfandRef(DOCDirStream, PLC):
             print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, start + 1)
             pos += 4
 
+            # aATRDPre10
+            aATRDPre10 = ATRDPre10(self, self.getOffset(self.pos, i))
+            aATRDPre10.dump()
             print '</aCP>'
         print '</plcfandRef>'
 
