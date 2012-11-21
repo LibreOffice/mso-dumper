@@ -318,6 +318,20 @@ class PnFkpChpx(DOCDirStream):
         chpxFkp.dump()
         print '</%s>' % self.name
 
+class LPXCharBuffer9(DOCDirStream):
+    """The LPXCharBuffer9 structure is a length-prefixed buffer for up to 9 Unicode characters."""
+    def __init__(self, parent, name):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.name = name
+
+    def dump(self):
+        print '<%s type="LPXCharBuffer9" offset="%d" size="20 bytes">' % (self.name, self.pos)
+        self.printAndSet("cch", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("xcharArray", self.bytes[self.pos:self.pos+(self.cch*2)].decode('utf-16'), hexdump = False)
+        print '</%s>' % self.name
+
 class ATRDPre10(DOCDirStream):
     """The ATRDPre10 structure contains information about a comment in the document."""
     def __init__(self, aPlcfandRef, offset):
@@ -326,6 +340,17 @@ class ATRDPre10(DOCDirStream):
 
     def dump(self):
         print '<aATRDPre10 type="ATRDPre10" offset="%d" size="30 bytes">' % self.pos
+        xstUsrInitl = LPXCharBuffer9(self, "xstUsrInitl")
+        xstUsrInitl.dump()
+        self.pos += 20
+        self.printAndSet("ibst", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("bitsNotUsed", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("grfNotUsed", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("ITagBkmk", self.getInt32())
+        self.pos += 4
         print '</aATRDPre10>'
 
 class PnFkpPapx(DOCDirStream):
