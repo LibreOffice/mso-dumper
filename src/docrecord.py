@@ -101,7 +101,7 @@ class FBKF(DOCDirStream):
         self.pos += 2
         print '</aFBKF>'
 
-class PlcfAtnBkf(DOCDirStream, PLC):
+class PlcfBkf(DOCDirStream, PLC):
     """A PLCFBKF is a PLC whose data elements are FBKF structures."""
     def __init__(self, mainStream, offset, size):
         DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
@@ -110,7 +110,7 @@ class PlcfAtnBkf(DOCDirStream, PLC):
         self.size = size
 
     def dump(self):
-        print '<plcfAtnBkf type="PlcfAtnBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print '<plcfBkf type="PlcfAtnBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
         offset = self.mainStream.fcMin
         pos = self.pos
         for i in range(self.getElements()):
@@ -124,7 +124,53 @@ class PlcfAtnBkf(DOCDirStream, PLC):
             aFBKF = FBKF(self, self.getOffset(self.pos, i))
             aFBKF.dump()
             print '</aCP>'
-        print '</plcfAtnBkf>'
+        print '</plcfBkf>'
+
+class PlcfBkf(DOCDirStream, PLC):
+    """A PLCFBKF is a PLC whose data elements are FBKF structures."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, size, 4) # 4 is defined by 2.8.10
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<plcfBkf type="PlcfBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            start = offset + self.getuInt32(pos = pos)
+            print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, start + 1)
+            pos += 4
+
+            # aFBKF
+            aFBKF = FBKF(self, self.getOffset(self.pos, i))
+            aFBKF.dump()
+            print '</aCP>'
+        print '</plcfBkf>'
+
+class PlcfBkl(DOCDirStream, PLC):
+    """The Plcfbkl structure is a PLC that contains only CPs and no additional data."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, size, 0) # 0 is defined by 2.8.12
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<plcfBkl type="PlcfBkl" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            end = offset + self.getuInt32(pos = pos)
+            print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, end, end + 1)
+            pos += 4
+            print '</aCP>'
+        print '</plcfBkl>'
 
 class PlcPcd(DOCDirStream, PLC):
     """The PlcPcd structure is a PLC whose data elements are Pcds (8 bytes each)."""
