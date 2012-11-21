@@ -31,11 +31,7 @@ class FcCompressed(DOCDirStream):
 
     @staticmethod
     def getFCTransformedValue(bytes, start, end):
-        # This is a bit ugly, but at this state we don't know yet if the text is compressed or not.
-        try:
-            return globals.encodeName(bytes[start:end].decode('utf-16'), lowOnly = True)
-        except UnicodeDecodeError:
-            return globals.encodeName(bytes[start:end])
+        return globals.encodeName(bytes[start:end])
 
 class Pcd(DOCDirStream):
     """The Pcd structure specifies the location of text in the WordDocument Stream and additional properties for this text."""
