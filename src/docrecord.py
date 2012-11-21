@@ -73,6 +73,59 @@ class PLC:
     def getPLCOffset(pos, elements, structSize, i):
         return pos + (4 * (elements + 1)) + (structSize * i)
 
+class BKC(DOCDirStream):
+    """The BKC structure contains information about how a bookmark interacts with tables."""
+    def __init__(self, bkc):
+        self.bkc = bkc
+
+    def dump(self):
+        print '<bkc type="BKC">'
+        self.printAndSet("itcFirst", self.bkc & 0x007f) # 1..7th bits
+        self.printAndSet("fPub", self.getBit(self.bkc, 8))
+        self.printAndSet("itcLim", (self.bkc & 0x3f00) >> 8) # 9..14th bits
+        self.printAndSet("fNative", self.getBit(self.bkc, 15))
+        self.printAndSet("fCol", self.getBit(self.bkc, 16))
+        print '</bkc>'
+
+class FBKF(DOCDirStream):
+    """The FBKF structure contains information about a bookmark."""
+    def __init__(self, plcfAtnBkf, offset):
+        DOCDirStream.__init__(self, plcfAtnBkf.bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<aFBKF type="FBKF" offset="%d">' % self.pos
+        self.printAndSet("ibkl", self.getuInt16())
+        self.pos += 2
+        BKC(self.getuInt16()).dump()
+        self.pos += 2
+        print '</aFBKF>'
+
+class PlcfAtnBkf(DOCDirStream, PLC):
+    """A PLCFBKF is a PLC whose data elements are FBKF structures."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, size, 4) # 4 is defined by 2.8.10
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<plcfAtnBkf type="PlcfAtnBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            start = offset + self.getuInt32(pos = pos)
+            print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, start + 1)
+            pos += 4
+
+            # aFBKF
+            aFBKF = FBKF(self, self.getOffset(self.pos, i))
+            aFBKF.dump()
+            print '</aCP>'
+        print '</plcfAtnBkf>'
+
 class PlcPcd(DOCDirStream, PLC):
     """The PlcPcd structure is a PLC whose data elements are Pcds (8 bytes each)."""
     def __init__(self, bytes, mainStream, offset, size):
