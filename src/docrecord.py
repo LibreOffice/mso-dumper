@@ -595,6 +595,49 @@ class SttbfFfn(DOCDirStream):
             print '</cchData>'
         print '</sttbfFfn>'
 
+class ATNBE(DOCDirStream):
+    """The ATNBE structure contains information about an annotation bookmark in the document."""
+    size = 10 # in bytes, see 2.9.4
+    def __init__(self, sttbfAtnBkmk):
+        DOCDirStream.__init__(self, sttbfAtnBkmk.bytes)
+        self.pos = sttbfAtnBkmk.pos
+
+    def dump(self):
+        print '<atnbe type="ATNBE">'
+        self.printAndSet("bmc", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("ITag", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("ITagOld", self.getuInt32())
+        self.pos += 4
+        print '</atnbe>'
+
+class SttbfAtnBkmk(DOCDirStream):
+    """The SttbfAtnBkmk structure is an STTB whose strings are all of zero length."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<sttbfAtnBkmk type="SttbfAtnBkmk" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("fExtended", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("cData", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("cbExtra", self.getuInt16())
+        self.pos += 2
+        for i in range(self.cData):
+            cchData = self.getuInt16()
+            print '<cchData index="%d" offset="%d", size="%d bytes"/>' % (i, self.pos, cchData)
+            self.pos += 2
+            print '<extraData index="%d" offset="%d", size="%d bytes">' % (i, self.pos, ATNBE.size)
+            atnbe = ATNBE(self)
+            atnbe.dump()
+            self.pos += ATNBE.size
+            print '</extraData>'
+        print '</sttbfAtnBkmk>'
+
 class Stshif(DOCDirStream):
     """The Stshif structure specifies general stylesheet information."""
     def __init__(self, bytes, mainStream, offset):
