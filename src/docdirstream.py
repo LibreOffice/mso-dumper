@@ -20,14 +20,17 @@ class DOCDirStream:
         self.mainStream = mainStream
         self.doc = doc
     
-    def printAndSet(self, key, value, hexdump = True, end = True):
+    def printAndSet(self, key, value, hexdump = True, end = True, offset = False):
         setattr(self, key, value)
         if hexdump:
             value = hex(value)
+        offstr = ""
+        if offset:
+            offstr += ' offset="%s"' % hex(self.pos)
         if end:
-            print '<%s value="%s"/>' % (key, value)
+            print '<%s value="%s"%s/>' % (key, value, offstr)
         else:
-            print '<%s value="%s">' % (key, value)
+            print '<%s value="%s"%s>' % (key, value, offstr)
 
     def getuInt8(self, bytes = None, pos = None):
         if not bytes:

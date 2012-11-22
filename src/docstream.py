@@ -65,15 +65,44 @@ class WordDocumentStream(DOCDirStream):
         self.dumpFibRgLw97("fibRgLw")
         self.printAndSet("cbRgFcLcb", self.getuInt16())
         self.pos += 2
+        pos = self.pos
         self.dumpFibRgFcLcb("fibRgFcLcbBlob")
-        self.printAndSet("cswNew", self.getuInt16())
+        self.pos = pos + (8 * self.cbRgFcLcb)
+        self.printAndSet("cswNew", self.getuInt16(), offset = True)
         self.pos += 2
+        if self.cswNew != 0:
+            self.dumpFibRgCswNew("fibRgCswNew")
         print '</fib>'
+
+    def dumpFibRgCswNew(self, name):
+        print '<%s type="FibRgCswNew" size="%d bytes">' % (name, self.cswNew)
+        self.printAndSet("nFibNew", self.getuInt16())
+        self.pos += 2
+        if self.nFibNew == 0x0112:
+            self.dumpFibRgCswNewData2007("fibRgCswNewData2007")
+        else:
+            print """<todo what="dumpFibRgCswNew() doesn't know how to handle nFibNew = %s">""" % hex(self.nFibNew)
+        print '</%s>' % name
+
+    def __dumpFibRgCswNewData2000(self):
+        self.printAndSet("cQuickSavesNew", self.getuInt16())
+        self.pos += 2
+
+    def dumpFibRgCswNewData2007(self, name):
+        print '<%s type="FibRgCswNewData2007" size="%d bytes">' % (name, 8)
+        self.__dumpFibRgCswNewData2000()
+        self.printAndSet("lidThemeOther", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("lidThemeFE", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("lidThemeCS", self.getuInt16())
+        self.pos += 2
+        print '</%s>' % name
 
     def dumpFibBase(self, name):
         print '<%s type="FibBase" size="32 bytes">' % name
 
-        self.printAndSet("wIndent", self.getuInt16())
+        self.printAndSet("wIdent", self.getuInt16())
         self.pos += 2
 
         self.printAndSet("nFib", self.getuInt16())
@@ -385,7 +414,7 @@ class WordDocumentStream(DOCDirStream):
             hasHandler = len(i) > 1
             # a member needs handling if it defines the size of a struct and it's non-zero
             needsHandling = i[0].startswith("lcb") and value != 0
-            self.printAndSet(i[0], self.getuInt32(), end = ((not hasHandler) and (not needsHandling)))
+            self.printAndSet(i[0], self.getuInt32(), end = ((not hasHandler) and (not needsHandling)), offset = True)
             self.pos += 4
             if hasHandler or needsHandling:
                 if hasHandler:
