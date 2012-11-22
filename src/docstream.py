@@ -381,10 +381,17 @@ class WordDocumentStream(DOCDirStream):
             ["lcbSttbfUssr"],
                 ]
         for i in fields:
-            self.printAndSet(i[0], self.getuInt32(), end = len(i) == 1)
+            value = self.getuInt32()
+            hasHandler = len(i) > 1
+            # a member needs handling if it defines the size of a struct and it's non-zero
+            needsHandling = i[0].startswith("lcb") and value != 0
+            self.printAndSet(i[0], self.getuInt32(), end = ((not hasHandler) and (not needsHandling)))
             self.pos += 4
-            if len(i) > 1:
-                i[1]()
+            if hasHandler or needsHandling:
+                if hasHandler:
+                    i[1]()
+                else:
+                    print '<todo what="value is non-zero and unhandled"/>'
                 print '</%s>' % i[0]
 
     def handleLcbClx(self):
