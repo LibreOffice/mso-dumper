@@ -65,14 +65,27 @@ class WordDocumentStream(DOCDirStream):
         self.dumpFibRgLw97("fibRgLw")
         self.printAndSet("cbRgFcLcb", self.getuInt16())
         self.pos += 2
-        pos = self.pos
+
+        self.blobOffset = self.pos
+        self.nFibNew = self.__getFibNew()
         self.dumpFibRgFcLcb("fibRgFcLcbBlob")
-        self.pos = pos + (8 * self.cbRgFcLcb)
+        self.pos = self.__getCswNewOffset()
+
         self.printAndSet("cswNew", self.getuInt16(), offset = True)
         self.pos += 2
         if self.cswNew != 0:
             self.dumpFibRgCswNew("fibRgCswNew")
         print '</fib>'
+
+    def __getFibNew(self):
+        cswNew = self.getuInt16(pos = self.__getCswNewOffset())
+        if cswNew == 0:
+            raise Exception()
+        else:
+            return self.getuInt16(pos = self.__getCswNewOffset() + 2)
+    
+    def __getCswNewOffset(self):
+        return self.blobOffset + (8 * self.cbRgFcLcb)
 
     def dumpFibRgCswNew(self, name):
         print '<%s type="FibRgCswNew" size="%d bytes">' % (name, self.cswNew)
@@ -285,7 +298,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcWss"],
             ["lcbWss"],
             ["fcDop"],
-            ["lcbDop"],
+            ["lcbDop", self.handleDop],
             ["fcSttbfAssoc"],
             ["lcbSttbfAssoc"],
             ["fcClx"],
@@ -422,6 +435,9 @@ class WordDocumentStream(DOCDirStream):
                 else:
                     print '<todo what="value is non-zero and unhandled"/>'
                 print '</%s>' % i[0]
+
+    def handleDop(self):
+        docrecord.Dop(self).dump()
 
     def handleLcbClx(self):
         offset = self.fcClx

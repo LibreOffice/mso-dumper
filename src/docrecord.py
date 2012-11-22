@@ -595,6 +595,184 @@ class Clx(DOCDirStream):
             print '<todo what="Clx::dump() first byte is not 0x02"/>'
         print '</clx>'
 
+class DopBase(DOCDirStream):
+    """The DopBase structure contains document and compatibility settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+        self.dop = dop
+
+    def dump(self):
+        posorig = self.pos
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fFacingPages", self.getBit(buf, 0))
+        self.printAndSet("unused1", self.getBit(buf, 1))
+        self.printAndSet("fPMHMainDoc", self.getBit(buf, 2))
+        self.printAndSet("unused2", (buf & 0x18) >> 3) # 4..5th bits
+        self.printAndSet("fpc", (buf & 0x60) >> 5) # 6..7th bits
+        self.printAndSet("unused3", self.getBit(buf, 7))
+
+        self.printAndSet("unused4", self.getuInt8())
+        self.pos += 1
+
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("rncFtn", buf & 0x03) # 1..2nd bits
+        self.printAndSet("nFtn", (buf & 0xfffc) >> 2) # 3..16th bits
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("unused5", self.getBit(buf, 0))
+        self.printAndSet("unused6", self.getBit(buf, 1))
+        self.printAndSet("unused7", self.getBit(buf, 2))
+        self.printAndSet("unused8", self.getBit(buf, 3))
+        self.printAndSet("unused9", self.getBit(buf, 4))
+        self.printAndSet("unused10", self.getBit(buf, 5))
+        self.printAndSet("fSplAllDone", self.getBit(buf, 6))
+        self.printAndSet("fSplAllClean", self.getBit(buf, 7))
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fSplHideErrors", self.getBit(buf, 0))
+        self.printAndSet("fGramHideErrors", self.getBit(buf, 1))
+        self.printAndSet("fLabelDoc", self.getBit(buf, 2))
+        self.printAndSet("fHyphCapitals", self.getBit(buf, 3))
+        self.printAndSet("fAutoHyphen", self.getBit(buf, 4))
+        self.printAndSet("fFormNoFields", self.getBit(buf, 5))
+        self.printAndSet("fLinkStyles", self.getBit(buf, 6))
+        self.printAndSet("fRevMarking", self.getBit(buf, 7))
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("unused11", self.getBit(buf, 0))
+        self.printAndSet("fExactCWords", self.getBit(buf, 1))
+        self.printAndSet("fPagHidden", self.getBit(buf, 2))
+        self.printAndSet("fPagResults", self.getBit(buf, 3))
+        self.printAndSet("fLockAtn", self.getBit(buf, 4))
+        self.printAndSet("fMirrorMargins", self.getBit(buf, 5))
+        self.printAndSet("fWord97Compat", self.getBit(buf, 6))
+        self.printAndSet("unused12", self.getBit(buf, 7))
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("unused13", self.getBit(buf, 0))
+        self.printAndSet("fProtEnabled", self.getBit(buf, 1))
+        self.printAndSet("fDispFormFldSel", self.getBit(buf, 2))
+        self.printAndSet("fRMView", self.getBit(buf, 3))
+        self.printAndSet("fRMPrint", self.getBit(buf, 4))
+        self.printAndSet("fLockVbaProj", self.getBit(buf, 5))
+        self.printAndSet("fLockRev", self.getBit(buf, 6))
+        self.printAndSet("fEmbedFonts", self.getBit(buf, 7))
+
+        # Copts60 first byte
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fNoTabForInd", self.getBit(buf, 0))
+        self.printAndSet("fNoSpaceRaiseLower", self.getBit(buf, 1))
+        self.printAndSet("fSuppressSpBfAfterPgBrk", self.getBit(buf, 2))
+        self.printAndSet("fWrapTrailSpaces", self.getBit(buf, 3))
+        self.printAndSet("fMapPrintTextColor", self.getBit(buf, 4))
+        self.printAndSet("fNoColumnBalance", self.getBit(buf, 5))
+        self.printAndSet("fConvMailMergeEsc", self.getBit(buf, 6))
+        self.printAndSet("fSuppressTopSpacing", self.getBit(buf, 7))
+
+        # Copts60 second byte
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fOrigWordTableRules", self.getBit(buf, 0))
+        self.printAndSet("unused14", self.getBit(buf, 1))
+        self.printAndSet("fShowBreaksInFrames", self.getBit(buf, 2))
+        self.printAndSet("fSwapBordersFacingPgs", self.getBit(buf, 3))
+        self.printAndSet("fLeaveBackslashAlone", self.getBit(buf, 4))
+        self.printAndSet("fExpShRtn", self.getBit(buf, 5))
+        self.printAndSet("fDntULTrlSpc", self.getBit(buf, 6))
+        self.printAndSet("fDntBlnSbDbWid", self.getBit(buf, 7))
+
+        print '<debug offset="%d"/>' % (self.pos - posorig)
+
+class Dop95(DOCDirStream):
+    """The Dop95 structure contains document and compatibility settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+        self.dop = dop
+
+    def dump(self):
+        DopBase(self).dump()
+        self.pos += 84
+
+class Dop97(DOCDirStream):
+    """The Dop97 structure contains document and compatibility settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+        self.dop = dop
+
+    def dump(self):
+        Dop95(self).dump()
+        self.pos += 88
+
+class Dop2000(DOCDirStream):
+    """The Dop2000 structure contains document and compatibility settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+        self.dop = dop
+
+    def dump(self):
+        Dop97(self).dump()
+        self.pos += 500
+
+class Dop2002(DOCDirStream):
+    """The Dop2002 structure contains document and compatibility settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+        self.dop = dop
+
+    def dump(self):
+        Dop2000(self).dump()
+        self.pos += 544
+
+class Dop2003(DOCDirStream):
+    """The Dop2003 structure contains document and compatibility settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+        self.dop = dop
+
+    def dump(self):
+        Dop2002(self).dump()
+        self.pos += 594
+
+class Dop2007(DOCDirStream):
+    """The Dop2007 structure contains document and compatibility settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+        self.dop = dop
+
+    def dump(self):
+        Dop2003(self).dump()
+        self.pos += 616
+
+class Dop(DOCDirStream):
+    """The Dop structure contains the document and compatibility settings for the document."""
+    def __init__(self, fib):
+        DOCDirStream.__init__(self, fib.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = fib.fcDop
+        self.size = fib.lcbDop
+        self.fib = fib
+
+    def dump(self):
+        print '<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size)
+        if self.fib.nFibNew == 0x0112:
+            Dop2007(self).dump()
+        else:
+            print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s">""" % hex(self.nFibNew)
+        print '</dop>'
+
 class FFID(DOCDirStream):
     """The FFID structure specifies the font family and character pitch for a font."""
     def __init__(self, bytes, offset):
