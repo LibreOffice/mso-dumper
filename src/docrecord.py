@@ -603,7 +603,7 @@ class DopBase(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        posorig = self.pos
+        print '<dopBase offset="%d" size="%d bytes">' % (self.pos, 84)
         buf = self.getuInt8()
         self.pos += 1
         self.printAndSet("fFacingPages", self.getBit(buf, 0))
@@ -689,7 +689,75 @@ class DopBase(DOCDirStream):
         self.printAndSet("fDntULTrlSpc", self.getBit(buf, 6))
         self.printAndSet("fDntBlnSbDbWid", self.getBit(buf, 7))
 
-        print '<debug offset="%d"/>' % (self.pos - posorig)
+        self.printAndSet("dxaTab", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("cpgWebOpt", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("dxaHotZ", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("cConsecHypLim", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("wSpare2", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("dttmCreated", self.getuInt32()) # TODO extract DTTM here and below
+        self.pos += 4
+        self.printAndSet("dttmRevised", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("dttmLastPrint", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("nRevision", self.getInt16())
+        self.pos += 2
+        self.printAndSet("tmEdited", self.getInt32())
+        self.pos += 4
+        self.printAndSet("cWords", self.getInt32())
+        self.pos += 4
+        self.printAndSet("cCh", self.getInt32())
+        self.pos += 4
+        self.printAndSet("cPg", self.getInt16())
+        self.pos += 2
+        self.printAndSet("cParas", self.getInt32())
+        self.pos += 4
+
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("rncEdn", buf & 0x0003) # 1..2nd bits
+        self.printAndSet("nEdn", (buf & 0xfffc) >> 2) # 3..16th bits
+
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("epc", buf & 0x0003) # 1..2nd bits
+        self.printAndSet("unused14", (buf & 0x003c) >> 2) # 3..6th bits
+        self.printAndSet("unused15", (buf & 0x03c0) >> 6) # 7..10th bits
+        self.printAndSet("fPrintFormData", self.getBit(buf, 10))
+        self.printAndSet("fSaveFormData", self.getBit(buf, 11))
+        self.printAndSet("fShadeFormData", self.getBit(buf, 12))
+        self.printAndSet("fShadeMergeFields", self.getBit(buf, 13))
+        self.printAndSet("reserved2", self.getBit(buf, 14))
+        self.printAndSet("fIncludeSubdocsInStats", self.getBit(buf, 15))
+
+        self.printAndSet("cLines", self.getInt32())
+        self.pos += 4
+        self.printAndSet("cWordsWithSubdocs", self.getInt32())
+        self.pos += 4
+        self.printAndSet("cChWithSubdocs", self.getInt32())
+        self.pos += 4
+        self.printAndSet("cPgWithSubdocs", self.getInt16())
+        self.pos += 2
+        self.printAndSet("cParasWithSubdocs", self.getInt32())
+        self.pos += 4
+        self.printAndSet("cLinesWithSubdocs", self.getInt32())
+        self.pos += 4
+        self.printAndSet("lKeyProtDoc", self.getInt32())
+        self.pos += 4
+
+        buf = self.getuInt16()
+        self.pos += 2
+        self.printAndSet("wvkoSaved", buf & 0x0007) # 1..3rd bits
+        self.printAndSet("pctWwdSaved", (buf & 0x0ff8) >> 3) # 4..12th bits
+        self.printAndSet("zkSaved", (buf & 0x3000) >> 12) # 13..14th bits
+        self.printAndSet("unused16", self.getBit(buf, 14))
+        self.printAndSet("iGutterPos", self.getBit(buf, 15))
+        print '</dopBase>'
 
 class Dop95(DOCDirStream):
     """The Dop95 structure contains document and compatibility settings."""
