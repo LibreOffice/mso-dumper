@@ -975,9 +975,9 @@ class SttbfAtnBkmk(DOCDirStream):
         self.pos += 2
         for i in range(self.cData):
             cchData = self.getuInt16()
-            print '<cchData index="%d" offset="%d", size="%d bytes"/>' % (i, self.pos, cchData)
+            print '<cchData index="%d" offset="%d" size="%d bytes"/>' % (i, self.pos, cchData)
             self.pos += 2
-            print '<extraData index="%d" offset="%d", size="%d bytes">' % (i, self.pos, ATNBE.size)
+            print '<extraData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, ATNBE.size)
             atnbe = ATNBE(self)
             atnbe.dump()
             self.pos += ATNBE.size
