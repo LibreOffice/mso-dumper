@@ -910,6 +910,7 @@ class Dop2000(DOCDirStream):
         self.dop = dop
 
     def dump(self):
+        print '<dop2000 type="Dop2000" offset="%d" size="544 bytes">' % self.pos
         dop97 = Dop97(self)
         dop97.dump()
         assert dop97.pos == self.pos + 500
@@ -967,6 +968,7 @@ class Dop2000(DOCDirStream):
         self.printAndSet("fSaveInvalidXML", self.getBit(buf, 5))
         self.printAndSet("fShowXMLErrors", self.getBit(buf, 6))
         self.printAndSet("fAlwaysMergeEmptyNamespace", self.getBit(buf, 7))
+        print '</dop2000>'
 
 class Dop2002(DOCDirStream):
     """The Dop2002 structure contains document and compatibility settings."""
@@ -976,10 +978,46 @@ class Dop2002(DOCDirStream):
         self.dop = dop
 
     def dump(self):
+        print '<dop2002 type="Dop2000" offset="%d" size="594 bytes">' % self.pos
         dop2000 = Dop2000(self)
         dop2000.dump()
         assert dop2000.pos == self.pos + 544
         self.pos += 544
+
+        self.printAndSet("unused", self.readuInt32())
+
+        buf = self.readuInt8()
+        self.printAndSet("fDoNotEmbedSystemFont", self.getBit(buf, 0))
+        self.printAndSet("fWordCompat", self.getBit(buf, 1))
+        self.printAndSet("fLiveRecover", self.getBit(buf, 2))
+        self.printAndSet("fEmbedFactoids", self.getBit(buf, 3))
+        self.printAndSet("fFactoidXML", self.getBit(buf, 4))
+        self.printAndSet("fFactoidAllDone", self.getBit(buf, 5))
+        self.printAndSet("fFolioPrint", self.getBit(buf, 6))
+        self.printAndSet("fReverseFolio", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("iTextLineEnding", (buf & 0x7)) # 1..3rd bits
+        self.printAndSet("fHideFcc", self.getBit(buf, 3))
+        self.printAndSet("fAcetateShowMarkup", self.getBit(buf, 4))
+        self.printAndSet("fAcetateShowAtn", self.getBit(buf, 5))
+        self.printAndSet("fAcetateShowInsDel", self.getBit(buf, 6))
+        self.printAndSet("fAcetateShowProps", self.getBit(buf, 7))
+
+        self.printAndSet("istdTableDflt", self.readuInt16())
+        self.printAndSet("verCompat", self.readuInt16())
+        self.printAndSet("grfFmtFilter", self.readuInt16())
+        self.printAndSet("iFolioPages", self.readuInt16())
+        self.printAndSet("cpgText", self.readuInt32())
+        self.printAndSet("cpMinRMText", self.readuInt32())
+        self.printAndSet("cpMinRMFtn", self.readuInt32())
+        self.printAndSet("cpMinRMHdd", self.readuInt32())
+        self.printAndSet("cpMinRMAtn", self.readuInt32())
+        self.printAndSet("cpMinRMEdn", self.readuInt32())
+        self.printAndSet("cpMinRmTxbx", self.readuInt32())
+        self.printAndSet("cpMinRmHdrTxbx", self.readuInt32())
+        self.printAndSet("rsidRoot", self.readuInt32())
+        print '</dop2002>'
 
 class Dop2003(DOCDirStream):
     """The Dop2003 structure contains document and compatibility settings."""
@@ -989,7 +1027,9 @@ class Dop2003(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        Dop2002(self).dump()
+        dop2002 = Dop2002(self)
+        dop2002.dump()
+        assert dop2002.pos == self.pos + 594
         self.pos += 594
 
 class Dop2007(DOCDirStream):
