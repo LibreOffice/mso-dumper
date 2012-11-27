@@ -754,6 +754,67 @@ class Copts80(DOCDirStream):
         self.printAndSet("fPrintMet", self.getBit(buf, 7))
         print '</copts80>'
 
+class Copts(DOCDirStream):
+    """A structure that specifies compatibility options."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+
+    def dump(self):
+        print '<copts type="Copts" offset="%d" size="32 bytes">' % self.pos
+        Copts80(self).dump()
+        self.pos += 4
+
+        buf = self.readuInt8()
+        self.printAndSet("fSpLayoutLikeWW8", self.getBit(buf, 0))
+        self.printAndSet("fFtnLayoutLikeWW8", self.getBit(buf, 1))
+        self.printAndSet("fDontUseHTMLParagraphAutoSpacing", self.getBit(buf, 2))
+        self.printAndSet("fDontAdjustLineHeightInTable", self.getBit(buf, 3))
+        self.printAndSet("fForgetLastTabAlign", self.getBit(buf, 4))
+        self.printAndSet("fUseAutospaceForFullWidthAlpha", self.getBit(buf, 5))
+        self.printAndSet("fAlignTablesRowByRow", self.getBit(buf, 6))
+        self.printAndSet("fLayoutRawTableWidth", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("fLayoutTableRowsApart", self.getBit(buf, 0))
+        self.printAndSet("fUseWord97LineBreakingRules", self.getBit(buf, 1))
+        self.printAndSet("fDontBreakWrappedTables", self.getBit(buf, 2))
+        self.printAndSet("fDontSnapToGridInCell", self.getBit(buf, 3))
+        self.printAndSet("fDontAllowFieldEndSelect", self.getBit(buf, 4))
+        self.printAndSet("fApplyBreakingRules", self.getBit(buf, 5))
+        self.printAndSet("fDontWrapTextWithPunct", self.getBit(buf, 6))
+        self.printAndSet("fDontUseAsianBreakRules", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("fUseWord2002TableStyleRules", self.getBit(buf, 0))
+        self.printAndSet("fGrowAutoFit", self.getBit(buf, 1))
+        self.printAndSet("fUseNormalStyleForList", self.getBit(buf, 2))
+        self.printAndSet("fDontUseIndentAsNumberingTabStop", self.getBit(buf, 3))
+        self.printAndSet("fFELineBreak11", self.getBit(buf, 4))
+        self.printAndSet("fAllowSpaceOfSameStyleInTable", self.getBit(buf, 5))
+        self.printAndSet("fWW11IndentRules", self.getBit(buf, 6))
+        self.printAndSet("fDontAutofitConstrainedTables", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("fAutofitLikeWW11", self.getBit(buf, 0))
+        self.printAndSet("fUnderlineTabInNumList", self.getBit(buf, 1))
+        self.printAndSet("fHangulWidthLikeWW11", self.getBit(buf, 2))
+        self.printAndSet("fSplitPgBreakAndParaMark", self.getBit(buf, 3))
+        self.printAndSet("fDontVertAlignCellWithSp", self.getBit(buf, 4))
+        self.printAndSet("fDontBreakConstrainedForcedTables", self.getBit(buf, 5))
+        self.printAndSet("fDontVertAlignInTxbx", self.getBit(buf, 6))
+        self.printAndSet("fWord11KerningPairs", self.getBit(buf, 7))
+
+        buf = self.readuInt32()
+        self.printAndSet("fCachedColBalance", self.getBit(buf, 0))
+        self.printAndSet("empty1", (buf & 0xfffffffe) >> 1) # 2..32th bits
+        self.printAndSet("empty2", self.readuInt32())
+        self.printAndSet("empty3", self.readuInt32())
+        self.printAndSet("empty4", self.readuInt32())
+        self.printAndSet("empty5", self.readuInt32())
+        self.printAndSet("empty6", self.readuInt32())
+        print '</copts>'
+
 class Dop95(DOCDirStream):
     """The Dop95 structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -853,6 +914,38 @@ class Dop2000(DOCDirStream):
         dop97.dump()
         assert dop97.pos == self.pos + 500
         self.pos += 500
+
+        self.printAndSet("ilvlLastBulletMain", self.readuInt8())
+        self.printAndSet("ilvlLastNumberMain", self.readuInt8())
+        self.printAndSet("istdClickParaType", self.readuInt16())
+
+        buf = self.readuInt8()
+        self.printAndSet("fLADAllDone", self.getBit(buf, 0))
+        self.printAndSet("fEnvelopeVis", self.getBit(buf, 1))
+        self.printAndSet("fMaybeTentativeListInDoc", self.getBit(buf, 2))
+        self.printAndSet("fMaybeFitText", self.getBit(buf, 3))
+        self.printAndSet("empty1", (buf & 0xf0) >> 4) # 5..8th bits
+
+        buf = self.readuInt8()
+        self.printAndSet("fFCCAllDone", self.getBit(buf, 0))
+        self.printAndSet("fRelyOnCSS_WebOpt", self.getBit(buf, 1))
+        self.printAndSet("fRelyOnVML_WebOpt", self.getBit(buf, 2))
+        self.printAndSet("fAllowPNG_WebOpt", self.getBit(buf, 3))
+        self.printAndSet("screenSize_WebOpt", (buf & 0xf0) >> 4) # 5..8th bits
+
+        buf = self.readuInt16()
+        self.printAndSet("fOrganizeInFolder_WebOpt", self.getBit(buf, 0))
+        self.printAndSet("fUseLongFileNames_WebOpt", self.getBit(buf, 1))
+        self.printAndSet("iPixelsPerInch_WebOpt", (buf & 0x0ffc) >> 2) # 3..12th bits
+        self.printAndSet("fWebOptionsInit", self.getBit(buf, 12))
+        self.printAndSet("fMaybeFEL", self.getBit(buf, 12))
+        self.printAndSet("fCharLineUnits", self.getBit(buf, 12))
+        self.printAndSet("unused1", self.getBit(buf, 12))
+
+        copts = Copts(self)
+        copts.dump()
+        assert copts.pos == self.pos + 32
+        self.pos += 32
 
 class Dop2002(DOCDirStream):
     """The Dop2002 structure contains document and compatibility settings."""
