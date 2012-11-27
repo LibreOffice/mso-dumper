@@ -57,22 +57,18 @@ class WordDocumentStream(DOCDirStream):
     def dumpFib(self):
         print '<fib>'
         self.dumpFibBase("base")
-        self.printAndSet("csw", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("csw", self.readuInt16())
         self.dumpFibRgW97("fibRgW")
-        self.printAndSet("cslw", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cslw", self.readuInt16())
         self.dumpFibRgLw97("fibRgLw")
-        self.printAndSet("cbRgFcLcb", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cbRgFcLcb", self.readuInt16())
 
         self.blobOffset = self.pos
         self.nFibNew = self.__getFibNew()
         self.dumpFibRgFcLcb("fibRgFcLcbBlob")
         self.pos = self.__getCswNewOffset()
 
-        self.printAndSet("cswNew", self.getuInt16(), offset = True)
-        self.pos += 2
+        self.printAndSet("cswNew", self.readuInt16(), offset = True)
         if self.cswNew != 0:
             self.dumpFibRgCswNew("fibRgCswNew")
         print '</fib>'
@@ -89,8 +85,7 @@ class WordDocumentStream(DOCDirStream):
 
     def dumpFibRgCswNew(self, name):
         print '<%s type="FibRgCswNew" size="%d bytes">' % (name, self.cswNew)
-        self.printAndSet("nFibNew", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("nFibNew", self.readuInt16())
         if self.nFibNew == 0x0112:
             self.dumpFibRgCswNewData2007("fibRgCswNewData2007")
         else:
@@ -98,40 +93,26 @@ class WordDocumentStream(DOCDirStream):
         print '</%s>' % name
 
     def __dumpFibRgCswNewData2000(self):
-        self.printAndSet("cQuickSavesNew", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cQuickSavesNew", self.readuInt16())
 
     def dumpFibRgCswNewData2007(self, name):
         print '<%s type="FibRgCswNewData2007" size="%d bytes">' % (name, 8)
         self.__dumpFibRgCswNewData2000()
-        self.printAndSet("lidThemeOther", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("lidThemeFE", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("lidThemeCS", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("lidThemeOther", self.readuInt16())
+        self.printAndSet("lidThemeFE", self.readuInt16())
+        self.printAndSet("lidThemeCS", self.readuInt16())
         print '</%s>' % name
 
     def dumpFibBase(self, name):
         print '<%s type="FibBase" size="32 bytes">' % name
 
-        self.printAndSet("wIdent", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("wIdent", self.readuInt16())
+        self.printAndSet("nFib", self.readuInt16())
+        self.printAndSet("unused", self.readuInt16())
+        self.printAndSet("lid", self.readuInt16())
+        self.printAndSet("pnNext", self.readuInt16())
 
-        self.printAndSet("nFib", self.getuInt16())
-        self.pos += 2
-
-        self.printAndSet("unused", self.getuInt16())
-        self.pos += 2
-
-        self.printAndSet("lid", self.getuInt16())
-        self.pos += 2
-
-        self.printAndSet("pnNext", self.getuInt16())
-        self.pos += 2
-
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("fDot", self.getBit(buf, 0))
         self.printAndSet("fGlsy", self.getBit(buf, 1))
         self.printAndSet("fComplex", self.getBit(buf, 2))
@@ -149,17 +130,11 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("fFarEast", self.getBit(buf, 14))
         self.printAndSet("fObfuscated", self.getBit(buf, 15))
 
-        self.printAndSet("nFibBack", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("nFibBack", self.readuInt16())
+        self.printAndSet("lKey", self.readuInt32())
+        self.printAndSet("envr", self.readuInt8())
 
-        self.printAndSet("lKey", self.getuInt32())
-        self.pos += 4
-
-        self.printAndSet("envr", self.getuInt8())
-        self.pos += 1
-
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
 
         self.printAndSet("fMac", self.getBit(buf, 0))
         self.printAndSet("fEmptySpecial", self.getBit(buf, 1))
@@ -168,15 +143,11 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("reserved2", self.getBit(buf, 4))
         self.printAndSet("fSpare0",  (buf & (2**3-1)))
 
-        self.printAndSet("reserved3", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("reserved4", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("reserved3", self.readuInt16())
+        self.printAndSet("reserved4", self.readuInt16())
         # reserved5 in the spec, offset of first character of text according to LO ww8 import filter
-        self.printAndSet("fcMin", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("reserved6", self.getuInt32())
-        self.pos += 4
+        self.printAndSet("fcMin", self.readuInt32())
+        self.printAndSet("reserved6", self.readuInt32())
 
         print '</%s>' % name
 
@@ -184,10 +155,8 @@ class WordDocumentStream(DOCDirStream):
         print '<%s type="FibRgW97" size="28 bytes">' % name
 
         for i in range(13):
-            self.printAndSet("reserved%d" % (i + 1), self.getuInt16())
-            self.pos += 2
-        self.printAndSet("lidFE", self.getuInt16())
-        self.pos += 2
+            self.printAndSet("reserved%d" % (i + 1), self.readuInt16())
+        self.printAndSet("lidFE", self.readuInt16())
 
         print '</%s>' % name
 
@@ -219,8 +188,7 @@ class WordDocumentStream(DOCDirStream):
                 "reserved14",
                 ]
         for i in fields:
-            self.printAndSet(i, self.getuInt32())
-            self.pos += 4
+            self.printAndSet(i, self.readuInt32())
 
         print '</%s>' % name
 
@@ -423,12 +391,11 @@ class WordDocumentStream(DOCDirStream):
             ["lcbSttbfUssr"],
                 ]
         for i in fields:
-            value = self.getuInt32()
+            value = self.readInt32()
             hasHandler = len(i) > 1
             # a member needs handling if it defines the size of a struct and it's non-zero
             needsHandling = i[0].startswith("lcb") and value != 0
-            self.printAndSet(i[0], self.getuInt32(), end = ((not hasHandler) and (not needsHandling)), offset = True)
-            self.pos += 4
+            self.printAndSet(i[0], value, end = ((not hasHandler) and (not needsHandling)), offset = True)
             if hasHandler or needsHandling:
                 if hasHandler:
                     i[1]()
@@ -539,8 +506,7 @@ class WordDocumentStream(DOCDirStream):
             "lcbBkdEdnOld", 
                 ]
         for i in fields:
-            self.printAndSet(i, self.getuInt32())
-            self.pos += 4
+            self.printAndSet(i, self.readuInt32())
 
     def __dumpFibRgFcLcb2002(self):
         self.__dumpFibRgFcLcb2000()
@@ -603,8 +569,7 @@ class WordDocumentStream(DOCDirStream):
             "lcbPlcflvcMixedXP",
                 ]
         for i in fields:
-            self.printAndSet(i, self.getuInt32())
-            self.pos += 4
+            self.printAndSet(i, self.readuInt32())
 
     def dumpFibRgFcLcb2002(self, name):
         print '<%s type="dumpFibRgFcLcb2002" size="744 bytes">' % name

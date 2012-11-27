@@ -39,12 +39,22 @@ class DOCDirStream:
             pos = self.pos
         return struct.unpack("<B", bytes[pos:pos+1])[0]
 
+    def readuInt8(self):
+        ret = self.getuInt8()
+        self.pos += 1
+        return ret
+
     def getuInt16(self, bytes = None, pos = None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
         return struct.unpack("<H", bytes[pos:pos+2])[0]
+
+    def readuInt16(self):
+        ret = self.getuInt16()
+        self.pos += 2
+        return ret
 
     def getInt16(self, bytes = None, pos = None):
         if not bytes:
@@ -53,12 +63,22 @@ class DOCDirStream:
             pos = self.pos
         return struct.unpack("<h", bytes[pos:pos+2])[0]
 
+    def readInt16(self):
+        ret = self.getInt16()
+        self.pos += 2
+        return ret
+
     def getuInt32(self, bytes = None, pos = None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
         return struct.unpack("<I", bytes[pos:pos+4])[0]
+
+    def readuInt32(self):
+        ret = self.getuInt32()
+        self.pos += 4
+        return ret
 
     def getInt32(self, bytes = None, pos = None):
         if not bytes:
@@ -67,6 +87,11 @@ class DOCDirStream:
             pos = self.pos
         return struct.unpack("<i", bytes[pos:pos+4])[0]
 
+    def readInt32(self):
+        ret = self.getInt32()
+        self.pos += 4
+        return ret
+
     def getuInt64(self, bytes = None, pos = None):
         if not bytes:
             bytes = self.bytes
@@ -74,13 +99,16 @@ class DOCDirStream:
             pos = self.pos
         return struct.unpack("<Q", bytes[pos:pos+8])[0]
 
+    def readuInt64(self):
+        ret = self.getuInt64()
+        self.pos += 8
+        return ret
+
     def getString(self):
         bytes = []
         while True:
-            i = self.getuInt8()
-            self.pos += 1
-            j = self.getuInt8()
-            self.pos += 1
+            i = self.readuInt8()
+            j = self.readuInt8()
             if i != 0 or j != 0:
                 bytes.append(i)
                 bytes.append(j)

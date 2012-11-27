@@ -19,8 +19,7 @@ class FcCompressed(DOCDirStream):
 
     def dump(self):
         print '<fcCompressed type="FcCompressed" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.getuInt32()
-        self.pos += 4
+        buf = self.readuInt32()
         self.printAndSet("fc", buf & ((2**32-1) >> 2)) # bits 0..29
         self.printAndSet("fCompressed", self.getBit(buf, 30))
         self.printAndSet("r1", self.getBit(buf, 31))
@@ -47,8 +46,7 @@ class Pcd(DOCDirStream):
 
     def dump(self):
         print '<pcd type="Pcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("fNoParaLast", self.getBit(buf, 0))
         self.printAndSet("fR1", self.getBit(buf, 1))
         self.printAndSet("fDirty", self.getBit(buf, 2))
@@ -96,10 +94,8 @@ class FBKF(DOCDirStream):
 
     def dump(self):
         print '<aFBKF type="FBKF" offset="%d">' % self.pos
-        self.printAndSet("ibkl", self.getuInt16())
-        self.pos += 2
-        BKC(self.getuInt16()).dump()
-        self.pos += 2
+        self.printAndSet("ibkl", self.readuInt16())
+        BKC(self.readuInt16()).dump()
         print '</aFBKF>'
 
 class PlcfBkf(DOCDirStream, PLC):
@@ -214,8 +210,7 @@ class Sprm(DOCDirStream):
                 7: 3,
                 }
 
-        self.sprm = self.getuInt16()
-        self.pos += 2
+        self.sprm = self.readuInt16()
 
         self.ispmd = (self.sprm & 0x1ff)        # 1-9th bits
         self.fSpec = (self.sprm & 0x200)  >> 9  # 10th bit
@@ -301,8 +296,7 @@ class Chpx(DOCDirStream):
 
     def dump(self):
         print '<chpx type="Chpx" offset="%d">' % self.pos
-        self.printAndSet("cb", self.getuInt8())
-        self.pos += 1
+        self.printAndSet("cb", self.readuInt8())
         pos = self.pos
         while (self.cb - (pos - self.pos)) > 0:
             prl = Prl(self.bytes, pos)
@@ -318,11 +312,9 @@ class PapxInFkp(DOCDirStream):
 
     def dump(self):
         print '<papxInFkp type="PapxInFkp" offset="%d">' % self.pos
-        self.printAndSet("cb", self.getuInt8())
-        self.pos += 1
+        self.printAndSet("cb", self.readuInt8())
         if self.cb == 0:
-            self.printAndSet("cb_", self.getuInt8())
-            self.pos += 1
+            self.printAndSet("cb_", self.readuInt8())
             grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_)
             grpPrlAndIstd.dump()
         else:
@@ -339,7 +331,7 @@ class BxPap(DOCDirStream):
 
     def dump(self):
         print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("bOffset", self.getuInt8())
+        self.printAndSet("bOffset", self.readuInt8())
         papxInFkp = PapxInFkp(self.bytes, self.mainStream, self.parentpos + self.bOffset*2)
         papxInFkp.dump()
         print '</bxPap>'
@@ -411,8 +403,7 @@ class PnFkpChpx(DOCDirStream):
 
     def dump(self):
         print '<%s type="PnFkpChpx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
-        buf = self.getuInt32()
-        self.pos += 4
+        buf = self.readuInt32()
         self.printAndSet("pn", buf & (2**22-1))
         chpxFkp = ChpxFkp(self.bytes, self.mainStream, self.pn*512, 512)
         chpxFkp.dump()
@@ -427,8 +418,7 @@ class LPXCharBuffer9(DOCDirStream):
 
     def dump(self):
         print '<%s type="LPXCharBuffer9" offset="%d" size="20 bytes">' % (self.name, self.pos)
-        self.printAndSet("cch", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cch", self.readuInt16())
         self.printAndSet("xcharArray", self.bytes[self.pos:self.pos+(self.cch*2)].decode('utf-16'), hexdump = False)
         print '</%s>' % self.name
 
@@ -443,14 +433,10 @@ class ATRDPre10(DOCDirStream):
         xstUsrInitl = LPXCharBuffer9(self, "xstUsrInitl")
         xstUsrInitl.dump()
         self.pos += 20
-        self.printAndSet("ibst", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("bitsNotUsed", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("grfNotUsed", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("ITagBkmk", self.getInt32())
-        self.pos += 4
+        self.printAndSet("ibst", self.readuInt16())
+        self.printAndSet("bitsNotUsed", self.readuInt16())
+        self.printAndSet("grfNotUsed", self.readuInt16())
+        self.printAndSet("ITagBkmk", self.readInt32())
         print '</aATRDPre10>'
 
 class PnFkpPapx(DOCDirStream):
@@ -463,8 +449,7 @@ class PnFkpPapx(DOCDirStream):
 
     def dump(self):
         print '<%s type="PnFkpPapx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
-        buf = self.getuInt32()
-        self.pos += 4
+        buf = self.readuInt32()
         self.printAndSet("pn", buf & (2**22-1))
         papxFkp = PapxFkp(self.bytes, self.mainStream, self.pn*512, 512)
         papxFkp.dump()
@@ -572,10 +557,8 @@ class Pcdt(DOCDirStream):
 
     def dump(self):
         print '<pcdt type="Pcdt" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("clxt", self.getuInt8())
-        self.pos += 1
-        self.printAndSet("lcb", self.getuInt32())
-        self.pos += 4
+        self.printAndSet("clxt", self.readuInt8())
+        self.printAndSet("lcb", self.readuInt32())
         PlcPcd(self.bytes, self.mainStream, self.pos, self.lcb).dump()
         print '</pcdt>'
 
@@ -604,8 +587,7 @@ class Copts60(DOCDirStream):
     def dump(self):
         print '<copts60 type="Copts60" offset="%s" size="2 bytes">' % self.pos
         # Copts60 first byte
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("fNoTabForInd", self.getBit(buf, 0))
         self.printAndSet("fNoSpaceRaiseLower", self.getBit(buf, 1))
         self.printAndSet("fSuppressSpBfAfterPgBrk", self.getBit(buf, 2))
@@ -616,8 +598,7 @@ class Copts60(DOCDirStream):
         self.printAndSet("fSuppressTopSpacing", self.getBit(buf, 7))
 
         # Copts60 second byte
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("fOrigWordTableRules", self.getBit(buf, 0))
         self.printAndSet("unused14", self.getBit(buf, 1))
         self.printAndSet("fShowBreaksInFrames", self.getBit(buf, 2))
@@ -637,8 +618,7 @@ class DopBase(DOCDirStream):
 
     def dump(self):
         print '<dopBase offset="%d" size="%d bytes">' % (self.pos, 84)
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("fFacingPages", self.getBit(buf, 0))
         self.printAndSet("unused1", self.getBit(buf, 1))
         self.printAndSet("fPMHMainDoc", self.getBit(buf, 2))
@@ -646,16 +626,13 @@ class DopBase(DOCDirStream):
         self.printAndSet("fpc", (buf & 0x60) >> 5) # 6..7th bits
         self.printAndSet("unused3", self.getBit(buf, 7))
 
-        self.printAndSet("unused4", self.getuInt8())
-        self.pos += 1
+        self.printAndSet("unused4", self.readuInt8())
 
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("rncFtn", buf & 0x03) # 1..2nd bits
         self.printAndSet("nFtn", (buf & 0xfffc) >> 2) # 3..16th bits
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("unused5", self.getBit(buf, 0))
         self.printAndSet("unused6", self.getBit(buf, 1))
         self.printAndSet("unused7", self.getBit(buf, 2))
@@ -665,8 +642,7 @@ class DopBase(DOCDirStream):
         self.printAndSet("fSplAllDone", self.getBit(buf, 6))
         self.printAndSet("fSplAllClean", self.getBit(buf, 7))
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("fSplHideErrors", self.getBit(buf, 0))
         self.printAndSet("fGramHideErrors", self.getBit(buf, 1))
         self.printAndSet("fLabelDoc", self.getBit(buf, 2))
@@ -676,8 +652,7 @@ class DopBase(DOCDirStream):
         self.printAndSet("fLinkStyles", self.getBit(buf, 6))
         self.printAndSet("fRevMarking", self.getBit(buf, 7))
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("unused11", self.getBit(buf, 0))
         self.printAndSet("fExactCWords", self.getBit(buf, 1))
         self.printAndSet("fPagHidden", self.getBit(buf, 2))
@@ -687,8 +662,7 @@ class DopBase(DOCDirStream):
         self.printAndSet("fWord97Compat", self.getBit(buf, 6))
         self.printAndSet("unused12", self.getBit(buf, 7))
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("unused13", self.getBit(buf, 0))
         self.printAndSet("fProtEnabled", self.getBit(buf, 1))
         self.printAndSet("fDispFormFldSel", self.getBit(buf, 2))
@@ -702,42 +676,26 @@ class DopBase(DOCDirStream):
         copts60.dump()
         self.pos += 2
 
-        self.printAndSet("dxaTab", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("cpgWebOpt", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("dxaHotZ", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("cConsecHypLim", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("wSpare2", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("dttmCreated", self.getuInt32()) # TODO extract DTTM here and below
-        self.pos += 4
-        self.printAndSet("dttmRevised", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("dttmLastPrint", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("nRevision", self.getInt16())
-        self.pos += 2
-        self.printAndSet("tmEdited", self.getInt32())
-        self.pos += 4
-        self.printAndSet("cWords", self.getInt32())
-        self.pos += 4
-        self.printAndSet("cCh", self.getInt32())
-        self.pos += 4
-        self.printAndSet("cPg", self.getInt16())
-        self.pos += 2
-        self.printAndSet("cParas", self.getInt32())
-        self.pos += 4
+        self.printAndSet("dxaTab", self.readuInt16())
+        self.printAndSet("cpgWebOpt", self.readuInt16())
+        self.printAndSet("dxaHotZ", self.readuInt16())
+        self.printAndSet("cConsecHypLim", self.readuInt16())
+        self.printAndSet("wSpare2", self.readuInt16())
+        self.printAndSet("dttmCreated", self.readuInt32()) # TODO extract DTTM here and below
+        self.printAndSet("dttmRevised", self.readuInt32())
+        self.printAndSet("dttmLastPrint", self.readuInt32())
+        self.printAndSet("nRevision", self.readInt16())
+        self.printAndSet("tmEdited", self.readInt32())
+        self.printAndSet("cWords", self.readInt32())
+        self.printAndSet("cCh", self.readInt32())
+        self.printAndSet("cPg", self.readInt16())
+        self.printAndSet("cParas", self.readInt32())
 
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("rncEdn", buf & 0x0003) # 1..2nd bits
         self.printAndSet("nEdn", (buf & 0xfffc) >> 2) # 3..16th bits
 
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("epc", buf & 0x0003) # 1..2nd bits
         self.printAndSet("unused14", (buf & 0x003c) >> 2) # 3..6th bits
         self.printAndSet("unused15", (buf & 0x03c0) >> 6) # 7..10th bits
@@ -748,23 +706,15 @@ class DopBase(DOCDirStream):
         self.printAndSet("reserved2", self.getBit(buf, 14))
         self.printAndSet("fIncludeSubdocsInStats", self.getBit(buf, 15))
 
-        self.printAndSet("cLines", self.getInt32())
-        self.pos += 4
-        self.printAndSet("cWordsWithSubdocs", self.getInt32())
-        self.pos += 4
-        self.printAndSet("cChWithSubdocs", self.getInt32())
-        self.pos += 4
-        self.printAndSet("cPgWithSubdocs", self.getInt16())
-        self.pos += 2
-        self.printAndSet("cParasWithSubdocs", self.getInt32())
-        self.pos += 4
-        self.printAndSet("cLinesWithSubdocs", self.getInt32())
-        self.pos += 4
-        self.printAndSet("lKeyProtDoc", self.getInt32())
-        self.pos += 4
+        self.printAndSet("cLines", self.readInt32())
+        self.printAndSet("cWordsWithSubdocs", self.readInt32())
+        self.printAndSet("cChWithSubdocs", self.readInt32())
+        self.printAndSet("cPgWithSubdocs", self.readInt16())
+        self.printAndSet("cParasWithSubdocs", self.readInt32())
+        self.printAndSet("cLinesWithSubdocs", self.readInt32())
+        self.printAndSet("lKeyProtDoc", self.readInt32())
 
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("wvkoSaved", buf & 0x0007) # 1..3rd bits
         self.printAndSet("pctWwdSaved", (buf & 0x0ff8) >> 3) # 4..12th bits
         self.printAndSet("zkSaved", (buf & 0x3000) >> 12) # 13..14th bits
@@ -783,8 +733,7 @@ class Copts80(DOCDirStream):
         Copts60(self).dump()
         self.pos += 2
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("fSuppressTopSpacingMac5", self.getBit(buf, 0))
         self.printAndSet("fTruncDxaExpand", self.getBit(buf, 1))
         self.printAndSet("fPrintBodyBeforeHdr", self.getBit(buf, 2))
@@ -794,8 +743,7 @@ class Copts80(DOCDirStream):
         self.printAndSet("f2ptExtLeadingOnly", self.getBit(buf, 6))
         self.printAndSet("fTruncFontHeight", self.getBit(buf, 7))
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("fSubOnSize", self.getBit(buf, 0))
         self.printAndSet("fLineWrapLikeWord6", self.getBit(buf, 1))
         self.printAndSet("fWW6BorderRules", self.getBit(buf, 2))
@@ -837,23 +785,20 @@ class Dop97(DOCDirStream):
         assert dop95.pos == self.pos + 88
         self.pos += 88
 
-        self.printAndSet("adt", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("adt", self.readuInt16())
         # TODO doptypography
         self.pos += 310
         # TODO dogrid
         self.pos += 10
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("unused1", self.getBit(buf, 0))
         self.printAndSet("lvlDop", (buf & 0x1e) >> 1) # 2..5th bits
         self.printAndSet("fGramAllDone", self.getBit(buf, 5))
         self.printAndSet("fGramAllClean", self.getBit(buf, 6))
         self.printAndSet("fSubsetFonts", self.getBit(buf, 7))
 
-        buf = self.getuInt8()
-        self.pos += 1
+        buf = self.readuInt8()
         self.printAndSet("unused2", self.getBit(buf, 0))
         self.printAndSet("fHtmlDoc", self.getBit(buf, 1))
         self.printAndSet("fDiskLvcInvalid", self.getBit(buf, 2))
@@ -863,60 +808,37 @@ class Dop97(DOCDirStream):
         self.printAndSet("unused3", self.getBit(buf, 6))
         self.printAndSet("unused4", self.getBit(buf, 7))
 
-        self.printAndSet("unused5", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("unused5", self.readuInt16())
         # TODO asumyi
         self.pos += 12
-        self.printAndSet("cChWS", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("cChWSWithSubdocs", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("grfDocEvents", self.getuInt32())
-        self.pos += 4
+        self.printAndSet("cChWS", self.readuInt32())
+        self.printAndSet("cChWSWithSubdocs", self.readuInt32())
+        self.printAndSet("grfDocEvents", self.readuInt32())
 
-        buf = self.getuInt32()
-        self.pos += 4
+        buf = self.readuInt32()
         self.printAndSet("fVirusPrompted", self.getBit(buf, 0))
         self.printAndSet("fVirusLoadSafe", self.getBit(buf, 1))
         self.printAndSet("KeyVirusSession30", (buf & 0xfffffffc) >> 2)
 
-        self.printAndSet("space1", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("space2", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("space3", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("space4", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("space5", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("space6", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("space7", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("space8", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("space1", self.readuInt32())
+        self.printAndSet("space2", self.readuInt32())
+        self.printAndSet("space3", self.readuInt32())
+        self.printAndSet("space4", self.readuInt32())
+        self.printAndSet("space5", self.readuInt32())
+        self.printAndSet("space6", self.readuInt32())
+        self.printAndSet("space7", self.readuInt32())
+        self.printAndSet("space8", self.readuInt16())
 
-        self.printAndSet("cpMaxListCacheMainDoc", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("ilfoLastBulletMain", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("ilfoLastNumberMain", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("cDBC", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("cDBCWithSubdocs", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("reserved3a", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("nfcFtnRef", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("nfcEdnRef", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("hpsZoomFontPag", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("dywDispPag", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cpMaxListCacheMainDoc", self.readuInt32())
+        self.printAndSet("ilfoLastBulletMain", self.readuInt16())
+        self.printAndSet("ilfoLastNumberMain", self.readuInt16())
+        self.printAndSet("cDBC", self.readuInt32())
+        self.printAndSet("cDBCWithSubdocs", self.readuInt32())
+        self.printAndSet("reserved3a", self.readuInt32())
+        self.printAndSet("nfcFtnRef", self.readuInt16())
+        self.printAndSet("nfcEdnRef", self.readuInt16())
+        self.printAndSet("hpsZoomFontPag", self.readuInt16())
+        self.printAndSet("dywDispPag", self.readuInt16())
         print '</dop97>'
 
 class Dop2000(DOCDirStream):
@@ -988,8 +910,7 @@ class FFID(DOCDirStream):
         self.pos = offset
 
     def dump(self):
-        self.ffid = self.getuInt8()
-        self.pos += 1
+        self.ffid = self.readuInt8()
 
         self.prq =       (self.ffid & 0x3)       # first two bits
         self.fTrueType = (self.ffid & 0x4) >> 2  # 3rd bit
@@ -1008,8 +929,7 @@ class PANOSE(DOCDirStream):
     def dump(self):
         print '<panose type="PANOSE" offset="%s" size="10 bytes">' % self.pos
         for i in ["bFamilyType", "bSerifStyle", "bWeight", "bProportion", "bContrast", "bStrokeVariation", "bArmStyle", "bLetterform", "bMidline", "bHeight"]:
-            self.printAndSet(i, self.getuInt8())
-            self.pos += 1
+            self.printAndSet(i, self.readuInt8())
         print '</panose>'
 
 class FontSignature(DOCDirStream):
@@ -1019,18 +939,12 @@ class FontSignature(DOCDirStream):
         self.pos = offset
 
     def dump(self):
-        fsUsb1 = self.getuInt32()
-        self.pos += 4
-        fsUsb2 = self.getuInt32()
-        self.pos += 4
-        fsUsb3 = self.getuInt32()
-        self.pos += 4
-        fsUsb4 = self.getuInt32()
-        self.pos += 4
-        fsCsb1 = self.getuInt32()
-        self.pos += 4
-        fsCsb2 = self.getuInt32()
-        self.pos += 4
+        fsUsb1 = self.readuInt32()
+        fsUsb2 = self.readuInt32()
+        fsUsb3 = self.readuInt32()
+        fsUsb4 = self.readuInt32()
+        fsCsb1 = self.readuInt32()
+        fsCsb2 = self.readInt32()
         print '<fontSignature fsUsb1="%s" fsUsb2="%s" fsUsb3="%s" fsUsb4="%s" fsCsb1="%s" fsCsb2="%s"/>' % (
                 hex(fsUsb1), hex(fsUsb2), hex(fsUsb3), hex(fsUsb4), hex(fsCsb1), hex(fsCsb2)
                 )
@@ -1046,12 +960,9 @@ class FFN(DOCDirStream):
         print '<ffn type="FFN" offset="%d" size="%d bytes">' % (self.pos, self.size)
         FFID(self.bytes, self.pos).dump()
         self.pos += 1
-        self.printAndSet("wWeight", self.getInt16(), hexdump = False)
-        self.pos += 2
-        self.printAndSet("chs", self.getuInt8(), hexdump = False)
-        self.pos += 1
-        self.printAndSet("ixchSzAlt", self.getuInt8())
-        self.pos += 1
+        self.printAndSet("wWeight", self.readInt16(), hexdump = False)
+        self.printAndSet("chs", self.readuInt8(), hexdump = False)
+        self.printAndSet("ixchSzAlt", self.readuInt8())
         PANOSE(self.bytes, self.pos).dump()
         self.pos += 10
         FontSignature(self.bytes, self.pos).dump()
@@ -1068,13 +979,10 @@ class SttbfFfn(DOCDirStream):
 
     def dump(self):
         print '<sttbfFfn type="SttbfFfn" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("cData", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("cbExtra", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cData", self.readuInt16())
+        self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
-            cchData = self.getuInt8()
-            self.pos += 1
+            cchData = self.readuInt8()
             print '<cchData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
             FFN(self.bytes, self.mainStream, self.pos, cchData).dump()
             self.pos += cchData
@@ -1090,12 +998,9 @@ class ATNBE(DOCDirStream):
 
     def dump(self):
         print '<atnbe type="ATNBE">'
-        self.printAndSet("bmc", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("ITag", self.getuInt32())
-        self.pos += 4
-        self.printAndSet("ITagOld", self.getuInt32())
-        self.pos += 4
+        self.printAndSet("bmc", self.readuInt16())
+        self.printAndSet("ITag", self.readuInt32())
+        self.printAndSet("ITagOld", self.readuInt32())
         print '</atnbe>'
 
 class SttbfAtnBkmk(DOCDirStream):
@@ -1107,16 +1012,12 @@ class SttbfAtnBkmk(DOCDirStream):
 
     def dump(self):
         print '<sttbfAtnBkmk type="SttbfAtnBkmk" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("fExtended", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("cData", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("cbExtra", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("fExtended", self.readuInt16())
+        self.printAndSet("cData", self.readuInt16())
+        self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
-            cchData = self.getuInt16()
+            cchData = self.readuInt16()
             print '<cchData index="%d" offset="%d" size="%d bytes"/>' % (i, self.pos, cchData)
-            self.pos += 2
             print '<extraData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, ATNBE.size)
             atnbe = ATNBE(self)
             atnbe.dump()
@@ -1133,26 +1034,17 @@ class Stshif(DOCDirStream):
 
     def dump(self):
         print '<stshif type="Stshif" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("cstd", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("cbSTDBaseInFile", self.getuInt16())
-        self.pos += 2
-        buf = self.getuInt16()
+        self.printAndSet("cstd", self.readuInt16())
+        self.printAndSet("cbSTDBaseInFile", self.readuInt16())
+        buf = self.readuInt16()
         self.printAndSet("fStdStylenamesWritten", buf & 1) # first bit
         self.printAndSet("fReserved", (buf & 0xfe) >> 1) # 2..16th bits
-        self.pos += 2
-        self.printAndSet("stiMaxWhenSaved", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("istdMaxFixedWhenSaved", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("nVerBuiltInNamesWhenSaved", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("ftcAsci", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("ftcFE", self.getuInt16())
-        self.pos += 2
-        self.printAndSet("ftcOther", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("stiMaxWhenSaved", self.readuInt16())
+        self.printAndSet("istdMaxFixedWhenSaved", self.readuInt16())
+        self.printAndSet("nVerBuiltInNamesWhenSaved", self.readuInt16())
+        self.printAndSet("ftcAsci", self.readuInt16())
+        self.printAndSet("ftcFE", self.readuInt16())
+        self.printAndSet("ftcOther", self.readuInt16())
         print '</stshif>'
 
 class LSD(DOCDirStream):
@@ -1162,15 +1054,13 @@ class LSD(DOCDirStream):
         self.pos = offset
 
     def dump(self):
-        buf = self.getuInt16()
+        buf = self.readuInt16()
         self.printAndSet("fLocked", self.getBit(buf, 1))
         self.printAndSet("fSemiHidden", self.getBit(buf, 2))
         self.printAndSet("fUnhideWhenUsed", self.getBit(buf, 3))
         self.printAndSet("fQFormat", self.getBit(buf, 4))
         self.printAndSet("iPriority", (buf & 0xfff0) >> 4) # 5-16th bits
-        self.pos += 2
-        self.printAndSet("fReserved", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("fReserved", self.readuInt16())
 
 class StshiLsd(DOCDirStream):
     """The StshiLsd structure specifies latent style data for application-defined styles."""
@@ -1181,8 +1071,7 @@ class StshiLsd(DOCDirStream):
     
     def dump(self):
         print '<stshiLsd type="StshiLsd" offset="%d">' % (self.pos)
-        self.printAndSet("cbLSD", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cbLSD", self.readuInt16())
         for i in range(self.stshi.stshif.stiMaxWhenSaved):
             print '<mpstiilsd index="%d" type="LSD">' % i
             LSD(self.bytes, self.pos).dump()
@@ -1202,8 +1091,7 @@ class STSHI(DOCDirStream):
         self.stshif = Stshif(self.bytes, self.mainStream, self.pos)
         self.stshif.dump()
         self.pos += self.stshif.size
-        self.printAndSet("ftcBi", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("ftcBi", self.readuInt16())
         stshiLsd = StshiLsd(self.bytes, self, self.pos)
         stshiLsd.dump()
         print '</stshi>'
@@ -1216,8 +1104,7 @@ class LPStshi(DOCDirStream):
 
     def dump(self):
         print '<lpstshi type="LPStshi" offset="%d">' % self.pos
-        self.printAndSet("cbStshi", self.getuInt16(), hexdump = False)
-        self.pos += 2
+        self.printAndSet("cbStshi", self.readuInt16(), hexdump = False)
         self.stshi = STSHI(self.bytes, self.mainStream, self.pos, self.cbStshi)
         self.stshi.dump()
         self.pos += self.cbStshi
@@ -1232,15 +1119,13 @@ class StdfBase(DOCDirStream):
 
     def dump(self):
         print '<stdfBase type="StdfBase" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("sti", buf & 0x0fff) # 1..12th bits
         self.printAndSet("fScratch", self.getBit(buf, 13))
         self.printAndSet("fInvalHeight", self.getBit(buf, 14))
         self.printAndSet("fHasUpe", self.getBit(buf, 15))
         self.printAndSet("fMassCopy", self.getBit(buf, 16))
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.stk = buf & 0x000f # 1..4th bits
         stkmap = {
                 1: "paragraph",
@@ -1250,14 +1135,11 @@ class StdfBase(DOCDirStream):
                 }
         print '<stk value="%d" name="%s"/>' % (self.stk, stkmap[self.stk])
         self.printAndSet("istdBase", (buf & 0xfff0) >> 4) # 5..16th bits
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("cupx", buf & 0x000f) # 1..4th bits
         self.printAndSet("istdNext", (buf & 0xfff0) >> 4) # 5..16th bits
-        self.printAndSet("bchUpe", self.getuInt16(), hexdump = False)
-        self.pos += 2
-        self.printAndSet("grfstd", self.getuInt16()) # TODO dedicated GRFSTD class
-        self.pos += 2
+        self.printAndSet("bchUpe", self.readuInt16(), hexdump = False)
+        self.printAndSet("grfstd", self.readuInt16()) # TODO dedicated GRFSTD class
         print '</stdfBase>'
 
 class StdfPost2000(DOCDirStream):
@@ -1269,15 +1151,12 @@ class StdfPost2000(DOCDirStream):
 
     def dump(self):
         print '<stdfPost2000 type="StdfPost2000" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.getuInt16()
-        self.pos += 2
+        buf = self.readuInt16()
         self.printAndSet("istdLink", buf & 0xfff) # 1..12th bits
         self.printAndSet("fHasOriginalStyle", self.getBit(buf, 13)) # 13th bit
         self.printAndSet("fSpare", (buf & 0xe000) >> 13) # 14..16th bits
-        self.printAndSet("rsid", self.getuInt32())
-        self.pos += 4
-        buf = self.getuInt16()
-        self.pos += 2
+        self.printAndSet("rsid", self.readuInt32())
+        buf = self.readuInt16()
         self.printAndSet("iftcHtml", buf & 0x7) # 1..3rd bits
         self.printAndSet("unused", self.getBit(buf, 4))
         self.printAndSet("iPriority", (buf & 0xfff0) >> 4) # 5..16th bits
@@ -1313,8 +1192,7 @@ class Xst(DOCDirStream):
 
     def dump(self):
         print '<xst type="Xst" offset="%d">' % self.pos
-        self.printAndSet("cch", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cch", self.readuInt16())
         print '<rgtchar value="%s"/>' % self.getString()
         self.pos -= 2 # TODO this will break if not inside an Xstz, use self.cch instead
         print '</xst>'
@@ -1330,8 +1208,7 @@ class Xstz(DOCDirStream):
         xst = Xst(self)
         xst.dump()
         self.pos = xst.pos
-        self.printAndSet("chTerm", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("chTerm", self.readuInt16())
         print '</xstz>'
 
 class UpxPapx(DOCDirStream):
@@ -1343,8 +1220,7 @@ class UpxPapx(DOCDirStream):
 
     def dump(self):
         print '<upxPapx type="UpxPapx" offset="%d">' % self.pos
-        self.printAndSet("istd", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("istd", self.readuInt16())
         size = self.lPUpxPapx.cbUpx - 2
         pos = 0
         print '<grpprlPapx offset="%d" size="%d bytes">' % (self.pos, size)
@@ -1411,8 +1287,7 @@ class LPUpxPapx(DOCDirStream):
 
     def dump(self):
         print '<lPUpxPapx type="LPUpxPapx" offset="%d">' % self.pos
-        self.printAndSet("cbUpx", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cbUpx", self.readuInt16())
         upxPapx = UpxPapx(self)
         upxPapx.dump()
         self.pos += self.cbUpx
@@ -1429,8 +1304,7 @@ class LPUpxChpx(DOCDirStream):
 
     def dump(self):
         print '<lPUpxChpx type="LPUpxChpx" offset="%d">' % self.pos
-        self.printAndSet("cbUpx", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cbUpx", self.readuInt16())
         upxChpx = UpxChpx(self)
         upxChpx.dump()
         self.pos += self.cbUpx
@@ -1447,8 +1321,7 @@ class LPUpxTapx(DOCDirStream):
 
     def dump(self):
         print '<lPUpxTapx type="LPUpxTapx" offset="%d">' % self.pos
-        self.printAndSet("cbUpx", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cbUpx", self.readuInt16())
         upxTapx = UpxTapx(self)
         upxTapx.dump()
         self.pos += self.cbUpx
@@ -1601,8 +1474,7 @@ class LPStd(DOCDirStream):
         self.pos = stsh.pos
 
     def dump(self):
-        self.printAndSet("cbStd", self.getuInt16())
-        self.pos += 2
+        self.printAndSet("cbStd", self.readuInt16())
         if self.cbStd > 0:
             std = STD(self)
             std.dump()
