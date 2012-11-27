@@ -947,6 +947,27 @@ class Dop2000(DOCDirStream):
         assert copts.pos == self.pos + 32
         self.pos += 32
 
+        self.printAndSet("verCompatPre10", self.readuInt16())
+        buf = self.readuInt8()
+        self.printAndSet("fNoMargPgvwSaved", self.getBit(buf, 0))
+        self.printAndSet("unused2", self.getBit(buf, 1))
+        self.printAndSet("unused3", self.getBit(buf, 2))
+        self.printAndSet("unused4", self.getBit(buf, 3))
+        self.printAndSet("fBulletProofed", self.getBit(buf, 4))
+        self.printAndSet("empty2", self.getBit(buf, 5))
+        self.printAndSet("fSaveUim", self.getBit(buf, 6))
+        self.printAndSet("fFilterPrivacy", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("empty3", self.getBit(buf, 0))
+        self.printAndSet("fSeenRepairs", self.getBit(buf, 1))
+        self.printAndSet("fHasXML", self.getBit(buf, 2))
+        self.printAndSet("unused5", self.getBit(buf, 3))
+        self.printAndSet("fValidateXML", self.getBit(buf, 4))
+        self.printAndSet("fSaveInvalidXML", self.getBit(buf, 5))
+        self.printAndSet("fShowXMLErrors", self.getBit(buf, 6))
+        self.printAndSet("fAlwaysMergeEmptyNamespace", self.getBit(buf, 7))
+
 class Dop2002(DOCDirStream):
     """The Dop2002 structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -955,7 +976,9 @@ class Dop2002(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        Dop2000(self).dump()
+        dop2000 = Dop2000(self)
+        dop2000.dump()
+        assert dop2000.pos == self.pos + 544
         self.pos += 544
 
 class Dop2003(DOCDirStream):
