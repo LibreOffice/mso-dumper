@@ -815,7 +815,9 @@ class Dop95(DOCDirStream):
 
     def dump(self):
         print '<dop95 type="Dop95" offset="%d" size="88 bytes">' % self.pos
-        DopBase(self).dump()
+        dopBase = DopBase(self)
+        dopBase.dump()
+        assert dopBase.pos == self.pos + 84
         self.pos += 84
         Copts80(self).dump()
         self.pos += 4
@@ -829,8 +831,93 @@ class Dop97(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        Dop95(self).dump()
+        print '<dop97 type="Dop97" offset="%d" size="500 bytes">' % self.pos
+        dop95 = Dop95(self)
+        dop95.dump()
+        assert dop95.pos == self.pos + 88
         self.pos += 88
+
+        self.printAndSet("adt", self.getuInt16())
+        self.pos += 2
+        # TODO doptypography
+        self.pos += 310
+        # TODO dogrid
+        self.pos += 10
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("unused1", self.getBit(buf, 0))
+        self.printAndSet("lvlDop", (buf & 0x1e) >> 1) # 2..5th bits
+        self.printAndSet("fGramAllDone", self.getBit(buf, 5))
+        self.printAndSet("fGramAllClean", self.getBit(buf, 6))
+        self.printAndSet("fSubsetFonts", self.getBit(buf, 7))
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("unused2", self.getBit(buf, 0))
+        self.printAndSet("fHtmlDoc", self.getBit(buf, 1))
+        self.printAndSet("fDiskLvcInvalid", self.getBit(buf, 2))
+        self.printAndSet("fSnapBorder", self.getBit(buf, 3))
+        self.printAndSet("fIncludeHeader", self.getBit(buf, 4))
+        self.printAndSet("fIncludeFooter", self.getBit(buf, 5))
+        self.printAndSet("unused3", self.getBit(buf, 6))
+        self.printAndSet("unused4", self.getBit(buf, 7))
+
+        self.printAndSet("unused5", self.getuInt16())
+        self.pos += 2
+        # TODO asumyi
+        self.pos += 12
+        self.printAndSet("cChWS", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("cChWSWithSubdocs", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("grfDocEvents", self.getuInt32())
+        self.pos += 4
+
+        buf = self.getuInt32()
+        self.pos += 4
+        self.printAndSet("fVirusPrompted", self.getBit(buf, 0))
+        self.printAndSet("fVirusLoadSafe", self.getBit(buf, 1))
+        self.printAndSet("KeyVirusSession30", (buf & 0xfffffffc) >> 2)
+
+        self.printAndSet("space1", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("space2", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("space3", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("space4", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("space5", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("space6", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("space7", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("space8", self.getuInt16())
+        self.pos += 2
+
+        self.printAndSet("cpMaxListCacheMainDoc", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("ilfoLastBulletMain", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("ilfoLastNumberMain", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("cDBC", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("cDBCWithSubdocs", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("reserved3a", self.getuInt32())
+        self.pos += 4
+        self.printAndSet("nfcFtnRef", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("nfcEdnRef", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("hpsZoomFontPag", self.getuInt16())
+        self.pos += 2
+        self.printAndSet("dywDispPag", self.getuInt16())
+        self.pos += 2
+        print '</dop97>'
 
 class Dop2000(DOCDirStream):
     """The Dop2000 structure contains document and compatibility settings."""
@@ -840,7 +927,9 @@ class Dop2000(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        Dop97(self).dump()
+        dop97 = Dop97(self)
+        dop97.dump()
+        assert dop97.pos == self.pos + 500
         self.pos += 500
 
 class Dop2002(DOCDirStream):
