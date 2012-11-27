@@ -595,6 +595,39 @@ class Clx(DOCDirStream):
             print '<todo what="Clx::dump() first byte is not 0x02"/>'
         print '</clx>'
 
+class Copts60(DOCDirStream):
+    """The Copts60 structure specifies compatibility options."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+
+    def dump(self):
+        print '<copts60 type="Copts60" offset="%s" size="2 bytes">' % self.pos
+        # Copts60 first byte
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fNoTabForInd", self.getBit(buf, 0))
+        self.printAndSet("fNoSpaceRaiseLower", self.getBit(buf, 1))
+        self.printAndSet("fSuppressSpBfAfterPgBrk", self.getBit(buf, 2))
+        self.printAndSet("fWrapTrailSpaces", self.getBit(buf, 3))
+        self.printAndSet("fMapPrintTextColor", self.getBit(buf, 4))
+        self.printAndSet("fNoColumnBalance", self.getBit(buf, 5))
+        self.printAndSet("fConvMailMergeEsc", self.getBit(buf, 6))
+        self.printAndSet("fSuppressTopSpacing", self.getBit(buf, 7))
+
+        # Copts60 second byte
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fOrigWordTableRules", self.getBit(buf, 0))
+        self.printAndSet("unused14", self.getBit(buf, 1))
+        self.printAndSet("fShowBreaksInFrames", self.getBit(buf, 2))
+        self.printAndSet("fSwapBordersFacingPgs", self.getBit(buf, 3))
+        self.printAndSet("fLeaveBackslashAlone", self.getBit(buf, 4))
+        self.printAndSet("fExpShRtn", self.getBit(buf, 5))
+        self.printAndSet("fDntULTrlSpc", self.getBit(buf, 6))
+        self.printAndSet("fDntBlnSbDbWid", self.getBit(buf, 7))
+        print '</copts60>'
+
 class DopBase(DOCDirStream):
     """The DopBase structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -665,29 +698,9 @@ class DopBase(DOCDirStream):
         self.printAndSet("fLockRev", self.getBit(buf, 6))
         self.printAndSet("fEmbedFonts", self.getBit(buf, 7))
 
-        # Copts60 first byte
-        buf = self.getuInt8()
-        self.pos += 1
-        self.printAndSet("fNoTabForInd", self.getBit(buf, 0))
-        self.printAndSet("fNoSpaceRaiseLower", self.getBit(buf, 1))
-        self.printAndSet("fSuppressSpBfAfterPgBrk", self.getBit(buf, 2))
-        self.printAndSet("fWrapTrailSpaces", self.getBit(buf, 3))
-        self.printAndSet("fMapPrintTextColor", self.getBit(buf, 4))
-        self.printAndSet("fNoColumnBalance", self.getBit(buf, 5))
-        self.printAndSet("fConvMailMergeEsc", self.getBit(buf, 6))
-        self.printAndSet("fSuppressTopSpacing", self.getBit(buf, 7))
-
-        # Copts60 second byte
-        buf = self.getuInt8()
-        self.pos += 1
-        self.printAndSet("fOrigWordTableRules", self.getBit(buf, 0))
-        self.printAndSet("unused14", self.getBit(buf, 1))
-        self.printAndSet("fShowBreaksInFrames", self.getBit(buf, 2))
-        self.printAndSet("fSwapBordersFacingPgs", self.getBit(buf, 3))
-        self.printAndSet("fLeaveBackslashAlone", self.getBit(buf, 4))
-        self.printAndSet("fExpShRtn", self.getBit(buf, 5))
-        self.printAndSet("fDntULTrlSpc", self.getBit(buf, 6))
-        self.printAndSet("fDntBlnSbDbWid", self.getBit(buf, 7))
+        copts60 = Copts60(self)
+        copts60.dump()
+        self.pos += 2
 
         self.printAndSet("dxaTab", self.getuInt16())
         self.pos += 2
@@ -759,6 +772,40 @@ class DopBase(DOCDirStream):
         self.printAndSet("iGutterPos", self.getBit(buf, 15))
         print '</dopBase>'
 
+class Copts80(DOCDirStream):
+    """The Copts80 structure specifies compatibility options."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+
+    def dump(self):
+        print '<copts80 type="Copts80" offset="%d" size="4 bytes">' % self.pos
+        Copts60(self).dump()
+        self.pos += 2
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fSuppressTopSpacingMac5", self.getBit(buf, 0))
+        self.printAndSet("fTruncDxaExpand", self.getBit(buf, 1))
+        self.printAndSet("fPrintBodyBeforeHdr", self.getBit(buf, 2))
+        self.printAndSet("fNoExtLeading", self.getBit(buf, 3))
+        self.printAndSet("fDontMakeSpaceForUL", self.getBit(buf, 4))
+        self.printAndSet("fMWSmallCaps", self.getBit(buf, 5))
+        self.printAndSet("f2ptExtLeadingOnly", self.getBit(buf, 6))
+        self.printAndSet("fTruncFontHeight", self.getBit(buf, 7))
+
+        buf = self.getuInt8()
+        self.pos += 1
+        self.printAndSet("fSubOnSize", self.getBit(buf, 0))
+        self.printAndSet("fLineWrapLikeWord6", self.getBit(buf, 1))
+        self.printAndSet("fWW6BorderRules", self.getBit(buf, 2))
+        self.printAndSet("fExactOnTop", self.getBit(buf, 3))
+        self.printAndSet("fExtraAfter", self.getBit(buf, 4))
+        self.printAndSet("fWPSpace", self.getBit(buf, 5))
+        self.printAndSet("fWPJust", self.getBit(buf, 6))
+        self.printAndSet("fPrintMet", self.getBit(buf, 7))
+        print '</copts80>'
+
 class Dop95(DOCDirStream):
     """The Dop95 structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -767,8 +814,12 @@ class Dop95(DOCDirStream):
         self.dop = dop
 
     def dump(self):
+        print '<dop95 type="Dop95" offset="%d" size="88 bytes">' % self.pos
         DopBase(self).dump()
         self.pos += 84
+        Copts80(self).dump()
+        self.pos += 4
+        print '</dop95>'
 
 class Dop97(DOCDirStream):
     """The Dop97 structure contains document and compatibility settings."""
