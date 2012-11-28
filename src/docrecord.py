@@ -1145,6 +1145,36 @@ class Dop2003(DOCDirStream):
         self.printAndSet("ilfoMacAtCleanup", self.readuInt16())
         print '</dop2003>'
 
+class DopMth(DOCDirStream):
+    """The DopMth structure specifies document-wide math settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+
+    def dump(self):
+        print '<dopMth type="DopMth" offset="%d" size="34 bytes">' % self.pos
+        buf = self.readuInt32()
+        self.printAndSet("mthbrk", (buf & 0x03)) # 1..2nd bits
+        self.printAndSet("mthbrkSub", (buf & 0xc) >> 2) # 3..4th bits
+        self.printAndSet("mthbpjc", (buf & 0x70) >> 4) # 5..7th bits
+        self.printAndSet("reserved1", self.getBit(buf, 7))
+        self.printAndSet("fMathSmallFrac", self.getBit(buf, 8))
+        self.printAndSet("fMathIntLimUndOvr", self.getBit(buf, 9))
+        self.printAndSet("fMathNaryLimUndOvr", self.getBit(buf, 10))
+        self.printAndSet("fMathWrapAlignLeft", self.getBit(buf, 11))
+        self.printAndSet("fMathUseDispDefaults", self.getBit(buf, 12))
+        self.printAndSet("reserved2", (buf & 0xffffe000) >> 13) # 14..32th bits
+
+        self.printAndSet("ftcMath", self.readuInt16())
+        self.printAndSet("dxaLeftMargin", self.readuInt32())
+        self.printAndSet("dxaRightMargin", self.readuInt32())
+        self.printAndSet("empty1", self.readuInt32())
+        self.printAndSet("empty2", self.readuInt32())
+        self.printAndSet("empty3", self.readuInt32())
+        self.printAndSet("empty4", self.readuInt32())
+        self.printAndSet("dxaIndentWrapped", self.readuInt32())
+        print '</dopMth>'
+
 class Dop2007(DOCDirStream):
     """The Dop2007 structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -1177,7 +1207,7 @@ class Dop2007(DOCDirStream):
         self.printAndSet("empty4", self.readuInt32())
         self.printAndSet("empty5", self.readuInt32())
         self.printAndSet("empty6", self.readuInt32())
-        # TODO dopMth
+        DopMth(self).dump()
         self.pos += 34
         print '</dop2007>'
 
