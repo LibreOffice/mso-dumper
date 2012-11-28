@@ -1027,10 +1027,47 @@ class Dop2003(DOCDirStream):
         self.dop = dop
 
     def dump(self):
+        print '<dop2003 type="Dop2000" offset="%d" size="616 bytes">' % self.pos
         dop2002 = Dop2002(self)
         dop2002.dump()
         assert dop2002.pos == self.pos + 594
         self.pos += 594
+
+        buf = self.readuInt8()
+        self.printAndSet("fTreatLockAtnAsReadOnly", self.getBit(buf, 0))
+        self.printAndSet("fStyleLock", self.getBit(buf, 1))
+        self.printAndSet("fAutoFmtOverride", self.getBit(buf, 2))
+        self.printAndSet("fRemoveWordML", self.getBit(buf, 3))
+        self.printAndSet("fApplyCustomXForm", self.getBit(buf, 4))
+        self.printAndSet("fStyleLockEnforced", self.getBit(buf, 5))
+        self.printAndSet("fFakeLockAtn", self.getBit(buf, 6))
+        self.printAndSet("fIgnoreMixedContent", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("fShowPlaceholderText", self.getBit(buf, 0))
+        self.printAndSet("unused", self.getBit(buf, 1))
+        self.printAndSet("fWord97Doc", self.getBit(buf, 2))
+        self.printAndSet("fStyleLockTheme", self.getBit(buf, 3))
+        self.printAndSet("fStyleLockQFSet", self.getBit(buf, 4))
+        self.printAndSet("empty1", (buf & 0xe0) >> 5) # 6..8th bits
+        self.printAndSet("empty1_", self.readuInt16())
+
+        buf = self.readuInt8()
+        self.printAndSet("fReadingModeInkLockDown", self.getBit(buf, 0))
+        self.printAndSet("fAcetateShowInkAtn", self.getBit(buf, 1))
+        self.printAndSet("fFilterDttm", self.getBit(buf, 2))
+        self.printAndSet("fEnforceDocProt", self.getBit(buf, 3))
+        self.printAndSet("iDocProtCur", (buf & 0x70) >> 4) # 5..7th bits
+        self.printAndSet("fDispBkSpSaved", self.getBit(buf, 7))
+
+        self.printAndSet("empty2", self.readuInt8())
+        self.printAndSet("dxaPageLock", self.readuInt32())
+        self.printAndSet("dyaPageLock", self.readuInt32())
+        self.printAndSet("pctFontLock", self.readuInt32())
+        self.printAndSet("grfitbid", self.readuInt8())
+        self.printAndSet("empty3", self.readuInt8())
+        self.printAndSet("ilfoMacAtCleanup", self.readuInt16())
+        print '</dop2003>'
 
 class Dop2007(DOCDirStream):
     """The Dop2007 structure contains document and compatibility settings."""
@@ -1040,7 +1077,9 @@ class Dop2007(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        Dop2003(self).dump()
+        dop2003 = Dop2003(self)
+        dop2003.dump()
+        assert dop2003.pos == self.pos + 616
         self.pos += 616
 
 class Dop(DOCDirStream):
