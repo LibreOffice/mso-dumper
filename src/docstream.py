@@ -457,8 +457,8 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbPlcfAtnBkf(self):
         offset = self.fcPlcfAtnBkf
         size = self.lcbPlcfAtnBkf
-        plcfBkf = docrecord.PlcfBkf(self, offset, size)
-        plcfBkf.dump()
+        self.plcfAtnBkf = docrecord.PlcfBkf(self, offset, size)
+        self.plcfAtnBkf.dump()
 
     def handleLcbPlcfAtnBkl(self):
         offset = self.fcPlcfAtnBkl

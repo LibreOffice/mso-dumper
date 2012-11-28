@@ -109,10 +109,8 @@ class Test(unittest.TestCase):
         commentEnds = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfAtnBkl/plcfBkl/aCP')
 
         # The first comment covers Hello\x05, the second covers This\x05.
-        self.assertEqual('H', commentStarts[0].findall('transformed')[0].attrib['value'])
-        self.assertEqual('\\x05', commentEnds[0].findall('transformed')[0].attrib['value'])
-        self.assertEqual('T', commentStarts[1].findall('transformed')[0].attrib['value'])
-        self.assertEqual('\\x05', commentEnds[1].findall('transformed')[0].attrib['value'])
+        self.assertEqual('Hello', commentEnds[0].findall('transformed')[0].attrib['value'])
+        self.assertEqual('This', commentEnds[1].findall('transformed')[0].attrib['value'])
 
 if __name__ == '__main__':
     unittest.main()

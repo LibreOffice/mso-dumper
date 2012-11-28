@@ -130,6 +130,7 @@ class PlcfBkf(DOCDirStream, PLC):
         PLC.__init__(self, size, 4) # 4 is defined by 2.8.10
         self.pos = offset
         self.size = size
+        self.aCP = []
 
     def dump(self):
         print '<plcfBkf type="PlcfBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
@@ -138,8 +139,8 @@ class PlcfBkf(DOCDirStream, PLC):
         for i in range(self.getElements()):
             # aCp
             start = offset + self.getuInt32(pos = pos)
+            self.aCP.append(start)
             print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, start + 1)
             pos += 4
 
             # aFBKF
@@ -164,7 +165,8 @@ class PlcfBkl(DOCDirStream, PLC):
             # aCp
             end = offset + self.getuInt32(pos = pos)
             print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, end, end + 1)
+            start = self.mainStream.plcfAtnBkf.aCP[i]
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, end)
             pos += 4
             print '</aCP>'
         print '</plcfBkl>'
