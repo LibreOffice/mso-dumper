@@ -884,6 +884,26 @@ class Dogrid(DOCDirStream):
         self.printAndSet("fFollowMargins", self.getBit(buf, 7))
         print '</dogrid>'
 
+class Asumyi(DOCDirStream):
+    """The Asumyi structure specifies AutoSummary state information"""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+
+    def dump(self):
+        print '<asumyi type="Asumyi" offset="%d" size="12 bytes">' % self.pos
+        buf = self.readuInt16()
+        self.printAndSet("fValid", self.getBit(buf, 0))
+        self.printAndSet("fView", self.getBit(buf, 1))
+        self.printAndSet("iViewBy", (buf & 0x0c) >> 2) # 3..4th bits
+        self.printAndSet("fUpdateProps", self.getBit(buf, 4))
+        self.printAndSet("reserved", (buf & 0xffe0) >> 5) # 6..16th bits
+
+        self.printAndSet("wDlgLevel", self.readuInt16())
+        self.printAndSet("lHighestLevel", self.readuInt32())
+        self.printAndSet("lCurrentLevel", self.readuInt32())
+        print '</asumyi>'
+
 class Dop97(DOCDirStream):
     """The Dop97 structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -926,7 +946,7 @@ class Dop97(DOCDirStream):
         self.printAndSet("unused4", self.getBit(buf, 7))
 
         self.printAndSet("unused5", self.readuInt16())
-        # TODO asumyi
+        Asumyi(self).dump()
         self.pos += 12
         self.printAndSet("cChWS", self.readuInt32())
         self.printAndSet("cChWSWithSubdocs", self.readuInt32())
