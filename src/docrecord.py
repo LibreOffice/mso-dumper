@@ -630,6 +630,35 @@ class DTTM(DOCDirStream):
         print '</%s>' % self.name
         self.parent.pos = self.pos
 
+class GRFSTD(DOCDirStream):
+    """The GRFSTD structure specifies the general properties of a style."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<grfstd type="GRFSTD" offset="%d" size="2 bytes">' % self.pos
+        buf = self.readuInt8()
+        self.printAndSet("fAutoRedef", self.getBit(buf, 0))
+        self.printAndSet("fHidden", self.getBit(buf, 1))
+        self.printAndSet("f97LidsSet", self.getBit(buf, 2))
+        self.printAndSet("fCopyLang", self.getBit(buf, 3))
+        self.printAndSet("fPersonalCompose", self.getBit(buf, 4))
+        self.printAndSet("fPersonalReply", self.getBit(buf, 5))
+        self.printAndSet("fPersonal", self.getBit(buf, 6))
+        self.printAndSet("fNoHtmlExport", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("fSemiHidden", self.getBit(buf, 0))
+        self.printAndSet("fLocked", self.getBit(buf, 1))
+        self.printAndSet("fInternalUse", self.getBit(buf, 2))
+        self.printAndSet("fUnhideWhenUsed", self.getBit(buf, 3))
+        self.printAndSet("fQFormat", self.getBit(buf, 4))
+        self.printAndSet("fReserved", (buf & 0xe0) >> 5) # 6..8th bits
+        print '</grfstd>'
+        self.parent.pos = self.pos
+
 class DopBase(DOCDirStream):
     """The DopBase structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -1484,7 +1513,7 @@ class StdfBase(DOCDirStream):
         self.printAndSet("cupx", buf & 0x000f) # 1..4th bits
         self.printAndSet("istdNext", (buf & 0xfff0) >> 4) # 5..16th bits
         self.printAndSet("bchUpe", self.readuInt16(), hexdump = False)
-        self.printAndSet("grfstd", self.readuInt16()) # TODO dedicated GRFSTD class
+        GRFSTD(self).dump()
         print '</stdfBase>'
 
 class StdfPost2000(DOCDirStream):
