@@ -1517,8 +1517,8 @@ class Xst(DOCDirStream):
     def dump(self):
         print '<xst type="Xst" offset="%d">' % self.pos
         self.printAndSet("cch", self.readuInt16())
-        print '<rgtchar value="%s"/>' % self.getString()
-        self.pos -= 2 # TODO this will break if not inside an Xstz, use self.cch instead
+        print '<rgtchar value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*self.cch].decode('utf-16'), lowOnly = True)
+        self.pos += 2*self.cch
         print '</xst>'
 
 class Xstz(DOCDirStream):
