@@ -832,6 +832,36 @@ class Dop95(DOCDirStream):
         self.pos += 4
         print '</dop95>'
 
+class DopTypography(DOCDirStream):
+    """The DopTypography structure contains East Asian language typography settings."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+
+    def dump(self):
+        print '<dopTypography type="DopTypography" offset="%d" size="310 bytes">' % self.pos
+        buf = self.readuInt16()
+        self.printAndSet("fKerningPunct", self.getBit(buf, 0))
+        self.printAndSet("iJustification", (buf & 0x0006) >> 1) # 2..3rd bits
+        self.printAndSet("iLevelOfKinsoku", (buf & 0x0018) >> 1) # 4..5th bits
+        self.printAndSet("f2on1", self.getBit(buf, 5))
+        self.printAndSet("unused", self.getBit(buf, 6))
+        self.printAndSet("iCustomKsu", (buf & 0x0380) >> 7) # 8..10th bits
+        self.printAndSet("fJapaneseUseLevel2", self.getBit(buf, 10))
+        self.printAndSet("reserved", (buf & 0xf800) >> 11) # 12..16th bits
+
+        self.printAndSet("cchFollowingPunct", self.readInt16())
+        self.printAndSet("cchLeadingPunct", self.readInt16())
+        if self.cchFollowingPunct != 0:
+            print '<todo what="DopTypography::dump(): cchFollowingPunct != 0 not handled"/>'
+        else:
+            self.pos += 202
+        if self.cchLeadingPunct != 0:
+            print '<todo what="DopTypography::dump(): cchLeadingPunct != 0 not handled"/>'
+        else:
+            self.pos += 102
+        print '</dopTypography>'
+
 class Dop97(DOCDirStream):
     """The Dop97 structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -847,7 +877,9 @@ class Dop97(DOCDirStream):
         self.pos += 88
 
         self.printAndSet("adt", self.readuInt16())
-        # TODO doptypography
+        dopTypography = DopTypography(self)
+        dopTypography.dump()
+        assert dopTypography.pos == self.pos + 310
         self.pos += 310
         # TODO dogrid
         self.pos += 10
@@ -1116,7 +1148,7 @@ class Dop(DOCDirStream):
     def dump(self):
         print '<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size)
         if self.fib.nFibNew == 0x0112:
-            dop2007 = Dop2007(self)
+            Dop2007(self).dump()
         else:
             print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s">""" % hex(self.nFibNew)
         print '</dop>'
