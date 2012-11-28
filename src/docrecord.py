@@ -609,6 +609,27 @@ class Copts60(DOCDirStream):
         self.printAndSet("fDntBlnSbDbWid", self.getBit(buf, 7))
         print '</copts60>'
 
+class DTTM(DOCDirStream):
+    """The DTTM structure specifies date and time."""
+    def __init__(self, parent, name):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+        self.name = name
+
+    def dump(self):
+        buf = self.readuInt32()
+        print '<%s type="DTTM" offset="%d" size="4 bytes">' % (self.name, self.pos)
+        self.printAndSet("mint", buf & 0x0000003f) # 1..6th bits
+        self.printAndSet("hr",  (buf & 0x000007c0) >> 6) # 7..11th bits
+        self.printAndSet("dom", (buf & 0x0000f800) >> 11) # 12..16th bits
+        self.printAndSet("mon", (buf & 0x000f0000) >> 16) # 17..20th bits
+        self.printAndSet("yr",  (buf & 0x1ff00000) >> 20) # 21..29th bits
+        self.printAndSet("wdy", (buf & 0xe0000000) >> 29) # 30..32th bits
+        print '<transformed value="%s-%s-%s %s:%s"/>' % (1900+self.yr, self.mon, self.dom, self.hr, self.mint)
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
 class DopBase(DOCDirStream):
     """The DopBase structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -681,9 +702,9 @@ class DopBase(DOCDirStream):
         self.printAndSet("dxaHotZ", self.readuInt16())
         self.printAndSet("cConsecHypLim", self.readuInt16())
         self.printAndSet("wSpare2", self.readuInt16())
-        self.printAndSet("dttmCreated", self.readuInt32()) # TODO extract DTTM here and below
-        self.printAndSet("dttmRevised", self.readuInt32())
-        self.printAndSet("dttmLastPrint", self.readuInt32())
+        DTTM(self, "dttmCreated").dump()
+        DTTM(self, "dttmRevised").dump()
+        DTTM(self, "dttmLastprint").dump()
         self.printAndSet("nRevision", self.readInt16())
         self.printAndSet("tmEdited", self.readInt32())
         self.printAndSet("cWords", self.readInt32())
