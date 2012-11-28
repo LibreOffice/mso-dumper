@@ -862,6 +862,28 @@ class DopTypography(DOCDirStream):
             self.pos += 102
         print '</dopTypography>'
 
+class Dogrid(DOCDirStream):
+    """The Dogrid structure specifies parameters for the drawn object properties of the document."""
+    def __init__(self, dop):
+        DOCDirStream.__init__(self, dop.bytes)
+        self.pos = dop.pos
+
+    def dump(self):
+        print '<dogrid type="Dogrid" offset="%d" size="10 bytes">' % self.pos
+        self.printAndSet("xaGrid", self.readuInt16())
+        self.printAndSet("yaGrid", self.readuInt16())
+        self.printAndSet("dxaGrid", self.readuInt16())
+        self.printAndSet("dyaGrid", self.readuInt16())
+
+        buf = self.readuInt8()
+        self.printAndSet("dyGridDisplay", (buf & 0x7f)) # 1..7th bits
+        self.printAndSet("unused", self.getBit(buf, 7))
+
+        buf = self.readuInt8()
+        self.printAndSet("dxGridDisplay", (buf & 0x7f)) # 1..7th bits
+        self.printAndSet("fFollowMargins", self.getBit(buf, 7))
+        print '</dogrid>'
+
 class Dop97(DOCDirStream):
     """The Dop97 structure contains document and compatibility settings."""
     def __init__(self, dop):
@@ -881,7 +903,9 @@ class Dop97(DOCDirStream):
         dopTypography.dump()
         assert dopTypography.pos == self.pos + 310
         self.pos += 310
-        # TODO dogrid
+        dogrid = Dogrid(self)
+        dogrid.dump()
+        assert dogrid.pos == self.pos + 10
         self.pos += 10
 
         buf = self.readuInt8()
