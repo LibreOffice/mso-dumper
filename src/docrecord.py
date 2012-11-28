@@ -978,7 +978,7 @@ class Dop2002(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        print '<dop2002 type="Dop2000" offset="%d" size="594 bytes">' % self.pos
+        print '<dop2002 type="Dop2002" offset="%d" size="594 bytes">' % self.pos
         dop2000 = Dop2000(self)
         dop2000.dump()
         assert dop2000.pos == self.pos + 544
@@ -1027,7 +1027,7 @@ class Dop2003(DOCDirStream):
         self.dop = dop
 
     def dump(self):
-        print '<dop2003 type="Dop2000" offset="%d" size="616 bytes">' % self.pos
+        print '<dop2003 type="Dop2003" offset="%d" size="616 bytes">' % self.pos
         dop2002 = Dop2002(self)
         dop2002.dump()
         assert dop2002.pos == self.pos + 594
@@ -1077,10 +1077,33 @@ class Dop2007(DOCDirStream):
         self.dop = dop
 
     def dump(self):
+        print '<dop2007 type="Dop2007" offset="%d">' % self.pos
         dop2003 = Dop2003(self)
         dop2003.dump()
         assert dop2003.pos == self.pos + 616
         self.pos += 616
+
+        self.printAndSet("reserved1", self.readuInt32())
+
+        buf = self.readuInt16()
+        self.printAndSet("fRMTrackFormatting", self.getBit(buf, 0))
+        self.printAndSet("fRMTrackMoves", self.getBit(buf, 1))
+        self.printAndSet("reserved2", self.getBit(buf, 2))
+        self.printAndSet("empty1", self.getBit(buf, 3))
+        self.printAndSet("empty2", self.getBit(buf, 4))
+        self.printAndSet("ssm", (buf & 0x01e0) >> 5) # 6..9th bits
+        self.printAndSet("fReadingModeInkLockDownActualPage", self.getBit(buf, 9))
+        self.printAndSet("fAutoCompressPictures", self.getBit(buf, 10))
+        self.printAndSet("reserved3", (buf & 0xf800) >> 11) # 12..16th bits
+        self.printAndSet("reserved3_", self.readuInt16())
+
+        self.printAndSet("empty3", self.readuInt32())
+        self.printAndSet("empty4", self.readuInt32())
+        self.printAndSet("empty5", self.readuInt32())
+        self.printAndSet("empty6", self.readuInt32())
+        # TODO dopMth
+        self.pos += 34
+        print '</dop2007>'
 
 class Dop(DOCDirStream):
     """The Dop structure contains the document and compatibility settings for the document."""
@@ -1093,7 +1116,7 @@ class Dop(DOCDirStream):
     def dump(self):
         print '<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size)
         if self.fib.nFibNew == 0x0112:
-            Dop2007(self).dump()
+            dop2007 = Dop2007(self)
         else:
             print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s">""" % hex(self.nFibNew)
         print '</dop>'
