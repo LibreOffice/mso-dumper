@@ -1500,6 +1500,48 @@ class SttbfFfn(DOCDirStream):
             print '</cchData>'
         print '</sttbfFfn>'
 
+class SttbfAssoc(DOCDirStream):
+    """The SttbfAssoc structure is an STTB that contains strings which are associated with this document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = mainStream.fcSttbfAssoc
+        self.size = mainStream.lcbSttbfAssoc
+        self.mainStream = mainStream
+
+    def dump(self):
+        indexMap = {
+                0x00: "Unused. MUST be ignored.",
+                0x01: "The path of the associated document template (2), if it is not the default Normal template.",
+                0x02: "The title of the document.",
+                0x03: "The subject of the document.",
+                0x04: "Key words associated with the document.",
+                0x05: "Unused. This index MUST be ignored.",
+                0x06: "The author of the document.",
+                0x07: "The user who last revised the document.",
+                0x08: "The path of the associated mail merge data source.",
+                0x09: "The path of the associated mail merge header document.",
+                0x0A: "Unused. This index MUST be ignored.",
+                0x0B: "Unused. This index MUST be ignored.",
+                0x0C: "Unused. This index MUST be ignored.",
+                0x0D: "Unused. This index MUST be ignored.",
+                0x0E: "Unused. This index MUST be ignored.",
+                0x0F: "Unused. This index MUST be ignored.",
+                0x10: "Unused. This index MUST be ignored.",
+                0x11: "The write-reservation password of the document.",
+                }
+        print '<sttbfAssoc type="SttbfAssoc" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("fExtend", self.readuInt16())
+        self.printAndSet("cData", self.readuInt16())
+        self.printAndSet("cbExtra", self.readuInt16())
+        for i in range(self.cData):
+            cchData = self.readuInt16()
+            print '<cchData index="%s" meaning="%s" offset="%d" size="%d bytes">' % (hex(i), indexMap[i], self.pos, cchData)
+            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
+            self.pos += 2*cchData
+            print '</cchData>'
+        assert self.pos == self.mainStream.fcSttbfAssoc + self.size
+        print '</sttbfAssoc>'
+
 class ATNBE(DOCDirStream):
     """The ATNBE structure contains information about an annotation bookmark in the document."""
     size = 10 # in bytes, see 2.9.4
