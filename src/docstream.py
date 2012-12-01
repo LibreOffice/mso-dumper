@@ -216,7 +216,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcPlcfandTxt"],
             ["lcbPlcfandTxt", self.handleLcbPlcfandTxt],
             ["fcPlcfSed"],
-            ["lcbPlcfSed"],
+            ["lcbPlcfSed", self.handleLcbPlcfSed],
             ["fcPlcPad"],
             ["lcbPlcPad"],
             ["fcPlcfPhe"],
@@ -393,8 +393,10 @@ class WordDocumentStream(DOCDirStream):
         for i in fields:
             value = self.readInt32()
             hasHandler = len(i) > 1
+            # the spec says these must be ignored
+            needsIgnoring = ["lcbStshfOrig"]
             # a member needs handling if it defines the size of a struct and it's non-zero
-            needsHandling = i[0].startswith("lcb") and value != 0
+            needsHandling = i[0].startswith("lcb") and value != 0 and (not i[0] in needsIgnoring)
             self.printAndSet(i[0], value, end = ((not hasHandler) and (not needsHandling)), offset = True)
             if hasHandler or needsHandling:
                 if hasHandler:
@@ -465,6 +467,12 @@ class WordDocumentStream(DOCDirStream):
         size = self.lcbPlcfAtnBkl
         plcfBkl = docrecord.PlcfBkl(self, offset, size)
         plcfBkl.dump()
+
+    def handleLcbPlcfSed(self):
+        offset = self.fcPlcfSed
+        size = self.lcbPlcfSed
+        plcfSed = docrecord.PlcfSed(self, offset, size)
+        plcfSed.dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

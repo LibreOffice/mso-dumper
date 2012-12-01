@@ -197,6 +197,49 @@ class PlcPcd(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcPcd>'
 
+class Sed(DOCDirStream):
+    """The Sed structure specifies the location of the section properties."""
+    size = 12 # defined by 2.8.26
+    def __init__(self, plcfSed, offset):
+        DOCDirStream.__init__(self, plcfSed.bytes)
+        self.pos = offset
+        self.plcfSed = plcfSed
+
+    def dump(self):
+        print '<aSed type="Sed" offset="%d" size="%d bytes">' % (self.pos, Sed.size)
+        self.printAndSet("fn", self.readuInt16())
+        self.printAndSet("fcSepx", self.readuInt32())
+        self.printAndSet("fnMpr", self.readuInt16())
+        self.printAndSet("fcMpr", self.readuInt32())
+        print '</aSed>'
+
+class PlcfSed(DOCDirStream, PLC):
+    """The PlcfSed structure is a PLC structure where the data elements are Sed structures."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, size, Sed.size)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<plcSed type="PlcSed" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            pos += 4
+
+            # aSed
+            aSed = Sed(self, self.getOffset(self.pos, i))
+            aSed.dump()
+
+            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, offset + start, offset + end)
+            print '</aCP>'
+        print '</plcSed>'
+
 class Sprm(DOCDirStream):
     """The Sprm structure specifies a modification to a property of a character, paragraph, table, or section."""
     def __init__(self, bytes, offset):
@@ -1706,32 +1749,6 @@ class LPUpxTapx(DOCDirStream):
         self.pos = uPXPadding.pos
         print '</lPUpxTapx>'
 
-class StkCharLpUpxGrLpUpxRM(DOCDirStream):
-    """The StkCharLPUpxGrLPUpxRM structure specifies revision-marking information and formatting for character styles."""
-    def __init__(self, stkCharGRLPUPX):
-        DOCDirStream.__init__(self, stkCharGRLPUPX.bytes)
-        self.pos = stkCharGRLPUPX.pos
-
-    def dump(self):
-        print '<stkCharLpUpxGrLpUpxRM type="StkCharLpUpxGrLpUpxRM" offset="%d">' % self.pos
-        self.printAndSet("cbStkCharUpxGrLpUpxRM", self.getuInt16())
-        if self.cbStkCharUpxGrLpUpxRM != 0:
-            print '<todo what="StkCharLpUpxGrLpUpxRM: cbStkCharUpxGrLpUpxRM != 0 not implemented"/>'
-        print '</stkCharLpUpxGrLpUpxRM>'
-
-class StkParaLpUpxGrLpUpxRM(DOCDirStream):
-    """The StkParaLPUpxGrLPUpxRM structure specifies revision-marking information and formatting for paragraph styles."""
-    def __init__(self, stkParaGRLPUPX):
-        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
-        self.pos = stkParaGRLPUPX.pos
-
-    def dump(self):
-        print '<stkParaLpUpxGrLpUpxRM type="StkParaLpUpxGrLpUpxRM" offset="%d">' % self.pos
-        self.printAndSet("cbStkParaUpxGrLpUpxRM", self.getuInt16())
-        if self.cbStkParaUpxGrLpUpxRM != 0:
-            print '<todo what="StkParaLpUpxGrLpUpxRM: cbStkParaUpxGrLpUpxRM != 0 not implemented"/>'
-        print '</stkParaLpUpxGrLpUpxRM>'
-
 class StkListGRLPUPX(DOCDirStream):
     """The StkListGRLPUPX structure that specifies the formatting properties for a list style."""
     def __init__(self, grLPUpxSw):
@@ -1772,15 +1789,16 @@ class StkCharGRLPUPX(DOCDirStream):
         DOCDirStream.__init__(self, grLPUpxSw.bytes)
         self.grLPUpxSw = grLPUpxSw
         self.pos = grLPUpxSw.pos
+        self.grLPUpxSw = grLPUpxSw
 
     def dump(self):
         print '<stkCharGRLPUPX type="StkCharGRLPUPX" offset="%d">' % self.pos
-        lpUpxChpx = LPUpxChpx(self)
-        lpUpxChpx.dump()
-        self.pos = lpUpxChpx.pos
-        stkCharLpUpxGrLpUpxRM = StkCharLpUpxGrLpUpxRM(self)
-        stkCharLpUpxGrLpUpxRM.dump()
-        self.pos = stkCharLpUpxGrLpUpxRM.pos
+        if self.grLPUpxSw.std.stdf.stdfBase.cupx == 1:
+            lpUpxChpx = LPUpxChpx(self)
+            lpUpxChpx.dump()
+            self.pos = lpUpxChpx.pos
+        else:
+            print '<todo what="StkCharGRLPUPX: cupx != 1"/>'
         print '</stkCharGRLPUPX>'
 
 class StkParaGRLPUPX(DOCDirStream):
@@ -1789,18 +1807,19 @@ class StkParaGRLPUPX(DOCDirStream):
         DOCDirStream.__init__(self, grLPUpxSw.bytes)
         self.grLPUpxSw = grLPUpxSw
         self.pos = grLPUpxSw.pos
+        self.grLPUpxSw = grLPUpxSw
 
     def dump(self):
         print '<stkParaGRLPUPX type="StkParaGRLPUPX" offset="%d">' % self.pos
-        lPUpxPapx = LPUpxPapx(self)
-        lPUpxPapx.dump()
-        self.pos = lPUpxPapx.pos
-        lpUpxChpx = LPUpxChpx(self)
-        lpUpxChpx.dump()
-        self.pos = lpUpxChpx.pos
-        stkParaLpUpxGrLpUpxRM = StkParaLpUpxGrLpUpxRM(self)
-        stkParaLpUpxGrLpUpxRM.dump()
-        self.pos = stkParaLpUpxGrLpUpxRM.pos
+        if self.grLPUpxSw.std.stdf.stdfBase.cupx == 2:
+            lPUpxPapx = LPUpxPapx(self)
+            lPUpxPapx.dump()
+            self.pos = lPUpxPapx.pos
+            lpUpxChpx = LPUpxChpx(self)
+            lpUpxChpx.dump()
+            self.pos = lpUpxChpx.pos
+        else:
+            print '<todo what="StkParaGRLPUPX: cupx != 2"/>'
         print '</stkParaGRLPUPX>'
 
 class GrLPUpxSw(DOCDirStream):
