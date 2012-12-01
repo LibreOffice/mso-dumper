@@ -786,6 +786,7 @@ class GRFSTD(DOCDirStream):
 
 class DopBase(DOCDirStream):
     """The DopBase structure contains document and compatibility settings."""
+    size = 84
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
@@ -896,6 +897,8 @@ class DopBase(DOCDirStream):
         self.printAndSet("unused16", self.getBit(buf, 14))
         self.printAndSet("iGutterPos", self.getBit(buf, 15))
         print '</dopBase>'
+        assert self.pos == self.dop.pos + DopBase.size
+        self.dop.pos = self.pos
 
 class Copts80(DOCDirStream):
     """The Copts80 structure specifies compatibility options."""
@@ -931,12 +934,14 @@ class Copts80(DOCDirStream):
 
 class Copts(DOCDirStream):
     """A structure that specifies compatibility options."""
+    size = 32
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
+        self.dop = dop
 
     def dump(self):
-        print '<copts type="Copts" offset="%d" size="32 bytes">' % self.pos
+        print '<copts type="Copts" offset="%d" size="%d bytes">' % (self.pos, Copts.size)
         Copts80(self).dump()
         self.pos += 4
 
@@ -989,9 +994,12 @@ class Copts(DOCDirStream):
         self.printAndSet("empty5", self.readuInt32())
         self.printAndSet("empty6", self.readuInt32())
         print '</copts>'
+        assert self.pos == self.dop.pos + Copts.size
+        self.dop.pos = self.pos
 
 class Dop95(DOCDirStream):
     """The Dop95 structure contains document and compatibility settings."""
+    size = 88
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
@@ -1001,17 +1009,19 @@ class Dop95(DOCDirStream):
         print '<dop95 type="Dop95" offset="%d" size="88 bytes">' % self.pos
         dopBase = DopBase(self)
         dopBase.dump()
-        assert dopBase.pos == self.pos + 84
-        self.pos += 84
         Copts80(self).dump()
         self.pos += 4
         print '</dop95>'
+        assert self.pos == self.dop.pos + Dop95.size
+        self.dop.pos = self.pos
 
 class DopTypography(DOCDirStream):
     """The DopTypography structure contains East Asian language typography settings."""
+    size = 310
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
+        self.dop = dop
 
     def dump(self):
         print '<dopTypography type="DopTypography" offset="%d" size="310 bytes">' % self.pos
@@ -1036,15 +1046,19 @@ class DopTypography(DOCDirStream):
         else:
             self.pos += 102
         print '</dopTypography>'
+        assert self.pos == self.dop.pos + DopTypography.size
+        self.dop.pos = self.pos
 
 class Dogrid(DOCDirStream):
     """The Dogrid structure specifies parameters for the drawn object properties of the document."""
+    size = 10
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
+        self.dop = dop
 
     def dump(self):
-        print '<dogrid type="Dogrid" offset="%d" size="10 bytes">' % self.pos
+        print '<dogrid type="Dogrid" offset="%d" size="%d bytes">' % (self.pos, Dogrid.size)
         self.printAndSet("xaGrid", self.readuInt16())
         self.printAndSet("yaGrid", self.readuInt16())
         self.printAndSet("dxaGrid", self.readuInt16())
@@ -1058,6 +1072,8 @@ class Dogrid(DOCDirStream):
         self.printAndSet("dxGridDisplay", (buf & 0x7f)) # 1..7th bits
         self.printAndSet("fFollowMargins", self.getBit(buf, 7))
         print '</dogrid>'
+        assert self.pos == self.dop.pos + Dogrid.size
+        self.dop.pos = self.pos
 
 class Asumyi(DOCDirStream):
     """The Asumyi structure specifies AutoSummary state information"""
@@ -1081,27 +1097,22 @@ class Asumyi(DOCDirStream):
 
 class Dop97(DOCDirStream):
     """The Dop97 structure contains document and compatibility settings."""
+    size = 500
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
 
     def dump(self):
-        print '<dop97 type="Dop97" offset="%d" size="500 bytes">' % self.pos
+        print '<dop97 type="Dop97" offset="%d" size="%d bytes">' % (self.pos, Dop97.size)
         dop95 = Dop95(self)
         dop95.dump()
-        assert dop95.pos == self.pos + 88
-        self.pos += 88
 
         self.printAndSet("adt", self.readuInt16())
         dopTypography = DopTypography(self)
         dopTypography.dump()
-        assert dopTypography.pos == self.pos + 310
-        self.pos += 310
         dogrid = Dogrid(self)
         dogrid.dump()
-        assert dogrid.pos == self.pos + 10
-        self.pos += 10
 
         buf = self.readuInt8()
         self.printAndSet("unused1", self.getBit(buf, 0))
@@ -1152,9 +1163,12 @@ class Dop97(DOCDirStream):
         self.printAndSet("hpsZoomFontPag", self.readuInt16())
         self.printAndSet("dywDispPag", self.readuInt16())
         print '</dop97>'
+        assert self.pos == self.dop.pos + Dop97.size
+        self.dop.pos = self.pos
 
 class Dop2000(DOCDirStream):
     """The Dop2000 structure contains document and compatibility settings."""
+    size = 544
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
@@ -1164,8 +1178,6 @@ class Dop2000(DOCDirStream):
         print '<dop2000 type="Dop2000" offset="%d" size="544 bytes">' % self.pos
         dop97 = Dop97(self)
         dop97.dump()
-        assert dop97.pos == self.pos + 500
-        self.pos += 500
 
         self.printAndSet("ilvlLastBulletMain", self.readuInt8())
         self.printAndSet("ilvlLastNumberMain", self.readuInt8())
@@ -1196,8 +1208,6 @@ class Dop2000(DOCDirStream):
 
         copts = Copts(self)
         copts.dump()
-        assert copts.pos == self.pos + 32
-        self.pos += 32
 
         self.printAndSet("verCompatPre10", self.readuInt16())
         buf = self.readuInt8()
@@ -1220,20 +1230,21 @@ class Dop2000(DOCDirStream):
         self.printAndSet("fShowXMLErrors", self.getBit(buf, 6))
         self.printAndSet("fAlwaysMergeEmptyNamespace", self.getBit(buf, 7))
         print '</dop2000>'
+        assert self.pos == self.dop.pos + Dop2000.size
+        self.dop.pos = self.pos
 
 class Dop2002(DOCDirStream):
     """The Dop2002 structure contains document and compatibility settings."""
+    size = 594
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
 
     def dump(self):
-        print '<dop2002 type="Dop2002" offset="%d" size="594 bytes">' % self.pos
+        print '<dop2002 type="Dop2002" offset="%d" size="%d bytes">' % (self.pos, Dop2002.size)
         dop2000 = Dop2000(self)
         dop2000.dump()
-        assert dop2000.pos == self.pos + 544
-        self.pos += 544
 
         self.printAndSet("unused", self.readuInt32())
 
@@ -1269,9 +1280,12 @@ class Dop2002(DOCDirStream):
         self.printAndSet("cpMinRmHdrTxbx", self.readuInt32())
         self.printAndSet("rsidRoot", self.readuInt32())
         print '</dop2002>'
+        assert self.pos == self.dop.pos + Dop2002.size
+        self.dop.pos = self.pos
 
 class Dop2003(DOCDirStream):
     """The Dop2003 structure contains document and compatibility settings."""
+    size = 616
     def __init__(self, dop):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
@@ -1281,8 +1295,6 @@ class Dop2003(DOCDirStream):
         print '<dop2003 type="Dop2003" offset="%d" size="616 bytes">' % self.pos
         dop2002 = Dop2002(self)
         dop2002.dump()
-        assert dop2002.pos == self.pos + 594
-        self.pos += 594
 
         buf = self.readuInt8()
         self.printAndSet("fTreatLockAtnAsReadOnly", self.getBit(buf, 0))
@@ -1319,6 +1331,8 @@ class Dop2003(DOCDirStream):
         self.printAndSet("empty3", self.readuInt8())
         self.printAndSet("ilfoMacAtCleanup", self.readuInt16())
         print '</dop2003>'
+        assert self.pos == self.dop.pos + Dop2003.size
+        self.dop.pos = self.pos
 
 class DopMth(DOCDirStream):
     """The DopMth structure specifies document-wide math settings."""
@@ -1361,8 +1375,6 @@ class Dop2007(DOCDirStream):
         print '<dop2007 type="Dop2007" offset="%d">' % self.pos
         dop2003 = Dop2003(self)
         dop2003.dump()
-        assert dop2003.pos == self.pos + 616
-        self.pos += 616
 
         self.printAndSet("reserved1", self.readuInt32())
 
