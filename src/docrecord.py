@@ -105,31 +105,6 @@ class PlcfBkf(DOCDirStream, PLC):
         PLC.__init__(self, size, 4) # 4 is defined by 2.8.10
         self.pos = offset
         self.size = size
-
-    def dump(self):
-        print '<plcfBkf type="PlcfAtnBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin
-        pos = self.pos
-        for i in range(self.getElements()):
-            # aCp
-            start = offset + self.getuInt32(pos = pos)
-            print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, start + 1)
-            pos += 4
-
-            # aFBKF
-            aFBKF = FBKF(self, self.getOffset(self.pos, i))
-            aFBKF.dump()
-            print '</aCP>'
-        print '</plcfBkf>'
-
-class PlcfBkf(DOCDirStream, PLC):
-    """A PLCFBKF is a PLC whose data elements are FBKF structures."""
-    def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
-        PLC.__init__(self, size, 4) # 4 is defined by 2.8.10
-        self.pos = offset
-        self.size = size
         self.aCP = []
 
     def dump(self):
@@ -256,6 +231,21 @@ class PlcfSed(DOCDirStream, PLC):
             print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, offset + start, offset + end)
             print '</aCP>'
         print '</plcSed>'
+
+class Tcg(DOCDirStream):
+    """The Tcg structure specifies command-related customizations."""
+    def __init__(self, mainStream, offset, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = offset
+        self.size = size
+
+    def dump(self):
+        print '<tcg type="Tcg" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("nTcgVer", self.readuInt8())
+        self.printAndSet("chTerminator", self.readuInt8())
+        if self.chTerminator != 0x40:
+            print '<todo what="Tcg: chTerminator != 0x40"/>'
+        print '</tcg>'
 
 class Sprm(DOCDirStream):
     """The Sprm structure specifies a modification to a property of a character, paragraph, table, or section."""
