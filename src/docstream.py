@@ -264,7 +264,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcPrEnvLand"],
             ["lcbPrEnvLand"],
             ["fcWss"],
-            ["lcbWss"],
+            ["lcbWss", self.handleLcbWss],
             ["fcDop"],
             ["lcbDop", self.handleDop],
             ["fcSttbfAssoc"],
@@ -479,6 +479,9 @@ class WordDocumentStream(DOCDirStream):
         size = self.lcbCmds
         tcg = docrecord.Tcg(self, offset, size)
         tcg.dump()
+
+    def handleLcbWss(self):
+        docrecord.Selsf(self).dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

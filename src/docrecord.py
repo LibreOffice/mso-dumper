@@ -247,6 +247,54 @@ class Tcg(DOCDirStream):
             print '<todo what="Tcg: chTerminator != 0x40"/>'
         print '</tcg>'
 
+class Selsf(DOCDirStream):
+    """The Selsf structure specifies the last selection that was made to the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = mainStream.fcWss
+        self.size = mainStream.lcbWss
+        self.mainStream = mainStream
+
+    def dump(self):
+        print '<selsf type="Selsf" offset="%d" size="%d bytes">' % (self.pos, self.size)
+
+        buf = self.readuInt16()
+        self.printAndSet("fRightward", self.getBit(buf, 0))
+        self.printAndSet("unused1", self.getBit(buf, 1))
+        self.printAndSet("fWithinCell", self.getBit(buf, 2))
+        self.printAndSet("fTableAnchor", self.getBit(buf, 3))
+        self.printAndSet("fTableSelNonShrink", self.getBit(buf, 4))
+        self.printAndSet("unused2", self.getBit(buf, 5))
+        self.printAndSet("fDiscontiguous", self.getBit(buf, 6))
+        self.printAndSet("fPrefix", self.getBit(buf, 7))
+        self.printAndSet("fShape", self.getBit(buf, 8))
+        self.printAndSet("fFrame", self.getBit(buf, 9))
+        self.printAndSet("fColumn", self.getBit(buf, 10))
+        self.printAndSet("fTable", self.getBit(buf, 11))
+        self.printAndSet("fGraphics", self.getBit(buf, 12))
+        self.printAndSet("fBlock", self.getBit(buf, 13))
+        self.printAndSet("unused3", self.getBit(buf, 14))
+        self.printAndSet("fIns", self.getBit(buf, 15))
+
+        buf = self.readuInt8()
+        self.printAndSet("fForward", buf & 0x7f) # 1..7th bits
+        self.printAndSet("fPrefixW2007", self.getBit(buf, 7))
+
+        self.printAndSet("fInsEnd", self.readuInt8())
+        self.printAndSet("cpFirst", self.readuInt32())
+        self.printAndSet("cpLim", self.readuInt32())
+        self.printAndSet("unused4", self.readuInt32())
+        self.printAndSet("blktblSel", self.readuInt32())
+        self.printAndSet("cpAnchor", self.readuInt32())
+        # TODO Sty
+        self.pos += 2
+        self.printAndSet("unused5", self.readuInt16())
+        self.printAndSet("cpAnchorShrink", self.readuInt32())
+        self.printAndSet("xaTableLeft", self.readInt16())
+        self.printAndSet("xaTableRight", self.readInt16())
+        assert self.pos == self.mainStream.fcWss + self.size
+        print '</selsf>'
+
 class Sprm(DOCDirStream):
     """The Sprm structure specifies a modification to a property of a character, paragraph, table, or section."""
     def __init__(self, bytes, offset):
