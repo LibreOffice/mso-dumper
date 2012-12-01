@@ -197,6 +197,22 @@ class PlcPcd(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcPcd>'
 
+class Sepx(DOCDirStream):
+    """The Sepx structure specifies an array of Prl structures and the size of the array."""
+    def __init__(self, sed):
+        DOCDirStream.__init__(self, sed.plcfSed.mainStream.bytes)
+        self.pos = sed.fcSepx
+
+    def dump(self):
+        print '<sepx type="Sepx" offset="%d">' % self.pos
+        self.printAndSet("cb", self.readInt16())
+        pos = self.pos
+        while (self.cb - (pos - self.pos)) > 0:
+            prl = Prl(self.bytes, pos)
+            prl.dump()
+            pos += prl.getSize()
+        print '</sepx>'
+    
 class Sed(DOCDirStream):
     """The Sed structure specifies the location of the section properties."""
     size = 12 # defined by 2.8.26
@@ -209,6 +225,7 @@ class Sed(DOCDirStream):
         print '<aSed type="Sed" offset="%d" size="%d bytes">' % (self.pos, Sed.size)
         self.printAndSet("fn", self.readuInt16())
         self.printAndSet("fcSepx", self.readuInt32())
+        Sepx(self).dump()
         self.printAndSet("fnMpr", self.readuInt16())
         self.printAndSet("fcMpr", self.readuInt32())
         print '</aSed>'
@@ -286,6 +303,7 @@ class Sprm(DOCDirStream):
         nameMap = {
                 1: docsprm.parMap,
                 2: docsprm.chrMap,
+                4: docsprm.secMap,
                 5: docsprm.tblMap,
                 }
         print '<sprm value="%s" name="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s" operand="%s"/>' % (
