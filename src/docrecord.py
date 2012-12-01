@@ -247,6 +247,31 @@ class Tcg(DOCDirStream):
             print '<todo what="Tcg: chTerminator != 0x40"/>'
         print '</tcg>'
 
+class Sty(DOCDirStream):
+    """The Sty structure specifies the type of the selection that was made."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        value = self.readuInt16()
+        styMap = {
+                0x0000: "styNil",
+                0x0001: "styChar",
+                0x0002: "styWord",
+                0x0003: "stySent",
+                0x0004: "styPara",
+                0x0005: "styLine",
+                0x000C: "styCol",
+                0x000D: "styRow",
+                0x000E: "styColAll",
+                0x000F: "styWholeTable",
+                0x001B: "styPrefix",
+                }
+        print '<sty name="%s" value="%s"/>' % (styMap[value], hex(value))
+        self.parent.pos = self.pos
+
 class Selsf(DOCDirStream):
     """The Selsf structure specifies the last selection that was made to the document."""
     def __init__(self, mainStream):
@@ -286,8 +311,7 @@ class Selsf(DOCDirStream):
         self.printAndSet("unused4", self.readuInt32())
         self.printAndSet("blktblSel", self.readuInt32())
         self.printAndSet("cpAnchor", self.readuInt32())
-        # TODO Sty
-        self.pos += 2
+        Sty(self).dump()
         self.printAndSet("unused5", self.readuInt16())
         self.printAndSet("cpAnchorShrink", self.readuInt32())
         self.printAndSet("xaTableLeft", self.readInt16())
