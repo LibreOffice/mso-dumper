@@ -170,6 +170,25 @@ class OfficeArtFDG(DOCDirStream):
         self.printAndSet("spidCur", self.readuInt32())
         print '</drawingData>'
 
+class OfficeArtFSPGR(DOCDirStream):
+    """The OfficeArtFSPGR record specifies the coordinate system of the group shape that the anchors of the child shape are expressed in."""
+    def __init__(self, officeArtSpContainer, pos):
+        DOCDirStream.__init__(self, officeArtSpContainer.bytes)
+        self.pos = pos
+        self.officeArtSpContainer = officeArtSpContainer
+
+    def dump(self):
+        print '<shapeGroup type="OfficeArtFSPGR" offset="%d">' % (self.pos)
+        rh = OfficeArtRecordHeader(self, "rh")
+        rh.dump()
+        pos = self.pos
+        self.printAndSet("xLeft", self.readuInt32())
+        self.printAndSet("yTop", self.readuInt32())
+        self.printAndSet("xRight", self.readuInt32())
+        self.printAndSet("yBottom", self.readuInt32())
+        print '</shapeGroup>'
+        assert self.pos == pos + rh.recLen
+
 class OfficeArtSpContainer(DOCDirStream):
     """The OfficeArtSpContainer record specifies a shape container."""
     def __init__(self, parent, pos):
@@ -183,6 +202,7 @@ class OfficeArtSpContainer(DOCDirStream):
         self.rh.dump()
         pos = self.pos
         recMap = {
+                0xf009: OfficeArtFSPGR,
                 }
         while (self.rh.recLen - (pos - self.pos)) > 0:
             rh = OfficeArtRecordHeader(self, pos = pos)
