@@ -20,8 +20,10 @@ class DOCDirStream:
         self.mainStream = mainStream
         self.doc = doc
     
-    def printAndSet(self, key, value, hexdump = True, end = True, offset = False):
+    def printAndSet(self, key, value, hexdump = True, end = True, offset = False, silent = False):
         setattr(self, key, value)
+        if silent:
+            return
         if hexdump:
             value = hex(value)
         offstr = ""

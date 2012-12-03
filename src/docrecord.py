@@ -1565,6 +1565,20 @@ class SttbfRMark(DOCDirStream):
         assert self.pos == self.mainStream.fcSttbfRMark + self.size
         print '</sttbfRMark>'
 
+class OfficeArtWordDrawing(DOCDirStream):
+    """The OfficeArtWordDrawing structure specifies information about the drawings in the document."""
+    def __init__(self, officeArtContent):
+        DOCDirStream.__init__(self, officeArtContent.bytes)
+        self.pos = officeArtContent.pos
+        self.officeArtContent = officeArtContent
+
+    def dump(self):
+        print '<officeArtWordDrawing type="OfficeArtWordDrawing" pos="%d">' % self.pos
+        self.printAndSet("dgglbl", self.readuInt8())
+        docdraw.OfficeArtDgContainer(self, "container").dump()
+        print '</officeArtWordDrawing>'
+        self.officeArtContent.pos = self.pos
+
 class OfficeArtContent(DOCDirStream):
     """The OfficeArtContent structure specifies information about a drawing in the document."""
     def __init__(self, mainStream):
@@ -1576,8 +1590,10 @@ class OfficeArtContent(DOCDirStream):
     def dump(self):
         print '<officeArtContent type="OfficeArtContent" offset="%d" size="%d bytes">' % (self.pos, self.size)
         docdraw.OfficeArtDggContainer(self, "DrawingGroupData").dump()
-        # TODO Drawings
-        # assert self.pos == self.mainStream.fcDggInfo + self.size
+        print '<Drawings type="main" offset="%d">' % self.pos
+        OfficeArtWordDrawing(self).dump()
+        print '</Drawings>'
+        assert self.pos == self.mainStream.fcDggInfo + self.size
         print '</officeArtContent>'
 
 class ATNBE(DOCDirStream):

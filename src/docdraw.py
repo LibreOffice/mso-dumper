@@ -13,23 +13,33 @@ import docsprm
 class OfficeArtRecordHeader(DOCDirStream):
     """The OfficeArtRecordHeader record specifies the common record header for all the OfficeArt records."""
     size = 8
-    def __init__(self, parent, name):
+    def __init__(self, parent, name = None, pos = None):
         DOCDirStream.__init__(self, parent.bytes)
         self.name = name
-        self.pos = parent.pos
+        if pos:
+            self.pos = pos
+        else:
+            self.pos = parent.pos
+        self.posOrig = self.pos
         self.parent = parent
 
-    def dump(self):
-        print '<%s type="OfficeArtRecordHeader" offset="%d" size="%d bytes">' % (self.name, self.pos, OfficeArtRecordHeader.size)
+    def dump(self, parseOnly = False):
+        if not parseOnly:
+            print '<%s type="OfficeArtRecordHeader" offset="%d" size="%d bytes">' % (self.name, self.pos, OfficeArtRecordHeader.size)
         buf = self.readuInt16()
-        self.printAndSet("recVer", buf & 0x000f) # 1..4th bits
-        self.printAndSet("recInstance", (buf & 0xfff0) >> 4) # 5..16th bits
+        self.printAndSet("recVer", buf & 0x000f, silent = parseOnly) # 1..4th bits
+        self.printAndSet("recInstance", (buf & 0xfff0) >> 4, silent = parseOnly) # 5..16th bits
 
-        self.printAndSet("recType", self.readuInt16())
-        self.printAndSet("recLen", self.readuInt32())
-        print '</%s>' % self.name
-        assert self.pos == self.parent.pos + OfficeArtRecordHeader.size
-        self.parent.pos = self.pos
+        self.printAndSet("recType", self.readuInt16(), silent = parseOnly)
+        self.printAndSet("recLen", self.readuInt32(), silent = parseOnly)
+        if not parseOnly:
+            print '</%s>' % self.name
+        assert self.pos == self.posOrig + OfficeArtRecordHeader.size
+        if not parseOnly:
+            self.parent.pos = self.pos
+
+    def parse(self):
+        self.dump(True)
 
 class OfficeArtFDGG(DOCDirStream):
     """The OfficeArtFDGG record specifies documnet-wide information about all of the drawings that have been saved in the file."""
@@ -66,14 +76,12 @@ class OfficeArtIDCL(DOCDirStream):
 
 class OfficeArtFDGGBlock(DOCDirStream):
     """The OfficeArtFDGGBlock record specifies document-wide information about all of the drawings that have been saved in the file."""
-    def __init__(self, officeArtDggContainer, name):
+    def __init__(self, officeArtDggContainer, pos):
         DOCDirStream.__init__(self, officeArtDggContainer.bytes)
-        self.name = name
-        self.pos = officeArtDggContainer.pos
-        self.officeArtDggContainer = officeArtDggContainer
+        self.pos = pos
 
     def dump(self):
-        print '<%s type="OfficeArtFDGGBlock" offset="%d">' % (self.name, self.pos)
+        print '<drawingGroup type="OfficeArtFDGGBlock" offset="%d">' % self.pos
         OfficeArtRecordHeader(self, "rh").dump()
         self.head = OfficeArtFDGG(self, "head")
         self.head.dump()
@@ -81,8 +89,7 @@ class OfficeArtFDGGBlock(DOCDirStream):
             print '<Rgidcl index="%d">' % i
             OfficeArtIDCL(self).dump()
             print '</Rgidcl>'
-        print '</%s>' % self.name
-        self.officeArtDggContainer.pos = self.pos
+        print '</drawingGroup>'
 
 class MSOCR(DOCDirStream):
     """The MSOCR record specifies either the RGB color or the scheme color index."""
@@ -106,23 +113,18 @@ class MSOCR(DOCDirStream):
 
 class OfficeArtSplitMenuColorContainer(DOCDirStream):
     """The OfficeArtSplitMenuColorContainer record specifies a container for the colors that were most recently used to format shapes."""
-    def __init__(self, officeArtDggContainer, name):
+    def __init__(self, officeArtDggContainer, pos):
         DOCDirStream.__init__(self, officeArtDggContainer.bytes)
-        self.name = name
-        self.pos = officeArtDggContainer.pos
-        self.officeArtDggContainer = officeArtDggContainer
+        self.pos = pos
 
     def dump(self):
-        print '<%s type="OfficeArtSplitMenuColorContainer" offset="%d">' % (self.name, self.pos)
+        print '<splitColors type="OfficeArtSplitMenuColorContainer" offset="%d">' % self.pos
         OfficeArtRecordHeader(self, "rh").dump()
-        self.head = OfficeArtFDGG(self, "head")
-        self.head.dump()
         for i in ["fill", "line", "shadow", "3d"]:
             print '<smca type="%s">' % i
             MSOCR(self).dump()
             print '</smca>'
-        print '</%s>' % self.name
-        self.officeArtDggContainer.pos = self.pos
+        print '</splitColors>'
 
 class OfficeArtDggContainer(DOCDirStream):
     """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
@@ -132,24 +134,56 @@ class OfficeArtDggContainer(DOCDirStream):
         self.pos = officeArtContent.pos
         self.officeArtContent = officeArtContent
 
-    def getNextType(self):
-        return self.getuInt16(pos = self.pos + 2)
-
     def dump(self):
         print '<%s type="OfficeArtDggContainer" offset="%d">' % (self.name, self.pos)
-        OfficeArtRecordHeader(self, "rh").dump()
-        if self.getNextType() == 0xf006:
-            OfficeArtFDGGBlock(self, "drawingGroup").dump()
-        if self.getNextType() == 0xf001:
-            print '<todo what="OfficeArtDggContainer: unhandled OfficeArtBStoreContainer"/>'
-        if self.getNextType() == 0xf00b:
-            print '<todo what="OfficeArtDggContainer: unhandled OfficeArtFOPT"/>'
-        if self.getNextType() == 0xf122:
-            print '<todo what="OfficeArtDggContainer: unhandled OfficeArtTertiaryFOPT"/>'
-        if self.getNextType() == 0xf11a:
-            print '<todo what="OfficeArtDggContainer: unhandled OfficeArtColorMRUContainer"/>'
-        if self.getNextType() == 0xf11e:
-            OfficeArtSplitMenuColorContainer(self, "splitColors").dump()
+        self.rh = OfficeArtRecordHeader(self, "rh")
+        self.rh.dump()
+        pos = self.pos
+        recMap = {
+                0xf006: OfficeArtFDGGBlock,
+                0xf11e: OfficeArtSplitMenuColorContainer,
+                }
+        while (self.rh.recLen - (pos - self.pos)) > 0:
+            rh = OfficeArtRecordHeader(self, pos = pos)
+            rh.parse()
+            if rh.recType in recMap:
+                child = recMap[rh.recType](self, pos)
+                child.dump()
+                assert child.pos == pos + OfficeArtRecordHeader.size + rh.recLen
+            else:
+                print '<todo what="OfficeArtDggContainer: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen)
+            pos += OfficeArtRecordHeader.size + rh.recLen
         print '</%s>' % self.name
+        assert pos == self.pos + self.rh.recLen
+        self.officeArtContent.pos = pos
+
+class OfficeArtDgContainer(DOCDirStream):
+    """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
+    def __init__(self, officeArtContent, name):
+        DOCDirStream.__init__(self, officeArtContent.bytes)
+        self.name = name
+        self.pos = officeArtContent.pos
+        self.officeArtContent = officeArtContent
+
+    def dump(self):
+        print '<%s type="OfficeArtDgContainer" offset="%d">' % (self.name, self.pos)
+        self.rh = OfficeArtRecordHeader(self, "rh")
+        self.rh.dump()
+        pos = self.pos
+        recMap = {
+                }
+        while (self.rh.recLen - (pos - self.pos)) > 0:
+            rh = OfficeArtRecordHeader(self, pos = pos)
+            rh.parse()
+            if rh.recType in recMap:
+                child = recMap[rh.recType](self, pos)
+                child.dump()
+                assert child.pos == pos + OfficeArtRecordHeader.size + rh.recLen
+            else:
+                print '<todo what="OfficeArtDgContainer: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen)
+            pos += OfficeArtRecordHeader.size + rh.recLen
+        print '</%s>' % self.name
+        assert pos == self.pos + self.rh.recLen
+        self.officeArtContent.pos = pos
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
