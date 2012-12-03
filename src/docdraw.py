@@ -170,6 +170,34 @@ class OfficeArtFDG(DOCDirStream):
         self.printAndSet("spidCur", self.readuInt32())
         print '</drawingData>'
 
+class OfficeArtSpgrContainer(DOCDirStream):
+    """The OfficeArtSpgrContainer record specifies a container for groups of shapes."""
+    def __init__(self, officeArtDgContainer, pos):
+        DOCDirStream.__init__(self, officeArtDgContainer.bytes)
+        self.pos = pos
+        self.officeArtDgContainer = officeArtDgContainer
+
+    def dump(self):
+        print '<groupShape type="OfficeArtSpgrContainer" offset="%d">' % self.pos
+        self.rh = OfficeArtRecordHeader(self, "rh")
+        self.rh.dump()
+        pos = self.pos
+        recMap = {
+                }
+        while (self.rh.recLen - (pos - self.pos)) > 0:
+            rh = OfficeArtRecordHeader(self, pos = pos)
+            rh.parse()
+            if rh.recType in recMap:
+                child = recMap[rh.recType](self, pos)
+                child.dump()
+                assert child.pos == pos + OfficeArtRecordHeader.size + rh.recLen
+            else:
+                print '<todo what="OfficeArtSpgrContainer: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen)
+            pos += OfficeArtRecordHeader.size + rh.recLen
+        print '</groupShape>'
+        assert pos == self.pos + self.rh.recLen
+        self.pos = pos
+
 class OfficeArtDgContainer(DOCDirStream):
     """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
     def __init__(self, officeArtContent, name):
@@ -184,6 +212,7 @@ class OfficeArtDgContainer(DOCDirStream):
         self.rh.dump()
         pos = self.pos
         recMap = {
+                0xf003: OfficeArtSpgrContainer,
                 0xf008: OfficeArtFDG,
                 }
         while (self.rh.recLen - (pos - self.pos)) > 0:
