@@ -306,7 +306,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcDggInfo"],
             ["lcbDggInfo"],
             ["fcSttbfRMark"],
-            ["lcbSttbfRMark"],
+            ["lcbSttbfRMark", self.handleLcbSttbfRMark],
             ["fcSttbfCaption"],
             ["lcbSttbfCaption"],
             ["fcSttbfAutoCaption"],
@@ -485,6 +485,9 @@ class WordDocumentStream(DOCDirStream):
 
     def handleLcbSttbfAssoc(self):
         docrecord.SttbfAssoc(self).dump()
+
+    def handleLcbSttbfRMark(self):
+        docrecord.SttbfRMark(self).dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

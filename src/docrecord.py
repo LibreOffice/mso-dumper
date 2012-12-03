@@ -1542,6 +1542,28 @@ class SttbfAssoc(DOCDirStream):
         assert self.pos == self.mainStream.fcSttbfAssoc + self.size
         print '</sttbfAssoc>'
 
+class SttbfRMark(DOCDirStream):
+    """The SttbfRMark structure is an STTB structure where the strings specify the names of the authors of the revision marks, comments, and e-mail messages in the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = mainStream.fcSttbfRMark
+        self.size = mainStream.lcbSttbfRMark
+        self.mainStream = mainStream
+
+    def dump(self):
+        print '<sttbfRMark type="SttbfRMark" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("fExtend", self.readuInt16())
+        self.printAndSet("cData", self.readuInt16())
+        self.printAndSet("cbExtra", self.readuInt16())
+        for i in range(self.cData):
+            cchData = self.readuInt16()
+            print '<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
+            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
+            self.pos += 2*cchData
+            print '</cchData>'
+        assert self.pos == self.mainStream.fcSttbfRMark + self.size
+        print '</sttbfRMark>'
+
 class ATNBE(DOCDirStream):
     """The ATNBE structure contains information about an annotation bookmark in the document."""
     size = 10 # in bytes, see 2.9.4
