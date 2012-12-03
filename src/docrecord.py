@@ -9,6 +9,7 @@ import struct
 import globals
 from docdirstream import DOCDirStream
 import docsprm
+import docdraw
 
 class FcCompressed(DOCDirStream):
     """The FcCompressed structure specifies the location of text in the WordDocument Stream."""
@@ -1563,6 +1564,21 @@ class SttbfRMark(DOCDirStream):
             print '</cchData>'
         assert self.pos == self.mainStream.fcSttbfRMark + self.size
         print '</sttbfRMark>'
+
+class OfficeArtContent(DOCDirStream):
+    """The OfficeArtContent structure specifies information about a drawing in the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = mainStream.fcDggInfo
+        self.size = mainStream.lcbDggInfo
+        self.mainStream = mainStream
+
+    def dump(self):
+        print '<officeArtContent type="OfficeArtContent" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        docdraw.OfficeArtDggContainer(self, "DrawingGroupData").dump()
+        # TODO Drawings
+        # assert self.pos == self.mainStream.fcDggInfo + self.size
+        print '</officeArtContent>'
 
 class ATNBE(DOCDirStream):
     """The ATNBE structure contains information about an annotation bookmark in the document."""
