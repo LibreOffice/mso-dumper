@@ -139,10 +139,6 @@ class OfficeArtDggContainer(DOCDirStream):
         self.rh = OfficeArtRecordHeader(self, "rh")
         self.rh.dump()
         pos = self.pos
-        recMap = {
-                0xf006: OfficeArtFDGGBlock,
-                0xf11e: OfficeArtSplitMenuColorContainer,
-                }
         while (self.rh.recLen - (pos - self.pos)) > 0:
             rh = OfficeArtRecordHeader(self, pos = pos)
             rh.parse()
@@ -189,6 +185,38 @@ class OfficeArtFSPGR(DOCDirStream):
         print '</shapeGroup>'
         assert self.pos == pos + rh.recLen
 
+class OfficeArtFSP(DOCDirStream):
+    """The OfficeArtFSP record specifies an instance of a shape."""
+    def __init__(self, officeArtSpContainer, pos):
+        DOCDirStream.__init__(self, officeArtSpContainer.bytes)
+        self.pos = pos
+        self.officeArtSpContainer = officeArtSpContainer
+
+    def dump(self):
+        print '<shapeProp type="OfficeArtFSP" offset="%d">' % (self.pos)
+        rh = OfficeArtRecordHeader(self, "rh")
+        rh.dump()
+        pos = self.pos
+        self.printAndSet("spid", self.readuInt32())
+
+        buf = self.readuInt32()
+        self.printAndSet("fGroup", self.getBit(buf, 0))
+        self.printAndSet("fChild", self.getBit(buf, 1))
+        self.printAndSet("fPatriarch", self.getBit(buf, 2))
+        self.printAndSet("fDeleted", self.getBit(buf, 3))
+        self.printAndSet("fOleShape", self.getBit(buf, 4))
+        self.printAndSet("fHaveMaster", self.getBit(buf, 5))
+        self.printAndSet("fFlipH", self.getBit(buf, 6))
+        self.printAndSet("fFlipV", self.getBit(buf, 7))
+        self.printAndSet("fConnector", self.getBit(buf, 8))
+        self.printAndSet("fHaveAnchor", self.getBit(buf, 9))
+        self.printAndSet("fBackground", self.getBit(buf, 10))
+        self.printAndSet("fHaveSpt", self.getBit(buf, 11))
+        self.printAndSet("unused1", (buf & 0xfffff000) >> 12) # 13..32th bits
+
+        print '</shapeProp>'
+        assert self.pos == pos + rh.recLen
+
 class OfficeArtSpContainer(DOCDirStream):
     """The OfficeArtSpContainer record specifies a shape container."""
     def __init__(self, parent, pos):
@@ -201,9 +229,6 @@ class OfficeArtSpContainer(DOCDirStream):
         self.rh = OfficeArtRecordHeader(self, "rh")
         self.rh.dump()
         pos = self.pos
-        recMap = {
-                0xf009: OfficeArtFSPGR,
-                }
         while (self.rh.recLen - (pos - self.pos)) > 0:
             rh = OfficeArtRecordHeader(self, pos = pos)
             rh.parse()
@@ -230,9 +255,6 @@ class OfficeArtSpgrContainer(DOCDirStream):
         self.rh = OfficeArtRecordHeader(self, "rh")
         self.rh.dump()
         pos = self.pos
-        recMap = {
-                0xf004: OfficeArtSpContainer
-                }
         while (self.rh.recLen - (pos - self.pos)) > 0:
             rh = OfficeArtRecordHeader(self, pos = pos)
             rh.parse()
@@ -260,10 +282,6 @@ class OfficeArtDgContainer(DOCDirStream):
         self.rh = OfficeArtRecordHeader(self, "rh")
         self.rh.dump()
         pos = self.pos
-        recMap = {
-                0xf003: OfficeArtSpgrContainer,
-                0xf008: OfficeArtFDG,
-                }
         while (self.rh.recLen - (pos - self.pos)) > 0:
             rh = OfficeArtRecordHeader(self, pos = pos)
             rh.parse()
@@ -277,5 +295,15 @@ class OfficeArtDgContainer(DOCDirStream):
         print '</%s>' % self.name
         assert pos == self.pos + self.rh.recLen
         self.officeArtContent.pos = pos
+
+recMap = {
+        0xf003: OfficeArtSpgrContainer,
+        0xf004: OfficeArtSpContainer,
+        0xf006: OfficeArtFDGGBlock,
+        0xf008: OfficeArtFDG,
+        0xf009: OfficeArtFSPGR,
+        0xf00a: OfficeArtFSP,
+        0xf11e: OfficeArtSplitMenuColorContainer,
+        }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
