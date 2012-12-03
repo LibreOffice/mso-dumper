@@ -52,7 +52,7 @@ class OfficeArtFDGG(DOCDirStream):
 
     def dump(self):
         print '<%s type="OfficeArtFDGG" offset="%d" size="%d bytes">' % (self.name, self.pos, OfficeArtFDGG.size)
-        self.printAndSet("spidMax", self.readuInt32()) # TODO dump MSOSPID
+        self.printAndSet("spidMax", self.readuInt32())
         self.printAndSet("cidcl", self.readuInt32())
         self.printAndSet("cspSaved", self.readuInt32())
         self.printAndSet("cdgSaved", self.readuInt32())
@@ -69,7 +69,7 @@ class OfficeArtIDCL(DOCDirStream):
 
     def dump(self):
         print '<officeArtIDCL type="OfficeArtIDCL" pos="%d">' % self.pos
-        self.printAndSet("dgid", self.readuInt32()) # TODO dump MSODGID
+        self.printAndSet("dgid", self.readuInt32())
         self.printAndSet("cspidCur", self.readuInt32())
         print '</officeArtIDCL>'
         self.officeArtFDGGBlock.pos = self.pos
@@ -157,6 +157,19 @@ class OfficeArtDggContainer(DOCDirStream):
         assert pos == self.pos + self.rh.recLen
         self.officeArtContent.pos = pos
 
+class OfficeArtFDG(DOCDirStream):
+    """The OfficeArtFDG record specifies the number of shapes, the drawing identifier, and the shape identifier of the last shape in a drawing."""
+    def __init__(self, officeArtDgContainer, pos):
+        DOCDirStream.__init__(self, officeArtDgContainer.bytes)
+        self.pos = pos
+
+    def dump(self):
+        print '<drawingData type="OfficeArtFDG" offset="%d">' % self.pos
+        OfficeArtRecordHeader(self, "rh").dump()
+        self.printAndSet("csp", self.readuInt32())
+        self.printAndSet("spidCur", self.readuInt32())
+        print '</drawingData>'
+
 class OfficeArtDgContainer(DOCDirStream):
     """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
     def __init__(self, officeArtContent, name):
@@ -171,6 +184,7 @@ class OfficeArtDgContainer(DOCDirStream):
         self.rh.dump()
         pos = self.pos
         recMap = {
+                0xf008: OfficeArtFDG,
                 }
         while (self.rh.recLen - (pos - self.pos)) > 0:
             rh = OfficeArtRecordHeader(self, pos = pos)
