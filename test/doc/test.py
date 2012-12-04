@@ -28,6 +28,8 @@ class Test(unittest.TestCase):
         sock.close()
         tree = ElementTree.parse('%s.doc.xml' % name)
         self.root = tree.getroot()
+        # Make sure everything is dumped - so it can't happen that dump(a) == dump(b), but a != b.
+        self.assertEqual(0, len(self.root.findall('todo')))
 
     def getFontId(self, name):
         fonts = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbSttbfFfn/sttbfFfn/cchData')
