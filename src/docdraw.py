@@ -217,6 +217,21 @@ class OfficeArtFSP(DOCDirStream):
         print '</shapeProp>'
         assert self.pos == pos + rh.recLen
 
+class OfficeArtClientData(DOCDirStream):
+    def __init__(self, officeArtSpContainer, pos):
+        DOCDirStream.__init__(self, officeArtSpContainer.bytes)
+        self.pos = pos
+        self.officeArtSpContainer = officeArtSpContainer
+
+    def dump(self):
+        print '<clientData type="OfficeArtClientData" offset="%d">' % self.pos
+        rh = OfficeArtRecordHeader(self, "rh")
+        rh.dump()
+        pos = self.pos
+        self.printAndSet("data", self.readuInt32())
+        print '</clientData>'
+        assert self.pos == pos + rh.recLen
+
 class OfficeArtSpContainer(DOCDirStream):
     """The OfficeArtSpContainer record specifies a shape container."""
     def __init__(self, parent, pos):
@@ -303,6 +318,7 @@ recMap = {
         0xf008: OfficeArtFDG,
         0xf009: OfficeArtFSPGR,
         0xf00a: OfficeArtFSP,
+        0xf011: OfficeArtClientData,
         0xf11e: OfficeArtSplitMenuColorContainer,
         }
 
