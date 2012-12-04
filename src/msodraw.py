@@ -99,6 +99,14 @@ class RecordHeader:
         RecordHeader.appendHeaderLine(recHdl, pre + "  version: 0x%1.1X   instance: 0x%3.3X   size: %d"%
             (self.recVer, self.recInstance, self.recLen))
 
+    def dumpXml(self, recHdl):
+        recHdl.appendLine('<rh type="OfficeArtRecordHeader">')
+        recHdl.appendLine('<recVer value="0x%1.1X"/>' % self.recVer)
+        recHdl.appendLine('<recInstance value="0x%1.1X"/>' % self.recInstance)
+        recHdl.appendLine('<recType value="0x%1.1X"/>' % self.recType)
+        recHdl.appendLine('<recLen value="0x%1.1X"/>' % self.recLen)
+        recHdl.appendLine('</rh>')
+
 
 class ColorRef:
     def __init__ (self, byte):
@@ -605,3 +613,4 @@ class MSODrawHandler(globals.ByteStream):
                 bytes = self.readBytes(rh.recLen)
 
 
+# vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
