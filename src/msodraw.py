@@ -37,6 +37,8 @@ def headerLine ():
 
 class RecordHeader:
 
+    size = 8
+
     class Type:
         dggContainer            = 0xF000
         dgContainer             = 0xF002

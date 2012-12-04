@@ -124,4 +124,15 @@ class DOCDirStream:
     def dump(self):
         print '<stream name="%s" size="%s"/>' % (globals.encodeName(self.name), self.size)
 
+    # compat methods to make msodraw happy
+    def readUnsignedInt(self, size):
+        if size == 2:
+            return self.readuInt16()
+        elif size == 4:
+            return self.readuInt32()
+        raise Exception
+
+    def appendLine(self, line):
+        print line
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
