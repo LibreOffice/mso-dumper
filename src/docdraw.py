@@ -49,37 +49,6 @@ class OfficeArtDggContainer(DOCDirStream):
         assert pos == self.pos + self.rh.recLen
         self.officeArtContent.pos = pos
 
-class OfficeArtFSP(DOCDirStream):
-    """The OfficeArtFSP record specifies an instance of a shape."""
-    def __init__(self, officeArtSpContainer, pos):
-        DOCDirStream.__init__(self, officeArtSpContainer.bytes)
-        self.pos = pos
-        self.officeArtSpContainer = officeArtSpContainer
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<shapeProp type="OfficeArtFSP" offset="%d">' % (self.pos)
-        pos = self.pos
-        self.printAndSet("spid", self.readuInt32())
-
-        buf = self.readuInt32()
-        self.printAndSet("fGroup", self.getBit(buf, 0))
-        self.printAndSet("fChild", self.getBit(buf, 1))
-        self.printAndSet("fPatriarch", self.getBit(buf, 2))
-        self.printAndSet("fDeleted", self.getBit(buf, 3))
-        self.printAndSet("fOleShape", self.getBit(buf, 4))
-        self.printAndSet("fHaveMaster", self.getBit(buf, 5))
-        self.printAndSet("fFlipH", self.getBit(buf, 6))
-        self.printAndSet("fFlipV", self.getBit(buf, 7))
-        self.printAndSet("fConnector", self.getBit(buf, 8))
-        self.printAndSet("fHaveAnchor", self.getBit(buf, 9))
-        self.printAndSet("fBackground", self.getBit(buf, 10))
-        self.printAndSet("fHaveSpt", self.getBit(buf, 11))
-        self.printAndSet("unused1", (buf & 0xfffff000) >> 12) # 13..32th bits
-
-        print '</shapeProp>'
-        assert self.pos == pos + self.rh.recLen
-
 class OfficeArtClientData(DOCDirStream):
     def __init__(self, officeArtSpContainer, pos):
         DOCDirStream.__init__(self, officeArtSpContainer.bytes)
@@ -274,7 +243,7 @@ recMap = {
         0xf006: [msodraw.FDGGBlock],
         0xf008: [msodraw.FDG],
         0xf009: [msodraw.FSPGR],
-        0xf00a: [OfficeArtFSP, True],
+        0xf00a: [msodraw.FSP],
         0xf00b: [OfficeArtFOPT, True],
         0xf011: [OfficeArtClientData, True],
         0xf11e: [msodraw.SplitMenuColorContainer],

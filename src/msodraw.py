@@ -446,34 +446,51 @@ class FSP:
     def __init__ (self, strm):
         self.spid = strm.readUnsignedInt(4)
         self.flag = strm.readUnsignedInt(4)
+        self.groupShape     = (self.flag & 0x0001) != 0
+        self.childShape     = (self.flag & 0x0002) != 0
+        self.topMostInGroup = (self.flag & 0x0004) != 0
+        self.deleted        = (self.flag & 0x0008) != 0
+        self.oleObject      = (self.flag & 0x0010) != 0
+        self.haveMaster     = (self.flag & 0x0020) != 0
+        self.flipHorizontal = (self.flag & 0x0040) != 0
+        self.flipVertical   = (self.flag & 0x0080) != 0
+        self.isConnector    = (self.flag & 0x0100) != 0
+        self.haveAnchor     = (self.flag & 0x0200) != 0
+        self.background     = (self.flag & 0x0400) != 0
+        self.haveProperties = (self.flag & 0x0800) != 0
 
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("FSP content (instance of a shape):")
         recHdl.appendLine("  ID of this shape: %d"%self.spid)
-        groupShape     = (self.flag & 0x0001) != 0
-        childShape     = (self.flag & 0x0002) != 0
-        topMostInGroup = (self.flag & 0x0004) != 0
-        deleted        = (self.flag & 0x0008) != 0
-        oleObject      = (self.flag & 0x0010) != 0
-        haveMaster     = (self.flag & 0x0020) != 0
-        flipHorizontal = (self.flag & 0x0040) != 0
-        flipVertical   = (self.flag & 0x0080) != 0
-        isConnector    = (self.flag & 0x0100) != 0
-        haveAnchor     = (self.flag & 0x0200) != 0
-        background     = (self.flag & 0x0400) != 0
-        haveProperties = (self.flag & 0x0800) != 0
-        recHdl.appendLineBoolean("  group shape", groupShape)
-        recHdl.appendLineBoolean("  child shape", childShape)
-        recHdl.appendLineBoolean("  topmost in group", topMostInGroup)
-        recHdl.appendLineBoolean("  deleted", deleted)
-        recHdl.appendLineBoolean("  OLE object shape", oleObject)
-        recHdl.appendLineBoolean("  have valid master", haveMaster)
-        recHdl.appendLineBoolean("  horizontally flipped", flipHorizontal)
-        recHdl.appendLineBoolean("  vertically flipped", flipVertical)
-        recHdl.appendLineBoolean("  connector shape", isConnector)
-        recHdl.appendLineBoolean("  have anchor", haveAnchor)
-        recHdl.appendLineBoolean("  background shape", background)
-        recHdl.appendLineBoolean("  have shape type property", haveProperties)
+        recHdl.appendLineBoolean("  group shape", self.groupShape)
+        recHdl.appendLineBoolean("  child shape", self.childShape)
+        recHdl.appendLineBoolean("  topmost in group", self.topMostInGroup)
+        recHdl.appendLineBoolean("  deleted", self.deleted)
+        recHdl.appendLineBoolean("  OLE object shape", self.oleObject)
+        recHdl.appendLineBoolean("  have valid master", self.haveMaster)
+        recHdl.appendLineBoolean("  horizontally flipped", self.flipHorizontal)
+        recHdl.appendLineBoolean("  vertically flipped", self.flipVertical)
+        recHdl.appendLineBoolean("  connector shape", self.isConnector)
+        recHdl.appendLineBoolean("  have anchor", self.haveAnchor)
+        recHdl.appendLineBoolean("  background shape", self.background)
+        recHdl.appendLineBoolean("  have shape type property", self.haveProperties)
+
+    def dumpXml(self, recHdl, rh):
+        recHdl.appendLine('<shapeProp type="OfficeArtFSPGR">')
+        recHdl.appendLine('<spid value="%d"/>' % self.spid)
+        recHdl.appendLine('<fGroup value="%d"/>' % self.groupShape)
+        recHdl.appendLine('<fChild value="%d"/>' % self.childShape)
+        recHdl.appendLine('<fPatriarch value="%d"/>' % self.topMostInGroup)
+        recHdl.appendLine('<fDeleted value="%d"/>' % self.deleted)
+        recHdl.appendLine('<fOleShape value="%d"/>' % self.oleObject)
+        recHdl.appendLine('<fHaveMaster value="%d"/>' % self.haveMaster)
+        recHdl.appendLine('<fFlipH value="%d"/>' % self.flipHorizontal)
+        recHdl.appendLine('<fFlipV value="%d"/>' % self.flipVertical)
+        recHdl.appendLine('<fConnector value="%d"/>' % self.isConnector)
+        recHdl.appendLine('<fHaveAnchor value="%d"/>' % self.haveAnchor)
+        recHdl.appendLine('<fBackground value="%d"/>' % self.background)
+        recHdl.appendLine('<fHaveSpt value="%d"/>' % self.haveProperties)
+        recHdl.appendLine('</shapeProp>')
 
 
 class FSPGR:
