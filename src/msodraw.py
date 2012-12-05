@@ -519,7 +519,7 @@ class MSOCR:
         else:
             recHdl.appendLine("  RGB color: (red=%d, green=%d, blue=%d)"%(self.red, self.green, self.blue))
 
-    def dumpXml(self, recHdl):
+    def dumpXml(self, recHdl, rh):
         recHdl.appendLine('<msocr type="MSOCR">')
         recHdl.appendLine('<red value="%d"/>' % self.red)
         recHdl.appendLine('<green value="%d"/>' % self.green)
@@ -538,6 +538,14 @@ class SplitMenuColorContainer:
     def appendLines (self, recHdl, rh):
         for msocr in self.smca:
             msocr.appendLines(recHdl, rh)
+
+    def dumpXml(self, recHdl, rh):
+        recHdl.appendLine('<splitColors type="OfficeArtSplitMenuColorContainer">')
+        for i, smca in enumerate(self.smca):
+            recHdl.appendLine('<smca index="%d">' % i)
+            smca.dumpXml(recHdl, rh)
+            recHdl.appendLine('</smca>')
+        recHdl.appendLine('</splitColors>')
 
 
 class FClientAnchorSheet:

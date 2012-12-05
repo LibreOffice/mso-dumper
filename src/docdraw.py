@@ -11,21 +11,6 @@ from docdirstream import DOCDirStream
 import docsprm
 import msodraw
 
-class OfficeArtSplitMenuColorContainer(DOCDirStream):
-    """The OfficeArtSplitMenuColorContainer record specifies a container for the colors that were most recently used to format shapes."""
-    def __init__(self, officeArtDggContainer, pos):
-        DOCDirStream.__init__(self, officeArtDggContainer.bytes)
-        self.pos = pos
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<splitColors type="OfficeArtSplitMenuColorContainer" offset="%d">' % self.pos
-        for i in ["fill", "line", "shadow", "3d"]:
-            print '<smca type="%s">' % i
-            msodraw.MSOCR(self).dumpXml(self)
-            print '</smca>'
-        print '</splitColors>'
-
 class OfficeArtDggContainer(DOCDirStream):
     """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
     def __init__(self, officeArtContent, name):
@@ -323,7 +308,7 @@ recMap = {
         0xf00a: [OfficeArtFSP, True],
         0xf00b: [OfficeArtFOPT, True],
         0xf011: [OfficeArtClientData, True],
-        0xf11e: [OfficeArtSplitMenuColorContainer, True],
+        0xf11e: [msodraw.SplitMenuColorContainer],
         }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
