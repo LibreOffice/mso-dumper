@@ -49,20 +49,6 @@ class OfficeArtDggContainer(DOCDirStream):
         assert pos == self.pos + self.rh.recLen
         self.officeArtContent.pos = pos
 
-class OfficeArtClientData(DOCDirStream):
-    def __init__(self, officeArtSpContainer, pos):
-        DOCDirStream.__init__(self, officeArtSpContainer.bytes)
-        self.pos = pos
-        self.officeArtSpContainer = officeArtSpContainer
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<clientData type="OfficeArtClientData" offset="%d">' % self.pos
-        pos = self.pos
-        self.printAndSet("data", self.readuInt32())
-        print '</clientData>'
-        assert self.pos == pos + self.rh.recLen
-
 class OfficeArtFOPTEOPID(DOCDirStream):
     """The OfficeArtFOPTEOPID record specifies the header for an entry in a property table."""
     def __init__(self, parent):
@@ -245,7 +231,7 @@ recMap = {
         0xf009: [msodraw.FSPGR],
         0xf00a: [msodraw.FSP],
         0xf00b: [OfficeArtFOPT, True],
-        0xf011: [OfficeArtClientData, True],
+        0xf011: [msodraw.FClientData],
         0xf11e: [msodraw.SplitMenuColorContainer],
         }
 

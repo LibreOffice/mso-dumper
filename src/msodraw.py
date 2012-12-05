@@ -558,6 +558,19 @@ class MSOCR:
         recHdl.appendLine('<fSchemeIndex value="%d"/>' % self.isSchemeIndex)
         recHdl.appendLine('</msocr>')
 
+class FClientData:
+    def __init__ (self, strm):
+        self.data = strm.readUnsignedInt(4)
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("FClientData content")
+        recHdl.appendLine("  data: 0x%8.8X"%self.data)
+
+    def dumpXml(self, recHdl, rh):
+        recHdl.appendLine('<clientData type="OfficeArtClientData">')
+        recHdl.appendLine('<data value="0x%8.8X"/>' % self.data)
+        recHdl.appendLine('</clientData>')
+
 class SplitMenuColorContainer:
     def __init__ (self, strm):
         self.smca = []
@@ -619,6 +632,7 @@ recData = {
     RecordHeader.Type.FConnectorRule: FConnectorRule,
     RecordHeader.Type.FDGSL: FDGSL,
     RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
+    RecordHeader.Type.FClientData: FClientData,
     RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer
 }
 
