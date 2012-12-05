@@ -300,42 +300,64 @@ class FOPT:
 
     class FillStyle:
 
-        def appendLines (self, recHdl, prop, level):
+        def __parseBytes(self, recHdl):
             flag1 = recHdl.readUnsignedInt(1)
             recHdl.moveForward(1)
             flag2 = recHdl.readUnsignedInt(1)
             recHdl.moveForward(1)
-            A = (flag1 & 0x01) != 0 # fNoFillHitTest
-            B = (flag1 & 0x02) != 0 # fillUseRect
-            C = (flag1 & 0x04) != 0 # fillShape
-            D = (flag1 & 0x08) != 0 # fHitTestFill
-            E = (flag1 & 0x10) != 0 # fFilled
-            F = (flag1 & 0x20) != 0 # fUseShapeAnchor
-            G = (flag1 & 0x40) != 0 # fRecolorFillAsPicture
+            self.A = (flag1 & 0x01) != 0 # fNoFillHitTest
+            self.B = (flag1 & 0x02) != 0 # fillUseRect
+            self.C = (flag1 & 0x04) != 0 # fillShape
+            self.D = (flag1 & 0x08) != 0 # fHitTestFill
+            self.E = (flag1 & 0x10) != 0 # fFilled
+            self.F = (flag1 & 0x20) != 0 # fUseShapeAnchor
+            self.G = (flag1 & 0x40) != 0 # fRecolorFillAsPicture
 
-            H = (flag2 & 0x01) != 0 # fUseNoFillHitTest
-            I = (flag2 & 0x02) != 0 # fUsefillUseRect
-            J = (flag2 & 0x04) != 0 # fUsefillShape
-            K = (flag2 & 0x08) != 0 # fUsefHitTestFill
-            L = (flag2 & 0x10) != 0 # fUsefFilled
-            M = (flag2 & 0x20) != 0 # fUsefUseShapeAnchor
-            N = (flag2 & 0x40) != 0 # fUsefRecolorFillAsPicture
+            self.H = (flag2 & 0x01) != 0 # fUseNoFillHitTest
+            self.I = (flag2 & 0x02) != 0 # fUsefillUseRect
+            self.J = (flag2 & 0x04) != 0 # fUsefillShape
+            self.K = (flag2 & 0x08) != 0 # fUsefHitTestFill
+            self.L = (flag2 & 0x10) != 0 # fUsefFilled
+            self.M = (flag2 & 0x20) != 0 # fUsefUseShapeAnchor
+            self.N = (flag2 & 0x40) != 0 # fUsefRecolorFillAsPicture
 
-            recHdl.appendLine(indent(level)+"fNoFillHitTest            : %s"%recHdl.getTrueFalse(A))
-            recHdl.appendLine(indent(level)+"fillUseRect               : %s"%recHdl.getTrueFalse(B))
-            recHdl.appendLine(indent(level)+"fillShape                 : %s"%recHdl.getTrueFalse(C))
-            recHdl.appendLine(indent(level)+"fHitTestFill              : %s"%recHdl.getTrueFalse(D))
-            recHdl.appendLine(indent(level)+"fFilled                   : %s"%recHdl.getTrueFalse(E))
-            recHdl.appendLine(indent(level)+"fUseShapeAnchor           : %s"%recHdl.getTrueFalse(F))
-            recHdl.appendLine(indent(level)+"fRecolorFillAsPicture     : %s"%recHdl.getTrueFalse(G))
+        def appendLines (self, recHdl, prop, level):
+            self.__parseBytes(recHdl)
 
-            recHdl.appendLine(indent(level)+"fUseNoFillHitTest         : %s"%recHdl.getTrueFalse(H))
-            recHdl.appendLine(indent(level)+"fUsefillUseRect           : %s"%recHdl.getTrueFalse(I))
-            recHdl.appendLine(indent(level)+"fUsefillShape             : %s"%recHdl.getTrueFalse(J))
-            recHdl.appendLine(indent(level)+"fUsefHitTestFill          : %s"%recHdl.getTrueFalse(K))
-            recHdl.appendLine(indent(level)+"fUsefFilled               : %s"%recHdl.getTrueFalse(L))
-            recHdl.appendLine(indent(level)+"fUsefUseShapeAnchor       : %s"%recHdl.getTrueFalse(M))
-            recHdl.appendLine(indent(level)+"fUsefRecolorFillAsPicture : %s"%recHdl.getTrueFalse(N))
+            recHdl.appendLine(indent(level)+"fNoFillHitTest            : %s"%recHdl.getTrueFalse(self.A))
+            recHdl.appendLine(indent(level)+"fillUseRect               : %s"%recHdl.getTrueFalse(self.B))
+            recHdl.appendLine(indent(level)+"fillShape                 : %s"%recHdl.getTrueFalse(self.C))
+            recHdl.appendLine(indent(level)+"fHitTestFill              : %s"%recHdl.getTrueFalse(self.D))
+            recHdl.appendLine(indent(level)+"fFilled                   : %s"%recHdl.getTrueFalse(self.E))
+            recHdl.appendLine(indent(level)+"fUseShapeAnchor           : %s"%recHdl.getTrueFalse(self.F))
+            recHdl.appendLine(indent(level)+"fRecolorFillAsPicture     : %s"%recHdl.getTrueFalse(self.G))
+
+            recHdl.appendLine(indent(level)+"fUseNoFillHitTest         : %s"%recHdl.getTrueFalse(self.H))
+            recHdl.appendLine(indent(level)+"fUsefillUseRect           : %s"%recHdl.getTrueFalse(self.I))
+            recHdl.appendLine(indent(level)+"fUsefillShape             : %s"%recHdl.getTrueFalse(self.J))
+            recHdl.appendLine(indent(level)+"fUsefHitTestFill          : %s"%recHdl.getTrueFalse(self.K))
+            recHdl.appendLine(indent(level)+"fUsefFilled               : %s"%recHdl.getTrueFalse(self.L))
+            recHdl.appendLine(indent(level)+"fUsefUseShapeAnchor       : %s"%recHdl.getTrueFalse(self.M))
+            recHdl.appendLine(indent(level)+"fUsefRecolorFillAsPicture : %s"%recHdl.getTrueFalse(self.N))
+
+        def dumpXml(self, recHdl):
+            self.__parseBytes(recHdl)
+
+            recHdl.appendLine('<fNoFillHitTest value="%s"/>' % self.A)
+            recHdl.appendLine('<fillUseRect value="%s"/>' % self.B)
+            recHdl.appendLine('<fillShape value="%s"/>' % self.C)
+            recHdl.appendLine('<fHitTestFill value="%s"/>' % self.D)
+            recHdl.appendLine('<fFilled value="%s"/>' % self.E)
+            recHdl.appendLine('<fUseShapeAnchor value="%s"/>' % self.F)
+            recHdl.appendLine('<fRecolorFillAsPicture value="%s"/>' % self.G)
+
+            recHdl.appendLine('<fUseNoFillHitTest value="%s"/>' % self.H)
+            recHdl.appendLine('<fUsefillUseRect value="%s"/>' % self.I)
+            recHdl.appendLine('<fUsefillShape value="%s"/>' % self.J)
+            recHdl.appendLine('<fUsefHitTestFill value="%s"/>' % self.K)
+            recHdl.appendLine('<fUsefFilled value="%s"/>' % self.L)
+            recHdl.appendLine('<fUsefUseShapeAnchor value="%s"/>' % self.M)
+            recHdl.appendLine('<fUsefRecolorFillAsPicture value="%s"/>' % self.N)
 
     class LineColor:
 
@@ -411,7 +433,7 @@ class FOPT:
         self.properties = []
         self.strm = strm
 
-    def appendLines (self, recHdl, rh):
+    def __parseBytes(self, rh):
         strm = globals.ByteStream(self.strm.readBytes(rh.recLen))
         while not strm.isEndOfRecord():
             entry = FOPT.E()
@@ -423,6 +445,9 @@ class FOPT:
             if entry.flagComplex:
                 entry.extra = strm.readBytes(entry.value)
             self.properties.append(entry)
+
+    def appendLines (self, recHdl, rh):
+        self.__parseBytes(rh)
 
         recHdl.appendLine("FOPT content (property table):")
         recHdl.appendLine("  property count: %d"%rh.recInstance)
@@ -444,6 +469,34 @@ class FOPT:
                 else:
                     # regular property value
                     recHdl.appendLine("    property value: 0x%8.8X"%prop.value)
+
+    def dumpXml(self, recHdl, rh):
+        self.__parseBytes(rh)
+
+        recHdl.appendLine('<shapePrimaryOptions type="OfficeArtFOPT">')
+        recHdl.appendLine('<fopt type="OfficeArtRGFOPTE">')
+        for i in xrange(0, rh.recInstance):
+            recHdl.appendLine('<rgfopte index="%d">' % i)
+            prop = self.properties[i]
+            recHdl.appendLine('<opid>')
+            recHdl.appendLine('<opid value="0x%4.4X"/>' % prop.ID)
+            recHdl.appendLine('<opid fBid="%d"/>' % prop.flagBid)
+            recHdl.appendLine('<opid fComplex="%d"/>' % prop.flagComplex)
+            recHdl.appendLine('</opid>')
+            if FOPT.propTable.has_key(prop.ID):
+                # We have a handler for this property.
+                # propData is expected to have two elements: name (0) and handler (1).
+                propHdl = FOPT.propTable[prop.ID]
+                recHdl.appendLine('<op name="%s" value="0x%4.4X">' % (propHdl[0], prop.ID))
+                propHdl[1]().dumpXml(recHdl)
+                recHdl.appendLine('</op>')
+            else:
+                recHdl.appendLine('<op value="0x%8.8X"/>' % prop.value)
+                if prop.flagComplex:
+                    recHdl.appendLine('<todo what="FOPT: fComplex != 0 unhandled"/>')
+            recHdl.appendLine('</rgfopte>')
+        recHdl.appendLine('</fopt>')
+        recHdl.appendLine('</shapePrimaryOptions>')
 
 
 class FRIT:

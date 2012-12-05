@@ -49,70 +49,6 @@ class OfficeArtDggContainer(DOCDirStream):
         assert pos == self.pos + self.rh.recLen
         self.officeArtContent.pos = pos
 
-class OfficeArtFOPTEOPID(DOCDirStream):
-    """The OfficeArtFOPTEOPID record specifies the header for an entry in a property table."""
-    def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
-        self.pos = parent.pos
-        self.parent = parent
-
-    def dump(self):
-        buf = self.readuInt16()
-        self.printAndSet("opid", buf & 0x3fff) # 1..14th bits
-        self.printAndSet("fBid", self.getBit(buf, 14))
-        self.printAndSet("fComplex", self.getBit(buf, 15))
-        self.parent.pos = self.pos
-
-class OfficeArtFOPTE(DOCDirStream):
-    """The OfficeArtFOPTE record specifies an entry in a property table."""
-    def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
-        self.pos = parent.pos
-        self.parent = parent
-
-    def dump(self):
-        print '<opid>'
-        self.opid = OfficeArtFOPTEOPID(self)
-        self.opid.dump()
-        print '</opid>'
-        self.printAndSet("op", self.readInt32())
-        self.parent.pos = self.pos
-
-class OfficeArtRGFOPTE(DOCDirStream):
-    """The OfficeArtRGFOPTE record specifies a property table."""
-    def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
-        self.pos = parent.pos
-        self.name = name
-        self.parent = parent
-
-    def dump(self):
-        print '<%s type="OfficeArtRGFOPTE" offset="%d">' % (self.name, self.pos)
-        for i in range(self.parent.rh.recInstance):
-            print '<rgfopte index="%d" offset="%d">' % (i, self.pos)
-            entry = OfficeArtFOPTE(self)
-            entry.dump()
-            if entry.opid.fComplex:
-                print '<todo what="OfficeArtRGFOPTE: fComplex != 0 unhandled"/>'
-            print '</rgfopte>'
-        print '</%s>' % self.name
-        self.parent.pos = self.pos
-
-class OfficeArtFOPT(DOCDirStream):
-    """The OfficeArtFOPT record specifies a table of OfficeArtRGFOPTE properties."""
-    def __init__(self, officeArtSpContainer, pos):
-        DOCDirStream.__init__(self, officeArtSpContainer.bytes)
-        self.pos = pos
-        self.officeArtSpContainer = officeArtSpContainer
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<shapePrimaryOptions type="OfficeArtFOPT" offset="%d">' % self.pos
-        pos = self.pos
-        OfficeArtRGFOPTE(self, "fopt").dump()
-        print '</shapePrimaryOptions>'
-        assert self.pos == pos + self.rh.recLen
-
 class OfficeArtSpContainer(DOCDirStream):
     """The OfficeArtSpContainer record specifies a shape container."""
     def __init__(self, parent, pos):
@@ -230,7 +166,7 @@ recMap = {
         0xf008: [msodraw.FDG],
         0xf009: [msodraw.FSPGR],
         0xf00a: [msodraw.FSP],
-        0xf00b: [OfficeArtFOPT, True],
+        0xf00b: [msodraw.FOPT],
         0xf011: [msodraw.FClientData],
         0xf11e: [msodraw.SplitMenuColorContainer],
         }

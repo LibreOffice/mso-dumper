@@ -139,6 +139,14 @@ class DOCDirStream:
             return self.readInt32()
         raise Exception
 
+    def readBytes(self, length):
+        r = self.bytes[self.pos:self.pos+length]
+        self.pos += length
+        return r
+
+    def moveForward (self, byteCount):
+        self.pos += byteCount
+
     def appendLine(self, line):
         print line
 
