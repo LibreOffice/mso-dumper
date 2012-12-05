@@ -49,24 +49,6 @@ class OfficeArtDggContainer(DOCDirStream):
         assert pos == self.pos + self.rh.recLen
         self.officeArtContent.pos = pos
 
-class OfficeArtFSPGR(DOCDirStream):
-    """The OfficeArtFSPGR record specifies the coordinate system of the group shape that the anchors of the child shape are expressed in."""
-    def __init__(self, officeArtSpContainer, pos):
-        DOCDirStream.__init__(self, officeArtSpContainer.bytes)
-        self.pos = pos
-        self.officeArtSpContainer = officeArtSpContainer
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<shapeGroup type="OfficeArtFSPGR" offset="%d">' % (self.pos)
-        pos = self.pos
-        self.printAndSet("xLeft", self.readuInt32())
-        self.printAndSet("yTop", self.readuInt32())
-        self.printAndSet("xRight", self.readuInt32())
-        self.printAndSet("yBottom", self.readuInt32())
-        print '</shapeGroup>'
-        assert self.pos == pos + self.rh.recLen
-
 class OfficeArtFSP(DOCDirStream):
     """The OfficeArtFSP record specifies an instance of a shape."""
     def __init__(self, officeArtSpContainer, pos):
@@ -291,7 +273,7 @@ recMap = {
         0xf004: [OfficeArtSpContainer, True],
         0xf006: [msodraw.FDGGBlock],
         0xf008: [msodraw.FDG],
-        0xf009: [OfficeArtFSPGR, True],
+        0xf009: [msodraw.FSPGR],
         0xf00a: [OfficeArtFSP, True],
         0xf00b: [OfficeArtFOPT, True],
         0xf011: [OfficeArtClientData, True],

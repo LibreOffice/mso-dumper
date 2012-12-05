@@ -134,6 +134,11 @@ class DOCDirStream:
             return self.readuInt32()
         raise Exception
 
+    def readSignedInt(self, size):
+        if size == 4:
+            return self.readInt32()
+        raise Exception
+
     def appendLine(self, line):
         print line
 

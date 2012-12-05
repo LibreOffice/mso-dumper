@@ -490,6 +490,14 @@ class FSPGR:
         recHdl.appendLine("  right boundary: %d"%self.right)
         recHdl.appendLine("  bottom boundary: %d"%self.bottom)
 
+    def dumpXml(self, recHdl, rh):
+        recHdl.appendLine('<shapeGroup type="OfficeArtFSPGR">')
+        recHdl.appendLine('<xLeft value="%d"/>' % self.left)
+        recHdl.appendLine('<yTop value="%d"/>' % self.top)
+        recHdl.appendLine('<xRight value="%d"/>' % self.right)
+        recHdl.appendLine('<yBottom value="%d"/>' % self.bottom)
+        recHdl.appendLine('</shapeGroup>')
+
 
 class FConnectorRule:
     def __init__ (self, strm):
