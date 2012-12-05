@@ -407,10 +407,23 @@ class FOPT:
             self.value       = None
             self.extra       = None
 
-    def __init__ (self):
+    def __init__ (self, strm):
         self.properties = []
+        self.strm = strm
 
     def appendLines (self, recHdl, rh):
+        strm = globals.ByteStream(self.strm.readBytes(rh.recLen))
+        while not strm.isEndOfRecord():
+            entry = FOPT.E()
+            val = strm.readUnsignedInt(2)
+            entry.ID          = (val & 0x3FFF)
+            entry.flagBid     = (val & 0x4000) # if true, the value is a blip ID.
+            entry.flagComplex = (val & 0x8000) # if true, the value stores the size of the extra bytes.
+            entry.value = strm.readSignedInt(4)
+            if entry.flagComplex:
+                entry.extra = strm.readBytes(entry.value)
+            self.properties.append(entry)
+
         recHdl.appendLine("FOPT content (property table):")
         recHdl.appendLine("  property count: %d"%rh.recInstance)
         for i in xrange(0, rh.recInstance):
@@ -628,6 +641,7 @@ recData = {
     RecordHeader.Type.FDG: FDG,
     RecordHeader.Type.FSPGR: FSPGR,
     RecordHeader.Type.FSP: FSP,
+    RecordHeader.Type.FOPT: FOPT,
     RecordHeader.Type.FDGGBlock: FDGGBlock,
     RecordHeader.Type.FConnectorRule: FConnectorRule,
     RecordHeader.Type.FDGSL: FDGSL,
@@ -644,22 +658,6 @@ class MSODrawHandler(globals.ByteStream):
         globals.ByteStream.__init__(self, bytes)
         self.parent = parent
 
-    def readFOPT (self, rh):
-        fopt = FOPT()
-        strm = globals.ByteStream(self.readBytes(rh.recLen))
-        while not strm.isEndOfRecord():
-            entry = FOPT.E()
-            val = strm.readUnsignedInt(2)
-            entry.ID          = (val & 0x3FFF)
-            entry.flagBid     = (val & 0x4000) # if true, the value is a blip ID.
-            entry.flagComplex = (val & 0x8000) # if true, the value stores the size of the extra bytes.
-            entry.value = strm.readSignedInt(4)
-            if entry.flagComplex:
-                entry.extra = strm.readBytes(entry.value)
-            fopt.properties.append(entry)
-
-        return fopt
-
     def parseBytes (self):
         while not self.isEndOfRecord():
             self.parent.appendLine(headerLine())
@@ -674,9 +672,6 @@ class MSODrawHandler(globals.ByteStream):
             if recData.has_key(rh.recType):
                 obj = recData[rh.recType](self)
                 obj.appendLines(self.parent, rh)
-            elif rh.recType == RecordHeader.Type.FOPT:
-                fopt = self.readFOPT(rh)
-                fopt.appendLines(self.parent, rh)
             else:
                 # unknown object
                 bytes = self.readBytes(rh.recLen)
