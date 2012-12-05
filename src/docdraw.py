@@ -11,25 +11,6 @@ from docdirstream import DOCDirStream
 import docsprm
 import msodraw
 
-class OfficeArtFDGG(DOCDirStream):
-    """The OfficeArtFDGG record specifies documnet-wide information about all of the drawings that have been saved in the file."""
-    size = 16
-    def __init__(self, officeArtFDGGBlock, name):
-        DOCDirStream.__init__(self, officeArtFDGGBlock.bytes)
-        self.name = name
-        self.pos = officeArtFDGGBlock.pos
-        self.officeArtFDGGBlock = officeArtFDGGBlock
-
-    def dump(self):
-        print '<%s type="OfficeArtFDGG" offset="%d" size="%d bytes">' % (self.name, self.pos, OfficeArtFDGG.size)
-        self.printAndSet("spidMax", self.readuInt32())
-        self.printAndSet("cidcl", self.readuInt32())
-        self.printAndSet("cspSaved", self.readuInt32())
-        self.printAndSet("cdgSaved", self.readuInt32())
-        print '</%s>' % self.name
-        assert self.pos == self.officeArtFDGGBlock.pos + OfficeArtFDGG.size
-        self.officeArtFDGGBlock.pos = self.pos
-
 class OfficeArtFDGGBlock(DOCDirStream):
     """The OfficeArtFDGGBlock record specifies document-wide information about all of the drawings that have been saved in the file."""
     def __init__(self, officeArtDggContainer, pos):
@@ -39,8 +20,8 @@ class OfficeArtFDGGBlock(DOCDirStream):
     def dump(self):
         print '<drawingGroup type="OfficeArtFDGGBlock" offset="%d">' % self.pos
         msodraw.RecordHeader(self).dumpXml(self)
-        self.head = OfficeArtFDGG(self, "head")
-        self.head.dump()
+        self.head = msodraw.FDGG(self)
+        self.head.dumpXml(self)
         for i in range(self.head.cidcl - 1):
             print '<Rgidcl index="%d">' % i
             msodraw.IDCL(self).dumpXml(self)

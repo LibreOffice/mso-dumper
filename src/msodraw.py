@@ -190,6 +190,14 @@ class FDGG:
         recHdl.appendLine("  total number of shapes in all drawings: %d"%self.cspSaved)
         recHdl.appendLine("  total number of drawings in the file: %d"%self.cdgSaved)
 
+    def dumpXml(self, recHdl):
+        recHdl.appendLine('<fdgg type="OfficeArtFDGG">')
+        recHdl.appendLine('<spidMax value="%d"/>' % self.spidMax)
+        recHdl.appendLine('<cidcl value="%d"/>' % self.cidcl)
+        recHdl.appendLine('<cspSaved value="%d"/>' % self.cspSaved)
+        recHdl.appendLine('<cdgSaved value="%d"/>' % self.cdgSaved)
+        recHdl.appendLine('</fdgg>')
+
 class FDGGBlock:
     def __init__ (self, strm):
         self.head = FDGG(strm)
