@@ -126,7 +126,9 @@ class DOCDirStream:
 
     # compat methods to make msodraw happy
     def readUnsignedInt(self, size):
-        if size == 2:
+        if size == 1:
+            return self.readuInt8()
+        elif size == 2:
             return self.readuInt16()
         elif size == 4:
             return self.readuInt32()

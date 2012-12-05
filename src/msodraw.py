@@ -510,6 +510,14 @@ class MSOCR:
         else:
             recHdl.appendLine("  RGB color: (red=%d, green=%d, blue=%d)"%(self.red, self.green, self.blue))
 
+    def dumpXml(self, recHdl):
+        recHdl.appendLine('<msocr type="MSOCR">')
+        recHdl.appendLine('<red value="%d"/>' % self.red)
+        recHdl.appendLine('<green value="%d"/>' % self.green)
+        recHdl.appendLine('<blue value="%d"/>' % self.blue)
+        recHdl.appendLine('<fSchemeIndex value="%d"/>' % self.isSchemeIndex)
+        recHdl.appendLine('</msocr>')
+
 class SplitMenuColorContainer:
     def __init__ (self, strm):
         self.smca = []

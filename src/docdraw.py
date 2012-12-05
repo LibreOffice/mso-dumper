@@ -28,26 +28,6 @@ class OfficeArtFDGGBlock(DOCDirStream):
             print '</Rgidcl>'
         print '</drawingGroup>'
 
-class MSOCR(DOCDirStream):
-    """The MSOCR record specifies either the RGB color or the scheme color index."""
-    size = 4
-    def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
-        self.pos = parent.pos
-        self.parent = parent
-
-    def dump(self):
-        print '<msocr type="MSOCR" offset="%d" size="%d">' % (self.pos, MSOCR.size)
-        buf = self.readuInt32()
-        self.printAndSet("red",           buf & 0x000000ff) # 1..8th bits
-        self.printAndSet("green",        (buf & 0x0000ff00) >> 8) # 9..16th bits
-        self.printAndSet("blue",         (buf & 0x00ff0000) >> 16) # 17..24th bits
-        self.printAndSet("unused1",      (buf & 0x07000000) >> 24) # 25..27th bits
-        self.printAndSet("fSchemeIndex", (buf & 0x08000000) >> 27) # 28th bits
-        self.printAndSet("unused2",      (buf & 0xf0000000) >> 28) # 29..32th bits
-        print '</msocr>'
-        self.parent.pos = self.pos
-
 class OfficeArtSplitMenuColorContainer(DOCDirStream):
     """The OfficeArtSplitMenuColorContainer record specifies a container for the colors that were most recently used to format shapes."""
     def __init__(self, officeArtDggContainer, pos):
@@ -59,7 +39,7 @@ class OfficeArtSplitMenuColorContainer(DOCDirStream):
         msodraw.RecordHeader(self).dumpXml(self)
         for i in ["fill", "line", "shadow", "3d"]:
             print '<smca type="%s">' % i
-            MSOCR(self).dump()
+            msodraw.MSOCR(self).dumpXml(self)
             print '</smca>'
         print '</splitColors>'
 
