@@ -159,6 +159,12 @@ class FDG:
         recHdl.appendLine("  shape count: %d"%self.shapeCount)
         recHdl.appendLine("  last shape ID: %d"%self.lastShapeID)
 
+    def dumpXml(self, recHdl, rh):
+        recHdl.appendLine('<drawingData type="OfficeArtFDG">')
+        recHdl.appendLine('<csp value="%d"/>' % self.shapeCount)
+        recHdl.appendLine('<spidCur value="%d"/>' % self.lastShapeID)
+        recHdl.appendLine('</drawingData>')
+
 
 class IDCL:
     def __init__ (self, strm):

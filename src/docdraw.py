@@ -49,19 +49,6 @@ class OfficeArtDggContainer(DOCDirStream):
         assert pos == self.pos + self.rh.recLen
         self.officeArtContent.pos = pos
 
-class OfficeArtFDG(DOCDirStream):
-    """The OfficeArtFDG record specifies the number of shapes, the drawing identifier, and the shape identifier of the last shape in a drawing."""
-    def __init__(self, officeArtDgContainer, pos):
-        DOCDirStream.__init__(self, officeArtDgContainer.bytes)
-        self.pos = pos
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<drawingData type="OfficeArtFDG" offset="%d">' % self.pos
-        self.printAndSet("csp", self.readuInt32())
-        self.printAndSet("spidCur", self.readuInt32())
-        print '</drawingData>'
-
 class OfficeArtFSPGR(DOCDirStream):
     """The OfficeArtFSPGR record specifies the coordinate system of the group shape that the anchors of the child shape are expressed in."""
     def __init__(self, officeArtSpContainer, pos):
@@ -303,7 +290,7 @@ recMap = {
         0xf003: [OfficeArtSpgrContainer, True],
         0xf004: [OfficeArtSpContainer, True],
         0xf006: [msodraw.FDGGBlock],
-        0xf008: [OfficeArtFDG, True],
+        0xf008: [msodraw.FDG],
         0xf009: [OfficeArtFSPGR, True],
         0xf00a: [OfficeArtFSP, True],
         0xf00b: [OfficeArtFOPT, True],
