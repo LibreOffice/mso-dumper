@@ -170,7 +170,7 @@ class IDCL:
         recHdl.appendLine("  drawing ID: %d"%self.dgid)
         recHdl.appendLine("  cspidCur: 0x%8.8X"%self.cspidCur)
 
-    def dumpXml(self, recHdl):
+    def dumpXml(self, recHdl, rh):
         recHdl.appendLine('<idcl type="OfficeArtIDCL">')
         recHdl.appendLine('<dgid value="%d"/>' % self.dgid)
         recHdl.appendLine('<cspidCur value="0x%8.8X"/>' % self.cspidCur)
@@ -190,7 +190,7 @@ class FDGG:
         recHdl.appendLine("  total number of shapes in all drawings: %d"%self.cspSaved)
         recHdl.appendLine("  total number of drawings in the file: %d"%self.cdgSaved)
 
-    def dumpXml(self, recHdl):
+    def dumpXml(self, recHdl, rh):
         recHdl.appendLine('<fdgg type="OfficeArtFDGG">')
         recHdl.appendLine('<spidMax value="%d"/>' % self.spidMax)
         recHdl.appendLine('<cidcl value="%d"/>' % self.cidcl)
@@ -213,6 +213,15 @@ class FDGGBlock:
         self.head.appendLines(recHdl, rh)
         for idcl in self.idcls:
             idcl.appendLines(recHdl, rh)
+
+    def dumpXml(self, recHdl, rh):
+        recHdl.appendLine('<drawingGroup type="OfficeArtFDGGBlock">')
+        self.head.dumpXml(recHdl, rh)
+        for i, idcl in enumerate(self.idcls):
+            recHdl.appendLine('<Rgidcl index="%d">' % i)
+            idcl.dumpXml(recHdl, rh)
+            recHdl.appendLine('</Rgidcl>')
+        recHdl.appendLine('</drawingGroup>')
 
 
 class FDGSL:
