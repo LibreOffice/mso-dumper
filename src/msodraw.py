@@ -170,6 +170,12 @@ class IDCL:
         recHdl.appendLine("  drawing ID: %d"%self.dgid)
         recHdl.appendLine("  cspidCur: 0x%8.8X"%self.cspidCur)
 
+    def dumpXml(self, recHdl):
+        recHdl.appendLine('<idcl type="OfficeArtIDCL">')
+        recHdl.appendLine('<dgid value="%d"/>' % self.dgid)
+        recHdl.appendLine('<cspidCur value="0x%8.8X"/>' % self.cspidCur)
+        recHdl.appendLine('</idcl>')
+
 class FDGG:
     def __init__ (self, strm):
         self.spidMax  = strm.readUnsignedInt(4) # current max shape ID

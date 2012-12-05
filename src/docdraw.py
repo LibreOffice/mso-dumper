@@ -30,20 +30,6 @@ class OfficeArtFDGG(DOCDirStream):
         assert self.pos == self.officeArtFDGGBlock.pos + OfficeArtFDGG.size
         self.officeArtFDGGBlock.pos = self.pos
 
-class OfficeArtIDCL(DOCDirStream):
-    """The OfficeArtIDCL record specifies a file identifier cluster, which is used to group shape identifiers within a drawing."""
-    def __init__(self, officeArtFDGGBlock):
-        DOCDirStream.__init__(self, officeArtFDGGBlock.bytes)
-        self.pos = officeArtFDGGBlock.pos
-        self.officeArtFDGGBlock = officeArtFDGGBlock
-
-    def dump(self):
-        print '<officeArtIDCL type="OfficeArtIDCL" pos="%d">' % self.pos
-        self.printAndSet("dgid", self.readuInt32())
-        self.printAndSet("cspidCur", self.readuInt32())
-        print '</officeArtIDCL>'
-        self.officeArtFDGGBlock.pos = self.pos
-
 class OfficeArtFDGGBlock(DOCDirStream):
     """The OfficeArtFDGGBlock record specifies document-wide information about all of the drawings that have been saved in the file."""
     def __init__(self, officeArtDggContainer, pos):
@@ -57,7 +43,7 @@ class OfficeArtFDGGBlock(DOCDirStream):
         self.head.dump()
         for i in range(self.head.cidcl - 1):
             print '<Rgidcl index="%d">' % i
-            OfficeArtIDCL(self).dump()
+            msodraw.IDCL(self).dumpXml(self)
             print '</Rgidcl>'
         print '</drawingGroup>'
 
