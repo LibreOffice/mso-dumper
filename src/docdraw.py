@@ -7,13 +7,14 @@
 
 import struct
 import globals
-from docdirstream import DOCDirStream
 import docsprm
 import msodraw
 
-class OfficeArtContainer(DOCDirStream):
+class OfficeArtContainer(globals.ByteStream):
     def __init__(self, parent, name, type, contained):
-        DOCDirStream.__init__(self, parent.bytes)
+        self.bytes = parent.bytes
+        self.size = len(self.bytes)
+        self.pos = 0
         self.name = name
         self.type = type
         self.contained = contained
@@ -47,6 +48,9 @@ class OfficeArtContainer(DOCDirStream):
         recHdl.appendLine('</%s>' % self.name)
         assert pos == self.pos + self.rh.recLen
         self.parent.pos = pos
+
+    def appendLine(self, line):
+        self.parent.appendLine(line)
 
 class OfficeArtDggContainer(OfficeArtContainer):
     """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
