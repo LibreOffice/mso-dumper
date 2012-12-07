@@ -59,16 +59,17 @@ class OfficeArtDgContainer(OfficeArtContainer):
     def __init__(self, officeArtContent, name):
         OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDgContainer")
 
-class OfficeArtSpContainer(DOCDirStream):
-    """The OfficeArtSpContainer record specifies a shape container."""
-    def __init__(self, parent, pos):
+class OfficeArtContainedContainer(DOCDirStream):
+    def __init__(self, parent, pos, name, type):
         DOCDirStream.__init__(self, parent.bytes)
         self.pos = pos
+        self.name = name
+        self.type = type
         self.parent = parent
 
     def dumpXml(self, compat, rh):
         self.rh = rh
-        print '<shape type="OfficeArtSpContainer">'
+        print '<%s type="OfficeArtSpContainer">' % self.name
         pos = self.pos
         while (self.rh.recLen - (pos - self.pos)) > 0:
             posOrig = self.pos
@@ -89,47 +90,21 @@ class OfficeArtSpContainer(DOCDirStream):
                     child.dumpXml(self, rh)
                     self.pos = posOrig
             else:
-                print '<todo what="OfficeArtSpContainer: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen)
+                print '<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen)
             pos += rh.recLen
-        print '</shape>'
+        print '</%s>' % self.name
         assert pos == self.pos + self.rh.recLen
         self.pos = pos
 
-class OfficeArtSpgrContainer(DOCDirStream):
+class OfficeArtSpContainer(OfficeArtContainedContainer):
+    """The OfficeArtSpContainer record specifies a shape container."""
+    def __init__(self, parent, pos):
+        OfficeArtContainedContainer.__init__(self, parent, pos, "shape", "OfficeArtSpContainer")
+
+class OfficeArtSpgrContainer(OfficeArtContainedContainer):
     """The OfficeArtSpgrContainer record specifies a container for groups of shapes."""
     def __init__(self, officeArtDgContainer, pos):
-        DOCDirStream.__init__(self, officeArtDgContainer.bytes)
-        self.pos = pos
-        self.officeArtDgContainer = officeArtDgContainer
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<groupShape type="OfficeArtSpgrContainer" offset="%d">' % self.pos
-        pos = self.pos
-        while (self.rh.recLen - (pos - self.pos)) > 0:
-            posOrig = self.pos
-            self.pos = pos
-            rh = msodraw.RecordHeader(self)
-            rh.dumpXml(self)
-            self.pos = posOrig
-            pos += msodraw.RecordHeader.size
-            if rh.recType in recMap:
-                if len(recMap[rh.recType]) == 2:
-                    child = recMap[rh.recType][0](self, pos)
-                    child.dumpXml(self, rh)
-                    assert child.pos == pos + rh.recLen
-                else:
-                    posOrig = self.pos
-                    self.pos = pos
-                    child = recMap[rh.recType][0](self)
-                    child.dumpXml(self, rh)
-                    self.pos = posOrig
-            else:
-                print '<todo what="OfficeArtSpgrContainer: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen)
-            pos += rh.recLen
-        print '</groupShape>'
-        assert pos == self.pos + self.rh.recLen
-        self.pos = pos
+        OfficeArtContainedContainer.__init__(self, officeArtDgContainer, pos, "groupShape", "OfficeArtSpgrContainer")
 
 recMap = {
         0xf003: [OfficeArtSpgrContainer, True],
