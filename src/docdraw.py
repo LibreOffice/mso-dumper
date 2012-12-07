@@ -11,16 +11,16 @@ from docdirstream import DOCDirStream
 import docsprm
 import msodraw
 
-class OfficeArtDggContainer(DOCDirStream):
-    """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
-    def __init__(self, officeArtContent, name):
-        DOCDirStream.__init__(self, officeArtContent.bytes)
+class OfficeArtContainer(DOCDirStream):
+    def __init__(self, parent, name, type):
+        DOCDirStream.__init__(self, parent.bytes)
         self.name = name
-        self.pos = officeArtContent.pos
-        self.officeArtContent = officeArtContent
+        self.type = type
+        self.pos = parent.pos
+        self.parent = parent
 
     def dumpXml(self):
-        print '<%s type="OfficeArtDggContainer" offset="%d">' % (self.name, self.pos)
+        print '<%s type="%s" offset="%d">' % (self.name, self.type, self.pos)
         self.rh = msodraw.RecordHeader(self)
         self.rh.dumpXml(self)
         pos = self.pos
@@ -43,11 +43,21 @@ class OfficeArtDggContainer(DOCDirStream):
                     child.dumpXml(self, rh)
                     self.pos = posOrig
             else:
-                print '<todo what="OfficeArtDggContainer: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen)
+                print '<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen)
             pos += rh.recLen
         print '</%s>' % self.name
         assert pos == self.pos + self.rh.recLen
-        self.officeArtContent.pos = pos
+        self.parent.pos = pos
+
+class OfficeArtDggContainer(OfficeArtContainer):
+    """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
+    def __init__(self, officeArtContent, name):
+        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDggContainer")
+
+class OfficeArtDgContainer(OfficeArtContainer):
+    """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
+    def __init__(self, officeArtContent, name):
+        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDgContainer")
 
 class OfficeArtSpContainer(DOCDirStream):
     """The OfficeArtSpContainer record specifies a shape container."""
@@ -120,44 +130,6 @@ class OfficeArtSpgrContainer(DOCDirStream):
         print '</groupShape>'
         assert pos == self.pos + self.rh.recLen
         self.pos = pos
-
-class OfficeArtDgContainer(DOCDirStream):
-    """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
-    def __init__(self, officeArtContent, name):
-        DOCDirStream.__init__(self, officeArtContent.bytes)
-        self.name = name
-        self.pos = officeArtContent.pos
-        self.officeArtContent = officeArtContent
-
-    def dumpXml(self):
-        print '<%s type="OfficeArtDgContainer" offset="%d">' % (self.name, self.pos)
-        self.rh = msodraw.RecordHeader(self)
-        self.rh.dumpXml(self)
-        pos = self.pos
-        while (self.rh.recLen - (pos - self.pos)) > 0:
-            posOrig = self.pos
-            self.pos = pos
-            rh = msodraw.RecordHeader(self)
-            rh.dumpXml(self)
-            self.pos = posOrig
-            pos += msodraw.RecordHeader.size
-            if rh.recType in recMap:
-                if len(recMap[rh.recType]) == 2:
-                    child = recMap[rh.recType][0](self, pos)
-                    child.dumpXml(self, rh)
-                    assert child.pos == pos + rh.recLen
-                else:
-                    posOrig = self.pos
-                    self.pos = pos
-                    child = recMap[rh.recType][0](self)
-                    child.dumpXml(self, rh)
-                    self.pos = posOrig
-            else:
-                print '<todo what="OfficeArtDgContainer: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen)
-            pos += rh.recLen
-        print '</%s>' % self.name
-        assert pos == self.pos + self.rh.recLen
-        self.officeArtContent.pos = pos
 
 recMap = {
         0xf003: [OfficeArtSpgrContainer, True],
