@@ -12,17 +12,21 @@ import docsprm
 import msodraw
 
 class OfficeArtContainer(DOCDirStream):
-    def __init__(self, parent, name, type):
+    def __init__(self, parent, name, type, contained):
         DOCDirStream.__init__(self, parent.bytes)
         self.name = name
         self.type = type
+        self.contained = contained
         self.pos = parent.pos
         self.parent = parent
 
-    def dumpXml(self):
-        print '<%s type="%s" offset="%d">' % (self.name, self.type, self.pos)
-        self.rh = msodraw.RecordHeader(self)
-        self.rh.dumpXml(self)
+    def dumpXml(self, recHdl, rh = None):
+        print '<%s type="%s">' % (self.name, self.type)
+        if self.contained:
+            self.rh = rh
+        else:
+            self.rh = msodraw.RecordHeader(self)
+            self.rh.dumpXml(self)
         pos = self.pos
         while (self.rh.recLen - (pos - self.pos)) > 0:
             posOrig = self.pos
@@ -32,16 +36,11 @@ class OfficeArtContainer(DOCDirStream):
             self.pos = posOrig
             pos += msodraw.RecordHeader.size
             if rh.recType in recMap:
-                if len(recMap[rh.recType]) == 2:
-                    child = recMap[rh.recType][0](self, pos)
-                    child.dumpXml(self, rh)
-                    assert child.pos == pos + rh.recLen
-                else:
-                    posOrig = self.pos
-                    self.pos = pos
-                    child = recMap[rh.recType][0](self)
-                    child.dumpXml(self, rh)
-                    self.pos = posOrig
+                posOrig = self.pos
+                self.pos = pos
+                child = recMap[rh.recType](self)
+                child.dumpXml(self, rh)
+                self.pos = posOrig
             else:
                 print '<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen)
             pos += rh.recLen
@@ -52,70 +51,33 @@ class OfficeArtContainer(DOCDirStream):
 class OfficeArtDggContainer(OfficeArtContainer):
     """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
     def __init__(self, officeArtContent, name):
-        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDggContainer")
+        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDggContainer", False)
 
 class OfficeArtDgContainer(OfficeArtContainer):
     """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
     def __init__(self, officeArtContent, name):
-        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDgContainer")
+        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDgContainer", False)
 
-class OfficeArtContainedContainer(DOCDirStream):
-    def __init__(self, parent, pos, name, type):
-        DOCDirStream.__init__(self, parent.bytes)
-        self.pos = pos
-        self.name = name
-        self.type = type
-        self.parent = parent
-
-    def dumpXml(self, compat, rh):
-        self.rh = rh
-        print '<%s type="OfficeArtSpContainer">' % self.name
-        pos = self.pos
-        while (self.rh.recLen - (pos - self.pos)) > 0:
-            posOrig = self.pos
-            self.pos = pos
-            rh = msodraw.RecordHeader(self)
-            rh.dumpXml(self)
-            self.pos = posOrig
-            pos += msodraw.RecordHeader.size
-            if rh.recType in recMap:
-                if len(recMap[rh.recType]) == 2:
-                    child = recMap[rh.recType][0](self, pos)
-                    child.dumpXml(self, rh)
-                    assert child.pos == pos + rh.recLen
-                else:
-                    posOrig = self.pos
-                    self.pos = pos
-                    child = recMap[rh.recType][0](self)
-                    child.dumpXml(self, rh)
-                    self.pos = posOrig
-            else:
-                print '<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen)
-            pos += rh.recLen
-        print '</%s>' % self.name
-        assert pos == self.pos + self.rh.recLen
-        self.pos = pos
-
-class OfficeArtSpContainer(OfficeArtContainedContainer):
+class OfficeArtSpContainer(OfficeArtContainer):
     """The OfficeArtSpContainer record specifies a shape container."""
-    def __init__(self, parent, pos):
-        OfficeArtContainedContainer.__init__(self, parent, pos, "shape", "OfficeArtSpContainer")
+    def __init__(self, parent):
+        OfficeArtContainer.__init__(self, parent, "shape", "OfficeArtSpContainer", True)
 
-class OfficeArtSpgrContainer(OfficeArtContainedContainer):
+class OfficeArtSpgrContainer(OfficeArtContainer):
     """The OfficeArtSpgrContainer record specifies a container for groups of shapes."""
-    def __init__(self, officeArtDgContainer, pos):
-        OfficeArtContainedContainer.__init__(self, officeArtDgContainer, pos, "groupShape", "OfficeArtSpgrContainer")
+    def __init__(self, officeArtDgContainer):
+        OfficeArtContainer.__init__(self, officeArtDgContainer, "groupShape", "OfficeArtSpgrContainer", True)
 
 recMap = {
-        0xf003: [OfficeArtSpgrContainer, True],
-        0xf004: [OfficeArtSpContainer, True],
-        0xf006: [msodraw.FDGGBlock],
-        0xf008: [msodraw.FDG],
-        0xf009: [msodraw.FSPGR],
-        0xf00a: [msodraw.FSP],
-        0xf00b: [msodraw.FOPT],
-        0xf011: [msodraw.FClientData],
-        0xf11e: [msodraw.SplitMenuColorContainer],
+        0xf003: OfficeArtSpgrContainer,
+        0xf004: OfficeArtSpContainer,
+        0xf006: msodraw.FDGGBlock,
+        0xf008: msodraw.FDG,
+        0xf009: msodraw.FSPGR,
+        0xf00a: msodraw.FSP,
+        0xf00b: msodraw.FOPT,
+        0xf011: msodraw.FClientData,
+        0xf11e: msodraw.SplitMenuColorContainer,
         }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
