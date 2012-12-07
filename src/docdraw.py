@@ -21,7 +21,7 @@ class OfficeArtContainer(DOCDirStream):
         self.parent = parent
 
     def dumpXml(self, recHdl, rh = None):
-        print '<%s type="%s">' % (self.name, self.type)
+        recHdl.appendLine('<%s type="%s">' % (self.name, self.type))
         if self.contained:
             self.rh = rh
         else:
@@ -42,9 +42,9 @@ class OfficeArtContainer(DOCDirStream):
                 child.dumpXml(self, rh)
                 self.pos = posOrig
             else:
-                print '<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen)
+                recHdl.appendLine('<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen))
             pos += rh.recLen
-        print '</%s>' % self.name
+        recHdl.appendLine('</%s>' % self.name)
         assert pos == self.pos + self.rh.recLen
         self.parent.pos = pos
 
