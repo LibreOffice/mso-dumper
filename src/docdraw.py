@@ -19,7 +19,7 @@ class OfficeArtDggContainer(DOCDirStream):
         self.pos = officeArtContent.pos
         self.officeArtContent = officeArtContent
 
-    def dump(self):
+    def dumpXml(self):
         print '<%s type="OfficeArtDggContainer" offset="%d">' % (self.name, self.pos)
         self.rh = msodraw.RecordHeader(self)
         self.rh.dumpXml(self)
@@ -129,7 +129,7 @@ class OfficeArtDgContainer(DOCDirStream):
         self.pos = officeArtContent.pos
         self.officeArtContent = officeArtContent
 
-    def dump(self):
+    def dumpXml(self):
         print '<%s type="OfficeArtDgContainer" offset="%d">' % (self.name, self.pos)
         self.rh = msodraw.RecordHeader(self)
         self.rh.dumpXml(self)

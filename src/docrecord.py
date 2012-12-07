@@ -1575,7 +1575,7 @@ class OfficeArtWordDrawing(DOCDirStream):
     def dump(self):
         print '<officeArtWordDrawing type="OfficeArtWordDrawing" pos="%d">' % self.pos
         self.printAndSet("dgglbl", self.readuInt8())
-        docdraw.OfficeArtDgContainer(self, "container").dump()
+        docdraw.OfficeArtDgContainer(self, "container").dumpXml()
         print '</officeArtWordDrawing>'
         self.officeArtContent.pos = self.pos
 
@@ -1589,7 +1589,7 @@ class OfficeArtContent(DOCDirStream):
 
     def dump(self):
         print '<officeArtContent type="OfficeArtContent" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        docdraw.OfficeArtDggContainer(self, "DrawingGroupData").dump()
+        docdraw.OfficeArtDggContainer(self, "DrawingGroupData").dumpXml()
         print '<Drawings type="main" offset="%d">' % self.pos
         OfficeArtWordDrawing(self).dump()
         print '</Drawings>'
