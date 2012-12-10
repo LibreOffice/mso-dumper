@@ -690,26 +690,18 @@ class FClientAnchorSheet:
 
 # ----------------------------------------------------------------------------
 
-recData = {
-    RecordHeader.Type.FDG: FDG,
-    RecordHeader.Type.FSPGR: FSPGR,
-    RecordHeader.Type.FSP: FSP,
-    RecordHeader.Type.FOPT: FOPT,
-    RecordHeader.Type.FDGGBlock: FDGGBlock,
-    RecordHeader.Type.FConnectorRule: FConnectorRule,
-    RecordHeader.Type.FDGSL: FDGSL,
-    RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
-    RecordHeader.Type.FClientData: FClientData,
-    RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer
-}
-
 class MSODrawHandler(globals.ByteStream):
 
-    def __init__ (self, bytes, parent):
-        """The 'parent' instance must have appendLine() method that takes one string argument."""
+    def __init__ (self, bytes, parent, name = None, type = None):
+        """The 'parent' instance must have appendLine() method that takes one string argument.
+           The optional parameters are used by dumpXml() only."""
 
         globals.ByteStream.__init__(self, bytes)
         self.parent = parent
+        if name and type:
+            self.name = name
+            self.type = type
+            self.pos = parent.pos
 
     def parseBytes (self):
         while not self.isEndOfRecord():
@@ -746,5 +738,68 @@ class MSODrawHandler(globals.ByteStream):
                 # unknown object
                 bytes = self.readBytes(rh.recLen)
 
+    def dumpXml (self, recHdl, rh = None):
+        recHdl.appendLine('<%s type="%s">' % (self.name, self.type))
+        if rh:
+            self.rh = rh
+        else:
+            self.rh = RecordHeader(self)
+            self.rh.dumpXml(self)
+        base = self.pos
+        while (self.rh.recLen - (self.pos - base)) > 0:
+            rh = RecordHeader(self)
+            rh.dumpXml(self)
+            saved = self.pos
+            if rh.recType in recData:
+                child = recData[rh.recType](self)
+                child.dumpXml(self, rh)
+            else:
+                recHdl.appendLine('<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen))
+            self.pos = saved + rh.recLen
+        recHdl.appendLine('</%s>' % self.name)
+        self.parent.pos = self.pos
+
+    def appendLine(self, line):
+        self.parent.appendLine(line)
+
+
+class DggContainer(MSODrawHandler):
+    """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
+    def __init__(self, officeArtContent, name):
+        MSODrawHandler.__init__(self, officeArtContent.bytes, officeArtContent, name, "OfficeArtDggContainer")
+
+
+class DgContainer(MSODrawHandler):
+    """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
+    def __init__(self, officeArtContent, name):
+        MSODrawHandler.__init__(self, officeArtContent.bytes, officeArtContent, name, "OfficeArtDgContainer")
+
+
+class SpContainer(MSODrawHandler):
+    """The OfficeArtSpContainer record specifies a shape container."""
+    def __init__(self, parent):
+        MSODrawHandler.__init__(self, parent.bytes, parent, "shape", "OfficeArtSpContainer")
+
+
+class SpgrContainer(MSODrawHandler):
+    """The OfficeArtSpgrContainer record specifies a container for groups of shapes."""
+    def __init__(self, officeArtDgContainer):
+        MSODrawHandler.__init__(self, officeArtDgContainer.bytes, officeArtDgContainer, "groupShape", "OfficeArtSpgrContainer")
+
+
+recData = {
+    RecordHeader.Type.spgrContainer: SpgrContainer,
+    RecordHeader.Type.spContainer: SpContainer,
+    RecordHeader.Type.FDG: FDG,
+    RecordHeader.Type.FSPGR: FSPGR,
+    RecordHeader.Type.FSP: FSP,
+    RecordHeader.Type.FOPT: FOPT,
+    RecordHeader.Type.FDGGBlock: FDGGBlock,
+    RecordHeader.Type.FConnectorRule: FConnectorRule,
+    RecordHeader.Type.FDGSL: FDGSL,
+    RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
+    RecordHeader.Type.FClientData: FClientData,
+    RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer
+}
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
