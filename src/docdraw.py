@@ -11,19 +11,18 @@ import docsprm
 import msodraw
 
 class OfficeArtContainer(globals.ByteStream):
-    def __init__(self, parent, name, type, contained):
+    def __init__(self, parent, name, type):
         self.bytes = parent.bytes
         self.size = len(self.bytes)
         self.pos = 0
         self.name = name
         self.type = type
-        self.contained = contained
         self.pos = parent.pos
         self.parent = parent
 
     def dumpXml(self, recHdl, rh = None):
         recHdl.appendLine('<%s type="%s">' % (self.name, self.type))
-        if self.contained:
+        if rh:
             self.rh = rh
         else:
             self.rh = msodraw.RecordHeader(self)
@@ -55,22 +54,22 @@ class OfficeArtContainer(globals.ByteStream):
 class OfficeArtDggContainer(OfficeArtContainer):
     """The OfficeArtDggContainer record type specifies the container for all the OfficeArt file records that contain document-wide data."""
     def __init__(self, officeArtContent, name):
-        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDggContainer", False)
+        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDggContainer")
 
 class OfficeArtDgContainer(OfficeArtContainer):
     """The OfficeArtDgContainer record specifies the container for all the file records for the objects in a drawing."""
     def __init__(self, officeArtContent, name):
-        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDgContainer", False)
+        OfficeArtContainer.__init__(self, officeArtContent, name, "OfficeArtDgContainer")
 
 class OfficeArtSpContainer(OfficeArtContainer):
     """The OfficeArtSpContainer record specifies a shape container."""
     def __init__(self, parent):
-        OfficeArtContainer.__init__(self, parent, "shape", "OfficeArtSpContainer", True)
+        OfficeArtContainer.__init__(self, parent, "shape", "OfficeArtSpContainer")
 
 class OfficeArtSpgrContainer(OfficeArtContainer):
     """The OfficeArtSpgrContainer record specifies a container for groups of shapes."""
     def __init__(self, officeArtDgContainer):
-        OfficeArtContainer.__init__(self, officeArtDgContainer, "groupShape", "OfficeArtSpgrContainer", True)
+        OfficeArtContainer.__init__(self, officeArtDgContainer, "groupShape", "OfficeArtSpgrContainer")
 
 recMap = {
         0xf003: OfficeArtSpgrContainer,
