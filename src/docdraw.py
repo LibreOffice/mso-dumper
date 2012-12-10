@@ -27,26 +27,19 @@ class OfficeArtContainer(globals.ByteStream):
         else:
             self.rh = msodraw.RecordHeader(self)
             self.rh.dumpXml(self)
-        pos = self.pos
-        while (self.rh.recLen - (pos - self.pos)) > 0:
-            posOrig = self.pos
-            self.pos = pos
+        base = self.pos
+        while (self.rh.recLen - (self.pos - base)) > 0:
             rh = msodraw.RecordHeader(self)
             rh.dumpXml(self)
-            self.pos = posOrig
-            pos += msodraw.RecordHeader.size
+            saved = self.pos
             if rh.recType in recMap:
-                posOrig = self.pos
-                self.pos = pos
                 child = recMap[rh.recType](self)
                 child.dumpXml(self, rh)
-                self.pos = posOrig
             else:
                 recHdl.appendLine('<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen))
-            pos += rh.recLen
+            self.pos = saved + rh.recLen
         recHdl.appendLine('</%s>' % self.name)
-        assert pos == self.pos + self.rh.recLen
-        self.parent.pos = pos
+        self.parent.pos = self.pos
 
     def appendLine(self, line):
         self.parent.appendLine(line)
