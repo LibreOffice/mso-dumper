@@ -187,7 +187,7 @@ Like parseBytes(), the derived classes must overwrite this method."""
             self.parseBytes()
             for line in self.lines:
                 print (headerStr + line)
-        except:
+        except globals.ByteStreamError:
             print(headerStr + "Error interpreting the record!")
 
     def debug (self, msg):
@@ -3457,6 +3457,38 @@ class SXDataItem(BaseRecordHandler):
             self.appendLine("name: %s"%name)
 
         return
+
+class SXPageItem(BaseRecordHandler):
+
+    class Item(object):
+
+        def __init__ (self, strm):
+            self.isxvd = strm.readSignedInt(2)
+            self.isxvi = strm.readSignedInt(2)
+            self.idObj = strm.readSignedInt(2)
+
+        def appendLines (self, parent):
+            parent.appendLine("item")
+            parent.appendLine("  field index: %d"%self.isxvd)
+            if self.isxvi == 0x7FFD:
+                parent.appendLine("  index of selected item: all")
+            else:
+                # Index of SXVI record, not of cache item in pivot cache.
+                # SXVI record holds the index of the cache item in pivot cache.
+                # Don't get confused.
+                parent.appendLine("  index of selected item: %d"%self.isxvi)
+            parent.appendLine("  OBJ record ID for page item drop-down arrow: %d"%self.idObj)
+
+    def __parseBytes (self):
+        self.items = []
+        while not self.isEndOfRecord():
+            item = SXPageItem.Item(self)
+            self.items.append(item)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        for item in self.items:
+            item.appendLines(self)
 
 
 class SXVI(BaseRecordHandler):

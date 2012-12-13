@@ -125,7 +125,7 @@ recData = {
     0x00B2: ["SXVI", "View Item", xlsrecord.SXVI],
     0x00B4: ["SXIVD", "Row/Column Field IDs", xlsrecord.SxIvd],
     0x00B5: ["SXLI", "Line Item Array", xlsrecord.SXLI],
-    0x00B6: ["SXPI", "Page Item"],
+    0x00B6: ["SXPI", "Page Item", xlsrecord.SXPageItem],
     0x00B8: ["DOCROUTE", "Routing Slip Information"],
     0x00B9: ["RECIPNAME", "Recipient Name"],
     0x00BC: ["SHRFMLA", "Shared Formula"],
