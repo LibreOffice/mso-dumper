@@ -352,6 +352,8 @@ class Sprm(DOCDirStream):
             self.operand = self.getuInt32()
         elif self.getOperandSize() == 7:
             self.operand = self.getuInt64() & 0x0fffffff
+        elif self.getOperandSize() == 9:
+            self.operand = self.getuInt64(pos = self.pos + 1)
         else:
             self.operand = "todo"
 
@@ -377,6 +379,8 @@ class Sprm(DOCDirStream):
         if self.spra == 6: # variable
             if self.sprm == 0xd634:
                 return 7
+            elif self.sprm in [0xd234, 0xd235, 0xd236, 0xd237]: # sprmSBrcTop / Left / Bottom / Right
+                return 9
             raise Exception()
         return self.operandSizeMap[self.spra]
 
