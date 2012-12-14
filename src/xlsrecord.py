@@ -2988,13 +2988,13 @@ class SXEx(BaseRecordHandler):
 
         flag = self.readUnsignedInt(2)
         self.fEnableWizard            = (flag & 0x0001) != 0 # D
-        self.fEnableDrilldown         = (flag & 0x0001) != 0 # E
-        self.fEnableFieldDialog       = (flag & 0x0001) != 0 # F
-        self.fPreserveFormatting      = (flag & 0x0001) != 0 # G
-        self.fMergeLabels             = (flag & 0x0001) != 0 # H
-        self.fDisplayErrorString      = (flag & 0x0001) != 0 # I
-        self.fDisplayNullString       = (flag & 0x0001) != 0 # J
-        self.fSubtotalHiddenPageItems = (flag & 0x0001) != 0 # K
+        self.fEnableDrilldown         = (flag & 0x0002) != 0 # E
+        self.fEnableFieldDialog       = (flag & 0x0004) != 0 # F
+        self.fPreserveFormatting      = (flag & 0x0008) != 0 # G
+        self.fMergeLabels             = (flag & 0x0010) != 0 # H
+        self.fDisplayErrorString      = (flag & 0x0020) != 0 # I
+        self.fDisplayNullString       = (flag & 0x0040) != 0 # J
+        self.fSubtotalHiddenPageItems = (flag & 0x0080) != 0 # K
 
         self.cchPageFieldStyle = self.readUnsignedInt(2)
         self.cchTableStyle = self.readUnsignedInt(2)
@@ -3033,6 +3033,20 @@ class SXEx(BaseRecordHandler):
         self.appendLineString("style used in page area", self.stPageFieldStyle)
         self.appendLineString("style used in table body", self.stTableStyle)
         self.appendLineString("style used in empty cells", self.stVacateStyle)
+        if self.fAcrossPageLay:
+            self.appendLine("page area layout: left to right, then top to bottom")
+        else:
+            self.appendLine("page area layout: top to bottom, then left to right")
+        self.appendLineInt("rows in each page column", self.cWrapPage)
+
+        self.appendLineBoolean("enable wizard", self.fEnableWizard)
+        self.appendLineBoolean("enable drilldown", self.fEnableDrilldown)
+        self.appendLineBoolean("enable field properties dialog", self.fEnableFieldDialog)
+        self.appendLineBoolean("preserve formatting", self.fPreserveFormatting)
+        self.appendLineBoolean("merge labels", self.fMergeLabels)
+        self.appendLineBoolean("display custom error string", self.fDisplayErrorString)
+        self.appendLineBoolean("display custom empty string", self.fDisplayNullString)
+        self.appendLineBoolean("subtotal hidden page items", self.fSubtotalHiddenPageItems)
 
 
 class SXDtr(BaseRecordHandler):
