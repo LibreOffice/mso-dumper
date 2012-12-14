@@ -3170,6 +3170,19 @@ class SXFDB(BaseRecordHandler):
         self.appendLineString("field name", self.stFieldName)
 
 
+class SxFormat(BaseRecordHandler):
+
+    def __parseBytes (self):
+        flag = self.readUnsignedInt(2)
+        self.rlType = (flag & 0x000F) != 0
+        self.cbData = self.readUnsignedInt(2)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineBoolean("formatting applied", self.rlType)
+        self.appendLineInt("number of byts in next SxDXF", self.cbData)
+
+
 class SXLI(BaseRecordHandler):
 
     itemTypes = {
