@@ -169,7 +169,7 @@ recData = {
     0x00ED: ["MSODRAWINGSELECTION", "Microsoft Office Drawing Selection", xlsrecord.MSODrawingSelection],
     0x00EF: ["PHONETIC", "Asian Phonetic Settings", xlsrecord.PhoneticInfo],
     0x00F0: ["SXRULE", "PivotTable Rule Data"],
-    0x00F1: ["SXEX", "PivotTable View Extended Information"],
+    0x00F1: ["SXEX", "PivotTable View Extended Information", xlsrecord.SXEx],
     0x00F2: ["SXFILT", "PivotTable Rule Filter"],
     0x00F6: ["SXNAME", "PivotTable Name"],
     0x00F7: ["SXSELECT", "PivotTable Selection Information"],

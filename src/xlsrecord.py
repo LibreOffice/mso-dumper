@@ -2966,6 +2966,74 @@ class SXDbEx(BaseRecordHandler):
         self.appendLine("last changed: %g"%lastChanged)
         self.appendLine("count of SXFORMULA records for this cache: %d"%sxFmlaRecs)
 
+class SXEx(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.csxformat = self.readUnsignedInt(2)
+        self.cchErrorString = self.readUnsignedInt(2)
+        self.cchNullString = self.readUnsignedInt(2)
+        self.cchTag = self.readUnsignedInt(2)
+        self.csxselect = self.readUnsignedInt(2)
+        self.crwPage = self.readUnsignedInt(2)
+        self.ccolPage = self.readUnsignedInt(2)
+        flag = self.readUnsignedInt(2)
+
+        # Page field layout
+        # 0 = top to bottom then left to right
+        # 1 = left to right then top to bottom
+        self.fAcrossPageLay = (flag & 0x0001)
+
+        # Rows in each page field column
+        self.cWrapPage = (flag & 0x01FE) / 2
+
+        flag = self.readUnsignedInt(2)
+        self.fEnableWizard            = (flag & 0x0001) != 0 # D
+        self.fEnableDrilldown         = (flag & 0x0001) != 0 # E
+        self.fEnableFieldDialog       = (flag & 0x0001) != 0 # F
+        self.fPreserveFormatting      = (flag & 0x0001) != 0 # G
+        self.fMergeLabels             = (flag & 0x0001) != 0 # H
+        self.fDisplayErrorString      = (flag & 0x0001) != 0 # I
+        self.fDisplayNullString       = (flag & 0x0001) != 0 # J
+        self.fSubtotalHiddenPageItems = (flag & 0x0001) != 0 # K
+
+        self.cchPageFieldStyle = self.readUnsignedInt(2)
+        self.cchTableStyle = self.readUnsignedInt(2)
+        self.cchVacateStyle = self.readUnsignedInt(2)
+
+        self.stError = ""
+        if self.cchErrorString != 0xFFFF:
+            self.stError = self.readXLUnicodeStringNoCch(self.cchErrorString)
+
+        self.stDisplayNull = ""
+        if self.cchNullString != 0xFFFF:
+            self.stDisplayNull = self.readXLUnicodeStringNoCch(self.cchNullString)
+
+        self.stTag = ""
+        if self.cchTag != 0xFFFF:
+            self.stTag = self.readXLUnicodeStringNoCch(self.cchTag)
+
+        self.stPageFieldStyle = ""
+        if self.cchPageFieldStyle != 0xFFFF and self.cchPageFieldStyle > 0:
+            self.stPageFieldStyle = self.readXLUnicodeStringNoCch(self.cchPageFieldStyle)
+
+        self.stTableStyle = ""
+        if self.cchTableStyle != 0xFFFF and self.cchTableStyle > 0:
+            self.stTableStyle = self.readXLUnicodeStringNoCch(self.cchTableStyle)
+
+        self.stVacateStyle = ""
+        if self.cchVacateStyle != 0xFFFF and self.cchVacateStyle > 0:
+            self.stVacateStyle = self.readXLUnicodeStringNoCch(self.cchVacateStyle)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineInt("number of SxFormat records", self.csxformat)
+        self.appendLineString("error string", self.stError)
+        self.appendLineString("null string", self.stDisplayNull)
+        self.appendLineString("custom string", self.stTag)
+        self.appendLineString("style used in page area", self.stPageFieldStyle)
+        self.appendLineString("style used in table body", self.stTableStyle)
+        self.appendLineString("style used in empty cells", self.stVacateStyle)
+
 
 class SXDtr(BaseRecordHandler):
 
