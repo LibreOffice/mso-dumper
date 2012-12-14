@@ -171,7 +171,7 @@ recData = {
     0x00F0: ["SXRULE", "PivotTable Rule Data"],
     0x00F1: ["SXEX", "PivotTable View Extended Information", xlsrecord.SXEx],
     0x00F2: ["SXFILT", "PivotTable Rule Filter"],
-    0x00F4: ["SxDXF", "PivotTable Differential Formatting"],
+    0x00F4: ["SxDXF", "PivotTable Differential Formatting", xlsrecord.SxDXF],
     0x00F6: ["SXNAME", "PivotTable Name"],
     0x00F7: ["SXSELECT", "PivotTable Selection Information"],
     0x00F8: ["SXPAIR", "PivotTable Name Pair"],
