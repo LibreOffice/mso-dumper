@@ -3301,6 +3301,93 @@ class SXStreamID(BaseRecordHandler):
         self.strmData.appendPivotCacheId(strmId)
         self.appendLine("pivot cache stream ID in SX DB storage: %4.4X"%strmId)
 
+class SxRule(BaseRecordHandler):
+
+    viewAreaTypes = [
+        "does not refer to any area.",
+        "refers to one or more pivot fields specified by SxFilt records that follow this record.",
+        "refers to cells displaying values of data items specified by SxFilt records that follow this record.",
+        "refers to the entire PivotTable view.",
+        "refers to the cells at the top-left of the PivotTable view, or at the top-right for a right-to-left sheet. For more information about this area, see Location and Body.",
+        "refers to a cell displaying a pivot field caption. The pivot field is specified by isxvd.",
+        "refers to the cells at the top-right of the PivotTable view, or at the top-left for a right-to-left sheet. For more information about this area, see Location and Body."
+    ]
+
+    def __parseBytes (self):
+        self.iDim = self.readUnsignedInt(1)
+        self.isvxd = self.readUnsignedInt(1)
+
+        flag = self.readUnsignedInt(2)
+        self.sxaxisRw   = (flag & 0x0001) != 0
+        self.sxaxisCol  = (flag & 0x0002) != 0
+        self.sxaxisPage = (flag & 0x0004) != 0
+        self.sxaxisData = (flag & 0x0008) != 0
+        self.sxrType    = (flag & 0x00F0) / (2**4)
+
+        flag /= 2**8 # shift 8 bits
+
+        self.fPart        = (flag & 0x01) != 0
+        self.fDataOnly    = (flag & 0x02) != 0
+        self.fLabelOnly   = (flag & 0x04) != 0
+        self.fGrandRw     = (flag & 0x08) != 0
+        self.fGrandCol    = (flag & 0x10) != 0
+        self.fGrandRwSav  = (flag & 0x20) != 0
+        self.fCacheBased  = (flag & 0x40) != 0
+        self.fGrandColSav = (flag & 0x80) != 0
+
+        self.readBytes(2) # 2 bytes reserved
+
+        self.csxFilt = self.readUnsignedInt(2)
+
+        if not self.fPart:
+            return
+
+        # following should exist only when fPart is true
+        self.irwFirst  = self.readUnsignedInt(1)
+        self.irwLast   = self.readUnsignedInt(1)
+        self.icolFirst = self.readUnsignedInt(1)
+        self.icolLast  = self.readUnsignedInt(1)
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLineInt("pivot field position", self.iDim)
+        if self.isvxd <= 0xFD:
+            if self.fCacheBased:
+                self.appendLineInt("cache field index", self.isvxd)
+            else:
+                self.appendLineInt("pivot field index", self.isvxd)
+        elif self.isvxd == 0xFE:
+            self.appendLine("this record refers to data field")
+        elif self.isvxd == 0xFF:
+            if self.fCacheBased:
+                self.appendLine("cache fields specified by SxFilt records.")
+            else:
+                self.appendLine("pivot fields specified by SxFilt records.")
+
+        self.appendLineBoolean("references row axis", self.sxaxisRw)
+        self.appendLineBoolean("references column axis", self.sxaxisCol)
+        self.appendLineBoolean("references page axis", self.sxaxisPage)
+        self.appendLineBoolean("references value axis", self.sxaxisData)
+        self.appendMultiLine("view area type: " + globals.getValueOrUnknown(SxRule.viewAreaTypes, self.sxrType))
+        self.appendLineBoolean("this rule includes data cells only", self.fDataOnly)
+        self.appendLineBoolean("this rule includes labels only", self.fDataOnly)
+        self.appendLineBoolean("this rule includes grand total row", self.fGrandRw)
+        self.appendLineBoolean("this rule includes grand total column", self.fGrandCol)
+        self.appendLineBoolean("this rule previosly included grand total row", self.fGrandRwSav)
+        self.appendLineBoolean("this rule previosly included grand total column", self.fGrandColSav)
+
+        self.appendLineInt("number of SxFilt records", self.csxFilt)
+
+        if not self.fPart:
+            return
+
+        # following should exist only when fPart is true
+        self.appendLineInt("offset to first row", self.irwFirst)
+        self.appendLineInt("offset to last row", self.irwLast)
+        self.appendLineInt("offset to first column", self.icolFirst)
+        self.appendLineInt("offset to last column", self.icolLast)
+
+
 
 class SXView(BaseRecordHandler):
 
