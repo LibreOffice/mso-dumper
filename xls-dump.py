@@ -30,6 +30,7 @@ import sys, os.path, optparse
 sys.path.append(sys.path[0]+"/src")
 import ole, xlsstream, globals, node, xlsmodel, olestream
 import xlsparser
+import msocrypto
 
 from globals import error
 
@@ -142,6 +143,13 @@ class XLDumper(object):
             elif dirname == "Revision Log":
                 dirstrm.type = xlsstream.DirType.RevisionLog
                 self.__readSubStream(dirstrm)
+
+            elif dirname == "EncryptionInfo":
+                globals.dumpBytes(dirstrm.bytes, 512)
+                print("-"*globals.OutputWidth)
+                info = msocrypto.EncryptionInfo(dirstrm.bytes)
+                info.read()
+                info.output()
 
             elif self.strmData.isPivotCacheStream(dirname):
                 dirstrm.type = xlsstream.DirType.PivotTableCache
