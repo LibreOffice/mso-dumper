@@ -72,4 +72,5 @@ class EncryptionInfo(object):
         self.outputInt("header stream size", self.size)
 
     def outputAgile (self):
-        pass
+        bytes = self.strm.readRemainingBytes()
+        print (bytes)
