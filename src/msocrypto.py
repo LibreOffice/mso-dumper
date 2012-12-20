@@ -41,6 +41,8 @@ class EncryptionInfo(object):
 
         if self.type == EncryptionInfo.Type.Standard or self.type == EncryptionInfo.Type.Extensible:
             self.size = self.strm.readUnsignedInt(4)
+        elif self.type == EncryptionInfo.Type.Agile:
+            self.bytes = self.strm.readRemainingBytes()
 
     def outputBoolean (self, name, value):
         if value:
@@ -72,5 +74,4 @@ class EncryptionInfo(object):
         self.outputInt("header stream size", self.size)
 
     def outputAgile (self):
-        bytes = self.strm.readRemainingBytes()
-        print (bytes)
+        print (self.bytes)
