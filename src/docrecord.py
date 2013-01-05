@@ -709,12 +709,15 @@ class Clx(DOCDirStream):
         self.pos = offset
         self.size = size
 
+        self.firstByte = self.getuInt8()
+        if self.firstByte == 0x02:
+            self.pcdt = Pcdt(self.bytes, self.mainStream, self.pos, self.size)
+
     def dump(self):
         print '<clx type="Clx" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        firstByte = self.getuInt8()
-        if firstByte == 0x02:
+        if self.firstByte == 0x02:
             print '<info what="Array of Prc, 0 elements"/>'
-            Pcdt(self.bytes, self.mainStream, self.pos, self.size).dump()
+            self.pcdt.dump()
         else:
             print '<todo what="Clx::dump() first byte is not 0x02"/>'
         print '</clx>'
