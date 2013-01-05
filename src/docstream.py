@@ -424,9 +424,9 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbClx(self, silent = False):
         offset = self.fcClx
         size = self.lcbClx
-        clx = docrecord.Clx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        self.clx = docrecord.Clx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
         if not silent:
-            clx.dump()
+            self.clx.dump()
 
     def handleLcbPlcfBteChpx(self):
         plcBteChpx = docrecord.PlcBteChpx(self)
@@ -624,6 +624,6 @@ class WordDocumentStream(DOCDirStream):
     def retrieveText(self, start, end):
         plcPcd = self.clx.pcdt.plcPcd
         idx = self.__findText(plcPcd, start)
-        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, double = False)
+        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, full = False)
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

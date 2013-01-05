@@ -30,16 +30,25 @@ class FcCompressed(DOCDirStream):
         self.printAndSet("r1", self.r1)
         print '</fcCompressed>'
 
-    def getTransformedValue(self, start, end, double = True):
+    def getTransformedValue(self, start, end, full = True):
         if self.fCompressed:
             offset = self.fc/2
-            return globals.encodeName(self.mainStream.bytes[offset:offset+end-start])
+            if full:
+                fro = offset
+                to = offset+end-start
+            else:
+                fro = start
+                to = end
+            return globals.encodeName(self.mainStream.bytes[fro:to])
         else:
-            l = end - start
-            if double:
-                l = l * 2
-            offset = self.fc
-            return globals.encodeName(self.mainStream.bytes[offset:offset+l].decode('utf-16'), lowOnly = True)
+            if full:
+                offset = self.fc
+                fro = offset
+                to = offset + (end - start) * 2
+            else:
+                fro = start
+                to = end
+            return globals.encodeName(self.mainStream.bytes[fro:to].decode('utf-16'), lowOnly = True)
 
     @staticmethod
     def getFCTransformedValue(bytes, start, end):
@@ -503,7 +512,7 @@ class ChpxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.bytes, start, end)
+            print '<transformed value="%s"/>' % self.pnFkpChpx.mainStream.retrieveText(start, end)
             pos += 4
 
             # rgbx
