@@ -18,12 +18,16 @@ class FcCompressed(DOCDirStream):
         self.pos = offset
         self.size = size
 
+        buf = self.readuInt32()
+        self.fc = buf & ((2**32-1) >> 2) # bits 0..29
+        self.fCompressed = self.getBit(buf, 30)
+        self.r1 = self.getBit(buf, 31)
+
     def dump(self):
         print '<fcCompressed type="FcCompressed" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.readuInt32()
-        self.printAndSet("fc", buf & ((2**32-1) >> 2)) # bits 0..29
-        self.printAndSet("fCompressed", self.getBit(buf, 30))
-        self.printAndSet("r1", self.getBit(buf, 31))
+        self.printAndSet("fc", self.fc)
+        self.printAndSet("fCompressed", self.fCompressed)
+        self.printAndSet("r1", self.r1)
         print '</fcCompressed>'
 
     def getTransformedValue(self, start, end):
