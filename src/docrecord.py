@@ -49,16 +49,21 @@ class Pcd(DOCDirStream):
         self.pos = offset
         self.size = size
 
+        buf = self.readuInt16()
+        self.fNoParaLast = self.getBit(buf, 0)
+        self.fR1 = self.getBit(buf, 1)
+        self.fDirty = self.getBit(buf, 2)
+        self.fR2 = buf & (2**13-1)
+        self.fc = FcCompressed(self.bytes, self.mainStream, self.pos, 4)
+        self.pos += 4
+
     def dump(self):
         print '<pcd type="Pcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        buf = self.readuInt16()
-        self.printAndSet("fNoParaLast", self.getBit(buf, 0))
-        self.printAndSet("fR1", self.getBit(buf, 1))
-        self.printAndSet("fDirty", self.getBit(buf, 2))
-        self.printAndSet("fR2", buf & (2**13-1))
-        self.fc = FcCompressed(self.bytes, self.mainStream, self.pos, 4)
+        self.printAndSet("fNoParaLast", self.fNoParaLast)
+        self.printAndSet("fR1", self.fR1)
+        self.printAndSet("fDirty", self.fDirty)
+        self.printAndSet("fR2", self.fR2)
         self.fc.dump()
-        self.pos += 4
         print '</pcd>'
 
 class PLC:
