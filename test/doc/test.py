@@ -120,6 +120,14 @@ class Test(unittest.TestCase):
         # Zoom is 42%
         self.assertEqual('0x2a', dopBase.findall('pctWwdSaved')[0].attrib['value'])
 
+    def test_nofibnew(self):
+        self.dump('nofibnew')
+
+        runs = self.getRuns()
+        self.assertEqual(1, len(runs))
+
+        self.assertEqual('Hello world!', runs[0].findall('transformed')[0].attrib['value'])
+
 if __name__ == '__main__':
     unittest.main()
 
