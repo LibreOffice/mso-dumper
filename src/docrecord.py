@@ -166,6 +166,8 @@ class PlcPcd(DOCDirStream, PLC):
         PLC.__init__(self, size, 8) # 8 is defined by 2.8.35
         self.pos = offset
         self.size = size
+        self.aCp = []
+        self.aPcd = []
 
     def dump(self):
         print '<plcPcd type="PlcPcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
@@ -175,11 +177,13 @@ class PlcPcd(DOCDirStream, PLC):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            self.aCp.append(start)
             pos += 4
 
             # aPcd
             aPcd = Pcd(self.bytes, self.mainStream, self.getOffset(self.pos, i), 8)
             aPcd.dump()
+            self.aPcd.append(aPcd)
 
             print '<transformed value="%s"/>' % aPcd.fc.getTransformedValue(start, end)
             print '</aCP>'
