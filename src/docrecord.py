@@ -468,10 +468,11 @@ class BxPap(DOCDirStream):
 
 class ChpxFkp(DOCDirStream):
     """The ChpxFkp structure maps text to its character properties."""
-    def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.bytes)
+    def __init__(self, pnFkpChpx, offset, size):
+        DOCDirStream.__init__(self, pnFkpChpx.mainStream.bytes)
         self.pos = offset
         self.size = size
+        self.pnFkpChpx = pnFkpChpx
 
     def dump(self):
         print '<chpxFkp type="ChpxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
@@ -525,17 +526,18 @@ class PapxFkp(DOCDirStream):
 
 class PnFkpChpx(DOCDirStream):
     """The PnFkpChpx structure specifies the location in the WordDocument Stream of a ChpxFkp structure."""
-    def __init__(self, bytes, mainStream, offset, size, name):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+    def __init__(self, plcBteChpx, offset, size, name):
+        DOCDirStream.__init__(self, plcBteChpx.bytes, mainStream=plcBteChpx.mainStream)
         self.pos = offset
         self.size = size
         self.name = name
+        self.plcBteChpx = plcBteChpx
 
     def dump(self):
         print '<%s type="PnFkpChpx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
         buf = self.readuInt32()
         self.printAndSet("pn", buf & (2**22-1))
-        chpxFkp = ChpxFkp(self.bytes, self.mainStream, self.pn*512, 512)
+        chpxFkp = ChpxFkp(self, self.pn*512, 512)
         chpxFkp.dump()
         print '</%s>' % self.name
 
@@ -587,11 +589,11 @@ class PnFkpPapx(DOCDirStream):
 
 class PlcBteChpx(DOCDirStream, PLC):
     """The PlcBteChpx structure is a PLC that maps the offsets of text in the WordDocument stream to the character properties of that text."""
-    def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
-        PLC.__init__(self, size, 4)
-        self.pos = offset
-        self.size = size
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        PLC.__init__(self, mainStream.lcbPlcfBteChpx, 4)
+        self.pos = mainStream.fcPlcfBteChpx
+        self.size = mainStream.lcbPlcfBteChpx
 
     def dump(self):
         print '<plcBteChpx type="PlcBteChpx" offset="%d" size="%d bytes">' % (self.pos, self.size)
@@ -604,7 +606,7 @@ class PlcBteChpx(DOCDirStream, PLC):
             pos += 4
 
             # aPnBteChpx
-            aPnBteChpx = PnFkpChpx(self.bytes, self.mainStream, self.getOffset(self.pos, i), 4, "aPnBteChpx")
+            aPnBteChpx = PnFkpChpx(self, self.getOffset(self.pos, i), 4, "aPnBteChpx")
             aPnBteChpx.dump()
             print '</aFC>'
         print '</plcBteChpx>'

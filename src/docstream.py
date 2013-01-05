@@ -416,9 +416,7 @@ class WordDocumentStream(DOCDirStream):
         clx.dump()
 
     def handleLcbPlcfBteChpx(self):
-        offset = self.fcPlcfBteChpx
-        size = self.lcbPlcfBteChpx
-        plcBteChpx = docrecord.PlcBteChpx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        plcBteChpx = docrecord.PlcBteChpx(self)
         plcBteChpx.dump()
 
     def handleLcbPlcfBtePapx(self):
