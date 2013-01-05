@@ -76,7 +76,7 @@ class WordDocumentStream(DOCDirStream):
     def __getFibNew(self):
         cswNew = self.getuInt16(pos = self.__getCswNewOffset())
         if cswNew == 0:
-            raise Exception()
+            return 0
         else:
             return self.getuInt16(pos = self.__getCswNewOffset() + 2)
     
@@ -399,10 +399,11 @@ class WordDocumentStream(DOCDirStream):
             needsHandling = i[0].startswith("lcb") and value != 0 and (not i[0] in needsIgnoring)
             self.printAndSet(i[0], value, end = ((not hasHandler) and (not needsHandling)), offset = True)
             if hasHandler or needsHandling:
-                if hasHandler:
-                    i[1]()
-                else:
-                    print '<todo what="value is non-zero and unhandled"/>'
+                if needsHandling:
+                    if hasHandler:
+                        i[1]()
+                    else:
+                        print '<todo what="value is non-zero and unhandled"/>'
                 print '</%s>' % i[0]
 
     def handleDop(self):
@@ -598,7 +599,7 @@ class WordDocumentStream(DOCDirStream):
             self.printAndSet(i, self.readuInt32())
 
     def dumpFibRgFcLcb2002(self, name):
-        print '<%s type="dumpFibRgFcLcb2002" size="744 bytes">' % name
+        print '<%s type="FibRgFcLcb2002" size="744 bytes">' % name
         self.__dumpFibRgFcLcb2002()
         print '</%s>' % name
 

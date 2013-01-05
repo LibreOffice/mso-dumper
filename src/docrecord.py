@@ -1413,7 +1413,9 @@ class Dop(DOCDirStream):
 
     def dump(self):
         print '<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size)
-        if self.fib.nFibNew == 0x0112:
+        if self.fib.nFibNew == 0:
+            Dop97(self).dump()
+        elif self.fib.nFibNew == 0x0112:
             Dop2007(self).dump()
         else:
             print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s">""" % hex(self.nFibNew)
@@ -1699,12 +1701,14 @@ class STSHI(DOCDirStream):
 
     def dump(self):
         print '<stshi type="STSHI" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        posOrig = self.pos
         self.stshif = Stshif(self.bytes, self.mainStream, self.pos)
         self.stshif.dump()
         self.pos += self.stshif.size
-        self.printAndSet("ftcBi", self.readuInt16())
-        stshiLsd = StshiLsd(self.bytes, self, self.pos)
-        stshiLsd.dump()
+        if self.pos - posOrig < self.size:
+            self.printAndSet("ftcBi", self.readuInt16())
+            stshiLsd = StshiLsd(self.bytes, self, self.pos)
+            stshiLsd.dump()
         print '</stshi>'
 
 class LPStshi(DOCDirStream):
