@@ -528,7 +528,7 @@ class ChpxFkp(DOCDirStream):
 class PapxFkp(DOCDirStream):
     """The PapxFkp structure maps paragraphs, table rows, and table cells to their properties."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.bytes)
+        DOCDirStream.__init__(self, mainStream.bytes, mainStream = mainStream)
         self.pos = offset
         self.size = size
 
@@ -541,7 +541,7 @@ class PapxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.bytes, start, end)
+            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, end)
             pos += 4
 
             # rgbx
