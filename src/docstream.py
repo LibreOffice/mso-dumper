@@ -614,4 +614,16 @@ class WordDocumentStream(DOCDirStream):
         self.__dumpFibRgFcLcb2002()
         print '</%s>' % name
 
+    def __findText(self, plcPcd, cp):
+        """Find the largest i such that plcPcd.aCp[i] <= cp."""
+        for i in range(len(plcPcd.aCp)):
+            if plcPcd.aCp[i] <= cp:
+                index = i
+        return index
+
+    def retrieveText(self, start, end):
+        plcPcd = self.clx.pcdt.plcPcd
+        idx = self.__findText(plcPcd, start)
+        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, double = False)
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

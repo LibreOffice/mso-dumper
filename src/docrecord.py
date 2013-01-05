@@ -30,13 +30,16 @@ class FcCompressed(DOCDirStream):
         self.printAndSet("r1", self.r1)
         print '</fcCompressed>'
 
-    def getTransformedValue(self, start, end):
-            if self.fCompressed:
-                offset = self.fc/2
-                return globals.encodeName(self.mainStream.bytes[offset:offset+end-start])
-            else:
-                offset = self.fc
-                return globals.encodeName(self.mainStream.bytes[offset:offset+end*2-start].decode('utf-16'), lowOnly = True)
+    def getTransformedValue(self, start, end, double = True):
+        if self.fCompressed:
+            offset = self.fc/2
+            return globals.encodeName(self.mainStream.bytes[offset:offset+end-start])
+        else:
+            l = end - start
+            if double:
+                l = l * 2
+            offset = self.fc
+            return globals.encodeName(self.mainStream.bytes[offset:offset+l].decode('utf-16'), lowOnly = True)
 
     @staticmethod
     def getFCTransformedValue(bytes, start, end):
