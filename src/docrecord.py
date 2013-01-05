@@ -30,10 +30,10 @@ class FcCompressed(DOCDirStream):
         self.printAndSet("r1", self.r1)
         print '</fcCompressed>'
 
-    def getTransformedValue(self, start, end, full = True):
+    def getTransformedValue(self, start, end, logical = True):
         if self.fCompressed:
             offset = self.fc/2
-            if full:
+            if logical:
                 fro = offset
                 to = offset+end-start
             else:
@@ -41,7 +41,7 @@ class FcCompressed(DOCDirStream):
                 to = end
             return globals.encodeName(self.mainStream.bytes[fro:to])
         else:
-            if full:
+            if logical:
                 offset = self.fc
                 fro = offset
                 to = offset + (end - start) * 2
@@ -258,7 +258,7 @@ class PlcfSed(DOCDirStream, PLC):
             aSed = Sed(self, self.getOffset(self.pos, i))
             aSed.dump()
 
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, offset + start, offset + end)
+            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, end, logical = True)
             print '</aCP>'
         print '</plcSed>'
 
