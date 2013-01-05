@@ -168,24 +168,28 @@ class PlcPcd(DOCDirStream, PLC):
         self.size = size
         self.aCp = []
         self.aPcd = []
+        self.ranges = []
 
-    def dump(self):
-        print '<plcPcd type="PlcPcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            self.ranges.append((start, end))
             self.aCp.append(start)
             pos += 4
 
             # aPcd
             aPcd = Pcd(self.bytes, self.mainStream, self.getOffset(self.pos, i), 8)
-            aPcd.dump()
             self.aPcd.append(aPcd)
 
-            print '<transformed value="%s"/>' % aPcd.fc.getTransformedValue(start, end)
+    def dump(self):
+        print '<plcPcd type="PlcPcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        for i in range(self.getElements()):
+            start, end = self.ranges[i]
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            self.aPcd[i].dump()
+            print '<transformed value="%s"/>' % self.aPcd[i].fc.getTransformedValue(start, end)
             print '</aCP>'
         print '</plcPcd>'
 
@@ -703,11 +707,15 @@ class Pcdt(DOCDirStream):
         self.pos = offset
         self.size = size
 
+        self.clxt = self.readuInt8()
+        self.lcb = self.readuInt32()
+        self.plcPcd = PlcPcd(self.bytes, self.mainStream, self.pos, self.lcb)
+
     def dump(self):
         print '<pcdt type="Pcdt" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        self.printAndSet("clxt", self.readuInt8())
-        self.printAndSet("lcb", self.readuInt32())
-        PlcPcd(self.bytes, self.mainStream, self.pos, self.lcb).dump()
+        self.printAndSet("clxt", self.clxt)
+        self.printAndSet("lcb", self.lcb)
+        self.plcPcd.dump()
         print '</pcdt>'
 
 class Clx(DOCDirStream):
