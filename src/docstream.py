@@ -390,6 +390,18 @@ class WordDocumentStream(DOCDirStream):
             ["fcSttbfUssr"],
             ["lcbSttbfUssr"],
                 ]
+
+        # Parse Clx early, as it's needed by other structures.
+        posOrig = self.pos
+        for i in fields:
+            value = self.readInt32()
+            if i[0] == "fcClx":
+                self.printAndSet(i[0], value, silent = True)
+            if i[0] == "lcbClx":
+                self.printAndSet(i[0], value, silent = True)
+                i[1](silent = True)
+        self.pos = posOrig
+
         for i in fields:
             value = self.readInt32()
             hasHandler = len(i) > 1
@@ -409,11 +421,12 @@ class WordDocumentStream(DOCDirStream):
     def handleDop(self):
         docrecord.Dop(self).dump()
 
-    def handleLcbClx(self):
+    def handleLcbClx(self, silent = False):
         offset = self.fcClx
         size = self.lcbClx
         clx = docrecord.Clx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
-        clx.dump()
+        if not silent:
+            clx.dump()
 
     def handleLcbPlcfBteChpx(self):
         plcBteChpx = docrecord.PlcBteChpx(self)
