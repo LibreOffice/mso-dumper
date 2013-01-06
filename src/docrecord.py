@@ -1452,7 +1452,7 @@ class Dop(DOCDirStream):
         elif self.fib.nFibNew == 0x0112:
             Dop2007(self).dump()
         else:
-            print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s">""" % hex(self.nFibNew)
+            print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s"/>""" % hex(self.fib.nFibNew)
         print '</dop>'
 
 class FFID(DOCDirStream):
@@ -1741,8 +1741,9 @@ class STSHI(DOCDirStream):
         self.pos += self.stshif.size
         if self.pos - posOrig < self.size:
             self.printAndSet("ftcBi", self.readuInt16())
-            stshiLsd = StshiLsd(self.bytes, self, self.pos)
-            stshiLsd.dump()
+            if self.pos - posOrig < self.size:
+                stshiLsd = StshiLsd(self.bytes, self, self.pos)
+                stshiLsd.dump()
         print '</stshi>'
 
 class LPStshi(DOCDirStream):

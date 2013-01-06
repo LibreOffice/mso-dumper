@@ -89,7 +89,7 @@ class WordDocumentStream(DOCDirStream):
         if self.nFibNew == 0x0112:
             self.dumpFibRgCswNewData2007("fibRgCswNewData2007")
         else:
-            print """<todo what="dumpFibRgCswNew() doesn't know how to handle nFibNew = %s">""" % hex(self.nFibNew)
+            print """<todo what="dumpFibRgCswNew() doesn't know how to handle nFibNew = %s"/>""" % hex(self.nFibNew)
         print '</%s>' % name
 
     def __dumpFibRgCswNewData2000(self):
