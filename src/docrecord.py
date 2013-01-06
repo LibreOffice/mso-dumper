@@ -50,10 +50,6 @@ class FcCompressed(DOCDirStream):
                 to = end
             return globals.encodeName(self.mainStream.bytes[fro:to].decode('utf-16'), lowOnly = True)
 
-    @staticmethod
-    def getFCTransformedValue(bytes, start, end):
-        return globals.encodeName(bytes[start:end])
-
 class Pcd(DOCDirStream):
     """The Pcd structure specifies the location of text in the WordDocument Stream and additional properties for this text."""
     def __init__(self, bytes, mainStream, offset, size):
@@ -163,7 +159,7 @@ class PlcfBkl(DOCDirStream, PLC):
             end = offset + self.getuInt32(pos = pos)
             print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
             start = self.mainStream.plcfAtnBkf.aCP[i]
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, end)
+            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, end)
             pos += 4
             print '</aCP>'
         print '</plcfBkl>'
@@ -656,7 +652,7 @@ class PlcfandTxt(DOCDirStream, PLC):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, offset+start, offset+end)
+            print '<transformed value="%s"/>' % self.mainStream.retrieveText(offset + start, offset + end)
             pos += 4
             print '</aCP>'
         print '</plcfandTxt>'
@@ -676,7 +672,7 @@ class PlcfandRef(DOCDirStream, PLC):
         for i in range(self.getElements()):
             start = offset + self.getuInt32(pos = pos)
             print '<aCP index="%d" commentEndOffset="%d">' % (i, start)
-            print '<transformed value="%s"/>' % FcCompressed.getFCTransformedValue(self.mainStream.bytes, start, start + 1)
+            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, start + 1)
             pos += 4
 
             # aATRDPre10
