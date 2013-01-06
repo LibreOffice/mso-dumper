@@ -345,6 +345,46 @@ class Selsf(DOCDirStream):
         assert self.pos == self.mainStream.fcWss + self.size
         print '</selsf>'
 
+class BRC(DOCDirStream):
+    """The Brc structure specifies a border."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.posOrig = self.pos
+        self.cv = self.readuInt32() # TODO parse COLORREF
+        self.dptLineWidth = self.readuInt8()
+        self.brcType = self.readuInt8() # TODO parse BrcType
+        buf = self.readuInt16()
+        self.dptSpace = buf & 0x1f # 1..5th bits
+        self.fShadow = self.getBit(buf, 5)
+        self.fFrame = self.getBit(buf, 6)
+        self.fReserved  = (buf & 0xff80) >> 7 # 8..16th bits
+
+    def dump(self):
+        print '<brc type="BRC" offset="%d">' % self.posOrig
+        self.printAndSet("cv", self.cv)
+        self.printAndSet("dptLineWidth", self.dptLineWidth)
+        self.printAndSet("brcType", self.brcType)
+        self.printAndSet("dptSpace", self.dptSpace)
+        self.printAndSet("fShadow", self.fShadow)
+        self.printAndSet("fFrame", self.fFrame)
+        self.printAndSet("fReserved", self.fReserved)
+        print '</brc>'
+
+class BrcOperand(DOCDirStream):
+    """The BrcOperand structure is the operand to several SPRMs that control borders."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.posOrig = self.pos
+        self.cb = self.readuInt8()
+        self.brc = BRC(self)
+
+    def dump(self):
+        print '<brcOperand type="BrcOperand" offset="%d">' % self.posOrig
+        self.brc.dump()
+        print '</brcOperand>'
+
 class Sprm(DOCDirStream):
     """The Sprm structure specifies a modification to a property of a character, paragraph, table, or section."""
     def __init__(self, bytes, offset):
@@ -367,6 +407,8 @@ class Sprm(DOCDirStream):
         self.sgc   = (self.sprm & 0x1c00) >> 10 # 11-13th bits
         self.spra  = (self.sprm & 0xe000) >> 13 # 14-16th bits
 
+        self.ct = False # If it's a complex type, it can't be dumped as a simple string.
+        self.operand = "todo"
         if self.getOperandSize() == 1:
             self.operand = self.getuInt8()
         elif self.getOperandSize() == 2:
@@ -378,9 +420,10 @@ class Sprm(DOCDirStream):
         elif self.getOperandSize() == 7:
             self.operand = self.getuInt64() & 0x0fffffff
         elif self.getOperandSize() == 9:
-            self.operand = self.getuInt64(pos = self.pos + 1)
-        else:
-            self.operand = "todo"
+            if self.sprm in (0xd234, 0xd235, 0xd236, 0xd237):
+                self.ct = BrcOperand(self)
+            else:
+                print '<todo what="Sprm::__init__() unhandled sprm of size 9"/>'
 
     def dump(self):
         sgcmap = {
@@ -396,9 +439,19 @@ class Sprm(DOCDirStream):
                 4: docsprm.secMap,
                 5: docsprm.tblMap,
                 }
-        print '<sprm value="%s" name="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s" operand="%s"/>' % (
-                hex(self.sprm), nameMap[self.sgc][self.sprm], hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), hex(self.operand)
+        if self.ct:
+            operandstr = ""
+        else:
+            if self.operand == "todo":
+                operandstr = ' operand=""/'
+            else:
+                operandstr = ' operand="%s"/' % hex(self.operand)
+        print '<sprm value="%s" name="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s"%s>' % (
+                hex(self.sprm), nameMap[self.sgc][self.sprm], hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), operandstr
                 )
+        if self.ct:
+            self.ct.dump()
+            print '</sprm>'
 
     def getOperandSize(self):
         if self.spra == 6: # variable
