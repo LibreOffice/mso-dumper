@@ -5,6 +5,18 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
+# see 2.6.5 of the spec
+picMap = {
+        0x6C02: "sprmPicBrcTop80",
+        0x6C03: "sprmPicBrcLeft80",
+        0x6C04: "sprmPicBrcBottom80",
+        0x6C05: "sprmPicBrcRight80",
+        0xCE08: "sprmPicBrcTop",
+        0xCE09: "sprmPicBrcLeft",
+        0xCE0A: "sprmPicBrcBottom",
+        0xCE0B: "sprmPicBrcRight",
+        }
+
 # see 2.6.4 of the spec
 secMap = {
     0x3000: "sprmScnsPgn",
@@ -155,6 +167,7 @@ tblMap = {
 # see 2.6.2 of the spec
 parMap = {
     0x4600: "sprmPIstd",
+    0x6654: "sprmPAnldCv",
     0xC601: "sprmPIstdPermute",
     0x2602: "sprmPIncLvl",
     0x2403: "sprmPJc80",
@@ -213,6 +226,7 @@ parMap = {
     0x664A: "sprmPDtap",
     0x244B: "sprmPFInnerTableCell",
     0x244C: "sprmPFInnerTtp",
+    0xC63E: "sprmPAnld80",
     0xC64D: "sprmPShd",
     0xC64E: "sprmPBrcTop",
     0xC64F: "sprmPBrcLeft",
@@ -312,6 +326,7 @@ chrMap = {
     0x4866: "sprmCShd80",
     0x4867: "sprmCIdslRMarkDel",
     0x0868: "sprmCFUsePgsuSettings",
+    0x486B: "sprmCCpg",
     0x486D: "sprmCRgLid0_80",
     0x486E: "sprmCRgLid1_80",
     0x286F: "sprmCIdctHint",

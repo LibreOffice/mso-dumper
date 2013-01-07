@@ -436,6 +436,7 @@ class Sprm(DOCDirStream):
         nameMap = {
                 1: docsprm.parMap,
                 2: docsprm.chrMap,
+                3: docsprm.picMap,
                 4: docsprm.secMap,
                 5: docsprm.tblMap,
                 }
