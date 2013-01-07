@@ -128,6 +128,11 @@ class Test(unittest.TestCase):
 
         self.assertEqual('Hello world!', runs[0].findall('transformed')[0].attrib['value'])
 
+    def test_escape(self):
+        # From https://bugs.freedesktop.org/show_bug.cgi?id=59106
+        # This first caused unhandled exceptions, then later invalid XML output.
+        self.dump('escape')
+
 if __name__ == '__main__':
     unittest.main()
 
