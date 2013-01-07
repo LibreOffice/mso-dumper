@@ -159,7 +159,7 @@ class PlcfBkl(DOCDirStream, PLC):
             end = offset + self.getuInt32(pos = pos)
             print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
             start = self.mainStream.plcfAtnBkf.aCP[i]
-            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, end)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, end))
             pos += 4
             print '</aCP>'
         print '</plcfBkl>'
@@ -194,7 +194,7 @@ class PlcPcd(DOCDirStream, PLC):
             start, end = self.ranges[i]
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
             self.aPcd[i].dump()
-            print '<transformed value="%s"/>' % self.aPcd[i].fc.getTransformedValue(start, end)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.aPcd[i].fc.getTransformedValue(start, end))
             print '</aCP>'
         print '</plcPcd>'
 
@@ -254,7 +254,7 @@ class PlcfSed(DOCDirStream, PLC):
             aSed = Sed(self, self.getOffset(self.pos, i))
             aSed.dump()
 
-            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, end, logical = True)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, end, logical = True))
             print '</aCP>'
         print '</plcSed>'
 
@@ -563,7 +563,7 @@ class ChpxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.pnFkpChpx.mainStream.retrieveText(start, end)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.pnFkpChpx.mainStream.retrieveText(start, end))
             pos += 4
 
             # rgbx
@@ -592,7 +592,7 @@ class PapxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, end)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, end))
             pos += 4
 
             # rgbx
@@ -707,7 +707,7 @@ class PlcfandTxt(DOCDirStream, PLC):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.mainStream.retrieveText(offset + start, offset + end)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end))
             pos += 4
             print '</aCP>'
         print '</plcfandTxt>'
@@ -727,7 +727,7 @@ class PlcfandRef(DOCDirStream, PLC):
         for i in range(self.getElements()):
             start = offset + self.getuInt32(pos = pos)
             print '<aCP index="%d" commentEndOffset="%d">' % (i, start)
-            print '<transformed value="%s"/>' % self.mainStream.retrieveText(start, start + 1)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, start + 1))
             pos += 4
 
             # aATRDPre10

@@ -7,6 +7,7 @@
 
 import globals
 import struct
+from xml.sax.saxutils import quoteattr
 
 class DOCDirStream:
     """Represents one single word file subdirectory, like e.g. 'WordDocument'."""
@@ -33,6 +34,11 @@ class DOCDirStream:
             print '<%s value="%s"%s/>' % (key, value, offstr)
         else:
             print '<%s value="%s"%s>' % (key, value, offstr)
+
+    def quoteAttr(self, value):
+        """Wrapper around xml.sax.saxutils.quoteattr, assumes the caller will put " around the result."""
+        ret = quoteattr("'"+value+"'")
+        return ret[2:len(ret)-2]
 
     def getuInt8(self, bytes = None, pos = None):
         if not bytes:
