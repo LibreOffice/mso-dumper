@@ -456,11 +456,12 @@ class Sprm(DOCDirStream):
 
     def getOperandSize(self):
         if self.spra == 6: # variable
-            if self.sprm == 0xd634:
-                return 7
-            elif self.sprm in [0xd234, 0xd235, 0xd236, 0xd237]: # sprmSBrcTop / Left / Bottom / Right
-                return 9
-            raise Exception()
+            if self.sprm not in [0xD608, 0xC615]: # sprmTDefTable, sprmPChgTabs
+                # these structures are prefixed with their size
+                return self.getuInt8() + 1
+            elif self.sprm == 0xD608:
+                return self.getuInt16() + 1
+            raise Exception("No idea what is the size of SPRM %s" % hex(self.sprm))
         return self.operandSizeMap[self.spra]
 
 class Prl(DOCDirStream):
