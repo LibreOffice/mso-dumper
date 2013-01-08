@@ -1596,6 +1596,23 @@ class SttbfFfn(DOCDirStream):
             print '</cchData>'
         print '</sttbfFfn>'
 
+class GrpXstAtnOwners(DOCDirStream):
+    """This array contains the names of authors of comments in the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = mainStream.fcGrpXstAtnOwners
+        self.size = mainStream.lcbGrpXstAtnOwners
+        self.mainStream = mainStream
+
+    def dump(self):
+        posOrig = self.pos
+        print '<grpXstAtnOwners type="GrpXstAtnOwners" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        while self.pos < posOrig + self.size:
+            xst = Xst(self)
+            xst.dump()
+            self.pos = xst.pos
+        print '</grpXstAtnOwners>'
+
 class SttbfAssoc(DOCDirStream):
     """The SttbfAssoc structure is an STTB that contains strings which are associated with this document."""
     def __init__(self, mainStream):

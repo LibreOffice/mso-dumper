@@ -114,6 +114,10 @@ class Test(unittest.TestCase):
         self.assertEqual('Hello', commentEnds[0].findall('transformed')[0].attrib['value'])
         self.assertEqual('This', commentEnds[1].findall('transformed')[0].attrib['value'])
 
+        authors = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbGrpXstAtnOwners/grpXstAtnOwners/xst/rgtchar')
+        self.assertEqual(1, len(authors))
+        self.assertEqual('vmiklos', authors[0].attrib['value'])
+
     def test_zoom(self):
         self.dump('zoom')
         dopBase = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbDop/dop/dop2007/dop2003/dop2002/dop2000/dop97/dop95/dopBase')[0]

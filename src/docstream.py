@@ -276,7 +276,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcAutosaveSource"],
             ["lcbAutosaveSource"],
             ["fcGrpXstAtnOwners"],
-            ["lcbGrpXstAtnOwners"],
+            ["lcbGrpXstAtnOwners", self.handleLcbGrpXstAtnOwners],
             ["fcSttbfAtnBkmk"],
             ["lcbSttbfAtnBkmk", self.handleLcbSttbfAtnBkmk],
             ["fcUnused2"],
@@ -463,6 +463,9 @@ class WordDocumentStream(DOCDirStream):
         size = self.lcbPlcfandRef
         plcfandRef = docrecord.PlcfandRef(self, offset, size)
         plcfandRef.dump()
+
+    def handleLcbGrpXstAtnOwners(self):
+        docrecord.GrpXstAtnOwners(self).dump()
 
     def handleLcbSttbfAtnBkmk(self):
         offset = self.fcSttbfAtnBkmk
