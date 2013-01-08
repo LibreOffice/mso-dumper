@@ -371,6 +371,45 @@ class BRC(DOCDirStream):
         self.printAndSet("fReserved", self.fReserved)
         print '</brc>'
 
+class PChgTabsDel(DOCDirStream):
+    """The PChgTabsDel structure specifies the locations at which custom tab stops are ignored."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<pchgTabsDel type="PChgTabsDel" offset="%d">' % self.pos
+        self.printAndSet("cTabs", self.readuInt8())
+        if self.cTabs != 0:
+            print '<todo what="PChgTabsDel::dump() cTabs is non-zero"/>'
+        print '</pchgTabsDel>'
+
+class PChgTabsAdd(DOCDirStream):
+    """The PChgTabsAdd structure specifies the locations and properties of custom tab stops."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<pchgTabsAdd type="PChgTabsAdd" offset="%d">' % self.pos
+        self.printAndSet("cTabs", self.readuInt8())
+        if self.cTabs != 0:
+            print '<todo what="PChgTabsAdd::dump() cTabs is non-zero"/>'
+        print '</pchgTabsAdd>'
+
+class PChgTabsPapxOperand(DOCDirStream):
+    """The PChgTabsPapxOperand structure is used by sprmPChgTabsPapx to specify custom tab stops to be added or ignored."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<pchgTabsPapxOperand type="PChgTabsPapxOperand" offset="%d">' % self.pos
+        self.printAndSet("cb", self.readuInt8())
+        PChgTabsDel(self).dump()
+        PChgTabsAdd(self).dump()
+        print '</pchgTabsPapxOperand>'
+
 class BrcOperand(DOCDirStream):
     """The BrcOperand structure is the operand to several SPRMs that control borders."""
     def __init__(self, parent):
@@ -422,6 +461,8 @@ class Sprm(DOCDirStream):
         elif self.getOperandSize() == 9:
             if self.sprm in (0xd234, 0xd235, 0xd236, 0xd237):
                 self.ct = BrcOperand(self)
+            elif self.sprm == 0xc60d:
+                self.ct = PChgTabsPapxOperand(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size 9"/>'
 
