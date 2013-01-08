@@ -567,9 +567,9 @@ class PapxInFkp(DOCDirStream):
         if self.cb == 0:
             self.printAndSet("cb_", self.readuInt8())
             grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_)
-            grpPrlAndIstd.dump()
         else:
-            print '<todo what="PapxInFkp::dump() first byte is not 0"/>'
+            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, self.cb)
+        grpPrlAndIstd.dump()
         print '</papxInFkp>'
     
 class BxPap(DOCDirStream):
