@@ -151,7 +151,7 @@ def debug (msg):
     sys.stderr.write("DEBUG: %s\n"%msg)
 
 
-def encodeName (name, lowOnly = False, lowLimit = 20):
+def encodeName (name, lowOnly = False, lowLimit = 0x20):
     """Encode name that contains unprintable characters."""
 
     n = len(name)
@@ -160,7 +160,7 @@ def encodeName (name, lowOnly = False, lowLimit = 20):
 
     newname = ''
     for i in xrange(0, n):
-        if ord(name[i]) <= lowLimit or ((not lowOnly) and ord(name[i]) >= 127):
+        if ord(name[i]) < lowLimit or ((not lowOnly) and ord(name[i]) >= 127):
             newname += "\\x%2.2X"%ord(name[i])
         else:
             newname += name[i]

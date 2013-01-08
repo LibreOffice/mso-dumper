@@ -31,7 +31,6 @@ class FcCompressed(DOCDirStream):
         print '</fcCompressed>'
 
     def getTransformedValue(self, start, end, logical = True):
-        lowLimit = 21 # would be only 20 by default
         if self.fCompressed:
             offset = self.fc/2
             if logical:
@@ -40,7 +39,7 @@ class FcCompressed(DOCDirStream):
             else:
                 fro = start
                 to = end
-            return globals.encodeName(self.mainStream.bytes[fro:to], lowLimit = lowLimit)
+            return globals.encodeName(self.mainStream.bytes[fro:to])
         else:
             if logical:
                 offset = self.fc
@@ -49,7 +48,7 @@ class FcCompressed(DOCDirStream):
             else:
                 fro = start
                 to = end
-            return globals.encodeName(self.mainStream.bytes[fro:to].decode('utf-16'), lowOnly = True, lowLimit = lowLimit)
+            return globals.encodeName(self.mainStream.bytes[fro:to].decode('utf-16'), lowOnly = True)
 
 class Pcd(DOCDirStream):
     """The Pcd structure specifies the location of text in the WordDocument Stream and additional properties for this text."""
