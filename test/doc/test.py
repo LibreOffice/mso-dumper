@@ -137,6 +137,15 @@ class Test(unittest.TestCase):
         # This first caused unhandled exceptions, then later invalid XML output.
         self.dump('escape')
 
+    def test_field(self):
+        self.dump('field')
+
+        instruction = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfFldMom/plcFld/aCP[@index="1"]/transformed')
+        self.assertEqual(' PAGE ', instruction[0].attrib['value'])
+
+        result = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfFldMom/plcFld/aCP[@index="2"]/transformed')
+        self.assertEqual('1', result[0].attrib['value'])
+
 if __name__ == '__main__':
     unittest.main()
 

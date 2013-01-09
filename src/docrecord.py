@@ -142,6 +142,67 @@ class PlcfBkf(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcfBkf>'
 
+class Fldch(DOCDirStream):
+    """The fldch structure determines the type of the field character."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        print '<fldch type="fldch" offset="%d" size="1 byte">' % self.pos
+        buf = self.readuInt8()
+        self.printAndSet("ch", buf & 0x1f) # 1..5th bits
+        self.printAndSet("reserved", (buf & 0xe0) >> 5) # 6..8th bits
+        print '</fldch>'
+        self.parent.pos = self.pos
+
+class Fld(DOCDirStream):
+    """The Fld structure specifies a field character."""
+    def __init__(self, parent, offset):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<fld type="FLD" offset="%d" size="2 bytes">' % self.pos
+        self.fldch = Fldch(self)
+        self.fldch.dump()
+        self.printAndSet("grffld", self.readuInt8()) # TODO parse flt and grffldEnd
+        print '</fld>'
+
+class PlcFld(DOCDirStream, PLC):
+    """The Plcfld structure specifies the location of fields in the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, mainStream.lcbPlcfFldMom, 2) # 2 is defined by 2.8.25
+        self.pos = mainStream.fcPlcfFldMom
+        self.size = mainStream.lcbPlcfFldMom
+
+    def dump(self):
+        print '<plcFld type="PlcFld" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin # 2.8.25: CPs relative to the start of that document part.
+        pos = self.pos
+        aFlds = []
+        for i in range(self.getElements()):
+            # aCp
+            value = self.getuInt32(pos = pos)
+            print '<aCP index="%d" value="%d">' % (i, value)
+            pos += 4
+
+            # aFld
+            aFld = Fld(self, self.getOffset(self.pos, i))
+            aFld.dump()
+
+            # This is a separator and the previous was a start: display the field instructions.
+            if aFld.fldch.ch == 0x14 and aFlds[-1][1].fldch.ch == 0x13:
+                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + aFlds[-1][0] + 1, offset + value))
+            # This is an end and the previous was a separator: display the field result.
+            elif aFld.fldch.ch == 0x15 and aFlds[-1][1].fldch.ch == 0x14:
+                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + aFlds[-1][0] + 1, offset + value))
+            aFlds.append((value, aFld))
+            print '</aCP>'
+        print '</plcFld>'
+
 class PlcfBkl(DOCDirStream, PLC):
     """The Plcfbkl structure is a PLC that contains only CPs and no additional data."""
     def __init__(self, mainStream, offset, size):
