@@ -2297,4 +2297,65 @@ class STSH(DOCDirStream):
             print '</rglpstd>'
         print '</stsh>'
 
+class SPLS(DOCDirStream):
+    """The SPLS structure specifies the current state of a range of text with regard to one of the language checking features."""
+    size = 2 # defined by 2.9.253
+    def __init__(self, name, plcfSpl, offset):
+        DOCDirStream.__init__(self, plcfSpl.bytes)
+        self.name = name
+        self.plcfSpl = plcfSpl
+        self.pos = offset
+
+    def dump(self):
+        splfMap = {
+                0x1: "splfPending",
+                0x2: "splfMaybeDirty",
+                0x3: "splfDirty",
+                0x4: "splfEdit",
+                0x5: "splfForeign",
+                0x7: "splfClean",
+                0x8: "splfNoLAD",
+                0xA: "splfErrorMin",
+                0xB: "splfRepeatWord",
+                0xC: "splfUnknownWord",
+                }
+        print '<spls type="SPLS" offset="%d" size="%d bytes">' % (self.pos, SPLS.size)
+        buf = self.readuInt16()
+        self.printAndSet("splf", buf & 0x000f, end = False) # 1..4th bits
+        if self.splf in splfMap:
+            print '<transformed name="%s"/>' % splfMap[self.splf]
+        print '</splf>'
+        self.printAndSet("fError", self.getBit(buf, 4))
+        self.printAndSet("fExtend", self.getBit(buf, 5))
+        self.printAndSet("fTypo", self.getBit(buf, 6))
+        self.printAndSet("unused", (buf & 0xff80) >> 7) # 8..16th bits
+        print '</spls>'
+
+class PlcfSpl(DOCDirStream, PLC):
+    """The Plcfspl structure is a Plc structure whose data elements are SpellingSpls structures."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, mainStream.lcbPlcfSpl, 2) # 2 is defined by 2.8.28
+        self.pos = mainStream.fcPlcfSpl
+        self.size = mainStream.lcbPlcfSpl
+
+    def dump(self):
+        print '<plcfSpl type="PlcfSpl" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            pos += 4
+
+            # aSpellingSpls
+            aSpellingSpls = SPLS("SpellingSpls", self, self.getOffset(self.pos, i))
+            aSpellingSpls.dump()
+
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end, logicalLength = True))
+            print '</aCP>'
+        print '</plcfSpl>'
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
