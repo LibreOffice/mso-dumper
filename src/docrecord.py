@@ -30,24 +30,21 @@ class FcCompressed(DOCDirStream):
         self.printAndSet("r1", self.r1)
         print '</fcCompressed>'
 
-    def getTransformedValue(self, start, end, logical = True):
+    def getTransformedValue(self, start, end, logicalPositions = True, logicalLength = True):
+        offset = self.fc
         if self.fCompressed:
             offset = self.fc/2
-            if logical:
-                fro = offset
-                to = offset+end-start
-            else:
-                fro = start
-                to = end
+        if logicalPositions:
+            fro = offset + start
+            to = offset + end
+        else:
+            fro = start
+            to = end
+        if self.fCompressed:
             return globals.encodeName(self.mainStream.bytes[fro:to])
         else:
-            if logical:
-                offset = self.fc
-                fro = offset
-                to = offset + (end - start) * 2
-            else:
-                fro = start
-                to = end
+            if logicalLength:
+                to += (to - fro)
             return globals.encodeName(self.mainStream.bytes[fro:to].decode('utf-16'), lowOnly = True)
 
 class Pcd(DOCDirStream):
@@ -301,7 +298,7 @@ class PlcfSed(DOCDirStream, PLC):
         self.size = size
 
     def dump(self):
-        print '<plcSed type="PlcSed" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print '<plcfSed type="PlcfSed" offset="%d" size="%d bytes">' % (self.pos, self.size)
         offset = self.mainStream.fcMin
         pos = self.pos
         for i in range(self.getElements()):
@@ -315,9 +312,9 @@ class PlcfSed(DOCDirStream, PLC):
             aSed = Sed(self, self.getOffset(self.pos, i))
             aSed.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, end, logical = True))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end, logicalLength = True))
             print '</aCP>'
-        print '</plcSed>'
+        print '</plcfSed>'
 
 class Tcg(DOCDirStream):
     """The Tcg structure specifies command-related customizations."""

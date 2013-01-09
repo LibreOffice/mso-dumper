@@ -629,9 +629,9 @@ class WordDocumentStream(DOCDirStream):
                 index = i
         return index
 
-    def retrieveText(self, start, end, logical = False):
+    def retrieveText(self, start, end, logicalLength = False):
         plcPcd = self.clx.pcdt.plcPcd
         idx = self.__findText(plcPcd, start)
-        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, logical = logical)
+        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, logicalPositions = False, logicalLength = logicalLength)
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

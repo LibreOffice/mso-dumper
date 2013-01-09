@@ -146,6 +146,13 @@ class Test(unittest.TestCase):
         result = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfFldMom/plcFld/aCP[@index="2"]/transformed')
         self.assertEqual('1', result[0].attrib['value'])
 
+    def test_sections(self):
+        self.dump('sections')
+
+        sections = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfSed/plcfSed/')
+        self.assertEqual('Before section 1.\\x0D\\x0D\\x0C', sections[0].findall('transformed')[0].attrib['value'])
+        self.assertEqual("\\x0DThe next one isn't a balanced one:\\x0D\\x0D\\x0C", sections[2].findall('transformed')[0].attrib['value'])
+
 if __name__ == '__main__':
     unittest.main()
 
