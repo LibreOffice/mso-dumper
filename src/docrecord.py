@@ -2385,4 +2385,43 @@ class PlcfGram(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcfGram>'
 
+class LSTF(DOCDirStream):
+    """The LSTF structure contains formatting properties that apply to an entire list."""
+    def __init__(self, plfLst):
+        DOCDirStream.__init__(self, plfLst.bytes)
+        self.pos = plfLst.pos
+        self.size = 28
+
+    def dump(self):
+        print '<lstf type="LSTF" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("lsid", self.readInt32())
+        self.printAndSet("tplc", self.readInt32())
+        for i in range(9):
+            print '<rgistdPara value="%s"/>' % self.readInt16()
+        buf = self.readuInt8()
+        self.printAndSet("fSimpleList", self.getBit(buf, 0))
+        self.printAndSet("unused1", self.getBit(buf, 1))
+        self.printAndSet("fAutoNum", self.getBit(buf, 2))
+        self.printAndSet("unused2", self.getBit(buf, 3))
+        self.printAndSet("fHybrid", self.getBit(buf, 4))
+        self.printAndSet("reserved1", (buf & 0xe0) >> 5) # 6..8th bits
+        self.printAndSet("grfhic", self.readuInt8()) # TODO dump grfhic
+        print '</lstf>'
+
+class PlfLst(DOCDirStream):
+    """The PlfLst structure contains the list formatting information for the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        self.pos = mainStream.fcPlfLst
+        self.size = mainStream.lcbPlfLst
+
+    def dump(self):
+        print '<plfLst type="PlfLst" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("cLst", self.readInt16())
+        for i in range(self.cLst):
+            rgLstf = LSTF(self)
+            rgLstf.dump()
+            self.pos = rgLstf.pos
+        print '</plfLst>'
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
