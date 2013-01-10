@@ -384,7 +384,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcPlcfAsumy"],
             ["lcbPlcfAsumy"],
             ["fcPlcfGram"],
-            ["lcbPlcfGram"],
+            ["lcbPlcfGram", self.handleLcbPlcfGram],
             ["fcSttbListNames"],
             ["lcbSttbListNames"],
             ["fcSttbfUssr"],
@@ -514,6 +514,9 @@ class WordDocumentStream(DOCDirStream):
 
     def handleLcbPlcfSpl(self):
         docrecord.PlcfSpl(self).dump()
+
+    def handleLcbPlcfGram(self):
+        docrecord.PlcfGram(self).dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

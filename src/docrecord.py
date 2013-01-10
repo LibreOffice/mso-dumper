@@ -2358,4 +2358,31 @@ class PlcfSpl(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcfSpl>'
 
+class PlcfGram(DOCDirStream, PLC):
+    """The PlcfGram structure is a Plc structure whose data elements are GrammarSpls structures."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, mainStream.lcbPlcfGram, 2) # 2 is defined by 2.8.21
+        self.pos = mainStream.fcPlcfGram
+        self.size = mainStream.lcbPlcfGram
+
+    def dump(self):
+        print '<plcfGram type="PlcfGram" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            pos += 4
+
+            # aGrammarSpls
+            aGrammarSpls = SPLS("GrammarSpls", self, self.getOffset(self.pos, i))
+            aGrammarSpls.dump()
+
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end, logicalLength = True))
+            print '</aCP>'
+        print '</plcfGram>'
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
