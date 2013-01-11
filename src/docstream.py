@@ -352,7 +352,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcPlfLst"],
             ["lcbPlfLst", self.handleLcbPlfLst],
             ["fcPlfLfo"],
-            ["lcbPlfLfo"],
+            ["lcbPlfLfo", self.handleLcbPlfLfo],
             ["fcPlcfTxbxBkd"],
             ["lcbPlcfTxbxBkd"],
             ["fcPlcfTxbxHdrBkd"],
@@ -520,6 +520,9 @@ class WordDocumentStream(DOCDirStream):
 
     def handleLcbPlfLst(self):
         docrecord.PlfLst(self).dump()
+
+    def handleLcbPlfLfo(self):
+        docrecord.PlfLfo(self).dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

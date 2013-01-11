@@ -2393,13 +2393,14 @@ class PlcfGram(DOCDirStream, PLC):
 
 class LSTF(DOCDirStream):
     """The LSTF structure contains formatting properties that apply to an entire list."""
-    def __init__(self, plfLst):
+    def __init__(self, plfLst, index):
         DOCDirStream.__init__(self, plfLst.bytes)
         self.pos = plfLst.pos
         self.size = 28
+        self.index = index
 
     def dump(self):
-        print '<lstf type="LSTF" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print '<lstf type="LSTF" index="%d" offset="%d" size="%d bytes">' % (self.index, self.pos, self.size)
         self.printAndSet("lsid", self.readInt32())
         self.printAndSet("tplc", self.readInt32())
         for i in range(9):
@@ -2445,12 +2446,13 @@ class LVLF(DOCDirStream):
 
 class LVL(DOCDirStream):
     """The LVL structure contains formatting information about a specific level in a list."""
-    def __init__(self, plfLst):
+    def __init__(self, plfLst, index):
         DOCDirStream.__init__(self, plfLst.bytes)
         self.pos = plfLst.pos
+        self.index = index
 
     def dump(self):
-        print '<lvl type="LVL" offset="%d">' % self.pos
+        print '<lvl type="LVL" index="%d" offset="%d">' % (self.index, self.pos)
         lvlf = LVLF(self)
         lvlf.dump()
         self.pos = lvlf.pos
@@ -2489,7 +2491,7 @@ class PlfLst(DOCDirStream):
         self.printAndSet("cLst", self.readInt16())
         cLvl = 0
         for i in range(self.cLst):
-            rgLstf = LSTF(self)
+            rgLstf = LSTF(self, i)
             rgLstf.dump()
             if rgLstf.fSimpleList:
                 cLvl += 1
@@ -2497,9 +2499,62 @@ class PlfLst(DOCDirStream):
                 cLvl += 9
             self.pos = rgLstf.pos
         for i in range(cLvl):
-            lvl = LVL(self)
+            lvl = LVL(self, i)
             lvl.dump()
             self.pos = lvl.pos
         print '</plfLst>'
+
+class LFO(DOCDirStream):
+    """The LFO structure specifies the LSTF element that corresponds to a list that contains a paragraph."""
+    def __init__(self, plfLfo):
+        DOCDirStream.__init__(self, plfLfo.bytes)
+        self.pos = plfLfo.pos
+
+    def dump(self):
+        print '<lfo type="LFO" offset="%d">' % self.pos
+        self.printAndSet("lsid", self.readInt32())
+        self.printAndSet("unused1", self.readuInt32())
+        self.printAndSet("unused2", self.readuInt32())
+        self.printAndSet("clfolvl", self.readuInt8())
+        self.printAndSet("ibstFltAutoNum", self.readuInt8())
+        self.printAndSet("grfhic", self.readuInt8()) # TODO dump grfhic
+        self.printAndSet("unused3", self.readuInt8())
+        print '</lfo>'
+
+class LFOData(DOCDirStream):
+    """The LFOData structure contains the Main Document CP of the corresponding LFO."""
+    def __init__(self, plfLfo, lfo):
+        DOCDirStream.__init__(self, plfLfo.bytes)
+        self.pos = plfLfo.pos
+        self.lfo = lfo
+
+    def dump(self):
+        print '<lfoData type="LFOData" offset="%d">' % self.pos
+        self.printAndSet("cp", self.readuInt32())
+        if self.lfo.clfolvl > 0:
+            print '<todo what="LFOData: clfolvl != 0"/>'
+        print '</lfoData>'
+
+class PlfLfo(DOCDirStream):
+    """The PlfLfo structure contains the list format override data for the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        self.pos = mainStream.fcPlfLfo
+        self.size = mainStream.lcbPlfLfo
+
+    def dump(self):
+        print '<plfLfo type="PlfLfo" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("lfoMac", self.readInt32())
+        lfos = []
+        for i in range(self.lfoMac):
+            lfo = LFO(self)
+            lfos.append(lfo)
+            lfo.dump()
+            self.pos = lfo.pos
+        for i in range(self.lfoMac):
+            lfoData = LFOData(self, lfos[i])
+            lfoData.dump()
+            self.pos = lfoData.pos
+        print '</plfLfo>'
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
