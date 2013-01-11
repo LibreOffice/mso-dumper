@@ -560,6 +560,12 @@ class Sprm(DOCDirStream):
                 return self.getuInt8() + 1
             elif self.sprm == 0xD608:
                 return self.getuInt16() + 1
+            elif self.sprm == 0xC615:
+                cb = self.getuInt8()
+                if cb < 255:
+                    return cb + 1
+                else:
+                    raise Exception("PChgTabsOperand: cb is 255")
             raise Exception("No idea what is the size of SPRM %s" % hex(self.sprm))
         return self.operandSizeMap[self.spra]
 
@@ -2408,6 +2414,69 @@ class LSTF(DOCDirStream):
         self.printAndSet("grfhic", self.readuInt8()) # TODO dump grfhic
         print '</lstf>'
 
+class LVLF(DOCDirStream):
+    """The LVLF structure contains formatting properties for an individual level in a list."""
+    def __init__(self, lvl):
+        DOCDirStream.__init__(self, lvl.bytes)
+        self.pos = lvl.pos
+
+    def dump(self):
+        print '<lvlf type="LVLF" offset="%d">' % self.pos
+        self.printAndSet("iStartAt", self.readInt32())
+        self.printAndSet("nfc", self.readuInt8())
+        buf = self.readuInt8()
+        self.printAndSet("jc", buf & 0x3) # 1..2nd bits
+        self.printAndSet("fLegal", self.getBit(buf, 2))
+        self.printAndSet("fNoRestart", self.getBit(buf, 3))
+        self.printAndSet("fIndentSav", self.getBit(buf, 4))
+        self.printAndSet("fConverted", self.getBit(buf, 5))
+        self.printAndSet("unused1", self.getBit(buf, 6))
+        self.printAndSet("fTentative", self.getBit(buf, 7))
+        for i in range(9):
+            print '<rgrgbxchNums index="%d" value="%s"/>' % (i, self.readuInt8())
+        self.printAndSet("ixchFollow", self.readuInt8())
+        self.printAndSet("dxaIndentSav", self.readInt32())
+        self.printAndSet("unused2", self.readuInt32())
+        self.printAndSet("cbGrpprlChpx", self.readuInt8())
+        self.printAndSet("cbGrpprlPapx", self.readuInt8())
+        self.printAndSet("ilvlRestartLim", self.readuInt8())
+        self.printAndSet("grfhic", self.readuInt8()) # TODO dump grfhic
+        print '</lvlf>'
+
+class LVL(DOCDirStream):
+    """The LVL structure contains formatting information about a specific level in a list."""
+    def __init__(self, plfLst):
+        DOCDirStream.__init__(self, plfLst.bytes)
+        self.pos = plfLst.pos
+
+    def dump(self):
+        print '<lvl type="LVL" offset="%d">' % self.pos
+        lvlf = LVLF(self)
+        lvlf.dump()
+        self.pos = lvlf.pos
+
+        print '<grpprlPapx offset="%d">' % self.pos
+        pos = self.pos
+        while (lvlf.cbGrpprlPapx - (pos - self.pos)) > 0:
+            prl = Prl(self.bytes, pos)
+            prl.dump()
+            pos += prl.getSize()
+        self.pos = pos
+        print '</grpprlPapx>'
+
+        print '<grpprlChpx offset="%d">' % self.pos
+        pos = self.pos
+        while (lvlf.cbGrpprlChpx - (pos - self.pos)) > 0:
+            prl = Prl(self.bytes, pos)
+            prl.dump()
+            pos += prl.getSize()
+        self.pos = pos
+        print '</grpprlChpx>'
+        xst = Xst(self)
+        xst.dump()
+        self.pos = xst.pos
+        print '</lvl>'
+
 class PlfLst(DOCDirStream):
     """The PlfLst structure contains the list formatting information for the document."""
     def __init__(self, mainStream):
@@ -2418,10 +2487,19 @@ class PlfLst(DOCDirStream):
     def dump(self):
         print '<plfLst type="PlfLst" offset="%d" size="%d bytes">' % (self.pos, self.size)
         self.printAndSet("cLst", self.readInt16())
+        cLvl = 0
         for i in range(self.cLst):
             rgLstf = LSTF(self)
             rgLstf.dump()
+            if rgLstf.fSimpleList:
+                cLvl += 1
+            else:
+                cLvl += 9
             self.pos = rgLstf.pos
+        for i in range(cLvl):
+            lvl = LVL(self)
+            lvl.dump()
+            self.pos = lvl.pos
         print '</plfLst>'
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
