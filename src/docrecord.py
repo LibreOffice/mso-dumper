@@ -539,16 +539,24 @@ class Sprm(DOCDirStream):
                 4: docsprm.secMap,
                 5: docsprm.tblMap,
                 }
-        if self.ct:
-            operandstr = ""
-        else:
+        attrs = []
+        close = False
+        attrs.append('value="%s"' % hex(self.sprm))
+        attrs.append('ispmd="%s"' % hex(self.ispmd))
+        attrs.append('fSpec="%s"' % hex(self.fSpec))
+        if self.sgc in sgcmap:
+            attrs.append('sgc="%s"' % sgcmap[self.sgc])
+        attrs.append('spra="%s"' % self.spra)
+        if self.sgc in nameMap and self.sprm in nameMap[self.sgc]:
+            attrs.append('name="%s"' % nameMap[self.sgc][self.sprm])
+        attrs.append('operandSize="%s"' % self.getOperandSize())
+        if not self.ct:
+            close = True
             if self.operand == "todo":
-                operandstr = ' operand=""/'
+                attrs.append('operand=""')
             else:
-                operandstr = ' operand="%s"/' % hex(self.operand)
-        print '<sprm value="%s" name="%s" ispmd="%s" fSpec="%s" sgc="%s" spra="%s" operandSize="%s"%s>' % (
-                hex(self.sprm), nameMap[self.sgc][self.sprm], hex(self.ispmd), hex(self.fSpec), sgcmap[self.sgc], hex(self.spra), self.getOperandSize(), operandstr
-                )
+                attrs.append('operand="%s"' % hex(self.operand))
+        print '<sprm %s%s>' % (" ".join(attrs), {True:"/", False:""}[close])
         if self.ct:
             self.ct.dump()
             print '</sprm>'
