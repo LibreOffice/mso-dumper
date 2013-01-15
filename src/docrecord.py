@@ -2580,4 +2580,25 @@ class SttbListNames(DOCDirStream):
         assert self.pos == self.mainStream.fcSttbListNames + self.size
         print '</sttbListNames>'
 
+class SttbSavedBy(DOCDirStream):
+    """The SttbSavedBy structure is an STTB structure that specifies the save history of this document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        self.pos = mainStream.fcSttbSavedBy
+        self.size = mainStream.lcbSttbSavedBy
+
+    def dump(self):
+        print '<sttbSavedBy type="SttbSavedBy" offset="%d" size="%d">' % (self.pos, self.size)
+        self.printAndSet("fExtend", self.readuInt16())
+        self.printAndSet("cData", self.readuInt16())
+        self.printAndSet("cbExtra", self.readuInt16())
+        for i in range(self.cData):
+            cchData = self.readuInt16()
+            print '<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
+            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
+            self.pos += 2*cchData
+            print '</cchData>'
+        assert self.pos == self.mainStream.fcSttbSavedBy + self.size
+        print '</sttbSavedBy>'
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

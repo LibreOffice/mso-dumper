@@ -353,7 +353,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcRouteSlip"],
             ["lcbRouteSlip"],
             ["fcSttbSavedBy"],
-            ["lcbSttbSavedBy"],
+            ["lcbSttbSavedBy", self.handleLcbSttbSavedBy],
             ["fcSttbFnm"],
             ["lcbSttbFnm"],
             ["fcPlfLst"],
@@ -524,6 +524,9 @@ class WordDocumentStream(DOCDirStream):
 
     def handleLcbPlcfGram(self):
         docrecord.PlcfGram(self).dump()
+
+    def handleLcbSttbSavedBy(self):
+        docrecord.SttbSavedBy(self).dump()
 
     def handleLcbPlfLst(self):
         docrecord.PlfLst(self).dump()
