@@ -146,6 +146,30 @@ class ColorRef:
             recHdl.appendLine(indent(level) + "scheme index: %s"%recHdl.getTrueFalse(self.schemeIndex))
             recHdl.appendLine(indent(level) + "system index: %s"%recHdl.getTrueFalse(self.sysIndex))
 
+    def dumpXml(self, recHdl):
+        recHdl.appendLine('<colorRef type="OfficeArtCOLORREF">')
+        if self.paletteIndex:
+            # red and green and used as an unsigned index into the current color palette.
+            paletteId = self.green * 256 + self.red
+            recHdl.appendLine('<paletteIndex value="%d"/>'%paletteId)
+        if self.sysIndex:
+            # red and green are used as an unsigned 16-bit index into the system color table.
+            sysId = self.green * 256 + self.red
+            recHdl.appendLine('<sysIndex value="%d"/>'%sysId)
+        elif self.schemeIndex:
+            # the red value is used as as a color scheme index
+            recHdl.appendLine('<schemeIndex value="%d"/>'%self.red)
+
+        else:
+            recHdl.appendLine('<color red="%d" green="%d" blue="%d" flag="0x%2.2X"/>'%
+                (self.red, self.green, self.blue, self.flag))
+            recHdl.appendLine('<paletteIndex value="%s"/>'%self.paletteIndex)
+            recHdl.appendLine('<paletteRGB value="%s"/>'%self.paletteRGB)
+            recHdl.appendLine('<systemRGB value="%s"/>'%self.systemRGB)
+            recHdl.appendLine('<schemeIndex value="%s"/>'%self.schemeIndex)
+            recHdl.appendLine('<sysIndex value="%s"/>'%self.sysIndex)
+        recHdl.appendLine('</colorRef>')
+
 
 
 class FDG:
@@ -298,6 +322,12 @@ class FOPT:
             color = ColorRef(prop.value)
             color.appendLine(recHdl, level)
 
+        def dumpXml(self, recHdl, prop):
+            recHdl.appendLine('<fillColor>')
+            color = ColorRef(prop.value)
+            color.dumpXml(recHdl)
+            recHdl.appendLine('</fillColor>')
+
     class FillStyle:
 
         def __parseBytes(self, recHdl):
@@ -340,7 +370,7 @@ class FOPT:
             recHdl.appendLine(indent(level)+"fUsefUseShapeAnchor       : %s"%recHdl.getTrueFalse(self.M))
             recHdl.appendLine(indent(level)+"fUsefRecolorFillAsPicture : %s"%recHdl.getTrueFalse(self.N))
 
-        def dumpXml(self, recHdl):
+        def dumpXml(self, recHdl, prop):
             self.__parseBytes(recHdl)
 
             recHdl.appendLine('<fNoFillHitTest value="%s"/>' % self.A)
@@ -488,7 +518,7 @@ class FOPT:
                 # propData is expected to have two elements: name (0) and handler (1).
                 propHdl = FOPT.propTable[prop.ID]
                 recHdl.appendLine('<op name="%s" value="0x%4.4X">' % (propHdl[0], prop.ID))
-                propHdl[1]().dumpXml(recHdl)
+                propHdl[1]().dumpXml(recHdl, prop)
                 recHdl.appendLine('</op>')
             else:
                 recHdl.appendLine('<op value="0x%8.8X"/>' % prop.value)
