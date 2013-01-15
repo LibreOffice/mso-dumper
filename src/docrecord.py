@@ -1609,6 +1609,8 @@ class Dop(DOCDirStream):
         print '<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size)
         if self.fib.nFibNew == 0:
             Dop97(self).dump()
+        elif self.fib.nFibNew == 0x00d9:
+            Dop2000(self).dump()
         elif self.fib.nFibNew == 0x0112:
             Dop2007(self).dump()
         else:

@@ -88,12 +88,19 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("nFibNew", self.readuInt16())
         if self.nFibNew == 0x0112:
             self.dumpFibRgCswNewData2007("fibRgCswNewData2007")
+        elif self.nFibNew == 0x00D9:
+            self.dumpFibRgCswNewData2000("fibRgCswNewData2000")
         else:
             print """<todo what="dumpFibRgCswNew() doesn't know how to handle nFibNew = %s"/>""" % hex(self.nFibNew)
         print '</%s>' % name
 
     def __dumpFibRgCswNewData2000(self):
         self.printAndSet("cQuickSavesNew", self.readuInt16())
+
+    def dumpFibRgCswNewData2000(self, name):
+        print '<%s type="FibRgCswNewData2000" size="%d bytes">' % (name, 8)
+        self.__dumpFibRgCswNewData2000()
+        print '</%s>' % name
 
     def dumpFibRgCswNewData2007(self, name):
         print '<%s type="FibRgCswNewData2007" size="%d bytes">' % (name, 8)
@@ -406,7 +413,7 @@ class WordDocumentStream(DOCDirStream):
             value = self.readInt32()
             hasHandler = len(i) > 1
             # the spec says these must be ignored
-            needsIgnoring = ["lcbStshfOrig"]
+            needsIgnoring = ["lcbStshfOrig", "lcbPlcfBteLvc"]
             if self.ccpHdd == 0:
                 needsIgnoring.append("lcbPlcfHdd")
             # a member needs handling if it defines the size of a struct and it's non-zero
