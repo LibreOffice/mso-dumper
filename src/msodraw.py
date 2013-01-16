@@ -473,6 +473,8 @@ class FOPT:
             entry.flagComplex = (val & 0x8000) # if true, the value stores the size of the extra bytes.
             entry.value = strm.readSignedInt(4)
             if entry.flagComplex:
+                if strm.pos + entry.value > strm.size:
+                    break
                 entry.extra = strm.readBytes(entry.value)
             self.properties.append(entry)
 
@@ -507,23 +509,24 @@ class FOPT:
         recHdl.appendLine('<fopt type="OfficeArtRGFOPTE">')
         for i in xrange(0, rh.recInstance):
             recHdl.appendLine('<rgfopte index="%d">' % i)
-            prop = self.properties[i]
-            recHdl.appendLine('<opid>')
-            recHdl.appendLine('<opid value="0x%4.4X"/>' % prop.ID)
-            recHdl.appendLine('<opid fBid="%d"/>' % prop.flagBid)
-            recHdl.appendLine('<opid fComplex="%d"/>' % prop.flagComplex)
-            recHdl.appendLine('</opid>')
-            if FOPT.propTable.has_key(prop.ID):
-                # We have a handler for this property.
-                # propData is expected to have two elements: name (0) and handler (1).
-                propHdl = FOPT.propTable[prop.ID]
-                recHdl.appendLine('<op name="%s" value="0x%4.4X">' % (propHdl[0], prop.ID))
-                propHdl[1]().dumpXml(recHdl, prop)
-                recHdl.appendLine('</op>')
-            else:
-                recHdl.appendLine('<op value="0x%8.8X"/>' % prop.value)
-                if prop.flagComplex:
-                    recHdl.appendLine('<todo what="FOPT: fComplex != 0 unhandled"/>')
+            if i < len(self.properties):
+                prop = self.properties[i]
+                recHdl.appendLine('<opid>')
+                recHdl.appendLine('<opid value="0x%4.4X"/>' % prop.ID)
+                recHdl.appendLine('<opid fBid="%d"/>' % prop.flagBid)
+                recHdl.appendLine('<opid fComplex="%d"/>' % prop.flagComplex)
+                recHdl.appendLine('</opid>')
+                if FOPT.propTable.has_key(prop.ID):
+                    # We have a handler for this property.
+                    # propData is expected to have two elements: name (0) and handler (1).
+                    propHdl = FOPT.propTable[prop.ID]
+                    recHdl.appendLine('<op name="%s" value="0x%4.4X">' % (propHdl[0], prop.ID))
+                    propHdl[1]().dumpXml(recHdl, prop)
+                    recHdl.appendLine('</op>')
+                else:
+                    recHdl.appendLine('<op value="0x%8.8X"/>' % prop.value)
+                    if prop.flagComplex:
+                        recHdl.appendLine('<todo what="FOPT: fComplex != 0 unhandled"/>')
             recHdl.appendLine('</rgfopte>')
         recHdl.appendLine('</fopt>')
         recHdl.appendLine('</shapePrimaryOptions>')
@@ -718,6 +721,17 @@ class FClientAnchorSheet:
         obj = xlsmodel.Shape(self.col1, self.row1, self.dx1, self.dy1, self.col2, self.row2, self.dx2, self.dy2)
         sheet.addShape(obj)
 
+class OfficeArtClientAnchor:
+    """Word-specific anchor data."""
+
+    def __init__ (self, strm):
+        self.clientanchor = strm.readSignedInt(4)
+
+    def dumpXml(self, recHdl):
+        recHdl.appendLine('<officeArtClientAnchor type="OfficeArtClientAnchor">')
+        recHdl.appendLine('<clientanchor value="0x%4.4X"/>' % self.clientanchor)
+        recHdl.appendLine('</officeArtClientAnchor>')
+
 # ----------------------------------------------------------------------------
 
 class MSODrawHandler(globals.ByteStream):
@@ -780,7 +794,10 @@ class MSODrawHandler(globals.ByteStream):
             rh = RecordHeader(self)
             rh.dumpXml(self)
             saved = self.pos
-            if rh.recType in recData:
+            if rh.recType == RecordHeader.Type.FClientAnchor and model.hostApp == globals.ModelBase.HostAppType.Word:
+                child = OfficeArtClientAnchor(self)
+                child.dumpXml(self)
+            elif rh.recType in recData:
                 child = recData[rh.recType](self)
                 child.dumpXml(self, model, rh)
             else:
