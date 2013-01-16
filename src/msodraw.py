@@ -183,7 +183,7 @@ class FDG:
         recHdl.appendLine("  shape count: %d"%self.shapeCount)
         recHdl.appendLine("  last shape ID: %d"%self.lastShapeID)
 
-    def dumpXml(self, recHdl, rh):
+    def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<drawingData type="OfficeArtFDG">')
         recHdl.appendLine('<csp value="%d"/>' % self.shapeCount)
         recHdl.appendLine('<spidCur value="%d"/>' % self.lastShapeID)
@@ -244,7 +244,7 @@ class FDGGBlock:
         for idcl in self.idcls:
             idcl.appendLines(recHdl, rh)
 
-    def dumpXml(self, recHdl, rh):
+    def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<drawingGroup type="OfficeArtFDGGBlock">')
         self.head.dumpXml(recHdl, rh)
         for i, idcl in enumerate(self.idcls):
@@ -500,7 +500,7 @@ class FOPT:
                     # regular property value
                     recHdl.appendLine("    property value: 0x%8.8X"%prop.value)
 
-    def dumpXml(self, recHdl, rh):
+    def dumpXml(self, recHdl, model, rh):
         self.__parseBytes(rh)
 
         recHdl.appendLine('<shapePrimaryOptions type="OfficeArtFOPT">')
@@ -571,8 +571,8 @@ class FSP:
         recHdl.appendLineBoolean("  background shape", self.background)
         recHdl.appendLineBoolean("  have shape type property", self.haveProperties)
 
-    def dumpXml(self, recHdl, rh):
-        recHdl.appendLine('<shapeProp type="OfficeArtFSPGR">')
+    def dumpXml(self, recHdl, model, rh):
+        recHdl.appendLine('<shapeProp type="OfficeArtFSP">')
         recHdl.appendLine('<spid value="%d"/>' % self.spid)
         recHdl.appendLine('<fGroup value="%d"/>' % self.groupShape)
         recHdl.appendLine('<fChild value="%d"/>' % self.childShape)
@@ -603,7 +603,7 @@ class FSPGR:
         recHdl.appendLine("  right boundary: %d"%self.right)
         recHdl.appendLine("  bottom boundary: %d"%self.bottom)
 
-    def dumpXml(self, recHdl, rh):
+    def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<shapeGroup type="OfficeArtFSPGR">')
         recHdl.appendLine('<xLeft value="%d"/>' % self.left)
         recHdl.appendLine('<yTop value="%d"/>' % self.top)
@@ -662,7 +662,7 @@ class FClientData:
         recHdl.appendLine("FClientData content")
         recHdl.appendLine("  data: 0x%8.8X"%self.data)
 
-    def dumpXml(self, recHdl, rh):
+    def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<clientData type="OfficeArtClientData">')
         recHdl.appendLine('<data value="0x%8.8X"/>' % self.data)
         recHdl.appendLine('</clientData>')
@@ -679,7 +679,7 @@ class SplitMenuColorContainer:
         for msocr in self.smca:
             msocr.appendLines(recHdl, rh)
 
-    def dumpXml(self, recHdl, rh):
+    def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<splitColors type="OfficeArtSplitMenuColorContainer">')
         for i, smca in enumerate(self.smca):
             recHdl.appendLine('<smca index="%d">' % i)
@@ -768,7 +768,7 @@ class MSODrawHandler(globals.ByteStream):
                 # unknown object
                 bytes = self.readBytes(rh.recLen)
 
-    def dumpXml (self, recHdl, rh = None):
+    def dumpXml (self, recHdl, model, rh = None):
         recHdl.appendLine('<%s type="%s">' % (self.name, self.type))
         if rh:
             self.rh = rh
@@ -782,7 +782,7 @@ class MSODrawHandler(globals.ByteStream):
             saved = self.pos
             if rh.recType in recData:
                 child = recData[rh.recType](self)
-                child.dumpXml(self, rh)
+                child.dumpXml(self, model, rh)
             else:
                 recHdl.appendLine('<todo what="%s: recType = %s unhandled (size: %d bytes)"/>' % (self.type, hex(rh.recType), rh.recLen))
             self.pos = saved + rh.recLen
