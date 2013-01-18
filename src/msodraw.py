@@ -395,6 +395,13 @@ class FOPT:
             color = ColorRef(prop.value)
             color.appendLine(recHdl, level)
 
+        def dumpXml(self, recHdl, prop):
+            recHdl.appendLine('<lineColor>')
+            color = ColorRef(prop.value)
+            color.dumpXml(recHdl)
+            recHdl.appendLine('</lineColor>')
+
+
     class GroupShape:
 
         flagNames = [
