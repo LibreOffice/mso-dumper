@@ -420,6 +420,14 @@ class FOPT:
         def dumpXml(self, recHdl, prop):
             recHdl.appendLine('<shadowOffsetX value="%s" inTwips="%s"/>' % (prop.value, emu_to_twip(prop.value)))
 
+    class LineWidth:
+
+        def appendLines(self, recHdl, prop, level):
+            recHdl.appendLine(indent(level)+"lineWidth: %s"%prop.value)
+
+        def dumpXml(self, recHdl, prop):
+            recHdl.appendLine('<lineWidth value="%s" inTwips="%s"/>' % (prop.value, emu_to_twip(prop.value)))
+
 
     class GroupShape:
 
@@ -475,6 +483,7 @@ class FOPT:
         0x0303: ['Connector Shape Style (cxstyle)', CXStyle],
         0x03BF: ['Group Shape Boolean Properties', GroupShape],
         0x0205: ['X Shadow Offset', ShadowOffsetX],
+        0x01CB: ['Line Width', LineWidth],
     }
 
     class E:
