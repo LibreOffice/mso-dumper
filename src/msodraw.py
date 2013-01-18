@@ -34,6 +34,17 @@ def indent (level):
 def headerLine ():
     return "+ " + "-"*58 + "+"
 
+def mm100_to_twip(value):
+    if value >= 0:
+        return (((value)*72+63)/127)
+    else:
+        return (((value)*72-63)/127)
+
+def emu_to_mm100(value):
+    return value / 360
+
+def emu_to_twip(value):
+    return mm100_to_twip(emu_to_mm100(value))
 
 class RecordHeader:
 
@@ -401,6 +412,14 @@ class FOPT:
             color.dumpXml(recHdl)
             recHdl.appendLine('</lineColor>')
 
+    class ShadowOffsetX:
+
+        def appendLines(self, recHdl, prop, level):
+            recHdl.appendLine(indent(level)+"shadowOffsetX: %s"%prop.value)
+
+        def dumpXml(self, recHdl, prop):
+            recHdl.appendLine('<shadowOffsetX value="%s" inTwips="%s"/>' % (prop.value, emu_to_twip(prop.value)))
+
 
     class GroupShape:
 
@@ -454,7 +473,8 @@ class FOPT:
         0x01BF: ['Fill Style Boolean Properties', FillStyle],
         0x01C0: ['Line Color', LineColor],
         0x0303: ['Connector Shape Style (cxstyle)', CXStyle],
-        0x03BF: ['Group Shape Boolean Properties', GroupShape]
+        0x03BF: ['Group Shape Boolean Properties', GroupShape],
+        0x0205: ['X Shadow Offset', ShadowOffsetX],
     }
 
     class E:
