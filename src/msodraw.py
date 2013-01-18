@@ -484,6 +484,17 @@ class FOPT:
         0x03BF: ['Group Shape Boolean Properties', GroupShape],
         0x0205: ['X Shadow Offset', ShadowOffsetX],
         0x01CB: ['Line Width', LineWidth],
+        0x0186: ['fillBlip'],
+        0x01C5: ['lineFillBlip'],
+        0x0080: ['lTxid'],
+        0x008A: ['hspNext'],
+        0x0200: ['shadowType'],
+        0x0201: ['shadowColor'],
+        0x0207: ['shadowSecondOffsetX'],
+        0x023F: ['Shadow Style Boolean Properties'],
+        0x01FF: ['Line Style Boolean Properties'],
+        0x0304: ['Black-and-white Display Mode'],
+        0x033F: ['Shape Boolean Properties'],
     }
 
     class E:
@@ -522,7 +533,7 @@ class FOPT:
         for i in xrange(0, rh.recInstance):
             recHdl.appendLine("    "+"-"*57)
             prop = self.properties[i]
-            if FOPT.propTable.has_key(prop.ID):
+            if FOPT.propTable.has_key(prop.ID) and len(FOPT.propTable[prop.ID]) > 1:
                 # We have a handler for this property.
                 # propData is expected to have two elements: name (0) and handler (1).
                 propHdl = FOPT.propTable[prop.ID]
@@ -536,6 +547,8 @@ class FOPT:
                     recHdl.appendLine("    blip ID: %d"%prop.value)
                 else:
                     # regular property value
+                    if FOPT.propTable.has_key(prop.ID):
+                        recHdl.appendLine("    property name: %s"%FOPT.propTable[prop.ID][0])
                     recHdl.appendLine("    property value: 0x%8.8X"%prop.value)
 
     def dumpXml(self, recHdl, model, rh):
@@ -552,7 +565,7 @@ class FOPT:
                 recHdl.appendLine('<opid fBid="%d"/>' % prop.flagBid)
                 recHdl.appendLine('<opid fComplex="%d"/>' % prop.flagComplex)
                 recHdl.appendLine('</opid>')
-                if FOPT.propTable.has_key(prop.ID):
+                if FOPT.propTable.has_key(prop.ID) and len(FOPT.propTable[prop.ID]) > 1:
                     # We have a handler for this property.
                     # propData is expected to have two elements: name (0) and handler (1).
                     propHdl = FOPT.propTable[prop.ID]
@@ -560,7 +573,10 @@ class FOPT:
                     propHdl[1]().dumpXml(recHdl, prop)
                     recHdl.appendLine('</op>')
                 else:
-                    recHdl.appendLine('<op value="0x%8.8X"/>' % prop.value)
+                    if FOPT.propTable.has_key(prop.ID):
+                        recHdl.appendLine('<op name="%s" value="0x%8.8X"/>' % (FOPT.propTable[prop.ID][0], prop.value))
+                    else:
+                        recHdl.appendLine('<op value="0x%8.8X"/>' % prop.value)
                     if prop.flagComplex:
                         recHdl.appendLine('<todo what="FOPT: fComplex != 0 unhandled"/>')
             recHdl.appendLine('</rgfopte>')
