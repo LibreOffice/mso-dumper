@@ -118,6 +118,17 @@ class Test(unittest.TestCase):
         self.assertEqual(1, len(authors))
         self.assertEqual('vmiklos', authors[0].attrib['value'])
 
+    def test_bookmark(self):
+        self.dump('bookmark')
+
+        bookmarkStarts = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfBkf/plcfBkf/aCP')
+        bookmarkEnds = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfBkl/plcfBkl/aCP')
+        self.assertEqual(1, len(bookmarkStarts))
+        self.assertEqual(1, len(bookmarkEnds))
+
+        # The bookmark covers Hello
+        self.assertEqual('Hello', bookmarkEnds[0].findall('transformed')[0].attrib['value'])
+
     def test_zoom(self):
         self.dump('zoom')
         dopBase = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbDop/dop/dop2007/dop2003/dop2002/dop2000/dop97/dop95/dopBase')[0]

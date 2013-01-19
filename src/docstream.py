@@ -253,11 +253,11 @@ class WordDocumentStream(DOCDirStream):
             ["fcPlcfFldMcr"],
             ["lcbPlcfFldMcr"],
             ["fcSttbfBkmk"],
-            ["lcbSttbfBkmk"],
+            ["lcbSttbfBkmk", self.handleLcbSttbfBkmk],
             ["fcPlcfBkf"],
-            ["lcbPlcfBkf"],
+            ["lcbPlcfBkf", self.handleLcbPlcfBkf],
             ["fcPlcfBkl"],
-            ["lcbPlcfBkl"],
+            ["lcbPlcfBkl", self.handleLcbPlcfBkl],
             ["fcCmds"],
             ["lcbCmds", self.handleLcbCmds],
             ["fcUnused1"],
@@ -489,7 +489,19 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbPlcfAtnBkl(self):
         offset = self.fcPlcfAtnBkl
         size = self.lcbPlcfAtnBkl
-        plcfBkl = docrecord.PlcfBkl(self, offset, size)
+        plcfBkl = docrecord.PlcfBkl(self, offset, size, start = self.plcfAtnBkf)
+        plcfBkl.dump()
+
+    def handleLcbPlcfBkf(self):
+        offset = self.fcPlcfBkf
+        size = self.lcbPlcfBkf
+        self.plcfBkf = docrecord.PlcfBkf(self, offset, size)
+        self.plcfBkf.dump()
+
+    def handleLcbPlcfBkl(self):
+        offset = self.fcPlcfBkl
+        size = self.lcbPlcfBkl
+        plcfBkl = docrecord.PlcfBkl(self, offset, size, start = self.plcfBkf)
         plcfBkl.dump()
 
     def handleLcbPlcfSed(self):
@@ -536,6 +548,9 @@ class WordDocumentStream(DOCDirStream):
 
     def handleLcbSttbListNames(self):
         docrecord.SttbListNames(self).dump()
+
+    def handleLcbSttbfBkmk(self):
+        docrecord.SttbfBkmk(self).dump()
 
     def dumpFibRgFcLcb97(self, name):
         print '<%s type="FibRgFcLcb97" size="744 bytes">' % name

@@ -202,11 +202,12 @@ class PlcFld(DOCDirStream, PLC):
 
 class PlcfBkl(DOCDirStream, PLC):
     """The Plcfbkl structure is a PLC that contains only CPs and no additional data."""
-    def __init__(self, mainStream, offset, size):
+    def __init__(self, mainStream, offset, size, start):
         DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
         PLC.__init__(self, size, 0) # 0 is defined by 2.8.12
         self.pos = offset
         self.size = size
+        self.start = start
 
     def dump(self):
         print '<plcfBkl type="PlcfBkl" offset="%d" size="%d bytes">' % (self.pos, self.size)
@@ -216,7 +217,7 @@ class PlcfBkl(DOCDirStream, PLC):
             # aCp
             end = offset + self.getuInt32(pos = pos)
             print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
-            start = self.mainStream.plcfAtnBkf.aCP[i]
+            start = self.start.aCP[i]
             print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, end))
             pos += 4
             print '</aCP>'
@@ -2608,5 +2609,27 @@ class SttbSavedBy(DOCDirStream):
             print '</cchData>'
         assert self.pos == self.mainStream.fcSttbSavedBy + self.size
         print '</sttbSavedBy>'
+
+class SttbfBkmk(DOCDirStream):
+    """The SttbfBkmk structure is an STTB structure whose strings specify the names of bookmarks."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        self.pos = mainStream.fcSttbfBkmk
+        self.size = mainStream.lcbSttbfBkmk
+        self.mainStream = mainStream
+
+    def dump(self):
+        print '<sttbfBkmk type="SttbfBkmk" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("fExtended", self.readuInt16())
+        self.printAndSet("cData", self.readuInt16())
+        self.printAndSet("cbExtra", self.readuInt16())
+        for i in range(self.cData):
+            cchData = self.readuInt16()
+            print '<cchData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
+            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
+            self.pos += 2*cchData
+            print '</cchData>'
+        assert self.pos == self.mainStream.fcSttbfBkmk + self.size
+        print '</sttbfBkmk>'
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
