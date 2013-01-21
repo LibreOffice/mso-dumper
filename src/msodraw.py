@@ -66,6 +66,7 @@ class RecordHeader:
         FConnectorRule          = 0xF012
         FDGSL                   = 0xF119
         SplitMenuColorContainer = 0xF11E
+        TertiaryFOPT            = 0xF122
 
     containerTypeNames = {
         Type.dggContainer:            'OfficeArtDggContainer',
@@ -519,9 +520,11 @@ class FOPT:
             self.value       = None
             self.extra       = None
 
-    def __init__ (self, strm):
+    def __init__ (self, strm, name = "shapePrimaryOptions", type = "OfficeArtFOPT"):
         self.properties = []
         self.strm = strm
+        self.name = name
+        self.type = type
 
     def __parseBytes(self, rh):
         strm = globals.ByteStream(self.strm.readBytes(rh.recLen))
@@ -567,7 +570,7 @@ class FOPT:
     def dumpXml(self, recHdl, model, rh):
         self.__parseBytes(rh)
 
-        recHdl.appendLine('<shapePrimaryOptions type="OfficeArtFOPT">')
+        recHdl.appendLine('<%s type="%s">' % (self.name, self.type))
         recHdl.appendLine('<fopt type="OfficeArtRGFOPTE">')
         for i in xrange(0, rh.recInstance):
             recHdl.appendLine('<rgfopte index="%d">' % i)
@@ -594,8 +597,11 @@ class FOPT:
                         recHdl.appendLine('<todo what="FOPT: fComplex != 0 unhandled"/>')
             recHdl.appendLine('</rgfopte>')
         recHdl.appendLine('</fopt>')
-        recHdl.appendLine('</shapePrimaryOptions>')
+        recHdl.appendLine('</%s>' % self.name)
 
+class TertiaryFOPT(FOPT):
+    def __init__ (self, strm):
+        FOPT.__init__(self, strm, "shapeTertiaryOptions", "OfficeArtTertiaryFOPT")
 
 class FRIT:
     def __init__ (self, strm):
@@ -911,7 +917,8 @@ recData = {
     RecordHeader.Type.FDGSL: FDGSL,
     RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
     RecordHeader.Type.FClientData: FClientData,
-    RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer
+    RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer,
+    RecordHeader.Type.TertiaryFOPT: TertiaryFOPT,
 }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
