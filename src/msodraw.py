@@ -495,6 +495,19 @@ class FOPT:
         0x01FF: ['Line Style Boolean Properties'],
         0x0304: ['Black-and-white Display Mode'],
         0x033F: ['Shape Boolean Properties'],
+        0x0081: ['dxTextLeft'],
+        0x0082: ['dxTextTop'],
+        0x0083: ['dxTextRight'],
+        0x0084: ['dxTextBottom'],
+        0x0088: ['txflTextFlow'],
+        0x0183: ['fillBackColor'],
+        0x01C2: ['lineBackColor'],
+        0x01CD: ['lineStyle'],
+        0x01CE: ['lineDashing'],
+        0x0384: ['dxWrapDistLeft'],
+        0x0385: ['dyWrapDistTop'],
+        0x0386: ['dyWrapDistRight'],
+        0x0387: ['dyWrapDistBottom'],
     }
 
     class E:
