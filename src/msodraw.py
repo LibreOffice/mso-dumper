@@ -509,6 +509,10 @@ class FOPT:
         0x0385: ['dyWrapDistTop'],
         0x0386: ['dyWrapDistRight'],
         0x0387: ['dyWrapDistBottom'],
+        0x038F: ['posh'],
+        0x0390: ['posrelh'],
+        0x0391: ['posv'],
+        0x0392: ['posrelv'],
     }
 
     class E:
