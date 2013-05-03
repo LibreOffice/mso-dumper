@@ -805,6 +805,43 @@ class PlcBteChpx(DOCDirStream, PLC):
             print '</aFC>'
         print '</plcBteChpx>'
 
+class PlcfHdd(DOCDirStream, PLC):
+    """The Plcfhdd structure is a PLC that contains only CPs and no additional data. It specifies where
+    header document stories begin and end."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        PLC.__init__(self, mainStream.lcbPlcfHdd, 0)
+        self.pos = mainStream.fcPlcfHdd
+        self.size = mainStream.lcbPlcfHdd
+
+    def dump(self):
+        print '<plcfHdd type="PlcfHdd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.fcMin + self.mainStream.ccpText
+        pos = self.pos
+        for i in range(self.getElements() - 1):
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            contentsMap = {
+                    0: "Footnote separator",
+                    1: "Footnote continuation separator",
+                    2: "Footnote continuation notice",
+                    3: "Endnote separator",
+                    4: "Endnote continuation separator",
+                    5: "Endnote continuation notice",
+
+                    6: "Even page header",
+                    7: "Odd page header",
+                    8: "Even page footer",
+                    9: "Odd page footer",
+                    10: "First page header",
+                    11: "First page footer",
+                    }
+            print '<aCP index="%d" contents="%s" start="%d" end="%d">' % (i, contentsMap[i], start, end)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end))
+            pos += 4
+            print '</aCP>'
+        print '</plcfHdd>'
+
 class PlcfandTxt(DOCDirStream, PLC):
     """The PlcfandTxt structure is a PLC that contains only CPs and no additional data."""
     def __init__(self, mainStream, offset, size):

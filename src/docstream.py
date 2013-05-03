@@ -233,7 +233,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcPlcfGlsy"],
             ["lcbPlcfGlsy"],
             ["fcPlcfHdd"],
-            ["lcbPlcfHdd"],
+            ["lcbPlcfHdd", self.handleLcbPlcfHdd],
             ["fcPlcfBteChpx"],
             ["lcbPlcfBteChpx", self.handleLcbPlcfBteChpx],
             ["fcPlcfBtePapx"],
@@ -436,6 +436,10 @@ class WordDocumentStream(DOCDirStream):
         self.clx = docrecord.Clx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
         if not silent:
             self.clx.dump()
+
+    def handleLcbPlcfHdd(self):
+        plcfHdd = docrecord.PlcfHdd(self)
+        plcfHdd.dump()
 
     def handleLcbPlcfBteChpx(self):
         plcBteChpx = docrecord.PlcBteChpx(self)
