@@ -2393,7 +2393,6 @@ class PlcfSpl(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfSpl type="PlcfSpl" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
@@ -2406,7 +2405,7 @@ class PlcfSpl(DOCDirStream, PLC):
             aSpellingSpls = SPLS("SpellingSpls", self, self.getOffset(self.pos, i))
             aSpellingSpls.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end, logicalLength = True))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
             print '</aCP>'
         print '</plcfSpl>'
 
