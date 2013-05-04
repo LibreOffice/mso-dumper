@@ -674,11 +674,11 @@ class WordDocumentStream(DOCDirStream):
                 index = i
         return index
 
-    def retrieveText(self, start, end, logicalLength = False):
+    def retrieveText(self, start, end):
         """Deprecated, use retrieveCPs instead."""
         plcPcd = self.clx.pcdt.plcPcd
         idx = self.__findText(plcPcd, start)
-        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, logicalPositions = False, logicalLength = logicalLength)
+        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, logicalPositions = False, logicalLength = False)
 
     def retrieveCP(self, cp):
         """Implements 2.4.1 Retrieving Text."""
