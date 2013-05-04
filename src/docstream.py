@@ -9,6 +9,7 @@ import ole
 import struct
 from docdirstream import DOCDirStream
 import docrecord
+import globals
 
 class DOCFile:
     """Represents the whole word file - feed will all bytes."""
@@ -674,8 +675,33 @@ class WordDocumentStream(DOCDirStream):
         return index
 
     def retrieveText(self, start, end, logicalLength = False):
+        """Deprecated, use retrieveCPs instead."""
         plcPcd = self.clx.pcdt.plcPcd
         idx = self.__findText(plcPcd, start)
         return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, logicalPositions = False, logicalLength = logicalLength)
+
+    def retrieveCP(self, cp):
+        """Implements 2.4.1 Retrieving Text."""
+        plcPcd = self.clx.pcdt.plcPcd
+        for i in range(len(plcPcd.aCp)):
+            if plcPcd.aCp[i] <= cp:
+                index = i
+                break
+        aPcd = plcPcd.aPcd[index]
+        fcCompressed = aPcd.fc
+        if fcCompressed.fCompressed == 1:
+            return globals.encodeName(self.bytes[(fcCompressed.fc/2) + (cp - plcPcd.aCp[i])])
+        else:
+            pos = fcCompressed.fc + 2 * (cp - plcPcd.aCp[i])
+            return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16'), lowOnly = True)
+
+    def retrieveCPs(self, start, end):
+        """Retrieves a range of characters."""
+        ret = []
+        i = start
+        while i < end:
+            ret.append(self.retrieveCP(i))
+            i += 1
+        return "".join(ret)
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

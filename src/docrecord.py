@@ -816,7 +816,7 @@ class PlcfHdd(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfHdd type="PlcfHdd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin + self.mainStream.ccpText
+        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
         pos = self.pos
         for i in range(self.getElements() - 1):
             start = self.getuInt32(pos = pos)
@@ -837,7 +837,7 @@ class PlcfHdd(DOCDirStream, PLC):
                     11: "First page footer",
                     }
             print '<aCP index="%d" contents="%s" start="%d" end="%d">' % (i, contentsMap[i], start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
             pos += 4
             print '</aCP>'
         print '</plcfHdd>'
