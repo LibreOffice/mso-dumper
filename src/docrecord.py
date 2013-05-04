@@ -177,7 +177,6 @@ class PlcFld(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcFld type="PlcFld" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin # 2.8.25: CPs relative to the start of that document part.
         pos = self.pos
         aFlds = []
         for i in range(self.getElements()):
@@ -192,10 +191,10 @@ class PlcFld(DOCDirStream, PLC):
 
             # This is a separator and the previous was a start: display the field instructions.
             if aFld.fldch.ch == 0x14 and aFlds[-1][1].fldch.ch == 0x13:
-                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + aFlds[-1][0] + 1, offset + value))
+                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(aFlds[-1][0] + 1, value))
             # This is an end and the previous was a separator: display the field result.
             elif aFld.fldch.ch == 0x15 and aFlds[-1][1].fldch.ch == 0x14:
-                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + aFlds[-1][0] + 1, offset + value))
+                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(aFlds[-1][0] + 1, value))
             aFlds.append((value, aFld))
             print '</aCP>'
         print '</plcFld>'
