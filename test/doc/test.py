@@ -170,6 +170,18 @@ class Test(unittest.TestCase):
         levels = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlfLst/plfLst/lvl')
         self.assertEqual("•", levels[0].findall('xst/rgtchar')[0].attrib['value'])
 
+    def test_header(self):
+        self.dump('header')
+
+        firstHeader = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfHdd/plcfHdd/aCP[@index="7"]')
+        self.assertEqual("This is a header.\\x0D\\x0D", firstHeader[0].findall('transformed')[0].attrib['value'])
+
+    def test_headerlo(self):
+        self.dump('headerlo')
+
+        firstHeader = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfHdd/plcfHdd/aCP[@index="7"]')
+        self.assertEqual("This is a header.\\x0D\\x0D", firstHeader[0].findall('transformed')[0].attrib['value'])
+
 if __name__ == '__main__':
     unittest.main()
 
