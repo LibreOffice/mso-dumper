@@ -851,13 +851,13 @@ class PlcfandTxt(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfandTxt type="PlcfandTxt" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin + self.mainStream.ccpText + self.mainStream.ccpFtn + self.mainStream.ccpHdd # TODO do this in a better way when headers are handled
+        offset = self.mainStream.ccpText + self.mainStream.ccpFtn + self.mainStream.ccpHdd
         pos = self.pos
         for i in range(self.getElements() - 1):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
             pos += 4
             print '</aCP>'
         print '</plcfandTxt>'
