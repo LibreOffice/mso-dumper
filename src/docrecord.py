@@ -872,12 +872,11 @@ class PlcfandRef(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfandRef type="PlcfandRef" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin
         pos = self.pos
         for i in range(self.getElements()):
-            start = offset + self.getuInt32(pos = pos)
-            print '<aCP index="%d" commentEndOffset="%d">' % (i, start)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, start + 1))
+            start = self.getuInt32(pos = pos)
+            print '<aCP index="%d" commentEnd="%d">' % (i, start)
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCP(start))
             pos += 4
 
             # aATRDPre10
