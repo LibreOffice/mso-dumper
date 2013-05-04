@@ -300,7 +300,6 @@ class PlcfSed(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfSed type="PlcfSed" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
@@ -313,7 +312,7 @@ class PlcfSed(DOCDirStream, PLC):
             aSed = Sed(self, self.getOffset(self.pos, i))
             aSed.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(offset + start, offset + end, logicalLength = True))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
             print '</aCP>'
         print '</plcfSed>'
 
