@@ -674,11 +674,25 @@ class WordDocumentStream(DOCDirStream):
                 index = i
         return index
 
-    def retrieveText(self, start, end):
-        """Deprecated, use retrieveCPs instead."""
+    def retrieveOffset(self, start, end):
+        """Retrieves text, defined by raw byte offsets."""
+
+        # Is the given offset compressed?
         plcPcd = self.clx.pcdt.plcPcd
-        idx = self.__findText(plcPcd, start)
-        return plcPcd.aPcd[idx].fc.getTransformedValue(start, end, logicalPositions = False, logicalLength = False)
+        for i in range(len(plcPcd.aCp)):
+            aPcd = plcPcd.aPcd[i]
+            fcCompressed = aPcd.fc
+            if fcCompressed.fCompressed == 1:
+                offset = fcCompressed.fc/2
+            else:
+                offset = fcCompressed.fc
+            if offset <= start:
+                compressed = fcCompressed.fCompressed
+
+        if compressed:
+            return globals.encodeName(self.bytes[start:end])
+        else:
+            return globals.encodeName(self.bytes[start:end].decode('utf-16'), lowOnly = True)
 
     def retrieveCP(self, cp):
         """Implements 2.4.1 Retrieving Text."""
@@ -686,7 +700,6 @@ class WordDocumentStream(DOCDirStream):
         for i in range(len(plcPcd.aCp)):
             if plcPcd.aCp[i] <= cp:
                 index = i
-                break
         aPcd = plcPcd.aPcd[index]
         fcCompressed = aPcd.fc
         if fcCompressed.fCompressed == 1:

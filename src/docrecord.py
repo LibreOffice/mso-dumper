@@ -30,23 +30,6 @@ class FcCompressed(DOCDirStream):
         self.printAndSet("r1", self.r1)
         print '</fcCompressed>'
 
-    def getTransformedValue(self, start, end, logicalPositions = True, logicalLength = True):
-        offset = self.fc
-        if self.fCompressed:
-            offset = self.fc/2
-        if logicalPositions:
-            fro = offset + start
-            to = offset + end
-        else:
-            fro = start
-            to = end
-        if self.fCompressed:
-            return globals.encodeName(self.mainStream.bytes[fro:to])
-        else:
-            if logicalLength:
-                to += (to - fro)
-            return globals.encodeName(self.mainStream.bytes[fro:to].decode('utf-16'), lowOnly = True)
-
 class Pcd(DOCDirStream):
     """The Pcd structure specifies the location of text in the WordDocument Stream and additional properties for this text."""
     def __init__(self, bytes, mainStream, offset, size):
@@ -217,7 +200,7 @@ class PlcfBkl(DOCDirStream, PLC):
             end = offset + self.getuInt32(pos = pos)
             print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
             start = self.start.aCP[i]
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, end))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveOffset(start, end))
             pos += 4
             print '</aCP>'
         print '</plcfBkl>'
@@ -252,7 +235,7 @@ class PlcPcd(DOCDirStream, PLC):
             start, end = self.ranges[i]
             print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
             self.aPcd[i].dump()
-            print '<transformed value="%s"/>' % self.quoteAttr(self.aPcd[i].fc.getTransformedValue(start, end))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
             print '</aCP>'
         print '</plcPcd>'
 
@@ -675,7 +658,7 @@ class ChpxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.pnFkpChpx.mainStream.retrieveText(start, end))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.pnFkpChpx.mainStream.retrieveOffset(start, end))
             pos += 4
 
             # rgbx
@@ -704,7 +687,7 @@ class PapxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveText(start, end))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveOffset(start, end))
             pos += 4
 
             # rgbx
