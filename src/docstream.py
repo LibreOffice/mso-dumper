@@ -153,8 +153,7 @@ class WordDocumentStream(DOCDirStream):
 
         self.printAndSet("reserved3", self.readuInt16())
         self.printAndSet("reserved4", self.readuInt16())
-        # reserved5 in the spec, offset of first character of text according to LO ww8 import filter
-        self.printAndSet("fcMin", self.readuInt32())
+        self.printAndSet("reserved5", self.readuInt32())
         self.printAndSet("reserved6", self.readuInt32())
 
         print '</%s>' % name

@@ -107,11 +107,10 @@ class PlcfBkf(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfBkf type="PlcfBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
-            start = offset + self.getuInt32(pos = pos)
+            start = self.getuInt32(pos = pos)
             self.aCP.append(start)
             print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
             pos += 4
@@ -193,14 +192,13 @@ class PlcfBkl(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfBkl type="PlcfBkl" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.fcMin
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
-            end = offset + self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos)
             print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
             start = self.start.aCP[i]
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveOffset(start, end))
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
             pos += 4
             print '</aCP>'
         print '</plcfBkl>'
