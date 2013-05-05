@@ -404,7 +404,7 @@ class WordDocumentStream(DOCDirStream):
             value = self.readInt32()
             if i[0] == "fcClx":
                 self.printAndSet(i[0], value, silent = True)
-            if i[0] == "lcbClx":
+            elif i[0] == "lcbClx":
                 self.printAndSet(i[0], value, silent = True)
                 i[1](silent = True)
         self.pos = posOrig
@@ -414,8 +414,6 @@ class WordDocumentStream(DOCDirStream):
             hasHandler = len(i) > 1
             # the spec says these must be ignored
             needsIgnoring = ["lcbStshfOrig", "lcbPlcfBteLvc"]
-            if self.ccpHdd == 0:
-                needsIgnoring.append("lcbPlcfHdd")
             # a member needs handling if it defines the size of a struct and it's non-zero
             needsHandling = i[0].startswith("lcb") and value != 0 and (not i[0] in needsIgnoring)
             self.printAndSet(i[0], value, end = ((not hasHandler) and (not needsHandling)), offset = True)
