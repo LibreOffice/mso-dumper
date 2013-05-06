@@ -476,6 +476,14 @@ class FOPT:
                 recHdl.appendLine(indent(level)+"%s: %s"%(FOPT.GroupShape.flagNames[i], recHdl.getTrueFalse(bval)))
                 flag /= 2
 
+        def dumpXml(self, recHdl, prop):
+            flag = prop.value
+            flagCount = len(FOPT.GroupShape.flagNames)
+            for i in xrange(0, flagCount):
+                bval = (flag & 0x00000001)
+                recHdl.appendLine('<%s value="%s"/>' % (FOPT.GroupShape.flagNames[i], bval))
+                flag /= 2
+
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
         0x0181: ['Fill Color', FillColor],
