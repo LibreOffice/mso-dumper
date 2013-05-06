@@ -1836,6 +1836,10 @@ class OfficeArtContent(DOCDirStream):
         print '<Drawings type="main" offset="%d">' % self.pos
         OfficeArtWordDrawing(self).dump()
         print '</Drawings>'
+        if self.pos < self.mainStream.fcDggInfo + self.size:
+            print '<Drawings type="header" offset="%d">' % self.pos
+            OfficeArtWordDrawing(self).dump()
+            print '</Drawings>'
         assert self.pos == self.mainStream.fcDggInfo + self.size
         print '</officeArtContent>'
 
