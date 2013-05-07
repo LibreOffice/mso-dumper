@@ -413,6 +413,7 @@ class PChgTabsDel(DOCDirStream):
     """The PChgTabsDel structure specifies the locations at which custom tab stops are ignored."""
     def __init__(self, parent):
         DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
         self.pos = parent.pos
 
     def dump(self):
@@ -421,19 +422,37 @@ class PChgTabsDel(DOCDirStream):
         if self.cTabs != 0:
             print '<todo what="PChgTabsDel::dump() cTabs is non-zero"/>'
         print '</pchgTabsDel>'
+        self.parent.pos = self.pos
+
+class PChgTabsDelClose(DOCDirStream):
+    """The PChgTabsDelClose structure specifies the locations at which custom tab stops are ignored."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<pchgTabsDelClose type="PChgTabsDelClose" offset="%d">' % self.pos
+        self.printAndSet("cTabs", self.readuInt8())
+        if self.cTabs != 0:
+            print '<todo what="PChgTabsDelClose::dump() cTabs is non-zero"/>'
+        print '</pchgTabsDelClose>'
+        self.parent.pos = self.pos
 
 class PChgTabsAdd(DOCDirStream):
     """The PChgTabsAdd structure specifies the locations and properties of custom tab stops."""
     def __init__(self, parent):
         DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
         self.pos = parent.pos
 
     def dump(self):
         print '<pchgTabsAdd type="PChgTabsAdd" offset="%d">' % self.pos
         self.printAndSet("cTabs", self.readuInt8())
-        if self.cTabs != 0:
-            print '<todo what="PChgTabsAdd::dump() cTabs is non-zero"/>'
+        for i in range(self.cTabs):
+            print '<rgdxaDel index="%d" value="%d"/>' % (i, self.readuInt16())
         print '</pchgTabsAdd>'
+        self.parent.pos = self.pos
 
 class PChgTabsPapxOperand(DOCDirStream):
     """The PChgTabsPapxOperand structure is used by sprmPChgTabsPapx to specify custom tab stops to be added or ignored."""
@@ -447,6 +466,21 @@ class PChgTabsPapxOperand(DOCDirStream):
         PChgTabsDel(self).dump()
         PChgTabsAdd(self).dump()
         print '</pchgTabsPapxOperand>'
+
+class PChgTabsOperand(DOCDirStream):
+    """The PChgTabsOperand structure is used by sprmPChgTabs to specify a list
+    of custom tab stops to add and another list of custom tab stops to
+    ignore."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<pchgTabsOperand type="PChgTabsOperand" offset="%d">' % self.pos
+        self.printAndSet("cb", self.readuInt8())
+        PChgTabsDelClose(self).dump()
+        PChgTabsAdd(self).dump()
+        print '</pchgTabsOperand>'
 
 class BrcOperand(DOCDirStream):
     """The BrcOperand structure is the operand to several SPRMs that control borders."""
@@ -501,6 +535,8 @@ class Sprm(DOCDirStream):
                 self.ct = BrcOperand(self)
             elif self.sprm == 0xc60d:
                 self.ct = PChgTabsPapxOperand(self)
+            elif self.sprm == 0xc615:
+                self.ct = PChgTabsOperand(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size 9"/>'
 
