@@ -413,7 +413,15 @@ class FOPT:
             color.dumpXml(recHdl)
             recHdl.appendLine('</lineColor>')
 
-    class GtextUNICODE:
+    # Hack, can't inherit from nested class otherwise.
+    global UnicodeComplex
+
+    class UnicodeComplex:
+        """Base class for properties that have a null-terminated Unicode string
+        as a complex property."""
+
+        def __init__(self, name):
+            self.name = name
 
         def __parseBytes(self, prop):
             # A null-terminated Unicode string.
@@ -421,11 +429,21 @@ class FOPT:
 
         def appendLines(self, recHdl, prop, level):
             self.__parseBytes(prop)
-            recHdl.appendLine(indent(level)+"gtextUNICODE: %s"%self.string)
+            recHdl.appendLine(indent(level)+"%s: %s"%(self.name,self.string))
 
         def dumpXml(self, recHdl, prop):
             self.__parseBytes(prop)
-            recHdl.appendLine('<gtextUNICODE value="%s"/>' % self.string)
+            recHdl.appendLine('<%s value="%s"/>' % (self.name, self.string))
+
+    class GtextUNICODE(UnicodeComplex):
+
+        def __init__(self):
+            UnicodeComplex.__init__(self, "gtextUNICODE")
+
+    class GtextFont(UnicodeComplex):
+
+        def __init__(self):
+            UnicodeComplex.__init__(self, "gtextFont")
 
     class ShadowOffsetX:
 
@@ -501,6 +519,7 @@ class FOPT:
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
         0x00C0: ['gtextUNICODE', GtextUNICODE],
+        0x00C5: ['gtextFont', GtextFont],
         0x0181: ['Fill Color', FillColor],
         0x01BF: ['Fill Style Boolean Properties', FillStyle],
         0x01C0: ['Line Color', LineColor],
