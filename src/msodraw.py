@@ -539,8 +539,9 @@ class FOPT:
         self.type = type
 
     def __parseBytes(self, rh):
+        complexPos = self.strm.pos + (rh.recInstance * 6)
         strm = globals.ByteStream(self.strm.readBytes(rh.recLen))
-        while not strm.isEndOfRecord():
+        for i in xrange(0, rh.recInstance):
             entry = FOPT.E()
             val = strm.readUnsignedInt(2)
             entry.ID          = (val & 0x3FFF)
@@ -548,9 +549,10 @@ class FOPT:
             entry.flagComplex = (val & 0x8000) # if true, the value stores the size of the extra bytes.
             entry.value = strm.readSignedInt(4)
             if entry.flagComplex:
-                if strm.pos + entry.value > strm.size:
+                if self.strm.pos + entry.value > self.strm.size:
                     break
-                entry.extra = strm.readBytes(entry.value)
+                entry.extra = self.strm.bytes[complexPos:complexPos+entry.value]
+                complexPos += entry.value
             self.properties.append(entry)
 
     def appendLines (self, recHdl, rh):
