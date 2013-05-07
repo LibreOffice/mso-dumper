@@ -413,6 +413,20 @@ class FOPT:
             color.dumpXml(recHdl)
             recHdl.appendLine('</lineColor>')
 
+    class GtextUNICODE:
+
+        def __parseBytes(self, prop):
+            # A null-terminated Unicode string.
+            self.string = prop.extra[0:-2].decode('utf-16')
+
+        def appendLines(self, recHdl, prop, level):
+            self.__parseBytes(prop)
+            recHdl.appendLine(indent(level)+"gtextUNICODE: %s"%self.string)
+
+        def dumpXml(self, recHdl, prop):
+            self.__parseBytes(prop)
+            recHdl.appendLine('<gtextUNICODE value="%s"/>' % self.string)
+
     class ShadowOffsetX:
 
         def appendLines(self, recHdl, prop, level):
@@ -486,6 +500,7 @@ class FOPT:
 
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
+        0x00C0: ['gtextUNICODE', GtextUNICODE],
         0x0181: ['Fill Color', FillColor],
         0x01BF: ['Fill Style Boolean Properties', FillStyle],
         0x01C0: ['Line Color', LineColor],
