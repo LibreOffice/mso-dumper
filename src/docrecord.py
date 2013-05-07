@@ -2429,6 +2429,22 @@ class PlcfSpl(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcfSpl>'
 
+class PlcfSpa(DOCDirStream, PLC):
+    """The PlcfSpa structure is a PLC structure in which the data elements are
+    SPA structures."""
+    def __init__(self, mainStream, pos, size):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, size, 26) # 2.8.37
+        self.pos = pos
+        self.size = size
+
+    def dump(self):
+        print '<plcfSpa type="PlcfSpa" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        pos = self.pos
+        if self.getElements() - 1 != 0:
+            print '<todo what="PlcfSpa: self.getElements() - 1 != 0"/>'
+        print '</plcfSpa>'
+
 class PlcfGram(DOCDirStream, PLC):
     """The PlcfGram structure is a Plc structure whose data elements are GrammarSpls structures."""
     def __init__(self, mainStream):
