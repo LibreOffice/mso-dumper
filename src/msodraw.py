@@ -346,6 +346,10 @@ class FOPT:
             styleName = globals.getValueOrUnknown(FOPT.CXStyle.style, prop.value)
             recHdl.appendLine(indent(level) + "connector style: %s (0x%8.8X)"%(styleName, prop.value))
 
+        def dumpXml(self, recHdl, prop):
+            styleName = globals.getValueOrUnknown(FOPT.CXStyle.style, prop.value)
+            recHdl.appendLine('<cxstyle name="%s" value="0x%8.8X"/>' % (styleName, prop.value))
+
     class FillColor:
 
         def appendLines (self, recHdl, prop, level):
