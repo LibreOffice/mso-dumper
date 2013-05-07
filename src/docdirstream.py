@@ -128,7 +128,7 @@ class DOCDirStream:
         return (byte & (1 << bitNumber)) >> bitNumber
 
     def dump(self):
-        print '<stream name="%s" size="%s"/>' % (globals.encodeName(self.name), self.size)
+        print '<stream name="%s" size="%s"/>' % (self.quoteAttr(globals.encodeName(self.name)), self.size)
 
     # compat methods to make msodraw happy
     def readUnsignedInt(self, size):
