@@ -445,6 +445,11 @@ class FOPT:
         def __init__(self):
             UnicodeComplex.__init__(self, "gtextFont")
 
+    class WzName(UnicodeComplex):
+
+        def __init__(self):
+            UnicodeComplex.__init__(self, "wzName")
+
     class ShadowOffsetX:
 
         def appendLines(self, recHdl, prop, level):
@@ -524,6 +529,7 @@ class FOPT:
         0x01BF: ['Fill Style Boolean Properties', FillStyle],
         0x01C0: ['Line Color', LineColor],
         0x0303: ['Connector Shape Style (cxstyle)', CXStyle],
+        0x0380: ['wzName', WzName],
         0x03BF: ['Group Shape Boolean Properties', GroupShape],
         0x0205: ['X Shadow Offset', ShadowOffsetX],
         0x01CB: ['Line Width', LineWidth],
