@@ -298,23 +298,41 @@ class FOPT:
 
     class TextBoolean:
 
+        def __parseBytes(self, prop):
+            self.A = (prop.value & 0x00000001) != 0
+            self.B = (prop.value & 0x00000002) != 0
+            self.C = (prop.value & 0x00000004) != 0
+            self.D = (prop.value & 0x00000008) != 0
+            self.E = (prop.value & 0x00000010) != 0
+            self.F = (prop.value & 0x00010000) != 0
+            self.G = (prop.value & 0x00020000) != 0
+            self.H = (prop.value & 0x00040000) != 0
+            self.I = (prop.value & 0x00080000) != 0
+            self.J = (prop.value & 0x00100000) != 0
+
         def appendLines (self, recHdl, prop, level):
-            A = (prop.value & 0x00000001) != 0
-            B = (prop.value & 0x00000002) != 0
-            C = (prop.value & 0x00000004) != 0
-            D = (prop.value & 0x00000008) != 0
-            E = (prop.value & 0x00000010) != 0
-            F = (prop.value & 0x00010000) != 0
-            G = (prop.value & 0x00020000) != 0
-            H = (prop.value & 0x00040000) != 0
-            I = (prop.value & 0x00080000) != 0
-            J = (prop.value & 0x00100000) != 0
-            recHdl.appendLineBoolean(indent(level) + "fit shape to text",     B)
-            recHdl.appendLineBoolean(indent(level) + "auto text margin",      D)
-            recHdl.appendLineBoolean(indent(level) + "select text",           E)
-            recHdl.appendLineBoolean(indent(level) + "use fit shape to text", G)
-            recHdl.appendLineBoolean(indent(level) + "use auto text margin",  I)
-            recHdl.appendLineBoolean(indent(level) + "use select text",       J)
+            self.__parseBytes(prop)
+            recHdl.appendLineBoolean(indent(level) + "fit shape to text",     self.B)
+            recHdl.appendLineBoolean(indent(level) + "auto text margin",      self.D)
+            recHdl.appendLineBoolean(indent(level) + "select text",           self.E)
+            recHdl.appendLineBoolean(indent(level) + "use fit shape to text", self.G)
+            recHdl.appendLineBoolean(indent(level) + "use auto text margin",  self.I)
+            recHdl.appendLineBoolean(indent(level) + "use select text",       self.J)
+
+        def dumpXml(self, recHdl, prop):
+            self.__parseBytes(prop)
+            recHdl.appendLine('<textBooleanProperties>')
+            recHdl.appendLine('<fUsefSelectText value="%s"/>' % self.A)
+            recHdl.appendLine('<fUsefAutoTextMargin value="%s"/>' % self.B)
+            recHdl.appendLine('<unused2 value="%s"/>' % self.C)
+            recHdl.appendLine('<fUsefFitShapeToText value="%s"/>' % self.D)
+            recHdl.appendLine('<unused3 value="%s"/>' % self.E)
+            recHdl.appendLine('<fSelectText value="%s"/>' % self.F)
+            recHdl.appendLine('<fAutoTextMargin value="%s"/>' % self.G)
+            recHdl.appendLine('<unused5 value="%s"/>' % self.H)
+            recHdl.appendLine('<fFitShapeToText value="%s"/>' % self.I)
+            recHdl.appendLine('<unused6 value="%s"/>' % self.J)
+            recHdl.appendLine('</textBooleanProperties>')
 
     class CXStyle:
         style = [
