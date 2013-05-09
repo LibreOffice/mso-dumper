@@ -482,6 +482,46 @@ class PChgTabsOperand(DOCDirStream):
         PChgTabsAdd(self).dump()
         print '</pchgTabsOperand>'
 
+class TC80(DOCDirStream):
+    """The TC80 structure specifies the border and other formatting for a single cell in a table."""
+    def __init__(self, parent, index):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+        self.index = index
+
+    def dump(self):
+        print '<tc80 index="%d">' % self.index
+        self.printAndSet("tcgrf", self.readuInt16()) # TODO dump TCGRF
+        self.printAndSet("wWidth", self.readuInt16(), hexdump = False)
+        self.printAndSet("brcTop", self.readuInt32()) # TODO dump Brc80MayBeNil
+        self.printAndSet("brcLeft", self.readuInt32())
+        self.printAndSet("brcBottom", self.readuInt32())
+        self.printAndSet("brcRight", self.readuInt32())
+        print '</tc80>'
+        self.parent.pos = self.pos
+
+class TDefTableOperand(DOCDirStream):
+    """The TDefTableOperand structure is the operand that is used by the
+    sprmTDefTable value. It specifies the initial layout of the columns in the
+    current table row."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<tDefTableOperand>'
+        self.printAndSet("cb", self.readuInt16())
+        size = self.pos + self.cb - 1
+        self.printAndSet("NumberOfColumns", self.readuInt8())
+        for i in range(self.NumberOfColumns + 1):
+            print '<rgdxaCenter index="%d" value="%d"/>' % (i, self.readInt16())
+        i = 0
+        while self.pos < size:
+            TC80(self, i).dump()
+            i += 1
+        print '</tDefTableOperand>'
+
 class BrcOperand(DOCDirStream):
     """The BrcOperand structure is the operand to several SPRMs that control borders."""
     def __init__(self, parent):
@@ -539,6 +579,9 @@ class Sprm(DOCDirStream):
                 self.ct = PChgTabsOperand(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size 9"/>'
+        else:
+            if self.sprm == 0xd608:
+                self.ct = TDefTableOperand(self)
 
     def dump(self):
         sgcmap = {
