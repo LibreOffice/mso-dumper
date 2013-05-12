@@ -21,19 +21,21 @@ class DOCDirStream:
         self.mainStream = mainStream
         self.doc = doc
     
-    def printAndSet(self, key, value, hexdump = True, end = True, offset = False, silent = False):
+    def printAndSet(self, key, value, hexdump = True, end = True, offset = False, silent = False, dict = None):
         setattr(self, key, value)
         if silent:
             return
+        attrs = ""
+        if dict:
+            attrs += ' name="%s"' % dict[value]
         if hexdump:
             value = hex(value)
-        offstr = ""
         if offset:
-            offstr += ' offset="%s"' % hex(self.pos)
+            attrs += ' offset="%s"' % hex(self.pos)
         if end:
-            print '<%s value="%s"%s/>' % (key, value, offstr)
+            print '<%s value="%s"%s/>' % (key, value, attrs)
         else:
-            print '<%s value="%s"%s>' % (key, value, offstr)
+            print '<%s value="%s"%s>' % (key, value, attrs)
 
     def quoteAttr(self, value):
         """Wrapper around xml.sax.saxutils.quoteattr, assumes the caller will put " around the result."""

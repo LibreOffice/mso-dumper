@@ -482,6 +482,41 @@ class PChgTabsOperand(DOCDirStream):
         PChgTabsAdd(self).dump()
         print '</pchgTabsOperand>'
 
+# The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
+# East Asian characters in each line of the block.
+TextFlow = {
+        0x0000: "grpfTFlrtb",
+        0x0001: "grpfTFtbrl",
+        0x0003: "grpfTFbtlr",
+        0x0004: "grpfTFlrtbv",
+        0x0005: "grpfTFtbrlv"
+        }
+
+# The VerticalMergeFlag enumeration provides a 2-bit value that specifies whether a table cell is
+# merged with the cells above or below it.
+VerticalMergeFlag = {
+        0x00: "fvmClear",
+        0x01: "fvmMerge",
+        0x03: "fvmRestart"
+        }
+
+# The VerticalAlign enumeration specifies the vertical alignment of content within table cells.
+VerticalAlign = {
+        0x00: "vaTop",
+        0x01: "vaCenter",
+        0x02: "vaBottom",
+        }
+
+# The Fts enumeration specifies how the preferred width for a table, table indent, table cell, cell
+# margin, or cell spacing is defined.
+Fts = {
+        0x00: "ftsNil",
+        0x01: "ftsAuto",
+        0x02: "ftsPercent",
+        0x03: "ftsDxa",
+        0x13: "ftsDxaSys"
+        }
+
 class TCGRF(DOCDirStream):
     """A TCGRF structure specifies the text layout and cell merge properties for a single cell in a table."""
     def __init__(self, parent):
@@ -492,12 +527,11 @@ class TCGRF(DOCDirStream):
     def dump(self):
         print '<tcgrf type="TCGRF" offset="%d">' % self.pos
         buf = self.readuInt16()
-        # TODO TextFlow, VerticalMergeFlag, VerticalAlign and Fts enums
         self.printAndSet("horzMerge", buf & 0x0003) # 1..2nd bits
-        self.printAndSet("textFlow",  (buf & 0x001c) >> 2) # 3..6th bits
-        self.printAndSet("vertMerge", (buf & 0x0060) >> 6) # 7..8th bits
-        self.printAndSet("vertAlign", (buf & 0x0180) >> 8) # 9..10th bits
-        self.printAndSet("ftsWidth",  (buf & 0x0e00) >> 10) # 11..12th bits
+        self.printAndSet("textFlow",  (buf & 0x001c) >> 2, dict = TextFlow) # 3..6th bits
+        self.printAndSet("vertMerge", (buf & 0x0060) >> 6, dict = VerticalMergeFlag) # 7..8th bits
+        self.printAndSet("vertAlign", (buf & 0x0180) >> 8, dict = VerticalAlign) # 9..10th bits
+        self.printAndSet("ftsWidth",  (buf & 0x0e00) >> 10, dict = Fts) # 11..12th bits
         self.printAndSet("fFitText", self.getBit(buf, 12))
         self.printAndSet("fNoWrap", self.getBit(buf, 13))
         self.printAndSet("fHideMark", self.getBit(buf, 14))
