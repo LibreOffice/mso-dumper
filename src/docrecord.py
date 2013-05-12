@@ -482,6 +482,29 @@ class PChgTabsOperand(DOCDirStream):
         PChgTabsAdd(self).dump()
         print '</pchgTabsOperand>'
 
+class TCGRF(DOCDirStream):
+    """A TCGRF structure specifies the text layout and cell merge properties for a single cell in a table."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<tcgrf type="TCGRF" offset="%d">' % self.pos
+        buf = self.readuInt16()
+        # TODO TextFlow, VerticalMergeFlag, VerticalAlign and Fts enums
+        self.printAndSet("horzMerge", buf & 0x0003) # 1..2nd bits
+        self.printAndSet("textFlow",  (buf & 0x001c) >> 2) # 3..6th bits
+        self.printAndSet("vertMerge", (buf & 0x0060) >> 6) # 7..8th bits
+        self.printAndSet("vertAlign", (buf & 0x0180) >> 8) # 9..10th bits
+        self.printAndSet("ftsWidth",  (buf & 0x0e00) >> 10) # 11..12th bits
+        self.printAndSet("fFitText", self.getBit(buf, 12))
+        self.printAndSet("fNoWrap", self.getBit(buf, 13))
+        self.printAndSet("fHideMark", self.getBit(buf, 14))
+        self.printAndSet("fUnused", self.getBit(buf, 15))
+        print '</tcgrf>'
+        self.parent.pos = self.pos
+
 class TC80(DOCDirStream):
     """The TC80 structure specifies the border and other formatting for a single cell in a table."""
     def __init__(self, parent, index):
@@ -492,7 +515,7 @@ class TC80(DOCDirStream):
 
     def dump(self):
         print '<tc80 index="%d">' % self.index
-        self.printAndSet("tcgrf", self.readuInt16()) # TODO dump TCGRF
+        TCGRF(self).dump()
         self.printAndSet("wWidth", self.readuInt16(), hexdump = False)
         self.printAndSet("brcTop", self.readuInt32()) # TODO dump Brc80MayBeNil
         self.printAndSet("brcLeft", self.readuInt32())
