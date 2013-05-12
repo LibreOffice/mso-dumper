@@ -929,13 +929,8 @@ class PlcfHdd(DOCDirStream, PLC):
         self.pos = mainStream.fcPlcfHdd
         self.size = mainStream.lcbPlcfHdd
 
-    def dump(self):
-        print '<plcfHdd type="PlcfHdd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
-        pos = self.pos
-        for i in range(self.getElements() - 1):
-            start = self.getuInt32(pos = pos)
-            end = self.getuInt32(pos = pos + 4)
+    def getContents(self, i):
+        if i <= 5:
             contentsMap = {
                     0: "Footnote separator",
                     1: "Footnote continuation separator",
@@ -943,15 +938,29 @@ class PlcfHdd(DOCDirStream, PLC):
                     3: "Endnote separator",
                     4: "Endnote continuation separator",
                     5: "Endnote continuation notice",
-
-                    6: "Even page header",
-                    7: "Odd page header",
-                    8: "Even page footer",
-                    9: "Odd page footer",
-                    10: "First page header",
-                    11: "First page footer",
                     }
-            print '<aCP index="%d" contents="%s" start="%d" end="%d">' % (i, contentsMap[i], start, end)
+            return contentsMap[i]
+        else:
+            contentsMap = {
+                    0: "Even page header",
+                    1: "Odd page header",
+                    2: "Even page footer",
+                    3: "Odd page footer",
+                    4: "First page header",
+                    5: "First page footer",
+                    }
+            sectionIndex = i / 6
+            contentsIndex = i % 6
+            return "%s (section #%s)" % (contentsMap[contentsIndex], sectionIndex)
+
+    def dump(self):
+        print '<plcfHdd type="PlcfHdd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
+        pos = self.pos
+        for i in range(self.getElements() - 1):
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" contents="%s" start="%d" end="%d">' % (i, self.getContents(i), start, end)
             print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
             pos += 4
             print '</aCP>'
