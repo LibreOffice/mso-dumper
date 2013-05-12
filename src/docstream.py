@@ -674,10 +674,9 @@ class WordDocumentStream(DOCDirStream):
                 index = i
         return index
 
-    def retrieveOffset(self, start, end):
-        """Retrieves text, defined by raw byte offsets."""
-
-        # Is the given offset compressed?
+    def __isOffsetCompressed(self, off):
+        """Is the given offset compressed?"""
+        compressed = None
         plcPcd = self.clx.pcdt.plcPcd
         for i in range(len(plcPcd.aCp)):
             aPcd = plcPcd.aPcd[i]
@@ -686,8 +685,19 @@ class WordDocumentStream(DOCDirStream):
                 offset = fcCompressed.fc/2
             else:
                 offset = fcCompressed.fc
-            if offset <= start:
+            if offset <= off:
                 compressed = fcCompressed.fCompressed
+        return compressed
+
+    def retrieveOffset(self, start, end):
+        """Retrieves text, defined by raw byte offsets."""
+
+        compressed = self.__isOffsetCompressed(start)
+        if compressed == None:
+            compressed = self.__isOffsetCompressed(end)
+
+        if compressed == None:
+            raise Exception("should not happen")
 
         if compressed:
             return globals.encodeName(self.bytes[start:end])
