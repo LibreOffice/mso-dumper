@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- encoding: UTF-8 -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
