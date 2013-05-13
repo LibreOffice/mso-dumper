@@ -1766,6 +1766,25 @@ class Dop2007(DOCDirStream):
         self.pos += 34
         print '</dop2007>'
 
+class RC4EncryptionHeader(DOCDirStream):
+    """The encryption header structure used for RC4 encryption."""
+    def __init__(self, fib, pos, size):
+        DOCDirStream.__init__(self, fib.doc.getDirectoryStreamByName("1Table").bytes)
+        self.fib = fib
+        self.pos = pos
+        self.size = size
+
+    def dump(self):
+        print '<RC4EncryptionHeader>'
+        self.Salt = self.readBytes(16)
+        print '<Salt value="%s"/>' % globals.encodeName(self.Salt)
+        self.EncryptedVerifier = self.readBytes(16)
+        print '<EncryptedVerifier value="%s"/>' % globals.encodeName(self.EncryptedVerifier)
+        self.EncryptedVerifierHash = self.readBytes(16)
+        print '<EncryptedVerifierHash value="%s"/>' % globals.encodeName(self.EncryptedVerifierHash)
+        print '</RC4EncryptionHeader>'
+        assert self.pos == self.size
+
 class Dop(DOCDirStream):
     """The Dop structure contains the document and compatibility settings for the document."""
     def __init__(self, fib):

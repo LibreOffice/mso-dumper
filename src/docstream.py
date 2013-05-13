@@ -57,7 +57,9 @@ class WordDocumentStream(DOCDirStream):
 
     def dumpFib(self):
         print '<fib>'
-        self.dumpFibBase("base")
+        if not self.dumpFibBase("base"):
+            print '</fib>'
+            return
         self.printAndSet("csw", self.readuInt16())
         self.dumpFibRgW97("fibRgW")
         self.printAndSet("cslw", self.readuInt16())
@@ -112,6 +114,7 @@ class WordDocumentStream(DOCDirStream):
         print '</%s>' % name
 
     def dumpFibBase(self, name):
+        ret = True
         print '<%s type="FibBase" size="32 bytes">' % name
 
         self.printAndSet("wIdent", self.readuInt16())
@@ -139,7 +142,26 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("fObfuscated", self.getBit(buf, 15))
 
         self.printAndSet("nFibBack", self.readuInt16())
-        self.printAndSet("lKey", self.readuInt32())
+
+        if self.fEncrypted == 1 and self.fObfuscated == 0:
+            self.printAndSet("lKey", self.readuInt32(), end = False)
+            print '<EncryptionVersionInfo>'
+            tableStream = self.doc.getDirectoryStreamByName("1Table")
+            self.printAndSet("vMajor", tableStream.readuInt16())
+            self.printAndSet("vMinor", tableStream.readuInt16())
+            print '</EncryptionVersionInfo>'
+            if self.vMajor == 0x0001 and self.vMinor == 0x0001:
+                docrecord.RC4EncryptionHeader(self, tableStream.pos, self.lKey).dump()
+                print '<todo what="handle RC4 encryption"/>'
+            elif self.vMajor in (0x0002, 0x0003, 0x0004) and self.vMinor == 0x0002:
+                print '<todo what="handle RC4CryptoApiEncryptionHeader"/>'
+            else:
+                print '<todo what="unexpected vMajor %d and vMinor %d"/>' % (self.vMajor, self.vMinor)
+            print '</lKey>'
+            ret = False
+        else:
+            self.printAndSet("lKey", self.readuInt32())
+
         self.printAndSet("envr", self.readuInt8())
 
         buf = self.readuInt8()
@@ -157,6 +179,7 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("reserved6", self.readuInt32())
 
         print '</%s>' % name
+        return ret
 
     def dumpFibRgW97(self, name):
         print '<%s type="FibRgW97" size="28 bytes">' % name
