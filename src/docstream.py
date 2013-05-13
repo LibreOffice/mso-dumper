@@ -10,6 +10,7 @@ import struct
 from docdirstream import DOCDirStream
 import docrecord
 import globals
+import sys
 
 class DOCFile:
     """Represents the whole word file - feed will all bytes."""
@@ -18,8 +19,16 @@ class DOCFile:
         self.size = len(self.chars)
         self.params = params
 
-        self.header = ole.Header(self.chars, self.params)
-        self.pos = self.header.parse()
+        if ord(self.chars[0]) == 0xD0 and ord(self.chars[1]) == 0xCF and ord(self.chars[2]) == 0x11 and ord(self.chars[3]) == 0xE0:
+            self.header = ole.Header(self.chars, self.params)
+            self.pos = self.header.parse()
+        else:
+            print '<?xml version="1.0"?>'
+            if ord(self.chars[0]) == 0xDB and ord(self.chars[1]) == 0xA5:
+                print '<todo what="handle v6 of the doc format"/>'
+            else:
+                print '<todo what="unhandled magic"/>'
+            sys.exit(0)
 
     def __getDirectoryObj(self):
         obj = self.header.getDirectory()
