@@ -65,7 +65,14 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("cbRgFcLcb", self.readuInt16())
 
         self.blobOffset = self.pos
-        self.nFibNew = self.__getFibNew()
+        cswNew = self.getuInt16(pos = self.__getCswNewOffset())
+
+        if cswNew != 0:
+            self.nFibNew = self.getuInt16(pos = self.__getCswNewOffset() + 2)
+            self.nFib = self.nFibNew
+        else:
+            self.nFibNew = 0
+
         self.dumpFibRgFcLcb("fibRgFcLcbBlob")
         self.pos = self.__getCswNewOffset()
 
@@ -74,13 +81,6 @@ class WordDocumentStream(DOCDirStream):
             self.dumpFibRgCswNew("fibRgCswNew")
         print '</fib>'
 
-    def __getFibNew(self):
-        cswNew = self.getuInt16(pos = self.__getCswNewOffset())
-        if cswNew == 0:
-            return 0
-        else:
-            return self.getuInt16(pos = self.__getCswNewOffset() + 2)
-    
     def __getCswNewOffset(self):
         return self.blobOffset + (8 * self.cbRgFcLcb)
 
@@ -202,8 +202,14 @@ class WordDocumentStream(DOCDirStream):
     def dumpFibRgFcLcb(self, name):
         if self.nFib == 0x00c1:
             self.dumpFibRgFcLcb97(name)
+        elif self.nFib == 0x00d9:
+            self.dumpFibRgFcLcb2000(name)
         elif self.nFib == 0x0101:
             self.dumpFibRgFcLcb2002(name)
+        elif self.nFib == 0x010c:
+            self.dumpFibRgFcLcb2003(name)
+        elif self.nFib == 0x0112:
+            self.dumpFibRgFcLcb2007(name)
         else:
             print """<todo what="dumpFibRgFcLcb() doesn't know how to handle nFib = %s">""" % hex(self.nFib)
 
@@ -562,6 +568,26 @@ class WordDocumentStream(DOCDirStream):
         self.__dumpFibRgFcLcb97()
         print '</%s>' % name
 
+    def dumpFibRgFcLcb2000(self, name):
+        print '<%s type="FibRgFcLcb2000" size="864 bytes">' % name
+        self.__dumpFibRgFcLcb2000()
+        print '</%s>' % name
+
+    def dumpFibRgFcLcb2002(self, name):
+        print '<%s type="FibRgFcLcb2002" size="1088 bytes">' % name
+        self.__dumpFibRgFcLcb2002()
+        print '</%s>' % name
+
+    def dumpFibRgFcLcb2003(self, name):
+        print '<%s type="FibRgFcLcb2003" size="1312 bytes">' % name
+        self.__dumpFibRgFcLcb2003()
+        print '</%s>' % name
+
+    def dumpFibRgFcLcb2007(self, name):
+        print '<%s type="FibRgFcLcb2007" size="1464 bytes">' % name
+        self.__dumpFibRgFcLcb2007()
+        print '</%s>' % name
+
     def __dumpFibRgFcLcb2000(self):
         self.__dumpFibRgFcLcb97()
         fields = [
@@ -662,10 +688,109 @@ class WordDocumentStream(DOCDirStream):
         for i in fields:
             self.printAndSet(i, self.readuInt32())
 
-    def dumpFibRgFcLcb2002(self, name):
-        print '<%s type="FibRgFcLcb2002" size="744 bytes">' % name
+    def __dumpFibRgFcLcb2003(self):
         self.__dumpFibRgFcLcb2002()
-        print '</%s>' % name
+        fields = [
+            "fcHplxsdr",
+            "lcbHplxsdr",
+            "fcSttbfBkmkSdt",
+            "lcbSttbfBkmkSdt",
+            "fcPlcfBkfSdt",
+            "lcbPlcfBkfSdt",
+            "fcPlcfBklSdt",
+            "fcCustomXForm",
+            "lcbCustomXForm",
+            "fcSttbfBkmkProt",
+            "lcbSttbfBkmkProt",
+            "fcPlcfBkfProt",
+            "lcbPlcfBkfProt",
+            "fcPlcfBklProt",
+            "lcbPlcfBklProt",
+            "fcSttbProtUser",
+            "lcbSttbProtUser",
+            "fcUnused",
+            "lcbUnused",
+            "fcPlcfpmiOld",
+            "lcbPlcfpmiOld",
+            "fcPlcfpmiOldInline",
+            "lcbPlcfpmiOldInline",
+            "fcPlcfpmiNew",
+            "lcbPlcfpmiNew",
+            "fcPlcfpmiNewInline",
+            "lcbPlcfpmiNewInline",
+            "fcPlcflvcOld",
+            "lcbPlcflvcOld",
+            "lcbPlcflvcOldInline",
+            "fcPlcflvcNew",
+            "lcbPlcflvcNew",
+            "fcPlcflvcNewInline",
+            "lcbPlcflvcNewInline",
+            "fcPgdMother",
+            "lcbPgdMother",
+            "fcBkdMother",
+            "lcbBkdMother",
+            "fcAfdMother",
+            "lcbAfdMother",
+            "fcPgdFtn",
+            "lcbPgdFtn",
+            "fcBkdFtn",
+            "lcbBkdFtn",
+            "fcAfdFtn",
+            "lcbAfdFtn",
+            "fcPgdEdn",
+            "lcbPgdEdn",
+            "fcBkdEdn",
+            "lcbBkdEdn",
+            "fcAfdEdn",
+            "fcAfd",
+            "lcbAfd",
+                ]
+        for i in fields:
+            self.printAndSet(i, self.readuInt32())
+
+    def __dumpFibRgFcLcb2007(self):
+        self.__dumpFibRgFcLcb2003()
+        fields = [
+            "fcPlcfmthd",
+            "lcbPlcfmthd",
+            "fcSttbfBkmkMoveFrom",
+            "lcbSttbfBkmkMoveFrom",
+            "fcPlcfBkfMoveFrom",
+            "lcbPlcfBkfMoveFrom",
+            "fcPlcfBklMoveFrom",
+            "lcbPlcfBklMoveFrom",
+            "fcSttbfBkmkMoveTo",
+            "lcbSttbfBkmkMoveTo",
+            "fcPlcfBkfMoveTo",
+            "lcbPlcfBkfMoveTo",
+            "fcPlcfBklMoveTo",
+            "lcbPlcfBklMoveTo",
+            "fcUnused1",
+            "lcbUnused1",
+            "fcUnused2",
+            "lcbUnused2",
+            "fcUnused3",
+            "lcbUnused3",
+            "lcbSttbfBkmkArto",
+            "fcPlcfBkfArto",
+            "lcbPlcfBkfArto",
+            "fcPlcfBklArto",
+            "lcbPlcfBklArto",
+            "fcArtoData",
+            "lcbArtoData",
+            "fcUnused4",
+            "lcbUnused4",
+            "fcUnused5",
+            "lcbUnused5",
+            "fcUnused6",
+            "lcbUnused6",
+            "fcOssTheme",
+            "lcbOssTheme",
+            "fcColorSchemeMapping",
+            "lcbColorSchemeMapping",
+                ]
+        for i in fields:
+            self.printAndSet(i, self.readuInt32())
 
     def __findText(self, plcPcd, cp):
         """Find the largest i such that plcPcd.aCp[i] <= cp."""
