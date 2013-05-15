@@ -61,6 +61,7 @@ class RecordHeader:
         FSPGR                   = 0xF009
         FSP                     = 0xF00A
         FOPT                    = 0xF00B
+        FClientTextbox          = 0xF00D
         FClientAnchor           = 0xF010
         FClientData             = 0xF011
         FConnectorRule          = 0xF012
@@ -77,6 +78,7 @@ class RecordHeader:
         Type.FDG:                     'OfficeArtFDG',
         Type.FDGGBlock:               'OfficeArtFDGGBlock',
         Type.FOPT:                    'OfficeArtFOPT',
+        Type.FClientTextbox:          'OfficeArtClientTextbox',
         Type.FClientAnchor:           'OfficeArtClientAnchor',
         Type.FClientData:             'OfficeArtClientData',
         Type.FSP:                     'OfficeArtFSP',
@@ -817,6 +819,19 @@ class FClientData:
         recHdl.appendLine('<data value="0x%8.8X"/>' % self.data)
         recHdl.appendLine('</clientData>')
 
+class FClientTextbox:
+    def __init__ (self, strm):
+        self.data = strm.readUnsignedInt(4)
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("FClientTextbox content")
+        recHdl.appendLine("  data: 0x%8.8X"%self.data)
+
+    def dumpXml(self, recHdl, model, rh):
+        recHdl.appendLine('<clientTextbox type="OfficeArtClientTextbox">')
+        recHdl.appendLine('<data value="0x%8.8X"/>' % self.data)
+        recHdl.appendLine('</clientTextbox>')
+
 class SplitMenuColorContainer:
     def __init__ (self, strm):
         self.smca = []
@@ -993,6 +1008,7 @@ recData = {
     RecordHeader.Type.FDGSL: FDGSL,
     RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
     RecordHeader.Type.FClientData: FClientData,
+    RecordHeader.Type.FClientTextbox: FClientTextbox,
     RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer,
     RecordHeader.Type.TertiaryFOPT: TertiaryFOPT,
 }
