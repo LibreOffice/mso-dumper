@@ -482,6 +482,116 @@ class PChgTabsOperand(DOCDirStream):
         PChgTabsAdd(self).dump()
         print '</pchgTabsOperand>'
 
+# The Ico structure specifies an entry in the color palette that is listed in the following table.
+Ico = {
+        0x00: "Red: 0x00, Green: 0x00, Blue: 0x00, fAuto: 0xFF",
+        0x01: "Red: 0x00, Green: 0x00, Blue: 0x00, fAuto: 0x00",
+        0x02: "Red: 0x00, Green: 0x00, Blue: 0xFF, fAuto: 0x00",
+        0x03: "Red: 0x00, Green: 0xFF, Blue: 0xFF, fAuto: 0x00",
+        0x04: "Red: 0x00, Green: 0xFF, Blue: 0x00, fAuto: 0x00",
+        0x05: "Red: 0xFF, Green: 0x00, Blue: 0xFF, fAuto: 0x00",
+        0x06: "Red: 0xFF, Green: 0x00, Blue: 0x00, fAuto: 0x00",
+        0x07: "Red: 0xFF, Green: 0xFF, Blue: 0x00, fAuto: 0x00",
+        0x08: "Red: 0xFF, Green: 0xFF, Blue: 0xFF, fAuto: 0x00",
+        0x09: "Red: 0x00, Green: 0x00, Blue: 0x80, fAuto: 0x00",
+        0x0A: "Red: 0x00, Green: 0x80, Blue: 0x80, fAuto: 0x00",
+        0x0B: "Red: 0x00, Green: 0x80, Blue: 0x00, fAuto: 0x00",
+        0x0C: "Red: 0x80, Green: 0x00, Blue: 0x80, fAuto: 0x00",
+        0x0D: "Red: 0x80, Green: 0x00, Blue: 0x80, fAuto: 0x00",
+        0x0E: "Red: 0x80, Green: 0x80, Blue: 0x00, fAuto: 0x00",
+        0x0F: "Red: 0x80, Green: 0x80, Blue: 0x80, fAuto: 0x00",
+        0x10: "Red: 0xC0, Green: 0xC0, Blue: 0xC0, fAuto: 0x00",
+        }
+
+# The Ipat enumeration is an index to a shading pattern.
+Ipat = {
+        0x0000: "ipatAuto",
+        0x0001: "ipatSolid",
+        0x0002: "ipatPct5",
+        0x0003: "ipatPct10",
+        0x0004: "ipatPct20",
+        0x0005: "ipatPct25",
+        0x0006: "ipatPct30",
+        0x0007: "ipatPct40",
+        0x0008: "ipatPct50",
+        0x0009: "ipatPct60",
+        0x000A: "ipatPct70",
+        0x000B: "ipatPct75",
+        0x000C: "ipatPct80",
+        0x000D: "ipatPct90",
+        0x000E: "ipatDkHorizontal",
+        0x000F: "ipatDkVertical",
+        0x0010: "ipatDkForeDiag",
+        0x0011: "ipatDkBackDiag",
+        0x0012: "ipatDkCross",
+        0x0013: "ipatDkDiagCross",
+        0x0014: "ipatHorizontal",
+        0x0015: "ipatVertical",
+        0x0016: "ipatForeDiag",
+        0x0017: "ipatBackDiag",
+        0x0018: "ipatCross",
+        0x0019: "ipatDiagCross",
+        0x0023: "ipatPctNew2",
+        0x0024: "ipatPctNew7",
+        0x0025: "ipatPctNew12",
+        0x0026: "ipatPctNew15",
+        0x0027: "ipatPctNew17",
+        0x0028: "ipatPctNew22",
+        0x0029: "ipatPctNew27",
+        0x002A: "ipatPctNew32",
+        0x002B: "ipatPctNew35",
+        0x002C: "ipatPctNew37",
+        0x002D: "ipatPctNew42",
+        0x002E: "ipatPctNew45",
+        0x002F: "ipatPctNew47",
+        0x0030: "ipatPctNew52",
+        0x0031: "ipatPctNew55",
+        0x0032: "ipatPctNew57",
+        0x0033: "ipatPctNew62",
+        0x0034: "ipatPctNew65",
+        0x0035: "ipatPctNew67",
+        0x0036: "ipatPctNew72",
+        0x0037: "ipatPctNew77",
+        0x0038: "ipatPctNew82",
+        0x0039: "ipatPctNew85",
+        0x003A: "ipatPctNew87",
+        0x003B: "ipatPctNew92",
+        0x003C: "ipatPctNew95",
+        0x003D: "ipatPctNew97",
+        0xFFFF: "ipatNil"
+        }
+
+class Shd80(DOCDirStream):
+    """The Shd80 structure specifies the colors and pattern that are used for background shading."""
+    size = 2 # in bytes, see 2.9.245
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        print '<shd80 type="Shd80" offset="%d">' % self.pos
+        buf = self.readuInt16()
+        self.printAndSet("icoFore",   buf & 0x001f, dict = Ico) # 1..5th bits
+        self.printAndSet("icoBack",  (buf & 0x03e0) >> 5, dict = Ico) # 6..10th bits
+        self.printAndSet("ipat",     (buf & 0xfc00) >> 10, dict = Ipat) # 11.16th bits
+        print '</shd80>'
+        self.parent.pos = self.pos
+
+class DefTableShd80Operand(DOCDirStream):
+    """The DefTableSdh800Operand structure is an operand that is used by several Table Sprms to
+    specify each style of background shading that is applied to each of the cells in a single row."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<defTableShd80Operand type="DefTableShd80Operand" offset="%d">' % self.pos
+        self.printAndSet("cb", self.readuInt8())
+        for i in xrange(self.cb / Shd80.size):
+            Shd80(self).dump()
+        print '</defTableShd80Operand>'
+
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
 # East Asian characters in each line of the block.
 TextFlow = {
@@ -634,6 +744,8 @@ class Sprm(DOCDirStream):
                 self.ct = PChgTabsPapxOperand(self)
             elif self.sprm == 0xc615:
                 self.ct = PChgTabsOperand(self)
+            elif self.sprm == 0xd609:
+                self.ct = DefTableShd80Operand(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size 9"/>'
         else:
