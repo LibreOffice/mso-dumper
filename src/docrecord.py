@@ -2669,6 +2669,72 @@ class PlcfSpl(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcfSpl>'
 
+class FTXBXNonReusable(DOCDirStream):
+    """The FTXBXNonReusable structure is used within the FTXBXS structure when that structure
+    describes a real textbox. A real textbox is any shape object into which text is added, and that is the
+    first or only shape in a linked chain."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<ftxbxsunion type="FTXBXNonReusable" offset="%d" size="8 bytes">' % (self.pos)
+        self.printAndSet("cTxbx", self.readuInt32())
+        self.printAndSet("cTxbxEdit", self.readuInt32())
+        print '</ftxbxsunion>'
+        self.parent.pos = self.pos
+
+class FTXBXS(DOCDirStream):
+    """Associates ranges of text from the Textboxes Document and the Header
+    Textboxes Document, with shape objects."""
+    size = 22 # 2.8.32
+    def __init__(self, parent, offset):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = self.posOrig = offset
+
+    def dump(self):
+        print '<aFTXBXS type="FTXBXS" offset="%d" size="%d bytes">' % (self.pos, FTXBXS.size)
+        self.fReusable = self.getuInt16(pos = self.pos + 8)
+        if self.fReusable:
+            print '<todo what="FTXBXS: handle fReusable == 1"/>'
+        else:
+            FTXBXNonReusable(self).dump()
+        self.printAndSet("fReusable", self.readuInt16())
+        self.printAndSet("itxbxsDest", self.readuInt32())
+        self.printAndSet("lid", self.readuInt32())
+        self.printAndSet("txidUndo", self.readuInt32())
+        print '</aFTXBXS>'
+        assert self.posOrig + FTXBXS.size == self.pos
+
+class PlcftxbxTxt(DOCDirStream, PLC):
+    """Specifies which ranges of text are contained in which textboxes."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, mainStream.lcbPlcftxbxTxt, FTXBXS.size)
+        self.pos = mainStream.fcPlcftxbxTxt
+        self.size = mainStream.lcbPlcftxbxTxt
+
+    def dump(self):
+        print '<plcftxbxTxt type="PlcftxbxTxt" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
+        pos = self.pos
+        for i in range(self.getElements() - 1):
+            # aCp
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            pos += 4
+
+            # aFTXBXS
+            aFTXBXS = FTXBXS(self, self.getOffset(self.pos, i))
+            aFTXBXS.dump();
+
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
+            print '</aCP>'
+        print '</plcftxbxTxt>'
+
 class PlcfSpa(DOCDirStream, PLC):
     """The PlcfSpa structure is a PLC structure in which the data elements are
     SPA structures."""
