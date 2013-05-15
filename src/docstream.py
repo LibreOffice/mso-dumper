@@ -329,7 +329,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcUnused3"],
             ["lcbUnused3"],
             ["fcPlcSpaMom"],
-            ["lcbPlcSpaMom"],
+            ["lcbPlcSpaMom", self.handleLcbPlcSpaMom],
             ["fcPlcSpaHdr"],
             ["lcbPlcSpaHdr", self.handleLcbPlcfSpaHdr],
             ["fcPlcfAtnBkf"],
@@ -573,6 +573,9 @@ class WordDocumentStream(DOCDirStream):
 
     def handleLcbPlcfSpl(self):
         docrecord.PlcfSpl(self).dump()
+
+    def handleLcbPlcSpaMom(self):
+        docrecord.PlcfSpa(self, self.fcPlcSpaMom, self.lcbPlcSpaMom).dump()
 
     def handleLcbPlcfSpaHdr(self):
         docrecord.PlcfSpa(self, self.fcPlcSpaHdr, self.lcbPlcSpaHdr).dump()
