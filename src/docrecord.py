@@ -2735,6 +2735,53 @@ class PlcftxbxTxt(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcftxbxTxt>'
 
+class Tbkd(DOCDirStream):
+    """The Tbkd structure is used by the PlcftxbxBkd and PlcfTxbxHdrBkd structures to associate ranges of
+    text from the Textboxes Document and the Header Textboxes Document with FTXBXS objects."""
+    size = 6 # 2.9.309
+    def __init__(self, parent, offset):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = self.posOrig = offset
+
+    def dump(self):
+        print '<aTbkd type="Tbkd" offset="%d" size="%d bytes">' % (self.pos, Tbkd.size)
+        self.printAndSet("itxbxs", self.readuInt16())
+        self.printAndSet("dcpDepend", self.readuInt16())
+        buf = self.readuInt16()
+        self.printAndSet("reserved1", buf & 0x03ff) # 1..10th bits
+        self.printAndSet("fMarkDelete", self.getBit(buf, 10))
+        self.printAndSet("fUnk", self.getBit(buf, 11))
+        self.printAndSet("fTextOverflow", self.getBit(buf, 12))
+        self.printAndSet("reserved2", (buf & 0xe000) >> 13) # 14..16th bits
+        print '</aTbkd>'
+        assert self.posOrig + Tbkd.size == self.pos
+
+class PlcftxbxBkd(DOCDirStream, PLC):
+    """Specifies which ranges of text go inside which textboxes."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        PLC.__init__(self, mainStream.lcbPlcfTxbxBkd, 6)
+        self.pos = mainStream.fcPlcfTxbxBkd
+        self.size = mainStream.lcbPlcfTxbxBkd
+
+    def dump(self):
+        print '<plcftxbxBkd type="PlcftxbxBkd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            pos += 4
+
+            # aTbkd
+            Tbkd(self, self.getOffset(self.pos, i)).dump()
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
+            print '</aCP>'
+        print '</plcftxbxBkd>'
+
 class PlcfSpa(DOCDirStream, PLC):
     """The PlcfSpa structure is a PLC structure in which the data elements are
     SPA structures."""
