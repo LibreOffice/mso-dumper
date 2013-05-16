@@ -1067,7 +1067,7 @@ class PlcfHdd(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfHdd type="PlcfHdd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
+        offset = self.mainStream.getHeaderOffset()
         pos = self.pos
         for i in range(self.getElements() - 1):
             start = self.getuInt32(pos = pos)
@@ -1088,7 +1088,7 @@ class PlcfandTxt(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcfandTxt type="PlcfandTxt" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.ccpText + self.mainStream.ccpFtn + self.mainStream.ccpHdd
+        offset = self.mainStream.getCommentOffset()
         pos = self.pos
         for i in range(self.getElements() - 1):
             start = self.getuInt32(pos = pos)
@@ -2706,7 +2706,8 @@ class FTXBXS(DOCDirStream):
         self.printAndSet("lid", self.readuInt32())
         self.printAndSet("txidUndo", self.readuInt32())
         print '</aFTXBXS>'
-        assert self.posOrig + FTXBXS.size == self.pos
+        if not self.fReusable:
+            assert self.posOrig + FTXBXS.size == self.pos
 
 class PlcftxbxTxt(DOCDirStream, PLC):
     """Specifies which ranges of text are contained in which textboxes."""
@@ -2718,7 +2719,7 @@ class PlcftxbxTxt(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcftxbxTxt type="PlcftxbxTxt" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
+        offset = self.mainStream.getHeaderOffset()
         pos = self.pos
         for i in range(self.getElements() - 1):
             # aCp
@@ -2767,7 +2768,7 @@ class PlcftxbxBkd(DOCDirStream, PLC):
 
     def dump(self):
         print '<plcftxbxBkd type="PlcftxbxBkd" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        offset = self.mainStream.ccpText + self.mainStream.ccpFtn
+        offset = self.mainStream.getHeaderOffset()
         pos = self.pos
         for i in range(self.getElements()):
             # aCp

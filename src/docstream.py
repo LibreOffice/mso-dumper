@@ -893,4 +893,10 @@ class WordDocumentStream(DOCDirStream):
             i += 1
         return "".join(ret)
 
+    def getHeaderOffset(self):
+        return self.ccpText + self.ccpFtn
+
+    def getCommentOffset(self):
+        return self.getHeaderOffset() + self.ccpHdd
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
