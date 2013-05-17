@@ -20,8 +20,7 @@ class DOCFile:
         self.params = params
 
         if ord(self.chars[0]) == 0xD0 and ord(self.chars[1]) == 0xCF and ord(self.chars[2]) == 0x11 and ord(self.chars[3]) == 0xE0:
-            self.header = ole.Header(self.chars, self.params)
-            self.pos = self.header.parse()
+            self.initWW8()
         else:
             print '<?xml version="1.0"?>'
             if ord(self.chars[0]) == 0xDB and ord(self.chars[1]) == 0xA5:
@@ -29,6 +28,10 @@ class DOCFile:
             else:
                 print '<todo what="unhandled magic"/>'
             sys.exit(0)
+
+    def initWW8(self):
+            self.header = ole.Header(self.chars, self.params)
+            self.pos = self.header.parse()
 
     def __getDirectoryObj(self):
         obj = self.header.getDirectory()
@@ -41,6 +44,9 @@ class DOCFile:
     def getDirectoryStreamByName(self, name):
         obj = self.__getDirectoryObj()
         bytes = obj.getRawStreamByName(name)
+        return self.getStreamFromBytes(name, bytes)
+
+    def getStreamFromBytes(self, name, bytes):
         if name == "WordDocument":
             return WordDocumentStream(bytes, self.params, doc=self)
         if name == "1Table":
