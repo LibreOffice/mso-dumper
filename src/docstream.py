@@ -6,6 +6,7 @@
 #
 
 import ole
+import ctypes
 import struct
 from docdirstream import DOCDirStream
 import docrecord
@@ -53,6 +54,58 @@ class DOCFile:
             return TableStream(bytes, self.params, name, doc=self)
         else:
             return DOCDirStream(bytes, self.params, name, doc=self)
+
+    def getName(self):
+        return "native"
+
+class GsfDOCFile(DOCFile):
+    """Same as DOCFile, but uses gsf to read the OLE streams."""
+    def __init__ (self, chars, params, gsf):
+        self.gsf = gsf
+        DOCFile.__init__(self, chars, params)
+
+    def initWW8(self):
+        self.streams = {}
+        self.gsf.gsf_init()
+        gsfInput = self.gsf.gsf_input_memory_new(self.chars, len(self.chars), False)
+        gsfInfile = self.gsf.gsf_infile_msole_new(gsfInput)
+        for i in range(self.gsf.gsf_infile_num_children(gsfInfile)):
+            child = self.gsf.gsf_infile_child_by_index(gsfInfile, i)
+            childName = ctypes.string_at(self.gsf.gsf_infile_name_by_index(gsfInfile,i))
+            childSize = self.gsf.gsf_input_size(child)
+            childData = ""
+            while True:
+                bufSize = 1024
+                pos = self.gsf.gsf_input_tell(child)
+                if pos == childSize:
+                    break
+                elif pos + bufSize > childSize:
+                    bufSize = childSize - pos
+                childData += ctypes.string_at(self.gsf.gsf_input_read(child, bufSize, None), bufSize)
+            self.streams[childName] = childData
+        self.gsf.gsf_shutdown()
+
+    def getDirectoryNames(self):
+        return self.streams.keys()
+
+    def getDirectoryStreamByName(self, name):
+        return self.getStreamFromBytes(name, self.streams[name])
+
+    def getName(self):
+        return "gsf"
+
+def createDOCFile(chars, params):
+    hasGsf = True
+    try:
+        gsf = ctypes.cdll.LoadLibrary('libgsf-1.so')
+        gsf.gsf_input_read.restype = ctypes.c_void_p
+    except:
+        hasGsf = False
+
+    if hasGsf:
+        return GsfDOCFile(chars, params, gsf)
+    else:
+        return DOCFile(chars, params)
 
 class TableStream(DOCDirStream):
     def __init__(self, bytes, params, name, doc):
