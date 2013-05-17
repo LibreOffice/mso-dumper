@@ -187,6 +187,9 @@ class WordDocumentStream(DOCDirStream):
 
         self.printAndSet("wIdent", self.readuInt16())
         self.printAndSet("nFib", self.readuInt16())
+        if self.nFib >= 0x65 and self.nFib <= 0x69:
+            print '<todo what="handle nFib 0x65..0x69: ww6 syntax"/>'
+            ret = False
         self.printAndSet("unused", self.readuInt16())
         self.printAndSet("lid", self.readuInt16())
         self.printAndSet("pnNext", self.readuInt16())
