@@ -2685,6 +2685,22 @@ class FTXBXNonReusable(DOCDirStream):
         print '</ftxbxsunion>'
         self.parent.pos = self.pos
 
+class FTXBXSReusable(DOCDirStream):
+    """The FTXBXSReusable structure is used within the FTXBXS structure when it describes a spare
+    structure that can be reused by the application and converted into an actual textbox."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<ftxbxsunion type="FTXBXReusable" offset="%d" size="8 bytes">' % (self.pos)
+        self.printAndSet("iNextReuse", self.readuInt32())
+        self.printAndSet("cReusable", self.readuInt32())
+        print '</ftxbxsunion>'
+        self.parent.pos = self.pos
+
+
 class FTXBXS(DOCDirStream):
     """Associates ranges of text from the Textboxes Document and the Header
     Textboxes Document, with shape objects."""
@@ -2698,7 +2714,7 @@ class FTXBXS(DOCDirStream):
         print '<aFTXBXS type="FTXBXS" offset="%d" size="%d bytes">' % (self.pos, FTXBXS.size)
         self.fReusable = self.getuInt16(pos = self.pos + 8)
         if self.fReusable:
-            print '<todo what="FTXBXS: handle fReusable == 1"/>'
+            FTXBXSReusable(self).dump()
         else:
             FTXBXNonReusable(self).dump()
         self.printAndSet("fReusable", self.readuInt16())
