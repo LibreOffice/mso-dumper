@@ -2055,7 +2055,11 @@ class SttbfAssoc(DOCDirStream):
         self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
             cchData = self.readuInt16()
-            print '<cchData index="%s" meaning="%s" offset="%d" size="%d bytes">' % (hex(i), indexMap[i], self.pos, cchData)
+            if i in indexMap.keys():
+                meaning = indexMap[i]
+            else:
+                meaning = "unknown"
+            print '<cchData index="%s" meaning="%s" offset="%d" size="%d bytes">' % (hex(i), meaning, self.pos, cchData)
             print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
             self.pos += 2*cchData
             print '</cchData>'
