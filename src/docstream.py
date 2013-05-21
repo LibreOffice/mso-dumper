@@ -941,9 +941,9 @@ class WordDocumentStream(DOCDirStream):
         aPcd = plcPcd.aPcd[index]
         fcCompressed = aPcd.fc
         if fcCompressed.fCompressed == 1:
-            return globals.encodeName(self.bytes[(fcCompressed.fc/2) + (cp - plcPcd.aCp[i])])
+            return globals.encodeName(self.bytes[(fcCompressed.fc/2) + (cp - plcPcd.aCp[index])])
         else:
-            pos = fcCompressed.fc + 2 * (cp - plcPcd.aCp[i])
+            pos = fcCompressed.fc + 2 * (cp - plcPcd.aCp[index])
             return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16'), lowOnly = True)
 
     def retrieveCPs(self, start, end):
