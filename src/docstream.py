@@ -895,44 +895,35 @@ class WordDocumentStream(DOCDirStream):
         for i in fields:
             self.printAndSet(i, self.readuInt32())
 
-    def __findText(self, plcPcd, cp):
-        """Find the largest i such that plcPcd.aCp[i] <= cp."""
-        for i in range(len(plcPcd.aCp)):
-            if plcPcd.aCp[i] <= cp:
-                index = i
-        return index
-
-    def __isOffsetCompressed(self, off):
-        """Is the given offset compressed?"""
-        compressed = None
-        plcPcd = self.clx.pcdt.plcPcd
-        for i in range(len(plcPcd.aCp)):
-            aPcd = plcPcd.aPcd[i]
-            fcCompressed = aPcd.fc
-            if fcCompressed.fCompressed == 1:
-                offset = fcCompressed.fc/2
-            else:
-                offset = fcCompressed.fc
-            if offset <= off:
-                compressed = fcCompressed.fCompressed
-        return compressed
-
     def retrieveOffset(self, start, end):
         """Retrieves text, defined by raw byte offsets."""
 
-        compressed = self.__isOffsetCompressed(start)
-        if compressed == None:
-            compressed = self.__isOffsetCompressed(end)
+        startCp = self.__offsetToCP(start)
+        endCp = self.__offsetToCP(end)
+        if startCp is None or endCp is None:
+            return ""
+        return self.retrieveCPs(startCp, endCp)
 
-        if compressed == None:
-            raise Exception("should not happen")
+    def __offsetToCP(self, offset):
+        plcPcd = self.clx.pcdt.plcPcd
+        for i in range(len(plcPcd.ranges)):
+            start, end = plcPcd.ranges[i]
+            # Count offset of the last-but-one CP, the last CP is in fact not included in the range.
+            end -= 1
+            startOffset, compressed = self.__cpToOffset(start)
+            endOffset = self.__cpToOffset(end)[0]
+            if compressed:
+                endOffset += 1
+            else:
+                endOffset += 2
+            if offset >= startOffset and offset <= endOffset:
+                if compressed:
+                    divider = 1
+                else:
+                    divider = 2
+                return (start + ((offset - startOffset) / divider))
 
-        if compressed:
-            return globals.encodeName(self.bytes[start:end])
-        else:
-            return globals.encodeName(self.bytes[start:end].decode('utf-16'), lowOnly = True)
-
-    def retrieveCP(self, cp):
+    def __cpToOffset(self, cp):
         """Implements 2.4.1 Retrieving Text."""
         plcPcd = self.clx.pcdt.plcPcd
         for i in range(len(plcPcd.aCp)):
@@ -941,9 +932,17 @@ class WordDocumentStream(DOCDirStream):
         aPcd = plcPcd.aPcd[index]
         fcCompressed = aPcd.fc
         if fcCompressed.fCompressed == 1:
-            return globals.encodeName(self.bytes[(fcCompressed.fc/2) + (cp - plcPcd.aCp[index])])
+            pos = (fcCompressed.fc/2) + (cp - plcPcd.aCp[index])
+            return pos, True
         else:
             pos = fcCompressed.fc + 2 * (cp - plcPcd.aCp[index])
+            return pos, False
+
+    def retrieveCP(self, cp):
+        pos, compressed = self.__cpToOffset(cp)
+        if compressed:
+            return globals.encodeName(self.bytes[pos])
+        else:
             return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16'), lowOnly = True)
 
     def retrieveCPs(self, start, end):
