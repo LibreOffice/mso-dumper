@@ -99,7 +99,7 @@ class FBKF(DOCDirStream):
 class PlcfBkf(DOCDirStream, PLC):
     """A PLCFBKF is a PLC whose data elements are FBKF structures."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, size, 4) # 4 is defined by 2.8.10
         self.pos = offset
         self.size = size
@@ -152,7 +152,7 @@ class Fld(DOCDirStream):
 class PlcFld(DOCDirStream, PLC):
     """The Plcfld structure specifies the location of fields in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, mainStream.lcbPlcfFldMom, 2) # 2 is defined by 2.8.25
         self.pos = mainStream.fcPlcfFldMom
         self.size = mainStream.lcbPlcfFldMom
@@ -184,7 +184,7 @@ class PlcFld(DOCDirStream, PLC):
 class PlcfBkl(DOCDirStream, PLC):
     """The Plcfbkl structure is a PLC that contains only CPs and no additional data."""
     def __init__(self, mainStream, offset, size, start):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, size, 0) # 0 is defined by 2.8.12
         self.pos = offset
         self.size = size
@@ -273,7 +273,7 @@ class Sed(DOCDirStream):
 class PlcfSed(DOCDirStream, PLC):
     """The PlcfSed structure is a PLC structure where the data elements are Sed structures."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, size, Sed.size)
         self.pos = offset
         self.size = size
@@ -299,7 +299,7 @@ class PlcfSed(DOCDirStream, PLC):
 class Tcg(DOCDirStream):
     """The Tcg structure specifies command-related customizations."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = offset
         self.size = size
 
@@ -339,7 +339,7 @@ class Sty(DOCDirStream):
 class Selsf(DOCDirStream):
     """The Selsf structure specifies the last selection that was made to the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcWss
         self.size = mainStream.lcbWss
         self.mainStream = mainStream
@@ -1011,7 +1011,7 @@ class PnFkpPapx(DOCDirStream):
 class PlcBteChpx(DOCDirStream, PLC):
     """The PlcBteChpx structure is a PLC that maps the offsets of text in the WordDocument stream to the character properties of that text."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfBteChpx, 4)
         self.pos = mainStream.fcPlcfBteChpx
         self.size = mainStream.lcbPlcfBteChpx
@@ -1036,7 +1036,7 @@ class PlcfHdd(DOCDirStream, PLC):
     """The Plcfhdd structure is a PLC that contains only CPs and no additional data. It specifies where
     header document stories begin and end."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfHdd, 0)
         self.pos = mainStream.fcPlcfHdd
         self.size = mainStream.lcbPlcfHdd
@@ -1081,7 +1081,7 @@ class PlcfHdd(DOCDirStream, PLC):
 class PlcfandTxt(DOCDirStream, PLC):
     """The PlcfandTxt structure is a PLC that contains only CPs and no additional data."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, 0)
         self.pos = offset
         self.size = size
@@ -1102,7 +1102,7 @@ class PlcfandTxt(DOCDirStream, PLC):
 class PlcfandRef(DOCDirStream, PLC):
     """The PlcfandRef structure is a PLC whose data elements are ATRDPre10 structures."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, 30)
         self.pos = offset
         self.size = size
@@ -1881,7 +1881,7 @@ class Dop2007(DOCDirStream):
 class RC4EncryptionHeader(DOCDirStream):
     """The encryption header structure used for RC4 encryption."""
     def __init__(self, fib, pos, size):
-        DOCDirStream.__init__(self, fib.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, fib.getTableStream().bytes)
         self.fib = fib
         self.pos = pos
         self.size = size
@@ -1900,7 +1900,7 @@ class RC4EncryptionHeader(DOCDirStream):
 class Dop(DOCDirStream):
     """The Dop structure contains the document and compatibility settings for the document."""
     def __init__(self, fib):
-        DOCDirStream.__init__(self, fib.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, fib.getTableStream().bytes)
         self.pos = fib.fcDop
         self.size = fib.lcbDop
         self.fib = fib
@@ -2006,7 +2006,7 @@ class SttbfFfn(DOCDirStream):
 class GrpXstAtnOwners(DOCDirStream):
     """This array contains the names of authors of comments in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcGrpXstAtnOwners
         self.size = mainStream.lcbGrpXstAtnOwners
         self.mainStream = mainStream
@@ -2023,7 +2023,7 @@ class GrpXstAtnOwners(DOCDirStream):
 class SttbfAssoc(DOCDirStream):
     """The SttbfAssoc structure is an STTB that contains strings which are associated with this document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcSttbfAssoc
         self.size = mainStream.lcbSttbfAssoc
         self.mainStream = mainStream
@@ -2069,7 +2069,7 @@ class SttbfAssoc(DOCDirStream):
 class SttbfRMark(DOCDirStream):
     """The SttbfRMark structure is an STTB structure where the strings specify the names of the authors of the revision marks, comments, and e-mail messages in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcSttbfRMark
         self.size = mainStream.lcbSttbfRMark
         self.mainStream = mainStream
@@ -2105,7 +2105,7 @@ class OfficeArtWordDrawing(DOCDirStream):
 class OfficeArtContent(DOCDirStream):
     """The OfficeArtContent structure specifies information about a drawing in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcDggInfo
         self.size = mainStream.lcbDggInfo
         self.mainStream = mainStream
@@ -2140,7 +2140,7 @@ class ATNBE(DOCDirStream):
 class SttbfAtnBkmk(DOCDirStream):
     """The SttbfAtnBkmk structure is an STTB whose strings are all of zero length."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = offset
         self.size = size
 
@@ -2650,7 +2650,7 @@ class SPLS(DOCDirStream):
 class PlcfSpl(DOCDirStream, PLC):
     """The Plcfspl structure is a Plc structure whose data elements are SpellingSpls structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, mainStream.lcbPlcfSpl, 2) # 2 is defined by 2.8.28
         self.pos = mainStream.fcPlcfSpl
         self.size = mainStream.lcbPlcfSpl
@@ -2732,7 +2732,7 @@ class FTXBXS(DOCDirStream):
 class PlcftxbxTxt(DOCDirStream, PLC):
     """Specifies which ranges of text are contained in which textboxes."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, mainStream.lcbPlcftxbxTxt, FTXBXS.size)
         self.pos = mainStream.fcPlcftxbxTxt
         self.size = mainStream.lcbPlcftxbxTxt
@@ -2781,7 +2781,7 @@ class Tbkd(DOCDirStream):
 class PlcftxbxBkd(DOCDirStream, PLC):
     """Specifies which ranges of text go inside which textboxes."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, mainStream.lcbPlcfTxbxBkd, 6)
         self.pos = mainStream.fcPlcfTxbxBkd
         self.size = mainStream.lcbPlcfTxbxBkd
@@ -2807,7 +2807,7 @@ class PlcfSpa(DOCDirStream, PLC):
     """The PlcfSpa structure is a PLC structure in which the data elements are
     SPA structures."""
     def __init__(self, mainStream, pos, size):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, size, 26) # 2.8.37
         self.pos = pos
         self.size = size
@@ -2822,7 +2822,7 @@ class PlcfSpa(DOCDirStream, PLC):
 class PlcfGram(DOCDirStream, PLC):
     """The PlcfGram structure is a Plc structure whose data elements are GrammarSpls structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         PLC.__init__(self, mainStream.lcbPlcfGram, 2) # 2 is defined by 2.8.21
         self.pos = mainStream.fcPlcfGram
         self.size = mainStream.lcbPlcfGram
@@ -2936,7 +2936,7 @@ class LVL(DOCDirStream):
 class PlfLst(DOCDirStream):
     """The PlfLst structure contains the list formatting information for the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         self.pos = mainStream.fcPlfLst
         self.size = mainStream.lcbPlfLst
 
@@ -2992,7 +2992,7 @@ class LFOData(DOCDirStream):
 class PlfLfo(DOCDirStream):
     """The PlfLfo structure contains the list format override data for the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream = mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream = mainStream)
         self.pos = mainStream.fcPlfLfo
         self.size = mainStream.lcbPlfLfo
 
@@ -3014,7 +3014,7 @@ class PlfLfo(DOCDirStream):
 class SttbListNames(DOCDirStream):
     """The SttbListNames structure is an STTB structure whose strings are the names used by the LISTNUM field."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         self.pos = mainStream.fcSttbListNames
         self.size = mainStream.lcbSttbListNames
 
@@ -3035,7 +3035,7 @@ class SttbListNames(DOCDirStream):
 class SttbSavedBy(DOCDirStream):
     """The SttbSavedBy structure is an STTB structure that specifies the save history of this document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes, mainStream=mainStream)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         self.pos = mainStream.fcSttbSavedBy
         self.size = mainStream.lcbSttbSavedBy
 
@@ -3056,7 +3056,7 @@ class SttbSavedBy(DOCDirStream):
 class SttbfBkmk(DOCDirStream):
     """The SttbfBkmk structure is an STTB structure whose strings specify the names of bookmarks."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.doc.getDirectoryStreamByName("1Table").bytes)
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcSttbfBkmk
         self.size = mainStream.lcbSttbfBkmk
         self.mainStream = mainStream

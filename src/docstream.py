@@ -50,7 +50,7 @@ class DOCFile:
     def getStreamFromBytes(self, name, bytes):
         if name == "WordDocument":
             return WordDocumentStream(bytes, self.params, doc=self)
-        if name == "1Table":
+        if name in ("0Table", "1Table"):
             return TableStream(bytes, self.params, name, doc=self)
         else:
             return DOCDirStream(bytes, self.params, name, doc=self)
@@ -181,6 +181,12 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("lidThemeCS", self.readuInt16())
         print '</%s>' % name
 
+    def getTableStream(self):
+        if self.fWhichTblStm:
+            return self.doc.getDirectoryStreamByName("1Table")
+        else:
+            return self.doc.getDirectoryStreamByName("0Table")
+
     def dumpFibBase(self, name):
         ret = True
         print '<%s type="FibBase" size="32 bytes">' % name
@@ -217,7 +223,7 @@ class WordDocumentStream(DOCDirStream):
         if self.fEncrypted == 1 and self.fObfuscated == 0:
             self.printAndSet("lKey", self.readuInt32(), end = False)
             print '<EncryptionVersionInfo>'
-            tableStream = self.doc.getDirectoryStreamByName("1Table")
+            tableStream = self.getTableStream()
             self.printAndSet("vMajor", tableStream.readuInt16())
             self.printAndSet("vMinor", tableStream.readuInt16())
             print '</EncryptionVersionInfo>'
@@ -531,7 +537,7 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbClx(self, silent = False):
         offset = self.fcClx
         size = self.lcbClx
-        self.clx = docrecord.Clx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        self.clx = docrecord.Clx(self.getTableStream().bytes, self, offset, size)
         if not silent:
             self.clx.dump()
 
@@ -546,19 +552,19 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbPlcfBtePapx(self):
         offset = self.fcPlcfBtePapx
         size = self.lcbPlcfBtePapx
-        plcBtePapx = docrecord.PlcBtePapx(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        plcBtePapx = docrecord.PlcBtePapx(self.getTableStream().bytes, self, offset, size)
         plcBtePapx.dump()
 
     def handleLcbSttbfFfn(self):
         offset = self.fcSttbfFfn
         size = self.lcbSttbfFfn
-        sttbfFfn = docrecord.SttbfFfn(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        sttbfFfn = docrecord.SttbfFfn(self.getTableStream().bytes, self, offset, size)
         sttbfFfn.dump()
 
     def handleLcbStshf(self):
         offset = self.fcStshf
         size = self.lcbStshf
-        stsh = docrecord.STSH(self.doc.getDirectoryStreamByName("1Table").bytes, self, offset, size)
+        stsh = docrecord.STSH(self.getTableStream().bytes, self, offset, size)
         stsh.dump()
 
     def handleLcbPlcfandTxt(self):
