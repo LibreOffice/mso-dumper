@@ -2062,7 +2062,9 @@ class SttbfAssoc(DOCDirStream):
             print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
             self.pos += 2*cchData
             print '</cchData>'
-        assert self.pos == self.mainStream.fcSttbfAssoc + self.size
+        # Probably this was cleared manually.
+        if self.cData != 0:
+            assert self.pos == self.mainStream.fcSttbfAssoc + self.size
         print '</sttbfAssoc>'
 
 class SttbfRMark(DOCDirStream):
@@ -3049,7 +3051,9 @@ class SttbSavedBy(DOCDirStream):
             print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
             self.pos += 2*cchData
             print '</cchData>'
-        assert self.pos == self.mainStream.fcSttbSavedBy + self.size
+        # Probably this was cleared manually.
+        if self.cData != 0:
+            assert self.pos == self.mainStream.fcSttbSavedBy + self.size
         print '</sttbSavedBy>'
 
 class SttbfBkmk(DOCDirStream):
