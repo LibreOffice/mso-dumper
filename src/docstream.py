@@ -12,6 +12,7 @@ from docdirstream import DOCDirStream
 import docrecord
 import globals
 import sys
+import bisect
 
 class DOCFile:
     """Represents the whole word file - feed will all bytes."""
@@ -932,9 +933,7 @@ class WordDocumentStream(DOCDirStream):
     def __cpToOffset(self, cp):
         """Implements 2.4.1 Retrieving Text."""
         plcPcd = self.clx.pcdt.plcPcd
-        for i in range(len(plcPcd.aCp)):
-            if plcPcd.aCp[i] <= cp:
-                index = i
+        index = bisect.bisect_right(plcPcd.aCp, cp) - 1
         aPcd = plcPcd.aPcd[index]
         fcCompressed = aPcd.fc
         if fcCompressed.fCompressed == 1:
