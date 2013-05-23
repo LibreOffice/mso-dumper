@@ -1517,14 +1517,13 @@ class DopTypography(DOCDirStream):
 
         self.printAndSet("cchFollowingPunct", self.readInt16())
         self.printAndSet("cchLeadingPunct", self.readInt16())
-        if self.cchFollowingPunct != 0:
-            print '<todo what="DopTypography::dump(): cchFollowingPunct != 0 not handled"/>'
-        else:
-            self.pos += 202
-        if self.cchLeadingPunct != 0:
-            print '<todo what="DopTypography::dump(): cchLeadingPunct != 0 not handled"/>'
-        else:
-            self.pos += 102
+
+        self.printAndSet("rgxchFPunct", self.getString(self.cchFollowingPunct), hexdump = False)
+        self.pos += (202 - 2 * self.cchFollowingPunct)
+
+        self.printAndSet("rgxchLPunct", self.getString(self.cchLeadingPunct), hexdump = False)
+        self.pos += (102 - 2 * self.cchLeadingPunct)
+
         print '</dopTypography>'
         assert self.pos == self.dop.pos + DopTypography.size
         self.dop.pos = self.pos
