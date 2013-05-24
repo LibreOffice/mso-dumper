@@ -78,6 +78,9 @@ class DOCDirStream:
         self.pos += 2
         return ret
 
+    def getuInt24(self):
+        return struct.unpack("<I", self.bytes[self.pos:self.pos+3] + "\x00")[0]
+
     def getuInt32(self, bytes = None, pos = None):
         if not bytes:
             bytes = self.bytes

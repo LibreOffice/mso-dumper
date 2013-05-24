@@ -732,7 +732,7 @@ class Sprm(DOCDirStream):
         elif self.getOperandSize() == 2:
             self.operand = self.getuInt16()
         elif self.getOperandSize() == 3:
-            self.operand = self.getuInt32() & 0x0fff
+            self.operand = self.getuInt24()
         elif self.getOperandSize() == 4:
             self.operand = self.getuInt32()
         elif self.getOperandSize() == 7:
