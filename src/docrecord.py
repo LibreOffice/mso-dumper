@@ -337,6 +337,7 @@ class Sty(DOCDirStream):
         self.parent.pos = self.pos
 
 class Selsf(DOCDirStream):
+    size = 36 # defined by 2.9.241
     """The Selsf structure specifies the last selection that was made to the document."""
     def __init__(self, mainStream):
         DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
@@ -380,7 +381,7 @@ class Selsf(DOCDirStream):
         self.printAndSet("cpAnchorShrink", self.readuInt32())
         self.printAndSet("xaTableLeft", self.readInt16())
         self.printAndSet("xaTableRight", self.readInt16())
-        assert self.pos == self.mainStream.fcWss + self.size
+        assert self.pos == self.mainStream.fcWss + Selsf.size
         print '</selsf>'
 
 class BRC(DOCDirStream):
