@@ -2313,14 +2313,15 @@ class Stdf(DOCDirStream):
         self.stdfBase = StdfBase(self.bytes, self.mainStream, self.pos)
         self.stdfBase.dump()
         self.pos += self.stdfBase.size
-        stsh = self.std.lpstd.stsh # root of the stylesheet table
-        cbSTDBaseInFile = stsh.lpstshi.stshi.stshif.cbSTDBaseInFile
-        print '<stdfPost2000OrNone cbSTDBaseInFile="%s">' % hex(cbSTDBaseInFile)
-        if cbSTDBaseInFile == 0x0012:
-            stdfPost2000 = StdfPost2000(self)
-            stdfPost2000.dump()
-            self.pos = stdfPost2000.pos
-        print '</stdfPost2000OrNone>'
+        if self.pos - self.std.pos < self.std.size:
+            stsh = self.std.lpstd.stsh # root of the stylesheet table
+            cbSTDBaseInFile = stsh.lpstshi.stshi.stshif.cbSTDBaseInFile
+            print '<stdfPost2000OrNone cbSTDBaseInFile="%s">' % hex(cbSTDBaseInFile)
+            if cbSTDBaseInFile == 0x0012:
+                stdfPost2000 = StdfPost2000(self)
+                stdfPost2000.dump()
+                self.pos = stdfPost2000.pos
+            print '</stdfPost2000OrNone>'
         print '</stdf>'
 
 class Xst(DOCDirStream):
@@ -2566,6 +2567,7 @@ class STD(DOCDirStream):
         DOCDirStream.__init__(self, lpstd.bytes, mainStream = lpstd.mainStream)
         self.lpstd = lpstd
         self.pos = lpstd.pos
+        self.posOrig = self.pos
         self.size = lpstd.cbStd
 
     def dump(self):
@@ -2573,12 +2575,13 @@ class STD(DOCDirStream):
         self.stdf = Stdf(self)
         self.stdf.dump()
         self.pos = self.stdf.pos
-        xstzName = Xstz(self)
-        xstzName.dump()
-        self.pos = xstzName.pos
-        grLPUpxSw = GrLPUpxSw(self)
-        grLPUpxSw.dump()
-        self.pos = grLPUpxSw.pos
+        if self.pos - self.posOrig < self.size:
+            xstzName = Xstz(self)
+            xstzName.dump()
+            self.pos = xstzName.pos
+            grLPUpxSw = GrLPUpxSw(self)
+            grLPUpxSw.dump()
+            self.pos = grLPUpxSw.pos
         print '</std>'
 
 class LPStd(DOCDirStream):
