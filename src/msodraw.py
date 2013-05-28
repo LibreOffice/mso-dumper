@@ -585,6 +585,11 @@ class FOPT:
         0x0390: ['posrelh'],
         0x0391: ['posv'],
         0x0392: ['posrelv'],
+        0x0004: ['rotation'],
+        0x00C3: ['gtextSize'],
+        0x00FF: ['Geometry Text Boolean Properties'],
+        0x0182: ['fillOpacity'],
+        0x053F: ['Diagram Boolean Properties'],
     }
 
     class E:
