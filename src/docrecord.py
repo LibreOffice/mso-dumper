@@ -593,6 +593,43 @@ class DefTableShd80Operand(DOCDirStream):
             Shd80(self).dump()
         print '</defTableShd80Operand>'
 
+# The PgbApplyTo enumeration is used to specify the pages to which a page border applies.
+PgbApplyTo = {
+        0x0: "pgbAllPages",
+        0x1: "pgbFirstPage",
+        0x2: "pgbAllButFirst"
+        }
+
+# The PgbOffsetFrom enumeration is used to specify the location from which the offset of a page
+# border is measured.
+PgbOffsetFrom = {
+        0x0: "pgbFromText",
+        0x1: "pgbFromEdge"
+        }
+
+# The PgbPageDepth enumeration is used to specify the "depth" of a page border in relation to other
+# page elements.
+PgbPageDepth = {
+        0x0: "pgbAtFront",
+        0x1: "pgbAtBack",
+        }
+
+class SPgbPropOperand(DOCDirStream):
+    """The SPgbPropOperand structure is the operand to sprmSPgbProp. It specifies the properties of a
+    page border."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+    
+    def dump(self):
+        print '<sPgbPropOperand type="SPgbPropOperand" offset="%d">' % self.pos
+        buf = self.readuInt8()
+        self.printAndSet("pgbApplyTo",     buf & 0x7,        dict = PgbApplyTo) # 1..3rd bits
+        self.printAndSet("pgbPageDepth",  (buf & 0x18) >> 3, dict = PgbPageDepth) # 4..5th bits
+        self.printAndSet("pgbOffsetFrom", (buf & 0xe0) >> 5, dict = PgbOffsetFrom) # 6..8th bits
+        self.printAndSet("reserved", self.readuInt8())
+        print '</sPgbPropOperand>'
+
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
 # East Asian characters in each line of the block.
 TextFlow = {
@@ -732,6 +769,8 @@ class Sprm(DOCDirStream):
             self.operand = self.getuInt8()
         elif self.getOperandSize() == 2:
             self.operand = self.getuInt16()
+            if self.sprm == 0x522f:
+                self.ct = SPgbPropOperand(self)
         elif self.getOperandSize() == 3:
             self.operand = self.getuInt24()
         elif self.getOperandSize() == 4:
