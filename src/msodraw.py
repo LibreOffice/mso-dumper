@@ -480,6 +480,11 @@ class FOPT:
         def __init__(self):
             UnicodeComplex.__init__(self, "wzName")
 
+    class PibName(UnicodeComplex):
+
+        def __init__(self):
+            UnicodeComplex.__init__(self, "pibName")
+
     class ShadowOffsetX:
 
         def appendLines(self, recHdl, prop, level):
@@ -607,6 +612,7 @@ class FOPT:
         0x0182: ['fillOpacity'],
         0x053F: ['Diagram Boolean Properties'],
         0x03A9: ['metroBlob', MetroBlob],
+        0x0105: ['pibName', PibName]
     }
 
     class E:
