@@ -2657,6 +2657,22 @@ class STSH(DOCDirStream):
             print '</rglpstd>'
         print '</stsh>'
 
+class Rca(DOCDirStream):
+    """The Rca structure is used to define the coordinates of a rectangular area in the document."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<rca type="Rca" offset="%s">' % self.pos
+        self.printAndSet("left", self.readuInt32())
+        self.printAndSet("top", self.readuInt32())
+        self.printAndSet("right", self.readuInt32())
+        self.printAndSet("bottom", self.readuInt32())
+        print '</rca>'
+        self.parent.pos = self.pos
+
 class SPA(DOCDirStream):
     """The Spa structure specifies information about the shapes and drawings that the document contains."""
     size = 26 # defined by 2.8.37
@@ -2669,8 +2685,7 @@ class SPA(DOCDirStream):
         pos = self.pos
         print '<spa type="SPA" offset="%s" size="%d bytes">' % (self.pos, SPA.size)
         self.printAndSet("lid", self.readuInt32())
-        # TODO rca
-        self.pos += 16
+        Rca(self).dump()
         buf = self.readuInt16()
         self.printAndSet("fHdr", self.getBit(buf, 0)) # 1st bit
         self.printAndSet("bx", (buf & 0x6) >> 1) # 2..3rd bits
