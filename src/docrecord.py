@@ -2657,6 +2657,33 @@ class STSH(DOCDirStream):
             print '</rglpstd>'
         print '</stsh>'
 
+class SPA(DOCDirStream):
+    """The Spa structure specifies information about the shapes and drawings that the document contains."""
+    size = 26 # defined by 2.8.37
+    def __init__(self, parent, offset):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = offset
+
+    def dump(self):
+        pos = self.pos
+        print '<spa type="SPA" offset="%s" size="%d bytes">' % (self.pos, SPA.size)
+        self.printAndSet("lid", self.readuInt32())
+        # TODO rca
+        self.pos += 16
+        buf = self.readuInt16()
+        self.printAndSet("fHdr", self.getBit(buf, 0)) # 1st bit
+        self.printAndSet("bx", (buf & 0x6) >> 1) # 2..3rd bits
+        self.printAndSet("by", (buf & 0x18) >> 3) # 4..5th bits
+        self.printAndSet("wr", (buf & 0x1e0) >> 5) # 6..9th bits
+        self.printAndSet("wrk", (buf & 0x1e00) >> 9) # 10..13th bits
+        self.printAndSet("fRcaSimple", self.getBit(buf, 13)) # 14th bit
+        self.printAndSet("fBelowText", self.getBit(buf, 14)) # 15th bit
+        self.printAndSet("fAnchorLock", self.getBit(buf, 15)) # 16th bit
+        self.printAndSet("cTxbx", self.readuInt32())
+        print '</spa>'
+        assert pos + SPA.size == self.pos
+
 class SPLS(DOCDirStream):
     """The SPLS structure specifies the current state of a range of text with regard to one of the language checking features."""
     size = 2 # defined by 2.9.253
@@ -2859,8 +2886,19 @@ class PlcfSpa(DOCDirStream, PLC):
     def dump(self):
         print '<plcfSpa type="PlcfSpa" offset="%d" size="%d bytes">' % (self.pos, self.size)
         pos = self.pos
-        if self.getElements() - 1 != 0:
-            print '<todo what="PlcfSpa: self.getElements() - 1 != 0"/>'
+        for i in range(self.getElements()):
+            # aCp
+            start = self.getuInt32(pos = pos)
+            end = self.getuInt32(pos = pos + 4)
+            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            pos += 4
+
+            # aSpa
+            aSpa = SPA(self, self.getOffset(self.pos, i))
+            aSpa.dump()
+
+            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
+            print '</aCP>'
         print '</plcfSpa>'
 
 class PlcfGram(DOCDirStream, PLC):
