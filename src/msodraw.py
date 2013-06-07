@@ -46,6 +46,12 @@ def emu_to_mm100(value):
 def emu_to_twip(value):
     return mm100_to_twip(emu_to_mm100(value))
 
+def hexdump(value):
+    ret = []
+    for i in value:
+        ret.append("%02x" % ord(i))
+    return "".join(ret)
+
 class RecordHeader:
 
     size = 8
@@ -490,6 +496,16 @@ class FOPT:
         def dumpXml(self, recHdl, prop):
             recHdl.appendLine('<lineWidth value="%s" inTwips="%s"/>' % (prop.value, emu_to_twip(prop.value)))
 
+    class MetroBlob:
+        """The metroBlob property specifies alternative XML content for a
+        shape. This property specifies a binary serialization of an OPC
+        container. The package contains an OOXML DrawingML document."""
+
+        def appendLines(self, recHdl, prop, level):
+            recHdl.appendLine(indent(level)+"metroBlob: %s"%hexdump(prop.value))
+
+        def dumpXml(self, recHdl, prop):
+            recHdl.appendLine('<metroBlob value="%s"/>' % hexdump(prop.extra))
 
     class GroupShape:
 
@@ -590,6 +606,7 @@ class FOPT:
         0x00FF: ['Geometry Text Boolean Properties'],
         0x0182: ['fillOpacity'],
         0x053F: ['Diagram Boolean Properties'],
+        0x03A9: ['metroBlob', MetroBlob],
     }
 
     class E:
