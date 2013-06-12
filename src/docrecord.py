@@ -593,6 +593,26 @@ class DefTableShd80Operand(DOCDirStream):
             Shd80(self).dump()
         print '</defTableShd80Operand>'
 
+class CMajorityOperand(DOCDirStream):
+    """The CMajorityOperand structure is used by sprmCMajority to specify which
+    character properties of the text to reset to match that of the underlying
+    paragraph style."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<cMajorityOperand type="CMajorityOperand" offset="%d">' % self.pos
+        self.printAndSet("cb", self.readuInt8())
+        pos = 0
+        print '<grpprl offset="%d" size="%d bytes">' % (self.pos, self.cb)
+        while self.cb - pos > 0:
+            prl = Prl(self.bytes, self.pos + pos)
+            prl.dump()
+            pos += prl.getSize()
+        print '</grpprl>'
+        print '</cMajorityOperand>'
+
 # The PgbApplyTo enumeration is used to specify the pages to which a page border applies.
 PgbApplyTo = {
         0x0: "pgbAllPages",
@@ -786,6 +806,8 @@ class Sprm(DOCDirStream):
                 self.ct = PChgTabsOperand(self)
             elif self.sprm == 0xd609:
                 self.ct = DefTableShd80Operand(self)
+            elif self.sprm == 0xca47:
+                self.ct = CMajorityOperand(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size 9"/>'
         else:
