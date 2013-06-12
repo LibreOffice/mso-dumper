@@ -850,11 +850,12 @@ class Prl(DOCDirStream):
     def __init__(self, bytes, offset):
         DOCDirStream.__init__(self, bytes)
         self.pos = offset
-
-    def dump(self):
-        print '<prl type="Prl" offset="%d">' % self.pos
+        self.posOrig = self.pos
         self.sprm = Sprm(self.bytes, self.pos)
         self.pos += 2
+
+    def dump(self):
+        print '<prl type="Prl" offset="%d">' % self.posOrig
         self.sprm.dump()
         print '</prl>'
 
@@ -1204,6 +1205,48 @@ class Pcdt(DOCDirStream):
         self.plcPcd.dump()
         print '</pcdt>'
 
+class PrcData(DOCDirStream):
+    """The PrcData structure specifies an array of Prl elements and the size of
+    the array."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+        self.cbGrpprl = self.readInt16()
+        pos = 0
+        self.prls = []
+        while self.cbGrpprl - pos > 0:
+            prl = Prl(self.bytes, self.pos + pos)
+            pos += prl.getSize()
+            self.prls.append(prl)
+        self.pos += self.cbGrpprl
+        parent.pos = self.pos
+
+    def dump(self):
+        print '<prcData>'
+        self.printAndSet("cbGrpprl", self.cbGrpprl)
+        print '<grpPrl>'
+        for i in self.prls:
+            i.dump()
+        print '</grpPrl>'
+        print '</prcData>'
+
+class Prc(DOCDirStream):
+    """The Prc structure specifies a set of properties for document content
+    that is referenced by a Pcd structure."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+        self.clxt = self.readuInt8()
+        self.prcData = PrcData(self)
+        parent.pos = self.pos
+
+    def dump(self, index):
+        print '<prc index="%d">' % index
+        self.prcData.dump()
+        print '</prc>'
+
 class Clx(DOCDirStream):
     def __init__(self, bytes, mainStream, offset, size):
         DOCDirStream.__init__(self, bytes, mainStream=mainStream)
@@ -1211,16 +1254,19 @@ class Clx(DOCDirStream):
         self.size = size
 
         self.firstByte = self.getuInt8()
-        if self.firstByte == 0x02:
-            self.pcdt = Pcdt(self.bytes, self.mainStream, self.pos, self.size)
+        self.prcs = []
+        while True:
+            self.firstByte = self.getuInt8()
+            if self.firstByte != 0x01:
+                break
+            self.prcs.append(Prc(self))
+        self.pcdt = Pcdt(self.bytes, self.mainStream, self.pos, self.size)
 
     def dump(self):
         print '<clx type="Clx" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        if self.firstByte == 0x02:
-            print '<info what="Array of Prc, 0 elements"/>'
-            self.pcdt.dump()
-        else:
-            print '<todo what="Clx::dump() first byte is not 0x02"/>'
+        for index, elem in enumerate(self.prcs):
+            elem.dump(index)
+        self.pcdt.dump()
         print '</clx>'
 
 class Copts60(DOCDirStream):
