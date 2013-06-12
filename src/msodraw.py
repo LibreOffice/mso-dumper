@@ -571,6 +571,75 @@ class FOPT:
                 recHdl.appendLine('<%s value="%s"/>' % (FOPT.GroupShape.flagNames[i], bval))
                 flag /= 2
 
+    class ShapeBooleanProperties:
+
+        memberNames = [
+            'unused1',
+            'unused2',
+            'unused3',
+            'fUsefPolicyLabel',
+            'fUsefPolicyBarcode',
+            'fUsefFlipHOverride',
+            'fUsefFlipVOverride',
+            'fUsefOleIcon',
+            'fUsefPreferRelativeResize',
+            'fUsefLockShapeType',
+            'fUsefInitiator',
+            'unused4',
+            'fUsefBackground',
+            'unused5',
+            'unused6',
+            'unused7',
+            'fPolicyLabel',
+            'fPolicyBarcode',
+            'fFlipHOverride',
+            'fFlipVOverride',
+            'fOleIcon',
+            'fPreferRelativeResize',
+            'fLockShapeType',
+            'fInitiator',
+            'reserved1',
+            'fBackground'
+            ]
+
+        def __parseBytes(self, buf):
+            self.unused1 =                    buf & 0x0000000f  # 1..4th bits
+            self.unused2 =                   (buf & 0x00000010) >> 4 # 5th bit
+            self.unused3 =                   (buf & 0x00000020) >> 5 # 6th bit
+            self.fUsefPolicyLabel =          (buf & 0x00000040) >> 6 # 7th bit
+            self.fUsefPolicyBarcode =        (buf & 0x00000080) >> 7 # 8th bit
+            self.fUsefFlipHOverride =        (buf & 0x00000100) >> 8 # 9th bit
+            self.fUsefFlipVOverride =        (buf & 0x00000200) >> 9 # 10th bit
+            self.fUsefOleIcon =              (buf & 0x00000400) >> 10 # 11th bit
+            self.fUsefPreferRelativeResize = (buf & 0x00000800) >> 11 # 12th bit
+            self.fUsefLockShapeType =        (buf & 0x00001000) >> 12 # 13th bit
+            self.fUsefInitiator =            (buf & 0x00002000) >> 13 # 14th bit
+            self.unused4 =                   (buf & 0x00004000) >> 14 # 15th bit
+            self.fUsefBackground =           (buf & 0x00008000) >> 15 # 16th bit
+            self.unused5 =                   (buf & 0x000f0000) >> 16 # 17..20th bits
+            self.unused6 =                   (buf & 0x00100000) >> 20 # 21th bit
+            self.unused7 =                   (buf & 0x00200000) >> 21 # 22th bit
+            self.fPolicyLabel =              (buf & 0x00400000) >> 22 # 23th bit
+            self.fPolicyBarcode =            (buf & 0x00800000) >> 23 # 24th bit
+            self.fFlipHOverride =            (buf & 0x01000000) >> 24 # 25th bit
+            self.fFlipVOverride =            (buf & 0x02000000) >> 25 # 26th bit
+            self.fOleIcon =                  (buf & 0x04000000) >> 26 # 27th bit
+            self.fPreferRelativeResize =     (buf & 0x08000000) >> 27 # 28th bit
+            self.fLockShapeType =            (buf & 0x10000000) >> 28 # 29th bit
+            self.fInitiator =                (buf & 0x20000000) >> 29 # 30th bit
+            self.reserved1 =                 (buf & 0x40000000) >> 30 # 31th bit
+            self.fBackground =               (buf & 0x80000000) >> 31 # 32th bit
+
+        def appendLines (self, recHdl, prop, level):
+            self.__parseBytes(prop.value)
+            for i in FOPT.ShapeBooleanProperties.memberNames:
+                recHdl.appendLine(indent(level)+"%s: %s"%(i, recHdl.getTrueFalse(getattr(self, i))))
+
+        def dumpXml(self, recHdl, prop):
+            self.__parseBytes(prop.value)
+            for i in FOPT.ShapeBooleanProperties.memberNames:
+                recHdl.appendLine('<%s value="%s"/>' % (i, getattr(self, i)))
+
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
         0x00C0: ['gtextUNICODE', GtextUNICODE],
@@ -594,7 +663,7 @@ class FOPT:
         0x023F: ['Shadow Style Boolean Properties'],
         0x01FF: ['Line Style Boolean Properties'],
         0x0304: ['Black-and-white Display Mode'],
-        0x033F: ['Shape Boolean Properties'],
+        0x033F: ['Shape Boolean Properties', ShapeBooleanProperties],
         0x0081: ['dxTextLeft'],
         0x0082: ['dxTextTop'],
         0x0083: ['dxTextRight'],
