@@ -687,7 +687,16 @@ class FOPT:
         0x0182: ['fillOpacity'],
         0x053F: ['Diagram Boolean Properties'],
         0x03A9: ['metroBlob', MetroBlob],
-        0x0105: ['pibName', PibName]
+        0x0105: ['pibName', PibName],
+        0x0085: ['WrapText'],
+        0x0087: ['anchorText'],
+        0x00C2: ['gtextAlign'],
+        0x0147: ['adjustValue'],
+        0x017F: ['Geometry Boolean Properties'],
+        0x0180: ['fillType'],
+        0x01C1: ['lineOpacity'],
+        0x01D6: ['lineJoinStyle'],
+        0x01D7: ['lineEndCapStyle'],
     }
 
     class E:
@@ -773,7 +782,7 @@ class FOPT:
                     if FOPT.propTable.has_key(prop.ID):
                         recHdl.appendLine('<op name="%s" value="0x%8.8X"/>' % (FOPT.propTable[prop.ID][0], prop.value))
                     else:
-                        recHdl.appendLine('<op value="0x%8.8X"/>' % prop.value)
+                        recHdl.appendLine('<op name="todo" value="0x%8.8X"/>' % prop.value)
                     if prop.flagComplex:
                         recHdl.appendLine('<todo what="FOPT: fComplex != 0 unhandled"/>')
             recHdl.appendLine('</rgfopte>')
