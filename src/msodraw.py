@@ -573,62 +573,64 @@ class FOPT:
 
     class ShapeBooleanProperties:
 
+        # The order of the members is in the opposite order in the spec, but
+        # this seems to be the reality.
         memberNames = [
+            'fBackground',
+            'reserved1',
+            'fInitiator',
+            'fLockShapeType',
+            'fPreferRelativeResize',
+            'fOleIcon',
+            'fFlipVOverride',
+            'fFlipHOverride',
+            'fPolicyBarcode',
+            'fPolicyLabel',
             'unused1',
             'unused2',
             'unused3',
-            'fUsefPolicyLabel',
-            'fUsefPolicyBarcode',
-            'fUsefFlipHOverride',
-            'fUsefFlipVOverride',
-            'fUsefOleIcon',
-            'fUsefPreferRelativeResize',
-            'fUsefLockShapeType',
-            'fUsefInitiator',
-            'unused4',
             'fUsefBackground',
+            'unused4',
+            'fUsefInitiator',
+            'fUsefLockShapeType',
+            'fusePreferrelativeResize',
+            'fUsefOleIcon',
+            'fUsefFlipVOverride',
+            'fUsefFlipHOverride',
+            'fUsefPolicyBarcode',
+            'fUsefPolicyLabel',
             'unused5',
             'unused6',
             'unused7',
-            'fPolicyLabel',
-            'fPolicyBarcode',
-            'fFlipHOverride',
-            'fFlipVOverride',
-            'fOleIcon',
-            'fPreferRelativeResize',
-            'fLockShapeType',
-            'fInitiator',
-            'reserved1',
-            'fBackground'
             ]
 
         def __parseBytes(self, buf):
-            self.unused1 =                    buf & 0x0000000f  # 1..4th bits
-            self.unused2 =                   (buf & 0x00000010) >> 4 # 5th bit
-            self.unused3 =                   (buf & 0x00000020) >> 5 # 6th bit
-            self.fUsefPolicyLabel =          (buf & 0x00000040) >> 6 # 7th bit
-            self.fUsefPolicyBarcode =        (buf & 0x00000080) >> 7 # 8th bit
-            self.fUsefFlipHOverride =        (buf & 0x00000100) >> 8 # 9th bit
-            self.fUsefFlipVOverride =        (buf & 0x00000200) >> 9 # 10th bit
-            self.fUsefOleIcon =              (buf & 0x00000400) >> 10 # 11th bit
-            self.fUsefPreferRelativeResize = (buf & 0x00000800) >> 11 # 12th bit
-            self.fUsefLockShapeType =        (buf & 0x00001000) >> 12 # 13th bit
-            self.fUsefInitiator =            (buf & 0x00002000) >> 13 # 14th bit
-            self.unused4 =                   (buf & 0x00004000) >> 14 # 15th bit
-            self.fUsefBackground =           (buf & 0x00008000) >> 15 # 16th bit
-            self.unused5 =                   (buf & 0x000f0000) >> 16 # 17..20th bits
-            self.unused6 =                   (buf & 0x00100000) >> 20 # 21th bit
-            self.unused7 =                   (buf & 0x00200000) >> 21 # 22th bit
-            self.fPolicyLabel =              (buf & 0x00400000) >> 22 # 23th bit
-            self.fPolicyBarcode =            (buf & 0x00800000) >> 23 # 24th bit
-            self.fFlipHOverride =            (buf & 0x01000000) >> 24 # 25th bit
-            self.fFlipVOverride =            (buf & 0x02000000) >> 25 # 26th bit
-            self.fOleIcon =                  (buf & 0x04000000) >> 26 # 27th bit
-            self.fPreferRelativeResize =     (buf & 0x08000000) >> 27 # 28th bit
-            self.fLockShapeType =            (buf & 0x10000000) >> 28 # 29th bit
-            self.fInitiator =                (buf & 0x20000000) >> 29 # 30th bit
-            self.reserved1 =                 (buf & 0x40000000) >> 30 # 31th bit
-            self.fBackground =               (buf & 0x80000000) >> 31 # 32th bit
+            self.fBackground =                 buf & 0x00000001  # 1st bit
+            self.reserved1 =                  (buf & 0x00000002) >> 1 # 2nd bit
+            self.fInitiator =                 (buf & 0x00000004) >> 2 # 3rd bit
+            self.fLockShapeType =             (buf & 0x00000008) >> 3 # 4th bit
+            self.fPreferRelativeResize =      (buf & 0x00000010) >> 4 # 5th bit
+            self.fOleIcon =                   (buf & 0x00000020) >> 5 # 6th bit
+            self.fFlipVOverride =             (buf & 0x00000040) >> 6 # 7th bit
+            self.fFlipHOverride =             (buf & 0x00000080) >> 7 # 8th bit
+            self.fPolicyBarcode =             (buf & 0x00000100) >> 8 # 9th bit
+            self.fPolicyLabel =               (buf & 0x00000200) >> 9 # 10th bit
+            self.unused1 =                    (buf & 0x00000400) >> 10 # 11th bit
+            self.unused2 =                    (buf & 0x00000800) >> 11 # 12th bit
+            self.unused3 =                    (buf & 0x0000f000) >> 12 # 13..16th bits
+            self.fUsefBackground =            (buf & 0x00010000) >> 16 # 17th bit
+            self.unused4 =                    (buf & 0x00020000) >> 17 # 18th bit
+            self.fUsefInitiator =             (buf & 0x00040000) >> 18 # 19th bit
+            self.fUsefLockShapeType =         (buf & 0x00080000) >> 19 # 20th bit
+            self.fusePreferrelativeResize =   (buf & 0x00100000) >> 20 # 21th bit
+            self.fUsefOleIcon =               (buf & 0x00200000) >> 21 # 22th bit
+            self.fUsefFlipVOverride =         (buf & 0x00400000) >> 22 # 23th bit
+            self.fUsefFlipHOverride =         (buf & 0x00800000) >> 23 # 24th bit
+            self.fUsefPolicyBarcode =         (buf & 0x01000000) >> 24 # 25th bit
+            self.fUsefPolicyLabel =           (buf & 0x02000000) >> 25 # 26th bit
+            self.unused5 =                    (buf & 0x04000000) >> 26 # 27th bit
+            self.unused6 =                    (buf & 0x08000000) >> 27 # 28th bit
+            self.unused7 =                    (buf & 0xf0000000) >> 28 # 29..32th bits
 
         def appendLines (self, recHdl, prop, level):
             self.__parseBytes(prop.value)
