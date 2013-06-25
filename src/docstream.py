@@ -952,6 +952,9 @@ class WordDocumentStream(DOCDirStream):
 
     def retrieveCPs(self, start, end):
         """Retrieves a range of characters."""
+        if not len(self.clx.pcdt.plcPcd.aPcd):
+            print '<info what="clx.pcdt.plcPcd.aPcd is empty, probably corrupted document"/>'
+            return ""
         ret = []
         i = start
         while i < end:

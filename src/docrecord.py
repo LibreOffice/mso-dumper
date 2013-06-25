@@ -3194,7 +3194,6 @@ class SttbListNames(DOCDirStream):
             print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
             self.pos += 2*cchData
             print '</cchData>'
-        assert self.pos == self.mainStream.fcSttbListNames + self.size
         print '</sttbListNames>'
 
 class SttbSavedBy(DOCDirStream):
