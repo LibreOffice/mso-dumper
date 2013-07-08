@@ -58,6 +58,7 @@ class RecordHeader:
 
     class Type:
         dggContainer            = 0xF000
+        BStoreContainer         = 0xF001
         dgContainer             = 0xF002
         spgrContainer           = 0xF003
         spContainer             = 0xF004
@@ -77,6 +78,7 @@ class RecordHeader:
 
     containerTypeNames = {
         Type.dggContainer:            'OfficeArtDggContainer',
+        Type.BStoreContainer:         'OfficeArtBStoreContainer',
         Type.dgContainer:             'OfficeArtDgContainer',
         Type.spContainer:             'OfficeArtSpContainer',
         Type.spgrContainer:           'OfficeArtSpgrContainer',
@@ -946,6 +948,34 @@ class FClientTextbox:
         recHdl.appendLine('<data value="0x%8.8X"/>' % self.data)
         recHdl.appendLine('</clientTextbox>')
 
+class BStoreContainerFileBlock:
+    def __init__(self, parent):
+        self.strm = parent.strm
+        self.parent = parent
+
+    def dumpXml(self, recHdl, model):
+        rh = RecordHeader(self.strm)
+        rh.dumpXml(recHdl)
+        if rh.recType in recData:
+            child = recData[rh.recType](self)
+            child.dumpXml(self, model, rh)
+        else:
+            recHdl.appendLine('<todo what="BStoreContainerFileBlock: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen))
+
+class BStoreContainer:
+    def __init__ (self, strm):
+        self.strm = strm
+
+    def appendLines (self, recHdl, rh):
+        recHdl.appendLine("BStoreContainer content")
+
+    def dumpXml(self, recHdl, model, rh):
+        recHdl.appendLine('<bStoreContainer type="OfficeArtBStoreContainer">')
+        for i in xrange(rh.recInstance):
+            bStoreContainerFileBlock = BStoreContainerFileBlock(self)
+            bStoreContainerFileBlock.dumpXml(recHdl, model)
+        recHdl.appendLine('</bStoreContainer>')
+
 class SplitMenuColorContainer:
     def __init__ (self, strm):
         self.smca = []
@@ -1125,6 +1155,7 @@ recData = {
     RecordHeader.Type.FClientTextbox: FClientTextbox,
     RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer,
     RecordHeader.Type.TertiaryFOPT: TertiaryFOPT,
+    RecordHeader.Type.BStoreContainer: BStoreContainer,
 }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
