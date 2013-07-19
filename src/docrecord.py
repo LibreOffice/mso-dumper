@@ -729,7 +729,8 @@ class PICF(DOCDirStream):
         self.printAndSet("lcb", self.readInt32())
         self.printAndSet("cbHeader", self.readInt16())
         assert self.cbHeader == 0x44
-        MFPF(self).dump()
+        self.mfpf = MFPF(self)
+        self.mfpf.dump()
         PICF_Shape(self, "innerHeader").dump()
         PICMID(self).dump()
         self.printAndSet("cProps", self.readuInt16())
@@ -747,9 +748,12 @@ class PICFAndOfficeArtData(DOCDirStream):
     def dump(self):
         print '<PICFAndOfficeArtData>'
         pos = self.pos
-        PICF(self).dump()
+        picf = PICF(self)
+        picf.dump()
         assert self.pos == pos + 68
-        # TODO cchPicName and others
+        if picf.mfpf.mm == 0x0066:
+            print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm == MM_SHAPEFILE is unhandled"/>'
+        # TODO dump OfficeArtInlineSpContainer
         print '</PICFAndOfficeArtData>'
 
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
