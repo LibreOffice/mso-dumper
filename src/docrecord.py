@@ -670,6 +670,25 @@ class MFPF(DOCDirStream):
         self.parent.pos = self.pos
         print '</mfpf>'
 
+class PICF_Shape(DOCDirStream):
+    """The PICF_Shape structure specifies additional header information for
+    pictures of type MM_SHAPE or MM_SHAPEFILE."""
+    def __init__(self, parent, name):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+        self.name = name
+
+    def dump(self):
+        print '<%s type="PICF_Shape" offset="%d">' % (self.name, self.pos)
+        self.printAndSet("grf", self.readuInt32())
+        self.printAndSet("padding1", self.readuInt32())
+        self.printAndSet("mmpm", self.readuInt16())
+        self.printAndSet("padding2", self.readuInt32())
+        self.parent.pos = self.pos
+        print '</%s>' % self.name
+
+
 class PICF(DOCDirStream):
     """The PICF structure specifies the type of a picture, as well as the size
     of the picture and information about its border."""
@@ -684,8 +703,7 @@ class PICF(DOCDirStream):
         self.printAndSet("cbHeader", self.readInt16())
         assert self.cbHeader == 0x44
         MFPF(self).dump()
-        # TODO PICF_Shape
-        self.pos += 14
+        PICF_Shape(self, "innerHeader").dump()
         # TODO PICMID
         self.pos += 38
         self.printAndSet("cProps", self.readuInt16())
