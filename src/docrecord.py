@@ -753,7 +753,8 @@ class PICFAndOfficeArtData(DOCDirStream):
         assert self.pos == pos + 68
         if picf.mfpf.mm == 0x0066:
             print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm == MM_SHAPEFILE is unhandled"/>'
-        # TODO dump OfficeArtInlineSpContainer
+        remaining = picf.lcb - (self.pos - pos)
+        msodraw.InlineSpContainer(self, remaining).dumpXml(self, globals.ModelBase(globals.ModelBase.HostAppType.Word))
         print '</PICFAndOfficeArtData>'
 
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual

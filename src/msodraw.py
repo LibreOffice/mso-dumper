@@ -963,6 +963,7 @@ class BStoreContainerFileBlock:
             child.dumpXml(self.strm, model, rh)
         else:
             recHdl.appendLine('<todo what="BStoreContainerFileBlock: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen))
+            self.strm.pos += rh.recLen
 
 class BStoreContainer:
     def __init__ (self, strm):
@@ -1181,6 +1182,21 @@ class DgContainer(MSODrawHandler):
     def __init__(self, officeArtContent, name):
         MSODrawHandler.__init__(self, officeArtContent.bytes, officeArtContent, name, "OfficeArtDgContainer")
 
+class InlineSpContainer:
+    """The OfficeArtInlineSpContainer record specifies a container for inline shapes."""
+    def __init__(self, officeArtContent, size):
+        self.strm = officeArtContent
+        self.size = size
+
+    def dumpXml (self, recHdl, model):
+        recHdl.appendLine('<inlineSpContainer>')
+        pos = self.strm.pos
+        shape = SpContainer(self.strm)
+        shape.dumpXml(recHdl, model)
+        while self.size > self.strm.pos - pos:
+            bStoreContainerFileBlock = BStoreContainerFileBlock(self)
+            bStoreContainerFileBlock.dumpXml(recHdl, model)
+        recHdl.appendLine('</inlineSpContainer>')
 
 class SpContainer(MSODrawHandler):
     """The OfficeArtSpContainer record specifies a shape container."""
