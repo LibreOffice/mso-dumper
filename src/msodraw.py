@@ -1049,7 +1049,14 @@ class FBSE:
         if self.cbName != 0:
             recHdl.appendLine('<todo what="FBSE::dumpXml(): cbName != 0"/>')
         if self.strm.pos < self.posOrig + rh.recLen:
-            recHdl.appendLine('<todo what="FBSE::dumpXml(): non-empty embeddedBlip"/>')
+            rh = RecordHeader(self.strm)
+            rh.dumpXml(recHdl)
+            if rh.recType in recData:
+                child = recData[rh.recType](self.strm)
+                child.dumpXml(self.strm, model, rh)
+            else:
+                recHdl.appendLine('<todo what="FBSE::dumpXml(): recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen))
+                self.strm.pos += rh.recLen
         recHdl.appendLine('</fbse>')
 
 class FClientAnchorSheet:
