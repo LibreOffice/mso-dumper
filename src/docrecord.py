@@ -650,6 +650,26 @@ class SPgbPropOperand(DOCDirStream):
         self.printAndSet("reserved", self.readuInt8())
         print '</sPgbPropOperand>'
 
+class MFPF(DOCDirStream):
+    """The MFPF structure specifies the type of picture data that is stored."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        mmDict = {
+                0x0064: "MM_SHAPE",
+                0x0066: "MM_SHAPEFILE",
+                }
+        print '<mfpf type="MFPF" offset="%d">' % self.pos
+        self.printAndSet("mm", self.readInt16(), dict = mmDict)
+        self.printAndSet("xExt", self.readuInt16())
+        self.printAndSet("yExt", self.readuInt16())
+        self.printAndSet("swHMF", self.readuInt16())
+        self.parent.pos = self.pos
+        print '</mfpf>'
+
 class PICF(DOCDirStream):
     """The PICF structure specifies the type of a picture, as well as the size
     of the picture and information about its border."""
@@ -663,8 +683,7 @@ class PICF(DOCDirStream):
         self.printAndSet("lcb", self.readInt32())
         self.printAndSet("cbHeader", self.readInt16())
         assert self.cbHeader == 0x44
-        # TODO MFPF
-        self.pos += 8
+        MFPF(self).dump()
         # TODO PICF_Shape
         self.pos += 14
         # TODO PICMID
