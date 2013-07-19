@@ -64,6 +64,7 @@ class RecordHeader:
         spContainer             = 0xF004
         solverContainer         = 0xF005
         FDGGBlock               = 0xF006
+        FBSE                    = 0xF007
         FDG                     = 0xF008
         FSPGR                   = 0xF009
         FSP                     = 0xF00A
@@ -85,6 +86,7 @@ class RecordHeader:
         Type.solverContainer:         'OfficeArtSolverContainer',
         Type.FDG:                     'OfficeArtFDG',
         Type.FDGGBlock:               'OfficeArtFDGGBlock',
+        Type.FBSE:                    'OfficeArtFBSE',
         Type.FOPT:                    'OfficeArtFOPT',
         Type.FClientTextbox:          'OfficeArtClientTextbox',
         Type.FClientAnchor:           'OfficeArtClientAnchor',
@@ -957,8 +959,8 @@ class BStoreContainerFileBlock:
         rh = RecordHeader(self.strm)
         rh.dumpXml(recHdl)
         if rh.recType in recData:
-            child = recData[rh.recType](self)
-            child.dumpXml(self, model, rh)
+            child = recData[rh.recType](self.strm)
+            child.dumpXml(self.strm, model, rh)
         else:
             recHdl.appendLine('<todo what="BStoreContainerFileBlock: recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen))
 
@@ -996,6 +998,58 @@ class SplitMenuColorContainer:
             recHdl.appendLine('</smca>')
         recHdl.appendLine('</splitColors>')
 
+MSOBLIPTYPE = {
+        0x00: 'msoblipERROR',
+        0x01: 'msoblipUNKNOWN',
+        0x02: 'msoblipEMF',
+        0x03: 'msoblipWMF',
+        0x04: 'msoblipPICT',
+        0x05: 'msoblipJPEG',
+        0x06: 'msoblipPNG',
+        0x07: 'msoblipDIB',
+        0x11: 'msoblipTIFF',
+        0x12: 'msoblipCMYKJPEG',
+        }
+
+class FBSE:
+    """2.2.32 The OfficeArtFBSE record specifies a File BLIP Store Entry (FBSE)
+    that contains information about the BLIP."""
+    def __init__(self, strm):
+        self.strm = strm
+        self.posOrig = strm.pos
+        self.btWin32 = strm.readUnsignedInt(1)
+        self.btMacOS = strm.readUnsignedInt(1)
+        self.rgbUid = strm.readBytes(16)
+        self.tag = strm.readUnsignedInt(2)
+        self.size = strm.readUnsignedInt(4)
+        self.cRef = strm.readUnsignedInt(4)
+        self.foDelay = strm.readUnsignedInt(4)
+        self.unused1 = strm.readUnsignedInt(1)
+        self.cbName = strm.readUnsignedInt(1)
+        self.unused2 = strm.readUnsignedInt(1)
+        self.unused3 = strm.readUnsignedInt(1)
+
+    def appendLines (self, recHdl, rh):
+        pass
+
+    def dumpXml(self, recHdl, model, rh):
+        recHdl.appendLine('<fbse>')
+        recHdl.appendLine('<btWin32 value="%s" name="%s"/>' % (self.btWin32, globals.getValueOrUnknown(MSOBLIPTYPE, self.btWin32, "todo")))
+        recHdl.appendLine('<btMacOS value="%s" name="%s"/>' % (self.btMacOS, globals.getValueOrUnknown(MSOBLIPTYPE, self.btMacOS, "todo")))
+        recHdl.appendLine('<rgbUid value="%s"/>' % hexdump(self.rgbUid))
+        recHdl.appendLine('<tag value="%s"/>' % self.tag)
+        recHdl.appendLine('<size value="%s"/>' % self.size)
+        recHdl.appendLine('<cRef value="%s"/>' % self.cRef)
+        recHdl.appendLine('<foDelay value="%s"/>' % hex(self.foDelay))
+        recHdl.appendLine('<unused1 value="%s"/>' % self.unused1)
+        recHdl.appendLine('<cbName value="%s"/>' % self.cbName)
+        recHdl.appendLine('<unused2 value="%s"/>' % self.unused2)
+        recHdl.appendLine('<unused3 value="%s"/>' % self.unused3)
+        if self.cbName != 0:
+            recHdl.appendLine('<todo what="FBSE::dumpXml(): cbName != 0"/>')
+        if self.strm.pos < self.posOrig + rh.recLen:
+            recHdl.appendLine('<todo what="FBSE::dumpXml(): non-empty embeddedBlip"/>')
+        recHdl.appendLine('</fbse>')
 
 class FClientAnchorSheet:
     """Excel-specific anchor data (OfficeArtClientAnchorSheet)"""
@@ -1156,6 +1210,7 @@ recData = {
     RecordHeader.Type.SplitMenuColorContainer: SplitMenuColorContainer,
     RecordHeader.Type.TertiaryFOPT: TertiaryFOPT,
     RecordHeader.Type.BStoreContainer: BStoreContainer,
+    RecordHeader.Type.FBSE: FBSE,
 }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
