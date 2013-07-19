@@ -650,6 +650,29 @@ class SPgbPropOperand(DOCDirStream):
         self.printAndSet("reserved", self.readuInt8())
         print '</sPgbPropOperand>'
 
+class PICF(DOCDirStream):
+    """The PICF structure specifies the type of a picture, as well as the size
+    of the picture and information about its border."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        print '<picf type="PICF" offset="%d">' % self.pos
+        self.printAndSet("lcb", self.readInt32())
+        self.printAndSet("cbHeader", self.readInt16())
+        assert self.cbHeader == 0x44
+        # TODO MFPF
+        self.pos += 8
+        # TODO PICF_Shape
+        self.pos += 14
+        # TODO PICMID
+        self.pos += 38
+        self.printAndSet("cProps", self.readuInt16())
+        self.parent.pos = self.pos
+        print '</picf>'
+
 class PICFAndOfficeArtData(DOCDirStream):
     """The PICFAndOfficeArtData structure specifies header information and
     binary data for a picture."""
@@ -660,7 +683,10 @@ class PICFAndOfficeArtData(DOCDirStream):
 
     def dump(self):
         print '<PICFAndOfficeArtData>'
-        # TODO PICF and others
+        pos = self.pos
+        PICF(self).dump()
+        assert self.pos == pos + 68
+        # TODO cchPicName and others
         print '</PICFAndOfficeArtData>'
 
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
