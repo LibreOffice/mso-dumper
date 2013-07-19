@@ -978,15 +978,19 @@ class Sprm(DOCDirStream):
 
 class Prl(DOCDirStream):
     """The Prl structure is a Sprm that is followed by an operand."""
-    def __init__(self, bytes, offset, mainStream = None, transformed = None):
+    def __init__(self, bytes, offset, mainStream = None, transformed = None, index = None):
         DOCDirStream.__init__(self, bytes)
         self.pos = offset
         self.posOrig = self.pos
         self.sprm = Sprm(self.bytes, self.pos, mainStream, transformed)
         self.pos += 2
+        self.index = index
 
     def dump(self):
-        print '<prl type="Prl" offset="%d">' % self.posOrig
+        indexstr = ""
+        if self.index != None:
+            indexstr = ' index="%d"' % self.index
+        print '<prl type="Prl" offset="%d"%s>' % (self.posOrig, indexstr)
         self.sprm.dump()
         print '</prl>'
 
@@ -1022,10 +1026,12 @@ class Chpx(DOCDirStream):
         print '<chpx type="Chpx" offset="%d">' % self.pos
         self.printAndSet("cb", self.readuInt8())
         pos = self.pos
+        index = 0
         while (self.cb - (pos - self.pos)) > 0:
-            prl = Prl(self.bytes, pos, self.mainStream, self.transformed)
+            prl = Prl(self.bytes, pos, self.mainStream, self.transformed, index)
             prl.dump()
             pos += prl.getSize()
+            index += 1
         print '</chpx>'
     
 class PapxInFkp(DOCDirStream):
