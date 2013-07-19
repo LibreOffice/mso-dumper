@@ -650,6 +650,19 @@ class SPgbPropOperand(DOCDirStream):
         self.printAndSet("reserved", self.readuInt8())
         print '</sPgbPropOperand>'
 
+class PICFAndOfficeArtData(DOCDirStream):
+    """The PICFAndOfficeArtData structure specifies header information and
+    binary data for a picture."""
+    def __init__(self, parent):
+        dataStream = parent.mainStream.doc.getDirectoryStreamByName("Data")
+        DOCDirStream.__init__(self, dataStream.bytes)
+        self.pos = parent.operand
+
+    def dump(self):
+        print '<PICFAndOfficeArtData>'
+        # TODO PICF and others
+        print '</PICFAndOfficeArtData>'
+
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
 # East Asian characters in each line of the block.
 TextFlow = {
@@ -763,8 +776,8 @@ class BrcOperand(DOCDirStream):
 
 class Sprm(DOCDirStream):
     """The Sprm structure specifies a modification to a property of a character, paragraph, table, or section."""
-    def __init__(self, bytes, offset):
-        DOCDirStream.__init__(self, bytes)
+    def __init__(self, bytes, offset, mainStream = None, transformed = None):
+        DOCDirStream.__init__(self, bytes, mainStream = mainStream)
         self.pos = offset
         self.operandSizeMap = {
                 0: 1,
@@ -795,6 +808,8 @@ class Sprm(DOCDirStream):
             self.operand = self.getuInt24()
         elif self.getOperandSize() == 4:
             self.operand = self.getuInt32()
+            if self.sprm == 0x6a03 and transformed == r"\x01":
+                self.ct = PICFAndOfficeArtData(self)
         elif self.getOperandSize() == 7:
             self.operand = self.getuInt64() & 0x0fffffff
         elif self.getOperandSize() == 9:
@@ -869,11 +884,11 @@ class Sprm(DOCDirStream):
 
 class Prl(DOCDirStream):
     """The Prl structure is a Sprm that is followed by an operand."""
-    def __init__(self, bytes, offset):
+    def __init__(self, bytes, offset, mainStream = None, transformed = None):
         DOCDirStream.__init__(self, bytes)
         self.pos = offset
         self.posOrig = self.pos
-        self.sprm = Sprm(self.bytes, self.pos)
+        self.sprm = Sprm(self.bytes, self.pos, mainStream, transformed)
         self.pos += 2
 
     def dump(self):
@@ -904,16 +919,17 @@ class GrpPrlAndIstd(DOCDirStream):
 
 class Chpx(DOCDirStream):
     """The Chpx structure specifies a set of properties for text."""
-    def __init__(self, bytes, mainStream, offset):
-        DOCDirStream.__init__(self, bytes)
+    def __init__(self, bytes, mainStream, offset, transformed = None):
+        DOCDirStream.__init__(self, bytes, mainStream = mainStream)
         self.pos = offset
+        self.transformed = transformed
 
     def dump(self):
         print '<chpx type="Chpx" offset="%d">' % self.pos
         self.printAndSet("cb", self.readuInt8())
         pos = self.pos
         while (self.cb - (pos - self.pos)) > 0:
-            prl = Prl(self.bytes, pos)
+            prl = Prl(self.bytes, pos, self.mainStream, self.transformed)
             prl.dump()
             pos += prl.getSize()
         print '</chpx>'
@@ -953,7 +969,7 @@ class BxPap(DOCDirStream):
 class ChpxFkp(DOCDirStream):
     """The ChpxFkp structure maps text to its character properties."""
     def __init__(self, pnFkpChpx, offset, size):
-        DOCDirStream.__init__(self, pnFkpChpx.mainStream.bytes)
+        DOCDirStream.__init__(self, pnFkpChpx.mainStream.bytes, mainStream = pnFkpChpx.mainStream)
         self.pos = offset
         self.size = size
         self.pnFkpChpx = pnFkpChpx
@@ -967,13 +983,14 @@ class ChpxFkp(DOCDirStream):
             start = self.getuInt32(pos = pos)
             end = self.getuInt32(pos = pos + 4)
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.pnFkpChpx.mainStream.retrieveOffset(start, end))
+            self.transformed = self.quoteAttr(self.pnFkpChpx.mainStream.retrieveOffset(start, end))
+            print '<transformed value="%s"/>' % self.transformed
             pos += 4
 
             # rgbx
             offset = PLC.getPLCOffset(self.pos, self.crun, 1, i)
             chpxOffset = self.getuInt8(pos = offset) * 2
-            chpx = Chpx(self.bytes, self.mainStream, self.pos + chpxOffset)
+            chpx = Chpx(self.bytes, self.mainStream, self.pos + chpxOffset, self.transformed)
             chpx.dump()
             print '</rgfc>'
 
