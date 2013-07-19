@@ -73,6 +73,7 @@ class RecordHeader:
         FClientAnchor           = 0xF010
         FClientData             = 0xF011
         FConnectorRule          = 0xF012
+        BlipPNG                 = 0xF01E
         FDGSL                   = 0xF119
         SplitMenuColorContainer = 0xF11E
         TertiaryFOPT            = 0xF122
@@ -94,6 +95,7 @@ class RecordHeader:
         Type.FSP:                     'OfficeArtFSP',
         Type.FSPGR:                   'OfficeArtFSPGR',
         Type.FConnectorRule:          'OfficeArtFConnectorRule',
+        Type.BlipPNG:                 'OfficeArtBlipPng',
         Type.FDGSL:                   'OfficeArtFDGSL',
         Type.SplitMenuColorContainer: 'OfficeArtSplitMenuColorContainer'
     }
@@ -304,6 +306,34 @@ class FDGSL:
         for shape in self.shapesSelected:
             recHdl.appendLine("  ID of shape selected: %d"%shape)
 
+class BlipPNG:
+    def __init__(self, strm):
+        self.strm = strm
+
+    def __parseBytes(self, rh):
+        pos = self.strm.pos
+        self.rgbUid1 = self.strm.readBytes(16)
+        if rh.recInstance == 0x06E1:
+            self.rgbUid2 = self.strm.readBytes(16)
+        else:
+            self.rgbUid2 = None
+        self.tag = self.strm.readUnsignedInt(1)
+        header = self.strm.pos - pos
+        data = rh.recLen - header
+        self.BLIPFileData = self.strm.readBytes(data)
+
+    def appendLines(self, recHdl, rh):
+        pass
+
+    def dumpXml(self, recHdl, model, rh):
+        recHdl.appendLine('<blipPng type="OfficeArtBlipPng">')
+        self.__parseBytes(rh)
+        recHdl.appendLine('<rgbUid1 value="%s"/>' % hexdump(self.rgbUid1))
+        if self.rgbUid2:
+            recHdl.appendLine('<rgbUid2 value="%s"/>' % hexdump(self.rgbUid2))
+        recHdl.appendLine('<tag value="%s"/>' % self.tag)
+        recHdl.appendLine('<BLIPFileData value="%s"/>' % hexdump(self.BLIPFileData))
+        recHdl.appendLine('</blipPng>')
 
 class FOPT:
     """property table for a shape instance"""
@@ -1227,6 +1257,7 @@ recData = {
     RecordHeader.Type.FDGGBlock: FDGGBlock,
     RecordHeader.Type.FConnectorRule: FConnectorRule,
     RecordHeader.Type.FDGSL: FDGSL,
+    RecordHeader.Type.BlipPNG: BlipPNG,
     RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
     RecordHeader.Type.FClientData: FClientData,
     RecordHeader.Type.FClientTextbox: FClientTextbox,
