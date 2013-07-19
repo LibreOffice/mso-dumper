@@ -688,6 +688,33 @@ class PICF_Shape(DOCDirStream):
         self.parent.pos = self.pos
         print '</%s>' % self.name
 
+class PICMID(DOCDirStream):
+    """The PICMID structure specifies the size and border information for a picture."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        print '<picmid type="PICMID" offset="%d">' % self.pos
+        self.printAndSet("dxaGoal", self.readuInt16())
+        self.printAndSet("dyaGoal", self.readuInt16())
+        self.printAndSet("mx", self.readuInt16())
+        self.printAndSet("my", self.readuInt16())
+        self.printAndSet("dxaReserved1", self.readuInt16())
+        self.printAndSet("dyaReserved1", self.readuInt16())
+        self.printAndSet("dxaReserved2", self.readuInt16())
+        self.printAndSet("dyaReserved2", self.readuInt16())
+        self.printAndSet("fReserved", self.readuInt8())
+        self.printAndSet("bpp", self.readuInt8())
+        self.printAndSet("brcTop80", self.readuInt32()) # TODO dump Brc80
+        self.printAndSet("brcLeft80", self.readuInt32())
+        self.printAndSet("brcBottom80", self.readuInt32())
+        self.printAndSet("brcRight80", self.readuInt32())
+        self.printAndSet("dxaReserved3", self.readuInt16())
+        self.printAndSet("dyaReserved3", self.readuInt16())
+        self.parent.pos = self.pos
+        print '</picmid>'
 
 class PICF(DOCDirStream):
     """The PICF structure specifies the type of a picture, as well as the size
@@ -704,8 +731,7 @@ class PICF(DOCDirStream):
         assert self.cbHeader == 0x44
         MFPF(self).dump()
         PICF_Shape(self, "innerHeader").dump()
-        # TODO PICMID
-        self.pos += 38
+        PICMID(self).dump()
         self.printAndSet("cProps", self.readuInt16())
         self.parent.pos = self.pos
         print '</picf>'
