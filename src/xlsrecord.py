@@ -1185,10 +1185,14 @@ class Array(BaseRecordHandler):
         self.__parseBytes()
         self.appendLine("range: %s"%self.ref.toString())
         self.appendLineBoolean("always calc", self.alwaysCalc)
-        fparser = formula.FormulaParser(self.header, self.tokens)
-        fparser.parse()
         self.appendLine("formula bytes: %s"%globals.getRawBytes(self.tokens, True, False))
-        self.appendLine("formula string: %s"%fparser.getText())
+        try:
+            fparser = formula.FormulaParser(self.header, self.tokens)
+            fparser.parse()
+            self.appendLine("formula string: %s"%fparser.getText())
+        except formula.FormulaParserError:
+            self.appendLine("formula string: <error parsing token bytes>")
+
 
 class Label(BaseRecordHandler):
 

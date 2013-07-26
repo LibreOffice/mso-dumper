@@ -1,6 +1,6 @@
 ########################################################################
 #
-#  Copyright (c) 2010 Kohei Yoshida
+#  Copyright (c) 2010-2013 Kohei Yoshida
 #  
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
@@ -30,6 +30,13 @@ import globals
 
 class InvalidCellAddress(Exception): pass
 class FormulaParserError(Exception): pass
+
+class ColRelU(object):
+    def __init__ (self, strm):
+        bits = strm.readUnsignedInt(2)
+        self.col = (bits & 0x3FFF)
+        self.colRelative = (bits & 0x4000) != 0
+        self.rowRelative = (bits & 0x8000) != 0
 
 def toColName (colID):
     if colID > 255:
@@ -174,14 +181,6 @@ class PtgMissArg(PtgBase):
     def getText (self):
         return '(arg missing)'
 
-class PtgRef(PtgBase):
-    def parseBytes (self):
-        self.row = self.strm.readUnsignedInt(2)
-        self.col = self.strm.readUnsignedInt(2)
-
-    def getText (self):
-        return "(ref: row=%d, col=%d)"%(self.row, self.col)
-
 class PtgMemFunc(PtgBase):
     def parseBytes(self):
         self.dataType = getPtgDataType(self.opcode1)
@@ -211,6 +210,13 @@ class PtgAtt(PtgBase):
     def getText (self):
         return "(att: %s)"%self.attName
 
+class PtgArray(PtgBase):
+    def parseBytes (self):
+        self.strm.readBytes(7)
+
+    def getText (self):
+        return "(array)"
+
 class PtgName(PtgBase):
     def parseBytes (self):
         self.nameIdx = self.strm.readUnsignedInt(4)
@@ -218,6 +224,13 @@ class PtgName(PtgBase):
     def getText (self):
         return "(name: %d)"%self.nameIdx
 
+class PtgRef(PtgBase):
+    def parseBytes (self):
+        self.row = self.strm.readUnsignedInt(2)
+        self.col = ColRelU(self.strm)
+
+    def getText (self):
+        return "(ref: row=%d,col=%d,rowRelative=%d,colRelative=%d)"%(self.row, self.col.col, self.col.rowRelative, self.col.colRelative)
 
 class PtgNameX(PtgBase):
     def parseBytes (self):
@@ -670,7 +683,9 @@ _tokenMap = {
     0x24: PtgRef,
     0x29: PtgMemFunc,
     0x3B: _Area3d,
+    0x40: PtgArray,
     0x43: PtgName,
+    0x44: PtgRef,
     0x59: PtgNameX,
     0x5B: _Area3d,
     0x7B: _Area3d,
