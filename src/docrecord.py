@@ -688,6 +688,27 @@ class PICF_Shape(DOCDirStream):
         self.parent.pos = self.pos
         print '</%s>' % self.name
 
+class Brc80(DOCDirStream):
+    """The Brc80 structure describes a border."""
+    def __init__(self, parent, name):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+        self.name = name
+
+    def dump(self):
+        buf = self.readuInt32()
+        print '<%s type="Brc80" offset="%d">' % (self.name, self.pos)
+        self.printAndSet("dptLineWidth", buf & 0x000000ff) # 1..8th bits
+        self.printAndSet("brcType", (buf & 0x0000ff00) >> 8) # 9..16th bits, TODO parse BrcType
+        self.printAndSet("ico", (buf & 0x00ff0000) >> 16, dict = Ico) # 17..24th bits
+        self.printAndSet("dptSpace", (buf & 0x1f000000) >> 24) # 25..29th bits
+        self.printAndSet("fShadow", self.getBit(buf, 29))
+        self.printAndSet("fFrame", self.getBit(buf, 30))
+        self.printAndSet("reserved", self.getBit(buf, 31))
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
 class PICMID(DOCDirStream):
     """The PICMID structure specifies the size and border information for a picture."""
     def __init__(self, parent):
@@ -707,10 +728,10 @@ class PICMID(DOCDirStream):
         self.printAndSet("dyaReserved2", self.readuInt16())
         self.printAndSet("fReserved", self.readuInt8())
         self.printAndSet("bpp", self.readuInt8())
-        self.printAndSet("brcTop80", self.readuInt32()) # TODO dump Brc80
-        self.printAndSet("brcLeft80", self.readuInt32())
-        self.printAndSet("brcBottom80", self.readuInt32())
-        self.printAndSet("brcRight80", self.readuInt32())
+        Brc80(self, "brcTop80").dump()
+        Brc80(self, "brcLeft80").dump()
+        Brc80(self, "brcBottom80").dump()
+        Brc80(self, "brcRight80").dump()
         self.printAndSet("dxaReserved3", self.readuInt16())
         self.printAndSet("dyaReserved3", self.readuInt16())
         self.parent.pos = self.pos
