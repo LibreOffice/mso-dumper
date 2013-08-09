@@ -27,6 +27,7 @@
 
 import globals, xlsmodel
 import sys
+from pptrecord import shapeTypes
 
 def indent (level):
     return '  '*level
@@ -130,7 +131,11 @@ class RecordHeader:
     def dumpXml(self, recHdl):
         recHdl.appendLine('<rh type="OfficeArtRecordHeader">')
         recHdl.appendLine('<recVer value="0x%1.1X"/>' % self.recVer)
-        recHdl.appendLine('<recInstance value="0x%1.1X"/>' % self.recInstance)
+        shapeType = ""
+        if self.recType == RecordHeader.Type.FSP:
+            # In this case recInstance is from the MSOSPT enumeration
+            shapeType = ' msospt="%s"' % shapeTypes[self.recInstance][0]
+        recHdl.appendLine('<recInstance value="0x%1.1X"%s/>' % (self.recInstance, shapeType))
         recHdl.appendLine('<recType value="0x%1.1X"/>' % self.recType)
         recHdl.appendLine('<recLen value="0x%1.1X"/>' % self.recLen)
         recHdl.appendLine('</rh>')
