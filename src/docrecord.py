@@ -1122,7 +1122,9 @@ class Sprm(DOCDirStream):
         elif self.getOperandSize() == 7:
             self.operand = self.getuInt64() & 0x0fffffff
         elif self.getOperandSize() == 9:
-            if self.sprm in (0xd234, 0xd235, 0xd236, 0xd237):
+            # top, left, bottom and right page / paragraph borders
+            if self.sprm in (0xd234, 0xd235, 0xd236, 0xd237,
+                    0xc64e, 0xc64f, 0xc650, 0xc651):
                 self.ct = BrcOperand(self)
             elif self.sprm == 0xc60d:
                 self.ct = PChgTabsPapxOperand(self)
@@ -1133,7 +1135,7 @@ class Sprm(DOCDirStream):
             elif self.sprm == 0xca47:
                 self.ct = CMajorityOperand(self)
             else:
-                print '<todo what="Sprm::__init__() unhandled sprm of size 9"/>'
+                print '<todo what="Sprm::__init__() unhandled sprm of size 9: %s"/>' % hex(self.sprm)
         else:
             if self.sprm == 0xd608:
                 self.ct = TDefTableOperand(self)
