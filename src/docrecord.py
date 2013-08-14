@@ -903,6 +903,26 @@ class Brc80(DOCDirStream):
         print '</%s>' % self.name
         self.parent.pos = self.pos
 
+class Brc80MayBeNil(DOCDirStream):
+    """The Brc80MayBeNil structure is a Brc80 structure. When all bits are set,
+    this structure specifies that the region in question has no border."""
+    def __init__(self, parent, name):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+        self.name = name
+
+    def dump(self):
+        buf = self.getuInt32()
+        if buf == 0xFFFFFFFF:
+            print '<%s type="Brc80MayBeNil" offset="%d" value="%s"/>' % (self.name, self.pos, hex(buf))
+            self.pos += 4
+        else:
+            print '<%s type="Brc80MayBeNil" offset="%d">' % (self.name, self.pos)
+            Brc80(self, self.name).dump()
+            print '</%s>' % self.name
+        self.parent.pos = self.pos
+
 class PICMID(DOCDirStream):
     """The PICMID structure specifies the size and border information for a picture."""
     def __init__(self, parent):
@@ -1041,10 +1061,10 @@ class TC80(DOCDirStream):
         print '<tc80 index="%d">' % self.index
         TCGRF(self).dump()
         self.printAndSet("wWidth", self.readuInt16(), hexdump = False)
-        self.printAndSet("brcTop", self.readuInt32()) # TODO dump Brc80MayBeNil
-        self.printAndSet("brcLeft", self.readuInt32())
-        self.printAndSet("brcBottom", self.readuInt32())
-        self.printAndSet("brcRight", self.readuInt32())
+        Brc80MayBeNil(self, "brcTop").dump()
+        Brc80MayBeNil(self, "brcLeft").dump()
+        Brc80MayBeNil(self, "brcBottom").dump()
+        Brc80MayBeNil(self, "brcRight").dump()
         print '</tc80>'
         self.parent.pos = self.pos
 
