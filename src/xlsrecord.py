@@ -5317,7 +5317,10 @@ together.
 
     def parseBytes (self):
         self.__parseBytes()
-        self.msodHdl.parseBytes()
+        try:
+            self.msodHdl.parseBytes()
+        except:
+            self.appendLine("Error while parsing MSO Drawing record!")
 
     def fillModel (self, model):
         self.__parseBytes()
