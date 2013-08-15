@@ -384,13 +384,32 @@ class Selsf(DOCDirStream):
         assert self.pos == self.mainStream.fcWss + Selsf.size
         print '</selsf>'
 
+class COLORREF(DOCDirStream):
+    """The COLORREF structure specifies a color in terms of its red, green, and blue components."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.red = self.readuInt8()
+        self.green = self.readuInt8()
+        self.blue = self.readuInt8()
+        self.fAuto = self.readuInt8()
+        parent.pos = self.pos
+
+    def dump(self, name):
+        print '<%s type="COLORREF">' % name
+        self.printAndSet("red", self.red)
+        self.printAndSet("green", self.green)
+        self.printAndSet("blue", self.blue)
+        self.printAndSet("fAuto", self.fAuto)
+        print '</%s>' % name
+
 class BRC(DOCDirStream):
     """The Brc structure specifies a border."""
     def __init__(self, parent):
         DOCDirStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.posOrig = self.pos
-        self.cv = self.readuInt32() # TODO parse COLORREF
+        self.cv = COLORREF(self)
         self.dptLineWidth = self.readuInt8()
         self.brcType = self.readuInt8()
         buf = self.readuInt16()
@@ -401,7 +420,7 @@ class BRC(DOCDirStream):
 
     def dump(self):
         print '<brc type="BRC" offset="%d">' % self.posOrig
-        self.printAndSet("cv", self.cv)
+        self.cv.dump("cv")
         self.printAndSet("dptLineWidth", self.dptLineWidth)
         self.printAndSet("brcType", self.brcType, dict = BrcType)
         self.printAndSet("dptSpace", self.dptSpace)
