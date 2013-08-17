@@ -11,6 +11,11 @@ from docdirstream import DOCDirStream
 import docsprm
 import msodraw
 
+def getWordModel(mainStream):
+    model = globals.ModelBase(globals.ModelBase.HostAppType.Word)
+    model.delayStream = mainStream
+    return model
+
 class FcCompressed(DOCDirStream):
     """The FcCompressed structure specifies the location of text in the WordDocument Stream."""
     def __init__(self, bytes, mainStream, offset, size):
@@ -998,6 +1003,7 @@ class PICFAndOfficeArtData(DOCDirStream):
         dataStream = parent.mainStream.doc.getDirectoryStreamByName("Data")
         DOCDirStream.__init__(self, dataStream.bytes)
         self.pos = parent.operand
+        self.parent = parent
 
     def dump(self):
         print '<PICFAndOfficeArtData>'
@@ -1008,7 +1014,7 @@ class PICFAndOfficeArtData(DOCDirStream):
         if picf.mfpf.mm == 0x0066:
             print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm == MM_SHAPEFILE is unhandled"/>'
         remaining = picf.lcb - (self.pos - pos)
-        msodraw.InlineSpContainer(self, remaining).dumpXml(self, globals.ModelBase(globals.ModelBase.HostAppType.Word))
+        msodraw.InlineSpContainer(self, remaining).dumpXml(self, getWordModel(self.parent.mainStream))
         print '</PICFAndOfficeArtData>'
 
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
@@ -2580,7 +2586,7 @@ class OfficeArtWordDrawing(DOCDirStream):
     def dump(self):
         print '<officeArtWordDrawing type="OfficeArtWordDrawing" pos="%d">' % self.pos
         self.printAndSet("dgglbl", self.readuInt8())
-        msodraw.DgContainer(self, "container").dumpXml(self, globals.ModelBase(globals.ModelBase.HostAppType.Word))
+        msodraw.DgContainer(self, "container").dumpXml(self, getWordModel(self.officeArtContent.mainStream))
         print '</officeArtWordDrawing>'
         self.officeArtContent.pos = self.pos
 
@@ -2594,7 +2600,7 @@ class OfficeArtContent(DOCDirStream):
 
     def dump(self):
         print '<officeArtContent type="OfficeArtContent" offset="%d" size="%d bytes">' % (self.pos, self.size)
-        msodraw.DggContainer(self, "DrawingGroupData").dumpXml(self, globals.ModelBase(globals.ModelBase.HostAppType.Word))
+        msodraw.DggContainer(self, "DrawingGroupData").dumpXml(self, getWordModel(self.mainStream))
         print '<Drawings type="main" offset="%d">' % self.pos
         OfficeArtWordDrawing(self).dump()
         print '</Drawings>'

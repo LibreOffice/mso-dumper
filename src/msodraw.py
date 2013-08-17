@@ -1070,6 +1070,17 @@ class FBSE:
         pass
 
     def dumpXml(self, recHdl, model, rh):
+
+        def dumpChild(strm):
+            rh = RecordHeader(strm)
+            rh.dumpXml(recHdl)
+            if rh.recType in recData:
+                child = recData[rh.recType](strm)
+                child.dumpXml(strm, model, rh)
+            else:
+                recHdl.appendLine('<todo what="FBSE::dumpXml(): recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen))
+                strm.pos += rh.recLen
+
         recHdl.appendLine('<fbse>')
         recHdl.appendLine('<btWin32 value="%s" name="%s"/>' % (self.btWin32, globals.getValueOrUnknown(MSOBLIPTYPE, self.btWin32, "todo")))
         recHdl.appendLine('<btMacOS value="%s" name="%s"/>' % (self.btMacOS, globals.getValueOrUnknown(MSOBLIPTYPE, self.btMacOS, "todo")))
@@ -1085,14 +1096,14 @@ class FBSE:
         if self.cbName != 0:
             recHdl.appendLine('<todo what="FBSE::dumpXml(): cbName != 0"/>')
         if self.strm.pos < self.posOrig + rh.recLen:
-            rh = RecordHeader(self.strm)
-            rh.dumpXml(recHdl)
-            if rh.recType in recData:
-                child = recData[rh.recType](self.strm)
-                child.dumpXml(self.strm, model, rh)
-            else:
-                recHdl.appendLine('<todo what="FBSE::dumpXml(): recType = %s unhandled (size: %d bytes)"/>' % (hex(rh.recType), rh.recLen))
-                self.strm.pos += rh.recLen
+            dumpChild(self.strm)
+        elif self.foDelay != 0xffffffff:
+            # Picture is in the delay stream, try to dump it.
+            if model.hostApp == globals.ModelBase.HostAppType.Word:
+                posOrig = model.delayStream.pos
+                model.delayStream.pos = self.foDelay
+                dumpChild(model.delayStream)
+                model.delayStream.pos = posOrig
         recHdl.appendLine('</fbse>')
 
 class FClientAnchorSheet:
