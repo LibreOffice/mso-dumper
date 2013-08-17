@@ -253,7 +253,7 @@ class Sepx(DOCDirStream):
         self.printAndSet("cb", self.readInt16())
         pos = self.pos
         while (self.cb - (pos - self.pos)) > 0:
-            prl = Prl(self.bytes, pos)
+            prl = Prl(self, pos)
             prl.dump()
             pos += prl.getSize()
         print '</sepx>'
@@ -631,7 +631,7 @@ class CMajorityOperand(DOCDirStream):
         pos = 0
         print '<grpprl offset="%d" size="%d bytes">' % (self.pos, self.cb)
         while self.cb - pos > 0:
-            prl = Prl(self.bytes, self.pos + pos)
+            prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
         print '</grpprl>'
@@ -1240,8 +1240,9 @@ class Sprm(DOCDirStream):
 
 class Prl(DOCDirStream):
     """The Prl structure is a Sprm that is followed by an operand."""
-    def __init__(self, bytes, offset, mainStream = None, transformed = None, index = None):
-        DOCDirStream.__init__(self, bytes)
+    def __init__(self, parent, offset, mainStream = None, transformed = None, index = None):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
         self.pos = offset
         self.posOrig = self.pos
         self.sprm = Sprm(self.bytes, self.pos, mainStream, transformed)
@@ -1272,7 +1273,7 @@ class GrpPrlAndIstd(DOCDirStream):
         self.printAndSet("istd", self.getuInt16())
         pos += 2
         while (self.size - (pos - self.pos)) > 0:
-            prl = Prl(self.bytes, pos)
+            prl = Prl(self, pos)
             prl.dump()
             pos += prl.getSize()
         print '</grpPrlAndIstd>'
@@ -1289,7 +1290,7 @@ class Chpx(DOCDirStream):
         index = 0
         self.prls = []
         while (self.cb - (pos - self.pos)) > 0:
-            prl = Prl(self.bytes, pos, self.mainStream, self.transformed, index)
+            prl = Prl(self, pos, self.mainStream, self.transformed, index)
             self.prls.append(prl)
             pos += prl.getSize()
             index += 1
@@ -1622,7 +1623,7 @@ class PrcData(DOCDirStream):
         pos = 0
         self.prls = []
         while self.cbGrpprl - pos > 0:
-            prl = Prl(self.bytes, self.pos + pos)
+            prl = Prl(self, self.pos + pos)
             pos += prl.getSize()
             self.prls.append(prl)
         self.pos += self.cbGrpprl
@@ -2856,7 +2857,7 @@ class UpxPapx(DOCDirStream):
         pos = 0
         print '<grpprlPapx offset="%d" size="%d bytes">' % (self.pos, size)
         while size - pos > 0:
-            prl = Prl(self.bytes, self.pos + pos)
+            prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
         print '</grpprlPapx>'
@@ -2875,7 +2876,7 @@ class UpxChpx(DOCDirStream):
         pos = 0
         print '<grpprlChpx offset="%d" size="%d bytes">' % (self.pos, size)
         while size - pos > 0:
-            prl = Prl(self.bytes, self.pos + pos)
+            prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
         print '</grpprlChpx>'
@@ -2894,7 +2895,7 @@ class UpxTapx(DOCDirStream):
         pos = 0
         print '<grpprlTapx offset="%d" size="%d bytes">' % (self.pos, size)
         while size - pos > 0:
-            prl = Prl(self.bytes, self.pos + pos)
+            prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
         print '</grpprlTapx>'
@@ -3463,7 +3464,7 @@ class LVL(DOCDirStream):
         print '<grpprlPapx offset="%d">' % self.pos
         pos = self.pos
         while (lvlf.cbGrpprlPapx - (pos - self.pos)) > 0:
-            prl = Prl(self.bytes, pos)
+            prl = Prl(self, pos)
             prl.dump()
             pos += prl.getSize()
         self.pos = pos
@@ -3472,7 +3473,7 @@ class LVL(DOCDirStream):
         print '<grpprlChpx offset="%d">' % self.pos
         pos = self.pos
         while (lvlf.cbGrpprlChpx - (pos - self.pos)) > 0:
-            prl = Prl(self.bytes, pos)
+            prl = Prl(self, pos)
             prl.dump()
             pos += prl.getSize()
         self.pos = pos
