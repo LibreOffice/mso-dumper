@@ -1284,16 +1284,21 @@ class Chpx(DOCDirStream):
         self.pos = offset
         self.transformed = transformed
 
-    def dump(self):
-        print '<chpx type="Chpx" offset="%d">' % self.pos
-        self.printAndSet("cb", self.readuInt8())
+        self.cb = self.readuInt8()
         pos = self.pos
         index = 0
+        self.prls = []
         while (self.cb - (pos - self.pos)) > 0:
             prl = Prl(self.bytes, pos, self.mainStream, self.transformed, index)
-            prl.dump()
+            self.prls.append(prl)
             pos += prl.getSize()
             index += 1
+
+    def dump(self):
+        print '<chpx type="Chpx" offset="%d">' % self.pos
+        self.printAndSet("cb", self.cb)
+        for prl in self.prls:
+            prl.dump()
         print '</chpx>'
     
 class PapxInFkp(DOCDirStream):
