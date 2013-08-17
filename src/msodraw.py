@@ -738,6 +738,7 @@ class FOPT:
         0x01C1: ['lineOpacity'],
         0x01D6: ['lineJoinStyle'],
         0x01D7: ['lineEndCapStyle'],
+        0x0104: ['pib'],
     }
 
     class E:
