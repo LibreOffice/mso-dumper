@@ -3405,6 +3405,28 @@ class PlcfGram(DOCDirStream, PLC):
             print '</aCP>'
         print '</plcfGram>'
 
+class Grfhic(DOCDirStream):
+    """The grfhic structure is a set of HTML incompatibility flags that specify
+    the HTML incompatibilities of a list structure."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        print '<grfhic type="grfhic">'
+        buf = self.readuInt8()
+        self.printAndSet("fhicChecked",  self.getBit(buf, 0))
+        self.printAndSet("fhicFormat",   self.getBit(buf, 1))
+        self.printAndSet("fhicListText", self.getBit(buf, 2))
+        self.printAndSet("fhicPeriod",   self.getBit(buf, 3))
+        self.printAndSet("fhicLeft1",    self.getBit(buf, 4))
+        self.printAndSet("fhicListTab",  self.getBit(buf, 5))
+        self.printAndSet("unused",       self.getBit(buf, 6))
+        self.printAndSet("fhicBullet",   self.getBit(buf, 7))
+        self.parent.pos = self.pos
+        print '</grfhic>'
+
 class LSTF(DOCDirStream):
     """The LSTF structure contains formatting properties that apply to an entire list."""
     def __init__(self, plfLst, index):
@@ -3426,7 +3448,7 @@ class LSTF(DOCDirStream):
         self.printAndSet("unused2", self.getBit(buf, 3))
         self.printAndSet("fHybrid", self.getBit(buf, 4))
         self.printAndSet("reserved1", (buf & 0xe0) >> 5) # 6..8th bits
-        self.printAndSet("grfhic", self.readuInt8()) # TODO dump grfhic
+        Grfhic(self).dump()
         print '</lstf>'
 
 class LVLF(DOCDirStream):
@@ -3455,7 +3477,7 @@ class LVLF(DOCDirStream):
         self.printAndSet("cbGrpprlChpx", self.readuInt8())
         self.printAndSet("cbGrpprlPapx", self.readuInt8())
         self.printAndSet("ilvlRestartLim", self.readuInt8())
-        self.printAndSet("grfhic", self.readuInt8()) # TODO dump grfhic
+        Grfhic(self).dump()
         print '</lvlf>'
 
 class LVL(DOCDirStream):
@@ -3531,7 +3553,7 @@ class LFO(DOCDirStream):
         self.printAndSet("unused2", self.readuInt32())
         self.printAndSet("clfolvl", self.readuInt8())
         self.printAndSet("ibstFltAutoNum", self.readuInt8())
-        self.printAndSet("grfhic", self.readuInt8()) # TODO dump grfhic
+        Grfhic(self).dump()
         self.printAndSet("unused3", self.readuInt8())
         print '</lfo>'
 
