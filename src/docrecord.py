@@ -1009,8 +1009,9 @@ class PICFAndOfficeArtData(DOCDirStream):
         print '<PICFAndOfficeArtData>'
         found = False
         for prl in self.parent.parent.parent.prls:
-            if prl.sprm.sprm == 0x0806: # sprmCFData
+            if prl.sprm.sprm in (0x0806, 0x080a): # sprmCFData, sprmCFOle2
                 found = True
+                break
         if not found:
             pos = self.pos
             picf = PICF(self)
@@ -1021,7 +1022,7 @@ class PICFAndOfficeArtData(DOCDirStream):
             remaining = picf.lcb - (self.pos - pos)
             msodraw.InlineSpContainer(self, remaining).dumpXml(self, getWordModel(self.parent.mainStream))
         else:
-            print '<todo what="PICFAndOfficeArtData::dump(): handle sprmCFData"/>'
+            print '<todo what="PICFAndOfficeArtData::dump(): handle sprmCFData or sprmCFOle2"/>'
         print '</PICFAndOfficeArtData>'
 
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
