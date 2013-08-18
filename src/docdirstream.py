@@ -134,7 +134,7 @@ class DOCDirStream:
             else:
                 break
             count += 1
-        return globals.getUTF8FromUTF16("".join(map(lambda x: chr(x), bytes)))
+        return globals.getUTF8FromUTF16("".join(map(lambda x: chr(x), bytes)), xml = True)
 
     def getBit(self, byte, bitNumber):
         return (byte & (1 << bitNumber)) >> bitNumber

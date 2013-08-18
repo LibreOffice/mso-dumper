@@ -948,7 +948,12 @@ class WordDocumentStream(DOCDirStream):
         if compressed:
             return globals.encodeName(self.bytes[pos])
         else:
-            return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16'), lowOnly = True)
+            try:
+                return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16'), lowOnly = True)
+            except UnicodeDecodeError:
+                reason = 'could not decode bytes in position %d-%d (%s-%s)' % (pos, pos+1, hex(ord(self.bytes[pos])), hex(ord(self.bytes[pos+1])))
+                print '<todo what="WordDocumentStream::retrieveCP(): %s"/>' % reason
+                return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16', errors="replace"), lowOnly = True)
 
     def retrieveCPs(self, start, end):
         """Retrieves a range of characters."""
