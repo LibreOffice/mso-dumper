@@ -1019,8 +1019,9 @@ class PICFAndOfficeArtData(DOCDirStream):
             assert self.pos == pos + 68
             if picf.mfpf.mm == 0x0066:
                 print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm == MM_SHAPEFILE is unhandled"/>'
-            remaining = picf.lcb - (self.pos - pos)
-            msodraw.InlineSpContainer(self, remaining).dumpXml(self, getWordModel(self.parent.mainStream))
+            else:
+                remaining = picf.lcb - (self.pos - pos)
+                msodraw.InlineSpContainer(self, remaining).dumpXml(self, getWordModel(self.parent.mainStream))
         else:
             print '<todo what="PICFAndOfficeArtData::dump(): handle sprmCFData or sprmCFOle2"/>'
         print '</PICFAndOfficeArtData>'
