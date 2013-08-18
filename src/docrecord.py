@@ -1072,7 +1072,7 @@ class TCGRF(DOCDirStream):
         print '<tcgrf type="TCGRF" offset="%d">' % self.pos
         buf = self.readuInt16()
         self.printAndSet("horzMerge", buf & 0x0003) # 1..2nd bits
-        self.printAndSet("textFlow",  (buf & 0x001c) >> 2, dict = TextFlow) # 3..6th bits
+        self.printAndSet("textFlow",  (buf & 0x001c) >> 2, dict = TextFlow, default = "todo") # 3..6th bits
         self.printAndSet("vertMerge", (buf & 0x0060) >> 6, dict = VerticalMergeFlag) # 7..8th bits
         self.printAndSet("vertAlign", (buf & 0x0180) >> 8, dict = VerticalAlign) # 9..10th bits
         self.printAndSet("ftsWidth",  (buf & 0x0e00) >> 10, dict = Fts) # 11..12th bits

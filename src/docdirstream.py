@@ -21,13 +21,16 @@ class DOCDirStream:
         self.mainStream = mainStream
         self.doc = doc
     
-    def printAndSet(self, key, value, hexdump = True, end = True, offset = False, silent = False, dict = None):
+    def printAndSet(self, key, value, hexdump = True, end = True, offset = False, silent = False, dict = None, default = None):
         setattr(self, key, value)
         if silent:
             return
         attrs = ""
         if dict:
-            attrs += ' name="%s"' % dict[value]
+            if value in dict or not default:
+                attrs += ' name="%s"' % dict[value]
+            else:
+                attrs += ' name="%s"' % default
         if hexdump:
             value = hex(value)
         if offset:
