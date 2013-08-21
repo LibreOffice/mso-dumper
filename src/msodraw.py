@@ -1097,7 +1097,7 @@ class FBSE:
             recHdl.appendLine('<todo what="FBSE::dumpXml(): cbName != 0"/>')
         if self.strm.pos < self.posOrig + rh.recLen:
             dumpChild(self.strm)
-        elif self.foDelay != 0xffffffff:
+        elif self.foDelay != 0xffffffff and self.cRef > 0:
             # Picture is in the delay stream, try to dump it.
             if model.hostApp == globals.ModelBase.HostAppType.Word:
                 posOrig = model.delayStream.pos
