@@ -46,6 +46,15 @@ class Test(unittest.TestCase):
     def getHex(self, num):
         return int(num, 16)
 
+    def test_pass(self):
+        """This test just makes sure that all files in the 'pass' directory are
+        dumped without problems."""
+
+        for dirname, dirnames, filenames in os.walk('pass'):
+            for filename in filenames:
+                if filename.endswith(".doc"):
+                    self.dump(os.path.join(dirname, filename).replace('.doc', ''))
+
     def test_hello(self):
         self.dump('hello')
 

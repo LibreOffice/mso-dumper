@@ -270,7 +270,8 @@ class Sed(DOCDirStream):
         print '<aSed type="Sed" offset="%d" size="%d bytes">' % (self.pos, Sed.size)
         self.printAndSet("fn", self.readuInt16())
         self.printAndSet("fcSepx", self.readuInt32())
-        Sepx(self).dump()
+        if self.fcSepx != 0xffffffff:
+            Sepx(self).dump()
         self.printAndSet("fnMpr", self.readuInt16())
         self.printAndSet("fcMpr", self.readuInt32())
         print '</aSed>'
