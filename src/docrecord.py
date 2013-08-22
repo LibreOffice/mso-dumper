@@ -3096,10 +3096,12 @@ class LPStd(DOCDirStream):
 
     def dump(self):
         self.printAndSet("cbStd", self.readuInt16())
+        posOrig = self.pos
         if self.cbStd > 0:
             std = STD(self)
             std.dump()
             self.pos = std.pos
+        self.pos = posOrig + self.cbStd
 
 class STSH(DOCDirStream):
     """The STSH structure specifies the stylesheet for a document."""
