@@ -2162,6 +2162,12 @@ class Dop2000(DOCDirStream):
         dop97 = Dop97(self)
         dop97.dump()
 
+        if self.pos == self.size:
+            print '<info what="Dop2000 size is smaller than expected."/>'
+            print '</dop2000>'
+            self.dop.pos = self.pos
+            return
+
         self.printAndSet("ilvlLastBulletMain", self.readuInt8())
         self.printAndSet("ilvlLastNumberMain", self.readuInt8())
         self.printAndSet("istdClickParaType", self.readuInt16())
