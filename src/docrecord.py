@@ -688,7 +688,7 @@ class MFPF(DOCDirStream):
                 0x0066: "MM_SHAPEFILE",
                 }
         print '<mfpf type="MFPF" offset="%d">' % self.pos
-        self.printAndSet("mm", self.readInt16(), dict = mmDict)
+        self.printAndSet("mm", self.readInt16(), dict = mmDict, default = "todo")
         self.printAndSet("xExt", self.readuInt16())
         self.printAndSet("yExt", self.readuInt16())
         self.printAndSet("swHMF", self.readuInt16())
@@ -986,14 +986,18 @@ class PICF(DOCDirStream):
 
     def dump(self):
         print '<picf type="PICF" offset="%d">' % self.pos
+        posOrig = self.pos
         self.printAndSet("lcb", self.readInt32())
         self.printAndSet("cbHeader", self.readInt16())
         assert self.cbHeader == 0x44
         self.mfpf = MFPF(self)
         self.mfpf.dump()
-        PICF_Shape(self, "innerHeader").dump()
-        PICMID(self).dump()
-        self.printAndSet("cProps", self.readuInt16())
+        if self.mfpf.mm == 0x0064: # MM_SHAPEFILE
+            PICF_Shape(self, "innerHeader").dump()
+            PICMID(self).dump()
+            self.printAndSet("cProps", self.readuInt16())
+        else:
+            self.pos = posOrig + self.cbHeader
         self.parent.pos = self.pos
         print '</picf>'
 
@@ -1018,11 +1022,13 @@ class PICFAndOfficeArtData(DOCDirStream):
             picf = PICF(self)
             picf.dump()
             assert self.pos == pos + 68
-            if picf.mfpf.mm == 0x0066:
+            if picf.mfpf.mm == 0x0066: # MM_SHAPEFILE
                 print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm == MM_SHAPEFILE is unhandled"/>'
-            else:
+            elif picf.mfpf.mm == 0x0064: # MM_SHAPE
                 remaining = picf.lcb - (self.pos - pos)
                 msodraw.InlineSpContainer(self, remaining).dumpXml(self, getWordModel(self.parent.mainStream))
+            else:
+                print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm is unhandled (not MM_SHAPE or MM_SHAPEFILE): %d"/>' % picf.mfpf.mm
         else:
             print '<todo what="PICFAndOfficeArtData::dump(): handle sprmCFData or sprmCFOle2"/>'
         print '</PICFAndOfficeArtData>'
