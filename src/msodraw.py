@@ -688,6 +688,19 @@ class FOPT:
             for i in FOPT.ShapeBooleanProperties.memberNames:
                 recHdl.appendLine('<%s value="%s"/>' % (i, getattr(self, i)))
 
+    class PibFlags:
+        """An MSOBLIPFLAGS enumeration value, that specifies how to interpret
+        the pibName property."""
+        def __parseBytes(self, prop):
+            self.pibFlags = globals.getValueOrUnknown(MSOBLIPFLAGS, prop.value, "todo")
+
+        def appendLines (self, recHdl, prop, level):
+            recHdl.appendLine(indent(level)+"pibFlags: %s"%prop.value)
+
+        def dumpXml(self, recHdl, prop):
+            self.__parseBytes(prop)
+            recHdl.appendLine('<pibFlags name="%s" value="%s"/>' % (self.pibFlags, hex(prop.value)))
+
     propTable = {
         0x00BF: ['Text Boolean Properties', TextBoolean],
         0x00C0: ['gtextUNICODE', GtextUNICODE],
@@ -747,6 +760,8 @@ class FOPT:
         0x01D7: ['lineEndCapStyle'],
         0x0104: ['pib'],
         0x018C: ['fillFocus'],
+        0x007F: ['Protection Boolean Properties'],
+        0x0106: ['pibFlags', PibFlags],
     }
 
     class E:
@@ -1054,6 +1069,14 @@ MSOBLIPTYPE = {
         0x07: 'msoblipDIB',
         0x11: 'msoblipTIFF',
         0x12: 'msoblipCMYKJPEG',
+        }
+
+MSOBLIPFLAGS = {
+        0x00000000: 'msoblipflagComment',
+        0x00000001: 'msoblipflagFile',
+        0x00000002: 'msoblipflagURL',
+        0x00000004: 'msoblipflagDoNotSave',
+        0x00000008: 'msoblipflagLinkToFile',
         }
 
 class FBSE:
