@@ -491,10 +491,15 @@ class FOPT:
 
         def __init__(self, name):
             self.name = name
+            self.todo = None
 
         def __parseBytes(self, prop):
             # A null-terminated Unicode string.
-            self.string = prop.extra[0:-2].decode('utf-16')
+            try:
+                self.string = prop.extra[0:-2].decode('utf-16')
+            except UnicodeDecodeError, reason:
+                self.todo = reason
+                self.string = prop.extra[0:-2].decode('utf-16', errors="replace")
 
         def appendLines(self, recHdl, prop, level):
             self.__parseBytes(prop)
@@ -502,7 +507,9 @@ class FOPT:
 
         def dumpXml(self, recHdl, prop):
             self.__parseBytes(prop)
-            recHdl.appendLine('<%s value="%s"/>' % (self.name, self.string))
+            if self.todo:
+                print '<todo what="UnicodeComplex::dumpXml(): %s"/>' % self.todo
+            recHdl.appendLine('<%s value="%s"/>' % (self.name, globals.encodeName(self.string)))
 
     class GtextUNICODE(UnicodeComplex):
 
