@@ -12,6 +12,7 @@ from docdirstream import DOCDirStream
 import docrecord
 import globals
 import sys
+import os
 import bisect
 
 class DOCFile:
@@ -20,6 +21,7 @@ class DOCFile:
         self.chars = chars
         self.size = len(self.chars)
         self.params = params
+        self.error = None
 
         if ord(self.chars[0]) == 0xD0 and ord(self.chars[1]) == 0xCF and ord(self.chars[2]) == 0x11 and ord(self.chars[3]) == 0xE0:
             self.initWW8()
@@ -65,11 +67,24 @@ class GsfDOCFile(DOCFile):
         self.gsf = gsf
         DOCFile.__init__(self, chars, params)
 
+    def disableStderr(self):
+        nil = os.open(os.devnull, os.O_WRONLY)
+        self.savedStderr = os.dup(2)
+        os.dup2(nil, 2)
+
+    def enableStderr(self):
+        os.dup2(self.savedStderr, 2)
+
     def initWW8(self):
         self.streams = {}
         self.gsf.gsf_init()
         gsfInput = self.gsf.gsf_input_memory_new(self.chars, len(self.chars), False)
-        gsfInfile = self.gsf.gsf_infile_msole_new(gsfInput)
+        self.disableStderr()
+        gsfInfile = self.gsf.gsf_infile_msole_new(gsfInput, None)
+        self.enableStderr()
+        if not gsfInfile:
+            self.error = "gsf_infile_msole_new() failed"
+            return
         for i in range(self.gsf.gsf_infile_num_children(gsfInfile)):
             child = self.gsf.gsf_infile_child_by_index(gsfInfile, i)
             childName = ctypes.string_at(self.gsf.gsf_infile_name_by_index(gsfInfile,i))

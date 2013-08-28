@@ -23,6 +23,8 @@ class DOCDumper:
         file.close()
         dirnames = strm.getDirectoryNames()
         print '<?xml version="1.0"?>\n<streams ole-type="%s">' % strm.getName()
+        if strm.error:
+            print '<error what="%s"/>' % strm.error
         for dirname in dirnames:
             if len(dirname) == 0 or dirname in ['Root Entry']:
                 continue
