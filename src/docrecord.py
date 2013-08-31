@@ -2426,6 +2426,8 @@ class Dop(DOCDirStream):
             Dop97(self).dump()
         elif self.fib.nFibNew == 0x00d9:
             Dop2000(self).dump()
+        elif self.fib.nFibNew == 0x0101:
+            Dop2002(self).dump()
         elif self.fib.nFibNew == 0x0112:
             Dop2007(self).dump()
         else:
@@ -2574,6 +2576,10 @@ class SttbfAssoc(DOCDirStream):
                 meaning = indexMap[i]
             else:
                 meaning = "unknown"
+            if self.pos + 2 * cchData > self.size:
+                self.cData = 0
+                print '<info what="SttbfAssoc::dump() wanted to read beyond the end of the stream"/>'
+                break
             print '<cchData index="%s" meaning="%s" offset="%d" size="%d bytes">' % (hex(i), meaning, self.pos, cchData)
             print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
             self.pos += 2*cchData
@@ -2602,7 +2608,8 @@ class SttbfRMark(DOCDirStream):
             print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos+2*cchData].decode('utf-16'), lowOnly = True)
             self.pos += 2*cchData
             print '</cchData>'
-        assert self.pos == self.mainStream.fcSttbfRMark + self.size
+        if self.cData != 0:
+            assert self.pos == self.mainStream.fcSttbfRMark + self.size
         print '</sttbfRMark>'
 
 class OfficeArtWordDrawing(DOCDirStream):
