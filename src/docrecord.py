@@ -1990,15 +1990,21 @@ class Copts(DOCDirStream):
 class Dop95(DOCDirStream):
     """The Dop95 structure contains document and compatibility settings."""
     size = 88
-    def __init__(self, dop):
+    def __init__(self, dop, dopSize):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
+        self.dopSize = dopSize
 
     def dump(self):
         print '<dop95 type="Dop95" offset="%d" size="88 bytes">' % self.pos
+        pos = self.pos
         dopBase = DopBase(self)
         dopBase.dump()
+        if self.pos >= pos + self.dopSize:
+            print '</dop95>'
+            self.dop.pos = self.pos
+            return
         Copts80(self).dump()
         self.pos += 4
         print '</dop95>'
@@ -2087,15 +2093,21 @@ class Asumyi(DOCDirStream):
 class Dop97(DOCDirStream):
     """The Dop97 structure contains document and compatibility settings."""
     size = 500
-    def __init__(self, dop):
+    def __init__(self, dop, dopSize):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
+        self.dopSize = dopSize
 
     def dump(self):
         print '<dop97 type="Dop97" offset="%d" size="%d bytes">' % (self.pos, Dop97.size)
-        dop95 = Dop95(self)
+        pos = self.pos
+        dop95 = Dop95(self, self.dopSize)
         dop95.dump()
+        if self.pos >= pos + self.dopSize:
+            print '</dop97>'
+            self.dop.pos = self.pos
+            return
 
         self.printAndSet("adt", self.readuInt16())
         dopTypography = DopTypography(self)
@@ -2158,14 +2170,15 @@ class Dop97(DOCDirStream):
 class Dop2000(DOCDirStream):
     """The Dop2000 structure contains document and compatibility settings."""
     size = 544
-    def __init__(self, dop):
+    def __init__(self, dop, dopSize):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
+        self.dopSize = dopSize
 
     def dump(self):
         print '<dop2000 type="Dop2000" offset="%d" size="544 bytes">' % self.pos
-        dop97 = Dop97(self)
+        dop97 = Dop97(self, self.dopSize)
         dop97.dump()
 
         if self.pos == self.size:
@@ -2231,14 +2244,15 @@ class Dop2000(DOCDirStream):
 class Dop2002(DOCDirStream):
     """The Dop2002 structure contains document and compatibility settings."""
     size = 594
-    def __init__(self, dop):
+    def __init__(self, dop, dopSize):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
+        self.dopSize = dopSize
 
     def dump(self):
         print '<dop2002 type="Dop2002" offset="%d" size="%d bytes">' % (self.pos, Dop2002.size)
-        dop2000 = Dop2000(self)
+        dop2000 = Dop2000(self, self.dopSize)
         dop2000.dump()
 
         self.printAndSet("unused", self.readuInt32())
@@ -2281,14 +2295,15 @@ class Dop2002(DOCDirStream):
 class Dop2003(DOCDirStream):
     """The Dop2003 structure contains document and compatibility settings."""
     size = 616
-    def __init__(self, dop):
+    def __init__(self, dop, dopSize):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
+        self.dopSize = dopSize
 
     def dump(self):
         print '<dop2003 type="Dop2003" offset="%d" size="616 bytes">' % self.pos
-        dop2002 = Dop2002(self)
+        dop2002 = Dop2002(self, self.dopSize)
         dop2002.dump()
 
         buf = self.readuInt8()
@@ -2361,14 +2376,15 @@ class DopMth(DOCDirStream):
 
 class Dop2007(DOCDirStream):
     """The Dop2007 structure contains document and compatibility settings."""
-    def __init__(self, dop):
+    def __init__(self, dop, dopSize):
         DOCDirStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
+        self.dopSize = dopSize
 
     def dump(self):
         print '<dop2007 type="Dop2007" offset="%d">' % self.pos
-        dop2003 = Dop2003(self)
+        dop2003 = Dop2003(self, self.dopSize)
         dop2003.dump()
 
         self.printAndSet("reserved1", self.readuInt32())
@@ -2423,13 +2439,13 @@ class Dop(DOCDirStream):
     def dump(self):
         print '<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size)
         if self.fib.nFibNew == 0:
-            Dop97(self).dump()
+            Dop97(self, self.size).dump()
         elif self.fib.nFibNew == 0x00d9:
-            Dop2000(self).dump()
+            Dop2000(self, self.size).dump()
         elif self.fib.nFibNew == 0x0101:
-            Dop2002(self).dump()
+            Dop2002(self, self.size).dump()
         elif self.fib.nFibNew == 0x0112:
-            Dop2007(self).dump()
+            Dop2007(self, self.size).dump()
         else:
             print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s"/>""" % hex(self.fib.nFibNew)
         print '</dop>'
