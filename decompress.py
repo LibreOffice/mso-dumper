@@ -27,6 +27,7 @@ class DecompressVBA(object):
         self.chars = file.read()
 
     def __decompressRawChunk (self):
+        print("decompressRawChunk")
         chunkSize = 4096
         for i in xrange(0,chunkSize):
             self.DecompressedContainer += struct.unpack("b", self.chars[self.CompressedCurrent + i ])[0]       
@@ -86,6 +87,7 @@ class DecompressVBA(object):
             self.CompressedCurrent += 2
 
     def __decompressTokenSequence (self):
+        print(" __decompressTokenSequence at CompressedCurrent %i"%self.CompressedCurrent )
         flagByte = struct.unpack("b", self.chars[self.CompressedCurrent ])[0]
         self.CompressedCurrent += 1
         if  self.CompressedCurrent < self.CompressedEnd:
@@ -103,14 +105,14 @@ class DecompressVBA(object):
         sig = sigflag & 0x7
         #extract chunk flag from sig 
         compressedChunkFlag = (( sigflag & 0x8 ) ==  0x8)
-        #print("size = %i"%size)
-        #print("sig = %x"%sig)
-        #print("compress = %i"%compressedChunkFlag)
+        print("size = %i"%size)
+        print("sig = %x"%sig)
+        print("compress = %i"%compressedChunkFlag)
         self.DecompressedChunkStart = self.DecompressedCurrent
         self.CompressedEnd = self.CompressedRecordEnd
         if ( ( self.CompressedChunkStart + size ) < self.CompressedRecordEnd ):
             self.CompressedEnd = ( self.CompressedChunkStart + size )
-        self.DecompressedCurrent = self.CompressedChunkStart + 2
+        self.CompressedCurrent = self.CompressedChunkStart + 2
         if compressedChunkFlag:
             while self.CompressedCurrent < self.CompressedEnd:
                 self.__decompressTokenSequence()
@@ -128,6 +130,7 @@ class DecompressVBA(object):
             self.CompressedCurrent += 1
             while self.CompressedCurrent < self.CompressedRecordEnd:
                 self.CompressedChunkStart = self.CompressedCurrent
+                print("about to call decompressChunk for start %i"%self.CompressedChunkStart)
                 self.decompressCompressedChunk()
         else:
             print("error decompressing containter invalid signature byte %i"% val)
