@@ -30,7 +30,7 @@ class DecompressVBA(object):
         print("decompressRawChunk")
         chunkSize = 4096
         for i in xrange(0,chunkSize):
-            self.DecompressedContainer += struct.unpack("b", self.chars[self.CompressedCurrent + i ])[0]       
+            self.DecompressedChunk[ self.DecompressedCurrent + i ] = ( struct.unpack("b", self.chars[self.CompressedCurrent + i ])[0] )
         self.CompressedCurrent += chunkSize
         self.DecompressedCurrent += chunkSize
 
@@ -58,24 +58,19 @@ class DecompressVBA(object):
 
     def __byteCopy( self, srcOffSet, dstOffSet, length ):
  
-        destSize = len( self.DecompressedContainer )
+        destSize = len( self.DecompressedChunk )
         srcCurrent = srcOffSet
         dstCurrent = dstOffSet 
         for i in xrange( 0, length ):
-            # check if we need to append to the Decompressed container
-            print("destSize %i dstCurrent %i srcCurrent %i"%(destSize,dstCurrent,srcCurrent))
-            if destSize > dstCurrent:
-                self.DecompressedContainer += struct.unpack("b", self.DecompressedContainer[ srcCurrent ] )
-            else: 
-                self.DecompressedContainer[ dstCurrent ] = self.DecompressedContainer[ srcCurrent ]
+            self.DecompressedChunk[ dstCurrent ] = self.DecompressedChunk[ srcCurrent ]
             srcCurrent +=1
             dstCurrent +=1
                 
     def __decompressToken (self, index, flagByte):
         flagBit = ( ( flagByte >> index ) & 1 )
         if flagBit == 0:
-            #self.DecompressedContainer += struct.unpack("b", self.chars[self.CompressedCurrent ])[0]       
-            self.DecompressedContainer +=  self.chars[self.CompressedCurrent ]
+            #self.DecompressedChunk += struct.unpack("b", self.chars[self.CompressedCurrent ])[0]       
+            self.DecompressedChunk[self.DecompressedCurrent] = self.chars[self.CompressedCurrent ]
             self.CompressedCurrent += 1
             self.DecompressedCurrent += 1
         else:
@@ -87,12 +82,13 @@ class DecompressVBA(object):
             self.CompressedCurrent += 2
 
     def __decompressTokenSequence (self):
-        print(" __decompressTokenSequence at CompressedCurrent %i"%self.CompressedCurrent )
+        print(" __decompressTokenSequence at CompressedCurrent %i CompressedEnd %i"%( self.CompressedCurrent, self.CompressedEnd ) )
         flagByte = struct.unpack("b", self.chars[self.CompressedCurrent ])[0]
         self.CompressedCurrent += 1
         if  self.CompressedCurrent < self.CompressedEnd:
             for i in xrange(0,8):
-                self.__decompressToken(i,flagByte)
+                if  self.CompressedCurrent < self.CompressedEnd:
+                    self.__decompressToken(i,flagByte)
  
     def decompressCompressedChunk (self):
         print("decompressCompressedChunk")
@@ -108,22 +104,29 @@ class DecompressVBA(object):
         print("size = %i"%size)
         print("sig = %x"%sig)
         print("compress = %i"%compressedChunkFlag)
-        self.DecompressedChunkStart = self.DecompressedCurrent
+        self.DecompressedChunk = bytearray(4096);  # one chunk ( need to cater for more than one chunk of course )
+        self.DecompressedChunkStart = 0
+        self.DecompressedCurrent = 0
         self.CompressedEnd = self.CompressedRecordEnd
         if ( ( self.CompressedChunkStart + size ) < self.CompressedRecordEnd ):
             self.CompressedEnd = ( self.CompressedChunkStart + size )
         self.CompressedCurrent = self.CompressedChunkStart + 2
-        if compressedChunkFlag:
+        if compressedChunkFlag == 1:
             while self.CompressedCurrent < self.CompressedEnd:
                 self.__decompressTokenSequence()
         else:
             self.__decompressRawChunk()
-    
+        if self.DecompressedCurrent:
+#             truncChunk = self.DecompressedChunk[0:self.DecompressedCurrent]
+#             self.DecompressedContainer.append( truncChunk )
+             for i in xrange( 0,  self.DecompressedCurrent ):
+                 self.DecompressedContainer.append( self.DecompressedChunk[ i ] )
     def read (self):
-        self.DecompressedContainer = ""
+        self.DecompressedContainer = bytearray();
         self.CompressedCurrent = 0
-        self.DecompressedCurrent = 0
         self.CompressedRecordEnd = len(self.chars )
+        self.DeCompressedBufferEnd = 0
+        self.DecompressedChunkStart = 0
         val = struct.unpack("b", self.chars[self.CompressedCurrent])[0]
         if val == 1:
             print("valid CompressedContainer.SignatureByte")
@@ -132,8 +135,13 @@ class DecompressVBA(object):
                 self.CompressedChunkStart = self.CompressedCurrent
                 print("about to call decompressChunk for start %i"%self.CompressedChunkStart)
                 self.decompressCompressedChunk()
+            print( "wrote %i bytes"%len(self.DecompressedContainer) )
+            out = open( "/data4/home/npower/test.out", 'wb' );
+            out.write( self.DecompressedContainer );
+            out.flush()
+            out.close()
         else:
-            print("error decompressing containter invalid signature byte %i"% val)
+            print("error decompressing container invalid signature byte %i"% val)
          
         
 def main():
