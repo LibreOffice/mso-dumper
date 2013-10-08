@@ -4,12 +4,10 @@ class CompressedVBAStream(object):
     
     CHUNKSIZE = 4096
     def __init__ (self,chars, offset):
-#        print("init - decompress from %s"%filepath)
         self.chars = chars
         self.mnOffset = offset
 
     def __decompressRawChunk (self):
-#        print("decompressRawChunk")
         for i in xrange(0,self.CHUNKSIZE):
             self.DecompressedChunk[ self.DecompressedCurrent + i ] =  self.chars[self.CompressedCurrent + i ]
         self.CompressedCurrent += self.CHUNKSIZE
@@ -50,7 +48,6 @@ class CompressedVBAStream(object):
     def __decompressToken (self, index, flagByte):
         flagBit = ( ( flagByte >> index ) & 1 )
         if flagBit == 0:
-            #self.DecompressedChunk += struct.unpack("b", self.chars[self.CompressedCurrent ])[0]       
             self.DecompressedChunk[self.DecompressedCurrent] = self.chars[self.CompressedCurrent ]
             self.CompressedCurrent += 1
             self.DecompressedCurrent += 1
@@ -63,7 +60,6 @@ class CompressedVBAStream(object):
             self.CompressedCurrent += 2
 
     def __decompressTokenSequence (self):
-#        print(" __decompressTokenSequence at CompressedCurrent %i CompressedEnd %i"%( self.CompressedCurrent, self.CompressedEnd ) )
         flagByte = struct.unpack("b", self.chars[self.CompressedCurrent ])[0]
         self.CompressedCurrent += 1
         if  self.CompressedCurrent < self.CompressedEnd:
@@ -72,22 +68,17 @@ class CompressedVBAStream(object):
                     self.__decompressToken(i,flagByte)
  
     def decompressCompressedChunk (self):
-#        print("decompressCompressedChunk")
         
         header = struct.unpack_from("<H",self.chars, self.CompressedChunkStart)[0]
         #extract size from header
         size = header & 0xFFF 
-#        print("raw size %i"%size)
         size = size + 3
         #extract chunk sig from header
         sigflag = header >> 12
         sig = sigflag & 0x7
         #extract chunk flag from sig 
         compressedChunkFlag = (( sigflag & 0x8 ) ==  0x8)
-#        print("chunksize = %i"%size)
-#        print("sig = %x"%sig)
-#        print("compress = %i"%compressedChunkFlag)
-        self.DecompressedChunk = bytearray(self.CHUNKSIZE);  # one chunk ( need to cater for more than one chunk of course )
+        self.DecompressedChunk = bytearray(self.CHUNKSIZE);
         self.DecompressedChunkStart = 0
         self.DecompressedCurrent = 0
         self.CompressedEnd = self.CompressedRecordEnd
@@ -111,11 +102,9 @@ class CompressedVBAStream(object):
         self.DecompressedChunkStart = self.CompressedCurrent 
         val = struct.unpack("b", self.chars[self.CompressedCurrent])[0]
         if val == 1:
-#            print("valid CompressedContainer.SignatureByte")
             self.CompressedCurrent += 1
             while self.CompressedCurrent < self.CompressedRecordEnd:
                 self.CompressedChunkStart = self.CompressedCurrent
-#                print("about to call decompressChunk for start %i"%self.CompressedChunkStart)
                 self.decompressCompressedChunk()
             return self.DecompressedContainer
         else:
