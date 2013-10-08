@@ -42,13 +42,22 @@ class DateTime:
 
 class DirNode:
 
-    def __init__(self, entry):
+    def __init__(self, entry, olecontainer):
         self.Nodes = []
         self.Entry = entry;
         self.HierachicalName = ''
+        self.OleContainer = olecontainer
+    def isStorage(self):
+        return self.Entry.DirIDRoot > 0
 
-    def isStorage():
-        return entry.Type == Directory.Type.RootStorage
+    def getName(self):
+        return self.Entry.Name
+
+    def getChildren(self):
+        return self.Nodes  
+
+    def getStream(self):
+        return self.OleContainer.getStreamForName( self.HierachicalName )
 
 class OleContainer:
 
@@ -86,7 +95,7 @@ class OleContainer:
         # add left siblings
         nextLeft = child.Entry.DirIDLeft
         if ( nextLeft > 0 ):
-            newEntry = DirNode( entries[ nextLeft ] )
+            newEntry = DirNode( entries[ nextLeft ], self )
 #            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             newEntry.HierachicalName = parent.HierachicalName + newEntry.Entry.Name
             if  newEntry.Entry.DirIDRoot > 0:
@@ -98,7 +107,7 @@ class OleContainer:
         nextRight = child.Entry.DirIDRight
         # add children to the right 
         if ( nextRight > 0 ):
-            newEntry = DirNode( entries[ nextRight ] )
+            newEntry = DirNode( entries[ nextRight ], self )
 #            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             newEntry.HierachicalName = parent.HierachicalName + newEntry.Entry.Name
             if  newEntry.Entry.DirIDRoot > 0:
@@ -109,7 +118,7 @@ class OleContainer:
     def __buildTreeImpl(self, entries, parent ):
 
         if ( parent.Entry.DirIDRoot > 0 ):
-            newEntry = DirNode( entries[ parent.Entry.DirIDRoot ] )
+            newEntry = DirNode( entries[ parent.Entry.DirIDRoot ], self )
 #            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             newEntry.HierachicalName = parent.HierachicalName +  newEntry.Entry.Name
             if ( newEntry.Entry.DirIDRoot > 0 ):
@@ -123,7 +132,7 @@ class OleContainer:
                 self.__buildTreeImpl( entries, child )
 
     def __buildTree(self, entries ):
-        treeRoot = DirNode( entries[0] ) 
+        treeRoot = DirNode( entries[0], self ) 
         self.__buildTreeImpl( entries, treeRoot )
         return treeRoot
 
@@ -162,26 +171,53 @@ class OleContainer:
             self.__printListReport( self.rootNode )
             # need to print a footer ( total bytes, total files like unzip )
 
+    def getStreamForEntry( self, entry ):
+        if  entry == None or entry.DirIDRoot > 0 :
+            raise Exception("can't get stream for invalid entry")
+        bytes = bytearray()
+        bytes = self.obj.getRawStream( entry )
+        bytes = bytes[0:entry.StreamSize]
+        return bytes
+
+    def getStreamForName( self, name ):
+        self.__parseFile()
+        if  self.rootNode != None:
+            entry = self.__findEntryByHierachicalName( self.rootNode, name )
+            return self.getStreamForEntry( entry )
+
     def extract(self, name):
         self.__parseFile()
         if  self.rootNode != None:
             entry = self.__findEntryByHierachicalName( self.rootNode, name )
-
-            if  entry == None or entry.DirIDRoot > 0 :
-                print "can't extract %s"%name
-                return
-            bytes = bytearray()
-            bytes = self.obj.getRawStream( entry )
-            bytes = bytes[0:entry.StreamSize]
+            bytes = self.getStreamForEntry( entry )
             file = open(entry.Name, 'wb') 
             file.write( bytes )
             file.close
         else:
             print("failed to initialise ole container")
+
+    def read(self):
+        self.__parseFile()
+
+    def getRoot(self):
+        self.__parseFile()
+        return self.rootNode 
+
+class VBAContainer:
+    def __init__( self, vbaroot ):
+        self.vbaroot = vbaroot
+    def dump( self ):
+        for child in self.vbaroot.getChildren():
+            # first level children are PROJECT, PROJECTwm & PROJECTlk
+            if child.isStorage() == False:
+                bytes = child.getStream()
+                print("%s (stream, size: %d bytes)"%(child.getName(), len(bytes)))
+                globals.dumpBytes( bytes, 512) 
 def main ():
     parser = optparse.OptionParser()
     parser.add_option("-l", "--list", action="store_true", dest="list", default=False, help="lists ole contents")
     parser.add_option("-x", "--extract", action="store_true", dest="extract", default=False, help="extract file")
+    parser.add_option("-b", "--basic", action="store_true", dest="dumpbasic", default=False, help="dump basic related info")
 
 
     options, args = parser.parse_args()
@@ -190,6 +226,7 @@ def main ():
 
     params.list =  options.list
     params.extract =  options.extract
+    params.dumpbasic =  options.dumpbasic
 
     if len(args) < 1:
         globals.error("takes at least one arguments\n")
@@ -207,6 +244,19 @@ def main ():
        for file in files:
            container.extract( file ) 
 #        container.listEntries() 
+    if params.dumpbasic:
+        print("dump basic related info!") 
+        container.read()
+        root = container.getRoot()
+        # find basic container
+        for child in root.getChildren():
+            # "Macros" is the 'word' VBA container, 
+            # "_VBA_PROJECT_CUR" is the 'excel" VBA container
+            if child.getName() == "_VBA_PROJECT_CUR" or child.getName() == "Macros":
+             
+                print("vba root storage  %s"%child.getName())
+                vba = VBAContainer( child ) 
+                vba.dump()
 
 if __name__ == '__main__':
     main()
