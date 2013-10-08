@@ -245,6 +245,10 @@ class ModuleStreamNameReader( DefaultBuffReservedBuffReader ):
     def __init__ (self, reader ):
         DefaultBuffReservedBuffReader.__init__(self, reader, "MODULESTREAMNAME" )
 
+class ModuleDocStringReader( DefaultBuffReservedBuffReader ):
+    def __init__ (self, reader ):
+        DefaultBuffReservedBuffReader.__init__(self, reader, "MODULEDOCSTRING" )
+
 class ProjectVersionReader:
     def __init__ (self, reader ):
         self.reader = reader
@@ -268,6 +272,7 @@ dirRecordData = {
     0x0007: ["PROJECTHELPCONTEXT", "HelpContextRecord"],
     0x0008: ["PROJECTLIBFLAGS", "LibFlagsRecord"],
     0x0009: ["PROJECTVERSION", "VersionRecord", ProjectVersionReader],
+    0x0010: ["DIRTERMINATOR", "DirTerminator"],
     0x000C: ["PROJECTCONSTANTS", "ConstantsRecord", ProjectConstantsReader],
     0x0014: ["PROJECTLCIDINVOKE", "LcidInvokeRecord"],
     #PROJECTREFERENCES
@@ -284,7 +289,7 @@ dirRecordData = {
     0x0019: ["MODULENAME", "ModuleName"],
     0x0047: ["MODULENAMEUNICODE", "ModuleNameUnicode"],
     0x001A: ["MODULESTREAMNAME", "ModuleStreamName", ModuleStreamNameReader],
-    0x001C: ["MODULEDOCSTRING", "ModuleDocString"],
+    0x001C: ["MODULEDOCSTRING", "ModuleDocString", ModuleDocStringReader],
     0x0031: ["MODULEOFFSET", "ModuleOffSet"],
     0x001E: ["MODULEHELPCONTEXT", "ModuleHelpContext"],
     0x002C: ["MODULECOOKIE", "ModuleCookie"],
