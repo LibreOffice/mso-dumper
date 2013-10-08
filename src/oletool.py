@@ -27,10 +27,9 @@
 ########################################################################
 
 import sys, os.path, optparse
-
 sys.path.append(sys.path[0]+"/src")
 
-import ole, globals
+import ole, globals, vbahelper
 
 class DateTime:
     def __init__(self):
@@ -53,11 +52,14 @@ class DirNode:
     def getName(self):
         return self.Entry.Name
 
+    def getHierarchicalName(self):
+        return self.HierachicalName
+
     def getChildren(self):
         return self.Nodes  
 
     def getStream(self):
-        return self.OleContainer.getStreamForName( self.HierachicalName )
+        return self.OleContainer.getStreamForName( self.Entry )
 
 class OleContainer:
 
@@ -206,13 +208,34 @@ class OleContainer:
 class VBAContainer:
     def __init__( self, vbaroot ):
         self.vbaroot = vbaroot
+
+    def __findNodeByHierarchicalName( self, node, name ):
+        if node.getHierarchicalName() == name:
+            return node
+        else:
+            for child in node.getChildren():
+                result = self.__findNodeByHierarchicalName( child, name )
+                if result != None:
+                    return result 
+        return None 
+    
     def dump( self ):
+        # dump the PROJECTxxx streams
         for child in self.vbaroot.getChildren():
             # first level children are PROJECT, PROJECTwm & PROJECTlk
             if child.isStorage() == False:
                 bytes = child.getStream()
                 print("%s (stream, size: %d bytes)"%(child.getName(), len(bytes)))
                 globals.dumpBytes( bytes, 512) 
+        # need to read the dir stream
+        dirName = self.vbaroot.getHierarchicalName() + "VBA/dir"
+        dirNode = self.__findNodeByHierarchicalName( self.vbaroot, dirName )
+        if dirNode != None:
+            #decompress 
+            bytes = dirNode.getStream()
+            compressed = vbahelper.CompressedVBAStream( bytes, 0 )
+            bytes = compressed.decompress()
+
 def main ():
     parser = optparse.OptionParser()
     parser.add_option("-l", "--list", action="store_true", dest="list", default=False, help="lists ole contents")
