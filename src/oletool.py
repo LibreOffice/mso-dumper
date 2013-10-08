@@ -55,8 +55,8 @@ class OleContainer:
     def __init__(self,filePath, params ):
         self.filePath = filePath
         self.header = None
+        self.rootNode = None
         self.params = params
-        self.pos = None
         
     def __getModifiedTime(self, entry):
         # need parse/decode Entry.TimeModified
@@ -71,16 +71,24 @@ class OleContainer:
         return modified
 
     def __parseFile (self):
-        file = open(self.filePath, 'rb')
-        self.chars = file.read()
-        file.close()    
+        if self.rootNode == None:
+            file = open(self.filePath, 'rb')
+            self.chars = file.read()
+            file.close()    
+            self.header = ole.Header(self.chars, self.params)
+            self.header.parse()
+            self.obj = self.header.getDirectory()
+            self.obj.parseDirEntries()
+            count = 0
+            self.rootNode = self.__buildTree( self.obj.entries )   
 
     def __addSiblings( self, entries, parent, child ):
         # add left siblings
         nextLeft = child.Entry.DirIDLeft
         if ( nextLeft > 0 ):
             newEntry = DirNode( entries[ nextLeft ] )
-            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
+#            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
+            newEntry.HierachicalName = parent.HierachicalName + newEntry.Entry.Name
             if  newEntry.Entry.DirIDRoot > 0:
                 newEntry.HierachicalName = newEntry.HierachicalName + '/'
 
@@ -91,7 +99,8 @@ class OleContainer:
         # add children to the right 
         if ( nextRight > 0 ):
             newEntry = DirNode( entries[ nextRight ] )
-            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
+#            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
+            newEntry.HierachicalName = parent.HierachicalName + newEntry.Entry.Name
             if  newEntry.Entry.DirIDRoot > 0:
                 newEntry.HierachicalName = newEntry.HierachicalName + '/'
             self.__addSiblings( entries, parent, newEntry ) 
@@ -101,7 +110,8 @@ class OleContainer:
 
         if ( parent.Entry.DirIDRoot > 0 ):
             newEntry = DirNode( entries[ parent.Entry.DirIDRoot ] )
-            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
+#            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
+            newEntry.HierachicalName = parent.HierachicalName +  newEntry.Entry.Name
             if ( newEntry.Entry.DirIDRoot > 0 ):
                 newEntry.HierachicalName =  newEntry.HierachicalName + '/'
 
@@ -127,7 +137,7 @@ class OleContainer:
                     return result 
         return None 
 
-    def __printListReport( self, treeNode, stats ):
+    def __printListReport( self, treeNode ):
 
         dateInfo = self.__getModifiedTime( treeNode.Entry )
 
@@ -136,66 +146,38 @@ class OleContainer:
      
         for node in treeNode.Nodes:
             # ignore the root
-            self.__printListReport( node, stats )
+            self.__printListReport( node )
 
     def __printHeader(self):
         print ("OLE: %s")%self.filePath
         print (" Length     Date   Time    Name")
         print ("--------    ----   ----    ----")
 
-    def listEntries(self):
-        self.__parseFile()
-        #if self.header == None:
-        #    self.header = ole.Header(self.chars, self.params)
-        #    self.pos = self.header.parse()
-        self.header = ole.Header(self.chars, self.params)
-        self.pos = self.header.parse()
-        obj =  self.header.getDirectory()
-        if obj != None:
-            obj.parseDirEntries()
-            count = 0
-            for entry in obj.entries:
-                print("Entry [0x%x] Name %s  Root 0x%x Left 0x%x Right %x")%( count, entry.Name, entry.DirIDRoot, entry.DirIDLeft, entry.DirIDRight )
-                count = count + 1
     def list(self):
         # need to share the inititialisation and parse stuff between the different options
+       
         self.__parseFile()
-        if self.header == None:
-            self.header = ole.Header(self.chars, self.params)
-            self.pos = self.header.parse()
-        obj =  self.header.getDirectory()
-        if obj != None:
-            obj.parseDirEntries()
-            count = 0
-            rootNode = self.__buildTree( obj.entries )            
-
+        if  self.rootNode != None:
             self.__printHeader()
-            self.__printListReport( rootNode, obj.entries )
+            self.__printListReport( self.rootNode )
             # need to print a footer ( total bytes, total files like unzip )
 
     def extract(self, name):
-        if  self.header == None:
-            self.__parseFile()
-            self.header = ole.Header(self.chars, self.params)
-            self.pos = self.header.parse()
+        self.__parseFile()
+        if  self.rootNode != None:
+            entry = self.__findEntryByHierachicalName( self.rootNode, name )
 
-        obj =  self.header.getDirectory()
-        if obj != None:
-            obj.parseDirEntries()
-     
-        root = self.__buildTree( obj.entries )
-        entry = self.__findEntryByHierachicalName( root, name )
-
-        if  entry == None or entry.DirIDRoot > 0 :
-            print "can't extract %s"%name
-            return
-        bytes = bytearray()
-        bytes = obj.getRawStream( entry )
-        bytes = bytes[0:entry.StreamSize]
-        file = open(entry.Name, 'wb') 
-        file.write( bytes )
-        file.close
-
+            if  entry == None or entry.DirIDRoot > 0 :
+                print "can't extract %s"%name
+                return
+            bytes = bytearray()
+            bytes = self.obj.getRawStream( entry )
+            bytes = bytes[0:entry.StreamSize]
+            file = open(entry.Name, 'wb') 
+            file.write( bytes )
+            file.close
+        else:
+            print("failed to initialise ole container")
 def main ():
     parser = optparse.OptionParser()
     parser.add_option("-l", "--list", action="store_true", dest="list", default=False, help="lists ole contents")
