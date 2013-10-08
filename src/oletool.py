@@ -189,9 +189,9 @@ class OleContainer:
         if  entry == None or entry.DirIDRoot > 0 :
             print "can't extract %s"%name
             return
-
+        bytes = bytearray()
         bytes = obj.getRawStream( entry )
-
+        bytes = bytes[0:entry.StreamSize]
         file = open(entry.Name, 'wb') 
         file.write( bytes )
         file.close
