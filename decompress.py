@@ -3,34 +3,21 @@
 import sys, os.path, optparse, struct
 
 
-#The following state is maintained for a CompressedBuffer:
-#CompressedRecordEnd: The location of the byte after the last byte in the CompressedContainer.
-#CompressedCurrent: The location of the next byte in the CompressedContainer to be read by
-#                   decompression or to be written by compression.
-#The following state is maintained for the current CompressedChunk:
-#CompressedChunkStart: The location of the first byte of the CompressedChunk within the
-#                      CompressedContainer .
-#The following state is maintained for a DecompressedBuffer:
-#DecompressedCurrent: The location of the next byte in the DecompressedBuffer to be written by
-#                     decompression or to be read by compression.
-#DecompressedBufferEnd: The location of the byte after the last byte in the DecompressedBuffer.
-#The following state is maintained for the current DecompressedChunk:
-#DecompressedChunkStart: The location of the first byte of the DecompressedC hunk within the
-#                        DecompressedBuffer.
-
-class DecompressVBA(object):
+class CompressedVBAStream(object):
     
-    def __init__ (self,filepath):
-        print("init - decompress from %s"%filepath)
+    def __init__ (self,filepath, offset):
+#        print("init - decompress from %s"%filepath)
         self.filepath = filepath
         file = open(self.filepath,'rb')
         self.chars = file.read()
+        self.filepath = filepath
+        self.mnOffset = offset
 
     def __decompressRawChunk (self):
-        print("decompressRawChunk")
+#        print("decompressRawChunk")
         chunkSize = 4096
         for i in xrange(0,chunkSize):
-            self.DecompressedChunk[ self.DecompressedCurrent + i ] = ( struct.unpack("b", self.chars[self.CompressedCurrent + i ])[0] )
+            self.DecompressedChunk[ self.DecompressedCurrent + i ] =  self.chars[self.CompressedCurrent + i ]
         self.CompressedCurrent += chunkSize
         self.DecompressedCurrent += chunkSize
 
@@ -82,7 +69,7 @@ class DecompressVBA(object):
             self.CompressedCurrent += 2
 
     def __decompressTokenSequence (self):
-        print(" __decompressTokenSequence at CompressedCurrent %i CompressedEnd %i"%( self.CompressedCurrent, self.CompressedEnd ) )
+#        print(" __decompressTokenSequence at CompressedCurrent %i CompressedEnd %i"%( self.CompressedCurrent, self.CompressedEnd ) )
         flagByte = struct.unpack("b", self.chars[self.CompressedCurrent ])[0]
         self.CompressedCurrent += 1
         if  self.CompressedCurrent < self.CompressedEnd:
@@ -91,19 +78,21 @@ class DecompressVBA(object):
                     self.__decompressToken(i,flagByte)
  
     def decompressCompressedChunk (self):
-        print("decompressCompressedChunk")
+#        print("decompressCompressedChunk")
         
         header = struct.unpack_from("<H",self.chars, self.CompressedChunkStart)[0]
         #extract size from header
         size = header & 0xFFF 
+#        print("raw size %i"%size)
+        size = size + 3
         #extract chunk sig from header
         sigflag = header >> 12
         sig = sigflag & 0x7
         #extract chunk flag from sig 
         compressedChunkFlag = (( sigflag & 0x8 ) ==  0x8)
-        print("size = %i"%size)
-        print("sig = %x"%sig)
-        print("compress = %i"%compressedChunkFlag)
+#        print("chunksize = %i"%size)
+#        print("sig = %x"%sig)
+#        print("compress = %i"%compressedChunkFlag)
         self.DecompressedChunk = bytearray(4096);  # one chunk ( need to cater for more than one chunk of course )
         self.DecompressedChunkStart = 0
         self.DecompressedCurrent = 0
@@ -117,39 +106,44 @@ class DecompressVBA(object):
         else:
             self.__decompressRawChunk()
         if self.DecompressedCurrent:
-#             truncChunk = self.DecompressedChunk[0:self.DecompressedCurrent]
-#             self.DecompressedContainer.append( truncChunk )
-             for i in xrange( 0,  self.DecompressedCurrent ):
-                 self.DecompressedContainer.append( self.DecompressedChunk[ i ] )
-    def read (self):
+             truncChunk = self.DecompressedChunk[0:self.DecompressedCurrent]
+             self.DecompressedContainer.extend( truncChunk )
+#             for i in xrange( 0,  self.DecompressedCurrent ):
+#                 self.DecompressedContainer.append( self.DecompressedChunk[ i ] )
+    def decompress (self):
         self.DecompressedContainer = bytearray();
-        self.CompressedCurrent = 0
+        self.CompressedCurrent = self.mnOffset
         self.CompressedRecordEnd = len(self.chars )
         self.DeCompressedBufferEnd = 0
-        self.DecompressedChunkStart = 0
+        self.DecompressedChunkStart = self.CompressedCurrent 
         val = struct.unpack("b", self.chars[self.CompressedCurrent])[0]
         if val == 1:
-            print("valid CompressedContainer.SignatureByte")
+#            print("valid CompressedContainer.SignatureByte")
             self.CompressedCurrent += 1
             while self.CompressedCurrent < self.CompressedRecordEnd:
                 self.CompressedChunkStart = self.CompressedCurrent
-                print("about to call decompressChunk for start %i"%self.CompressedChunkStart)
+#                print("about to call decompressChunk for start %i"%self.CompressedChunkStart)
                 self.decompressCompressedChunk()
-            print( "wrote %i bytes"%len(self.DecompressedContainer) )
-            out = open( "/data4/home/npower/test.out", 'wb' );
-            out.write( self.DecompressedContainer );
-            out.flush()
-            out.close()
+            return self.DecompressedContainer
         else:
-            print("error decompressing container invalid signature byte %i"% val)
+            raise Exception("error decompressing container invalid signature byte %i"% val)
          
-        
+        return None
 def main():
     if ( len ( sys.argv ) <= 1 ):
-        print("usage: decompress: file")
+        print("usage: decompress: file [offset]")
         sys.exit(1) 
-    dumper = DecompressVBA( sys.argv[1] )
-    dumper.read()
+    offset = 0
+    if len ( sys.argv ) > 2:
+        offset = int(sys.argv[2])
+    compressed = CompressedVBAStream( sys.argv[1], offset )
+    decompressed = compressed.decompress()
+
+    out = open( sys.argv[1] + ".decompress", 'wb' );
+    out.write( decompressed );
+    out.flush()
+    out.close()
+
     exit(0)
 
 if __name__ == '__main__':
