@@ -59,7 +59,7 @@ class DirNode:
         return self.Nodes  
 
     def getStream(self):
-        return self.OleContainer.getStreamForName( self.Entry )
+        return self.OleContainer.getStreamForEntry( self.Entry )
 
 class OleContainer:
 
@@ -205,6 +205,119 @@ class OleContainer:
         self.__parseFile()
         return self.rootNode 
 
+# alot of records done follow the id, sizeofrecord pattern
+# many of the dir records seems to be id, sizeofstring, stringbuffer, reserved,
+#   sizeofstring(unicode), stringbuffer(unicode)
+class DefaultBuffReservedBuffReader:
+    def __init__ (self, reader, recname ):
+        self.reader = reader
+        self.recname = recname
+    def parse(self):
+        # pos before header
+        pos = self.reader.getCurrentPos() - 2        
+        print ("0x%x: skipping %s"%(pos,self.recname))
+        # buffer
+        size = self.reader.readUnsignedInt( 4 )
+        self.reader.readBytes(size)        
+        # reserved
+        self.reader.readBytes(2)        
+        # buffer
+        size = self.reader.readUnsignedInt( 4 )
+        self.reader.readBytes(size)    
+
+class DocStringReader( DefaultBuffReservedBuffReader ):
+    def __init__ (self, reader ):
+        DefaultBuffReservedBuffReader.__init__(self, reader, "PROJECTDOCSTRING")
+
+class HelpFilePathReader( DefaultBuffReservedBuffReader ):
+    def __init__ (self, reader ):
+        DefaultBuffReservedBuffReader.__init__(self, reader, "PROJECTHELPFILEPATH" )
+
+class ProjectConstantsReader( DefaultBuffReservedBuffReader ):
+    def __init__ (self, reader ):
+        DefaultBuffReservedBuffReader.__init__(self, reader, "PROJECTCONSTANTS" )
+
+class ReferenceNameReader( DefaultBuffReservedBuffReader ):
+    def __init__ (self, reader ):
+        DefaultBuffReservedBuffReader.__init__(self, reader, "REFERENCENAMEREADER" )
+
+class ModuleStreamNameReader( DefaultBuffReservedBuffReader ):
+    def __init__ (self, reader ):
+        DefaultBuffReservedBuffReader.__init__(self, reader, "MODULESTREAMNAME" )
+
+class ProjectVersionReader:
+    def __init__ (self, reader ):
+        self.reader = reader
+    def parse(self):
+        # pos before header
+        pos = self.reader.getCurrentPos() - 2        
+        print ("0x%x: skipping %s"%(pos,"PROJECTVERSION"))
+        self.reader.readBytes(10)
+
+# map of record id and description of records
+#dir stream contains
+dirRecordData = {
+    #PROJECTINFORMATION RECORD
+    #  which contains any of the following sub records
+    0x0001: ["PROJECTSYSKIND", "SysKindRecord"],
+    0x0002: ["PROJECTLCID", "LcidRecord"],
+    0x0003: ["PROJECTCODEPAGE", "CodePageRecord"],
+    0x0004: ["PROJECTNAME", "NameRecord"],
+    0x0005: ["PROJECTDOCSTRING", "DocStringRecord", DocStringReader ],
+    0x0006: ["PROJECTHELPFILEPATH", "HelpFilePathRecord", HelpFilePathReader],
+    0x0007: ["PROJECTHELPCONTEXT", "HelpContextRecord"],
+    0x0008: ["PROJECTLIBFLAGS", "LibFlagsRecord"],
+    0x0009: ["PROJECTVERSION", "VersionRecord", ProjectVersionReader],
+    0x000C: ["PROJECTCONSTANTS", "ConstantsRecord", ProjectConstantsReader],
+    0x0014: ["PROJECTLCIDINVOKE", "LcidInvokeRecord"],
+    #PROJECTREFERENCES
+    # which contains any of the following sub records
+    0x0016: ["REFERENCENAME", "NameRecord", ReferenceNameReader ],
+    0x000D: ["REFERENCEREGISTERED", "ReferenceRegistered"],
+    0x000E: ["REFERENCEPROJECT", "ReferenceProject"],
+    0x002F: ["REFERENCECONTROL", "ReferenceControl"],
+    0x0033: ["REFERENCEORIGINAL", "ReferenceOriginal"],
+    #
+    0x000F: ["PROJECTMODULES", "ModulesRecord"],
+    0x0013: ["PROJECTCOOKIE", "CookieRecord"],
+    0x002B: ["PROJECTMODULETERM", "ModuleTerminator"],
+    0x0019: ["MODULENAME", "ModuleName"],
+    0x0047: ["MODULENAMEUNICODE", "ModuleNameUnicode"],
+    0x001A: ["MODULESTREAMNAME", "ModuleStreamName", ModuleStreamNameReader],
+    0x001C: ["MODULEDOCSTRING", "ModuleDocString"],
+    0x0031: ["MODULEOFFSET", "ModuleOffSet"],
+    0x001E: ["MODULEHELPCONTEXT", "ModuleHelpContext"],
+    0x002C: ["MODULECOOKIE", "ModuleCookie"],
+    0x0021: ["MODULETYPE", "ModuleTypeProcedural"],
+    0x0022: ["MODULETYPE", "ModuleTypeDocClassOrDesgn"],
+    0x0025: ["MODULEREADONLY", "ModuleReadOnly"],
+    0x0028: ["MODULEPRIVATE", "ModulePrivate"],
+}    
+
+    
+        
+class DirStreamReader( globals.ByteStream ): 
+    def __init__ (self, bytes ):
+        globals.ByteStream.__init__(self, bytes)
+
+    def parse(self):
+        print("============ Dir Stream ============")
+        while self.isEndOfRecord() == False:
+            pos = self.getCurrentPos()
+            recordID = self.readUnsignedInt( 2 )
+            name = "Unknown"
+            if dirRecordData.has_key( recordID ):
+                name = dirRecordData[ recordID ][0]
+            # if we have a handler let it deal with the record
+            if ( dirRecordData.has_key( recordID ) and len( dirRecordData[ recordID ] ) > 2 ):
+                reader =  dirRecordData[ recordID ][2]( self )
+                reader.parse()
+            else:
+                size = self.readUnsignedInt( 4 )
+                print ("0x%x: %s [0x%x] with size %i"%(pos,name,recordID,size))
+                if size:
+                    self.readBytes(size)        
+
 class VBAContainer:
     def __init__( self, vbaroot ):
         self.vbaroot = vbaroot
@@ -218,7 +331,8 @@ class VBAContainer:
                 if result != None:
                     return result 
         return None 
-    
+
+
     def dump( self ):
         # dump the PROJECTxxx streams
         for child in self.vbaroot.getChildren():
@@ -235,6 +349,9 @@ class VBAContainer:
             bytes = dirNode.getStream()
             compressed = vbahelper.CompressedVBAStream( bytes, 0 )
             bytes = compressed.decompress()
+            reader = DirStreamReader( bytes )
+            reader.parse()
+            
 
 def main ():
     parser = optparse.OptionParser()
