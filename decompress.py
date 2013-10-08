@@ -5,6 +5,7 @@ import sys, os.path, optparse, struct
 
 class CompressedVBAStream(object):
     
+    CHUNKSIZE = 4096
     def __init__ (self,filepath, offset):
 #        print("init - decompress from %s"%filepath)
         self.filepath = filepath
@@ -15,11 +16,10 @@ class CompressedVBAStream(object):
 
     def __decompressRawChunk (self):
 #        print("decompressRawChunk")
-        chunkSize = 4096
-        for i in xrange(0,chunkSize):
+        for i in xrange(0,self.CHUNKSIZE):
             self.DecompressedChunk[ self.DecompressedCurrent + i ] =  self.chars[self.CompressedCurrent + i ]
-        self.CompressedCurrent += chunkSize
-        self.DecompressedCurrent += chunkSize
+        self.CompressedCurrent += self.CHUNKSIZE
+        self.DecompressedCurrent += self.CHUNKSIZE
 
     def __copyTokenHelp(self):
         difference = self.DecompressedCurrent - self.DecompressedChunkStart
@@ -93,7 +93,7 @@ class CompressedVBAStream(object):
 #        print("chunksize = %i"%size)
 #        print("sig = %x"%sig)
 #        print("compress = %i"%compressedChunkFlag)
-        self.DecompressedChunk = bytearray(4096);  # one chunk ( need to cater for more than one chunk of course )
+        self.DecompressedChunk = bytearray(self.CHUNKSIZE);  # one chunk ( need to cater for more than one chunk of course )
         self.DecompressedChunkStart = 0
         self.DecompressedCurrent = 0
         self.CompressedEnd = self.CompressedRecordEnd
@@ -108,8 +108,7 @@ class CompressedVBAStream(object):
         if self.DecompressedCurrent:
              truncChunk = self.DecompressedChunk[0:self.DecompressedCurrent]
              self.DecompressedContainer.extend( truncChunk )
-#             for i in xrange( 0,  self.DecompressedCurrent ):
-#                 self.DecompressedContainer.append( self.DecompressedChunk[ i ] )
+
     def decompress (self):
         self.DecompressedContainer = bytearray();
         self.CompressedCurrent = self.mnOffset
