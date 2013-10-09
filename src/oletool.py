@@ -205,9 +205,9 @@ class OleContainer:
         self.__parseFile()
         return self.rootNode 
 
-# alot of records done follow the id, sizeofrecord pattern
-# many of the dir records seems to be id, sizeofstring, stringbuffer, reserved,
-#   sizeofstring(unicode), stringbuffer(unicode)
+# alot of records follow the id, sizeofrecord pattern
+# many of the dir records though seem to be id, sizeofstring,
+# stringbuffer, reserved, sizeofstring(unicode), stringbuffer(unicode)
 class DefaultBuffReservedBuffReader:
     def __init__ (self, reader ):
         self.reader = reader
@@ -238,6 +238,7 @@ class ProjectVersionReader:
         minor = self.reader.readUnsignedInt( 2 )
         print("    major: 0x%x"%major)
         print("    minor: 0x%x"%minor)
+
 class CodePageReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
@@ -265,7 +266,23 @@ class DocStringRecordReader(StdReader):
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
         print("    DocString(utf-16): %s size[%i]"%(bytes.decode("utf-16").decode(self.reader.codepageName), size ))
-                 
+
+class ConstantsRecordReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        bytes = self.reader.readBytes( size )
+        print("    Constants: size[%i]"%size)
+        if size:
+            print("%s"%bytes.decode(self.reader.codepageName))
+        #reserved
+        self.reader.readBytes( 2 )
+        #unicode docstring
+        size = self.reader.readUnsignedInt( 4 )
+        bytes = self.reader.readBytes( size )
+        print("    Constants(Utf-16): size[%i]"%size)
+        if size:
+            print("%s"%bytes.decode("uft-16").decode(self.reader.codepageName))
+
 class ProjectHelpFilePathReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
@@ -343,25 +360,56 @@ class ModuleTypeOtherReader(StdReader):
         # size must be zero ( assert? )
         print("    Module Type: document, class or design")
 
-# map of record id to array containing description of records and optionall
-# map of record id to array containing description of records and optionall
+class SysKindReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        val = self.reader.readUnsignedInt( size )
+        sysKind = "Unknown" 
+        if val == 0:
+           sysKind = "16 bit windows" 
+        elif val == 1:
+           sysKind = "32 bit windows" 
+        elif val == 2:
+           sysKind = "Macintosh" 
+        print("    SysType: %s"%sysKind)
+
+class LcidReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        val = self.reader.readUnsignedInt( size )
+        print("   LCID: 0x%x ( expected 0x409 )"%val)
+   
+class LcidInvokeReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        val = self.reader.readUnsignedInt( size )
+        print("   LCIDINVOKE: 0x%x ( expected 0x409 )"%val)
+   
+
+class LibFlagReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        val = self.reader.readUnsignedInt( size )
+        print("   LIBFLAGS: 0x%x"%val)
+
+# map of record id to array containing description of records and optional
 # a handler ( inspired by xlsstream.py )
 dirRecordData = {
     #dir stream contains........
     #PROJECTINFORMATION RECORD
     #  which contains any of the following sub records
-    0x0001: ["PROJECTSYSKIND", "SysKindRecord"],
-    0x0002: ["PROJECTLCID", "LcidRecord"],
+    0x0001: ["PROJECTSYSKIND", "SysKindRecord",SysKindReader],
+    0x0002: ["PROJECTLCID", "LcidRecord",LcidReader],
     0x0003: ["PROJECTCODEPAGE", "CodePageRecord", CodePageReader ],
     0x0004: ["PROJECTNAME", "NameRecord", ProjectNameReader],
     0x0005: ["PROJECTDOCSTRING", "DocStringRecord", DocStringRecordReader ],
     0x0006: ["PROJECTHELPFILEPATH", "HelpFilePathRecord", ProjectHelpFilePathReader],
     0x0007: ["PROJECTHELPCONTEXT", "HelpContextRecord", ProjectHelpFileContextReader],
-    0x0008: ["PROJECTLIBFLAGS", "LibFlagsRecord"],
+    0x0008: ["PROJECTLIBFLAGS", "LibFlagsRecord",LibFlagReader],
     0x0009: ["PROJECTVERSION", "VersionRecord",ProjectVersionReader],
     0x0010: ["DIRTERMINATOR", "DirTerminator"],
-    0x000C: ["PROJECTCONSTANTS", "ConstantsRecord", DefaultBuffReservedBuffReader],
-    0x0014: ["PROJECTLCIDINVOKE", "LcidInvokeRecord"],
+    0x000C: ["PROJECTCONSTANTS", "ConstantsRecord", ConstantsRecordReader],
+    0x0014: ["PROJECTLCIDINVOKE", "LcidInvokeRecord",LcidInvokeReader],
     #PROJECTREFERENCES
     # which contains any of the following sub records
     0x0016: ["REFERENCENAME", "NameRecord", DefaultBuffReservedBuffReader ],
@@ -417,7 +465,8 @@ class DirStreamReader( globals.ByteStream ):
             labelWidth = int(math.ceil(math.log(len(self.bytes), 10)))
             fmt = "%%%d.%dd: "%(labelWidth, labelWidth)
             sys.stdout.write(fmt%pos)
-            print ("%s [0x%x] "%(name,recordID))
+#            print ("%s [0x%x] "%(name,recordID))
+            print '[0x{0:0>4x}] {1}'.format(recordID,name)
             if ( dirRecordData.has_key( recordID ) and len( dirRecordData[ recordID ] ) > 2 ):
                 reader = dirRecordData[ recordID ][2]( self )
                 reader.parse()
