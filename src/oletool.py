@@ -428,31 +428,54 @@ class DirStreamReader( globals.ByteStream ):
                     self.readBytes(size)        
 
 class VBAContainer:
-    def __init__( self, vbaroot ):
-        self.vbaroot = vbaroot
+    def __init__( self, root ):
+        # well take a storage DirNode
+        # and try and find the VBA container
+        # relative to that. That way we should
+        # be able to cater for the normal 'word' or
+        # 'excel' compound documents or indeed some arbitrary
+        # storage that contains a 'VBA' sub-folder
+        self.oleRoot = root
+        self.vbaRoot = None
 
     def __findNodeByHierarchicalName( self, node, name ):
-        if node.getHierarchicalName() == name:
+        if ( node.getHierarchicalName() == name ):
             return node
         else:
             for child in node.getChildren():
                 result = self.__findNodeByHierarchicalName( child, name )
                 if result != None:
-                    return result 
-        return None 
+                    return result
+        return None
 
+    def __findNodeContainingLeafName( self, parentNode, name ):
+        for child in parentNode.getChildren():
+            if name == child.Entry.Name:
+                return parentNode
+            node = self.__findNodeContainingLeafName( child, name )
+            if node != None:
+                return node
+        return None
+
+    def findVBARoot(self):
+        # find the node that containes 'VBA' storage
+        return self.__findNodeContainingLeafName( self.oleRoot, "VBA" )
 
     def dump( self ):
+        self.vbaRoot = self.findVBARoot()
+        if self.vbaRoot == None:
+            print("Can't find VBA subcontainer")
+            exit(1)
         # dump the PROJECTxxx streams
-        for child in self.vbaroot.getChildren():
+        for child in self.vbaRoot.getChildren():
             # first level children are PROJECT, PROJECTwm & PROJECTlk
             if child.isStorage() == False:
                 bytes = child.getStream()
                 print("%s (stream, size: %d bytes)"%(child.getName(), len(bytes)))
                 globals.dumpBytes( bytes, 512) 
         # need to read the dir stream
-        dirName = self.vbaroot.getHierarchicalName() + "VBA/dir"
-        dirNode = self.__findNodeByHierarchicalName( self.vbaroot, dirName )
+        dirName = self.vbaRoot.getHierarchicalName() + "VBA/dir"
+        dirNode = self.__findNodeByHierarchicalName( self.vbaRoot, dirName )
         if dirNode != None:
             #decompress 
             bytes = dirNode.getStream()
@@ -463,9 +486,9 @@ class VBAContainer:
             print("")
             for module in reader.Modules:
                 print("== Module (decompressed) Name %s Stream %s at offset 0x%x =="%(module.name,module.streamname,module.offset))
-                fullStreamName = self.vbaroot.getHierarchicalName() + "VBA/" + module.streamname
-                modNode = self.__findNodeByHierarchicalName( self.vbaroot, fullStreamName )
-                bytes = modNode.getStream()
+                fullStreamName = self.vbaRoot.getHierarchicalName() + "VBA/" + module.streamname
+                moduleNode = self.__findNodeByHierarchicalName( self.vbaRoot, fullStreamName )
+                bytes = moduleNode.getStream()
                 compressed = vbahelper.CompressedVBAStream( bytes, module.offset )
                 bytes = compressed.decompress()
                 source = bytes.decode( reader.codepageName )
@@ -489,11 +512,11 @@ def main ():
     params.dumpbasic =  options.dumpbasic
 
     if len(args) < 1:
-        globals.error("takes at least one arguments\n")
+        globals.error("takes at least one argument\n")
         parser.print_help()
         sys.exit(1)
 
-    container =  OleContainer( args[ 0 ], params )
+    container = OleContainer( args[ 0 ], params )
 
     if params.list == True:
         container.list() 
@@ -503,20 +526,12 @@ def main ():
            
        for file in files:
            container.extract( file ) 
-#        container.listEntries() 
+
     if params.dumpbasic:
-        print("dump basic related info!") 
         container.read()
         root = container.getRoot()
-        # find basic container
-        for child in root.getChildren():
-            # "Macros" is the 'word' VBA container, 
-            # "_VBA_PROJECT_CUR" is the 'excel" VBA container
-            if child.getName() == "_VBA_PROJECT_CUR" or child.getName() == "Macros":
-             
-                print("vba root storage  %s"%child.getName())
-                vba = VBAContainer( child ) 
-                vba.dump()
+        vba = VBAContainer( root ) 
+        vba.dump()
 
 if __name__ == '__main__':
     main()
