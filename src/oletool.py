@@ -406,7 +406,7 @@ class DirStreamReader( globals.ByteStream ):
 
     def parse(self):
         print("")
-        print("============ Dir Stream ============")
+        print("============ Dir Stream (inflated) size: %d bytes ============"%len(self.bytes))
         while self.isEndOfRecord() == False:
             pos = self.getCurrentPos()
             recordID = self.readUnsignedInt( 2 )
@@ -466,13 +466,6 @@ class VBAContainer:
         if self.vbaRoot == None:
             print("Can't find VBA subcontainer")
             exit(1)
-        # dump the PROJECTxxx streams
-        for child in self.vbaRoot.getChildren():
-            # first level children are PROJECT, PROJECTwm & PROJECTlk
-            if child.isStorage() == False:
-                bytes = child.getStream()
-                print("%s (stream, size: %d bytes)"%(child.getName(), len(bytes)))
-                globals.dumpBytes( bytes, 512) 
         # need to read the dir stream
         dirName = self.vbaRoot.getHierarchicalName() + "VBA/dir"
         dirNode = self.__findNodeByHierarchicalName( self.vbaRoot, dirName )
@@ -483,12 +476,25 @@ class VBAContainer:
             bytes = compressed.decompress()
             reader = DirStreamReader( bytes )
             reader.parse()
+
             print("")
+            # dump the PROJECTxxx streams ( need to codepage from dir )
+            for child in self.vbaRoot.getChildren():
+                # first level children are PROJECT, PROJECTwm & PROJECTlk
+                if child.isStorage() == False:
+                    bytes = child.getStream()
+                    print("============ %s Stream size: %d bytes)============"%(child.getName(), len(bytes)))
+                    if child.getName() == "PROJECT":
+                        #straight text file
+                        print("%s"%bytes.decode(reader.codepageName))
+                    else:
+                        globals.dumpBytes( bytes, 512) 
+                print("")
             for module in reader.Modules:
-                print("== Module (decompressed) Name %s Stream %s at offset 0x%x =="%(module.name,module.streamname,module.offset))
                 fullStreamName = self.vbaRoot.getHierarchicalName() + "VBA/" + module.streamname
                 moduleNode = self.__findNodeByHierarchicalName( self.vbaRoot, fullStreamName )
                 bytes = moduleNode.getStream()
+                print("============ %s Stream (inflated) size: %d bytes offset: %d ============"%(module.streamname,len(bytes), module.offset) )
                 compressed = vbahelper.CompressedVBAStream( bytes, module.offset )
                 bytes = compressed.decompress()
                 source = bytes.decode( reader.codepageName )
