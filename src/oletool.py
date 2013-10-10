@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 ########################################################################
 #
-#  Copyright (c) 2011 Noel Power
+#  Copyright (c) 2013 Noel Power
 #  
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
@@ -213,7 +213,7 @@ class DefaultBuffReservedBuffReader:
         self.reader = reader
     def parse(self):
         # pos before header
-        print ("    skipping record")
+        print ("  skipping")
         # buffer
         size = self.reader.readUnsignedInt( 4 )
         self.reader.readBytes(size)        
@@ -236,8 +236,8 @@ class ProjectVersionReader:
         # major
         major = self.reader.readUnsignedInt( 4 )
         minor = self.reader.readUnsignedInt( 2 )
-        print("    major: 0x%x"%major)
-        print("    minor: 0x%x"%minor)
+        print("  major: 0x%x"%major)
+        print("  minor: 0x%x"%minor)
 
 class CodePageReader(StdReader):
     def parse(self):
@@ -247,31 +247,31 @@ class CodePageReader(StdReader):
         #need a map of codepage code (int) to codepage alias(s) from
         # #FIXME codepage is hardcoded below
         self.reader.codepageName = "cp1252"
-        print("    codepage: %i"%self.reader.codepage)
+        print("  codepage: %i"%self.reader.codepage)
      
 class ProjectNameReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("    ProjectName: %s"%bytes.decode(self.reader.codepageName))
+        print("  ProjectName: %s"%bytes.decode(self.reader.codepageName))
                  
 class DocStringRecordReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("    DocString: %s size[%i]"%(bytes.decode(self.reader.codepageName),size))
+        print("  DocString: %s size[0x%x]"%(bytes.decode(self.reader.codepageName),size))
         #reserved
         self.reader.readBytes( 2 )
         #unicode docstring
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("    DocString(utf-16): %s size[%i]"%(bytes.decode("utf-16").decode(self.reader.codepageName), size ))
+        print("  DocString(utf-16): %s size[0x%x]"%(bytes.decode("utf-16").decode(self.reader.codepageName), size ))
 
 class ConstantsRecordReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("    Constants: size[%i]"%size)
+        print("  Constants: size[0x%x]"%size)
         if size:
             print("%s"%bytes.decode(self.reader.codepageName))
         #reserved
@@ -279,7 +279,7 @@ class ConstantsRecordReader(StdReader):
         #unicode docstring
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("    Constants(Utf-16): size[%i]"%size)
+        print("  Constants(Utf-16): size[0x%x]"%size)
         if size:
             print("%s"%bytes.decode("uft-16").decode(self.reader.codepageName))
 
@@ -287,19 +287,19 @@ class ProjectHelpFilePathReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("    HelpFile1: %s size[%i]"%(bytes.decode(self.reader.codepageName),size))
+        print("  HelpFile1: %s size[0x%x]"%(bytes.decode(self.reader.codepageName),size))
         #reserved
         self.reader.readBytes( 2 )
         #unicode docstring
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("    HelpFile2: %s size[%i]"%(bytes.decode(self.reader.codepageName), size ))
+        print("  HelpFile2: %s size[0x%x]"%(bytes.decode(self.reader.codepageName), size ))
 
 class ProjectHelpFileContextReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         context = self.reader.readUnsignedInt( size )
-        print("    HelpContext: 0x%x"%context)
+        print("  HelpContext: 0x%x"%context)
 
 class ProjectModulesReader(StdReader):
     def parse(self):
@@ -307,7 +307,7 @@ class ProjectModulesReader(StdReader):
         size = self.reader.readUnsignedInt( 4 )
         count = self.reader.readUnsignedInt( size )
         self.reader.CurrentModule = ModuleInfo()
-        print("    Num Modules: %i"%count) 
+        print("  Num Modules: %i"%count) 
 
 class ModuleNameReader(StdReader):
     def parse(self):
@@ -315,7 +315,7 @@ class ModuleNameReader(StdReader):
         nameBytes = self.reader.readBytes( size )
         moduleInfo = self.reader.CurrentModule
         moduleInfo.name = nameBytes.decode( self.reader.codepageName )
-        print("    ModuleName: %s"%moduleInfo.name)
+        print("  ModuleName: %s"%moduleInfo.name)
 
 class ModuleStreamNameReader(StdReader):
     def parse(self):
@@ -323,13 +323,13 @@ class ModuleStreamNameReader(StdReader):
         nameBytes = self.reader.readBytes( size )
         moduleInfo = self.reader.CurrentModule
         moduleInfo.streamname = nameBytes.decode( self.reader.codepageName )
-        print("    ModuleStreamName: %s"%moduleInfo.name)
+        print("  ModuleStreamName: %s"%moduleInfo.name)
         #reserved
         self.reader.readBytes( 2 )
         size = self.reader.readUnsignedInt( 4 )
         nameUnicodeBytes = self.reader.readBytes( size )
         nameUnicode = nameUnicodeBytes.decode("utf-16").decode( self.reader.codepageName)
-        print("    ModuleStreamName(utf-16): %s"%nameUnicode)
+        print("  ModuleStreamName(utf-16): %s"%nameUnicode)
 
 class ModuleOffSetReader(StdReader):
     def parse(self):
@@ -337,7 +337,7 @@ class ModuleOffSetReader(StdReader):
         moduleInfo = self.reader.CurrentModule
         moduleInfo.offset = self.reader.readUnsignedInt( size )
      
-        print("    Offset: %i"%moduleInfo.offset) 
+        print("  Offset: 0x%x"%moduleInfo.offset) 
 
 class ProjectModuleTermReader(StdReader):
     def parse(self):
@@ -352,13 +352,13 @@ class ModuleTypeProceduralReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         # size must be zero ( assert? )
-        print("    Module Type: procedure")
+        print("  Module Type: procedure")
 
 class ModuleTypeOtherReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         # size must be zero ( assert? )
-        print("    Module Type: document, class or design")
+        print("  Module Type: document, class or design")
 
 class SysKindReader(StdReader):
     def parse(self):
@@ -371,26 +371,26 @@ class SysKindReader(StdReader):
            sysKind = "32 bit windows" 
         elif val == 2:
            sysKind = "Macintosh" 
-        print("    SysType: %s"%sysKind)
+        print("  SysType: %s"%sysKind)
 
 class LcidReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         val = self.reader.readUnsignedInt( size )
-        print("   LCID: 0x%x ( expected 0x409 )"%val)
+        print("  LCID: 0x%x ( expected 0x409 )"%val)
    
 class LcidInvokeReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         val = self.reader.readUnsignedInt( size )
-        print("   LCIDINVOKE: 0x%x ( expected 0x409 )"%val)
+        print("  LCIDINVOKE: 0x%x ( expected 0x409 )"%val)
    
 
 class LibFlagReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         val = self.reader.readUnsignedInt( size )
-        print("   LIBFLAGS: 0x%x"%val)
+        print("  LIBFLAGS: 0x%x"%val)
 
 # map of record id to array containing description of records and optional
 # a handler ( inspired by xlsstream.py )
@@ -453,8 +453,10 @@ class DirStreamReader( globals.ByteStream ):
         self.CurrentModule = None
 
     def parse(self):
+        print("============ Dir Stream (inflated) size: 0x%x bytes ============"%len(self.bytes))
         print("")
-        print("============ Dir Stream (inflated) size: %d bytes ============"%len(self.bytes))
+        print("Offset  [recId]  RecordName")
+        print("------- -------  -----------")
         while self.isEndOfRecord() == False:
             pos = self.getCurrentPos()
             recordID = self.readUnsignedInt( 2 )
@@ -463,7 +465,7 @@ class DirStreamReader( globals.ByteStream ):
                 name = dirRecordData[ recordID ][0]
             # if we have a handler let it deal with the record
             labelWidth = int(math.ceil(math.log(len(self.bytes), 10)))
-            fmt = "%%%d.%dd: "%(labelWidth, labelWidth)
+            fmt = "0x%%%d.%dx: "%(labelWidth, labelWidth)
             sys.stdout.write(fmt%pos)
 #            print ("%s [0x%x] "%(name,recordID))
             print '[0x{0:0>4x}] {1}'.format(recordID,name)
@@ -471,18 +473,18 @@ class DirStreamReader( globals.ByteStream ):
                 reader = dirRecordData[ recordID ][2]( self )
                 reader.parse()
             else:
-                print ("    skipping")
+                print ("  skipping")
                 size = self.readUnsignedInt( 4 )
                 if size:
                     self.readBytes(size)        
 
 class VBAContainer:
     def __init__( self, root ):
-        # well take a storage DirNode
+        # we'll take a storage DirNode
         # and try and find the VBA container
         # relative to that. That way we should
         # be able to cater for the normal 'word' or
-        # 'excel' compound documents or indeed some arbitrary
+        # 'excel' compound documents or indeed any arbitrary
         # storage that contains a 'VBA' sub-folder
         self.oleRoot = root
         self.vbaRoot = None
@@ -526,24 +528,24 @@ class VBAContainer:
             reader = DirStreamReader( bytes )
             reader.parse()
 
-            print("")
             # dump the PROJECTxxx streams ( need to codepage from dir )
             for child in self.vbaRoot.getChildren():
                 # first level children are PROJECT, PROJECTwm & PROJECTlk
                 if child.isStorage() == False:
                     bytes = child.getStream()
-                    print("============ %s Stream size: %d bytes)============"%(child.getName(), len(bytes)))
+                    print("")
+                    print("============ %s Stream size: 0x%x bytes)============"%(child.getName(), len(bytes)))
+                    print("")
                     if child.getName() == "PROJECT":
                         #straight text file
                         print("%s"%bytes.decode(reader.codepageName))
                     else:
                         globals.dumpBytes( bytes, 512) 
-                print("")
             for module in reader.Modules:
                 fullStreamName = self.vbaRoot.getHierarchicalName() + "VBA/" + module.streamname
                 moduleNode = self.__findNodeByHierarchicalName( self.vbaRoot, fullStreamName )
                 bytes = moduleNode.getStream()
-                print("============ %s Stream (inflated) size: %d bytes offset: %d ============"%(module.streamname,len(bytes), module.offset) )
+                print("============ %s Stream (inflated) size: 0x%x bytes offset: 0x%x ============"%(module.streamname,len(bytes), module.offset) )
                 compressed = vbahelper.CompressedVBAStream( bytes, module.offset )
                 bytes = compressed.decompress()
                 source = bytes.decode( reader.codepageName )
