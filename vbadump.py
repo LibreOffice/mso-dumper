@@ -4,6 +4,79 @@ import sys, os.path, optparse, math
 sys.path.append(sys.path[0]+"/src")
 import ole, globals, node, olestream, vbahelper
 
+#codepage -> codepagename map
+# note: there are some missing entries ( the commented out ones ) that
+# I couldn't find in python docs ... library/codecs.html
+codePageMap = {
+    437: "cp437",        #IBM_437
+    708: "iso8859_6",    #ISO_8859_6
+    737: "cp737",        #IBM_737
+    775: "cp775",        #IBM_775;
+    850: "cp850",        #IBM_850;
+    852: "cp852",        #IBM_852;
+    855: "cp855",        #IBM_855;
+    857: "cp857",        #IBM_857;
+    860: "cp860",        #IBM_860;
+    861: "cp861",        #IBM_861;
+    862: "cp862",        #IBM_862;
+    863: "cp863",        #IBM_863;
+    864: "cp864",        #IBM_864;
+    865: "cp865",        #IBM_865;
+    866: "cp866",        #IBM_866;
+    869: "cp869",        #IBM_869;
+    874: "cp874",        #MS_874;
+    932: "cp932",        #MS_932;
+#    936: "".             #MS_936;
+    949: "cp949",        #MS_949;
+    950: "cp950",        #MS_950;
+    1250: "cp1250",      #MS_1250;
+    1251: "cp1251",      #MS_1251;
+    1252: "cp1252",      #MS_1252;
+    1253: "cp1253",      #MS_1253;
+    1254: "cp1254",      #MS_1254;
+    1255: "cp1255",      #MS_1255;
+    1256: "cp1256",      #MS_1256;
+    1257: "cp1257",      #MS_1257;
+    1258: "cp1258",      #MS_1258;
+    1361: "cp1361",      #MS_1361;
+    10000: "macroman",   #APPLE_ROMAN;
+#    10001: "",           #APPLE_JAPANESE;
+#    10002: "",           #APPLE_CHINTRAD;
+#    10003: "",           #APPLE_KOREAN;
+    10004: "mac_arabic", #APPLE_ARABIC;
+#    10005: "",           #APPLE_HEBREW;
+    10006: "mac_greek",    #APPLE_GREEK;
+    10007: "mac_cyrillic", #APPLE_CYRILLIC;
+#    10008: "",           #APPLE_CHINSIMP;
+#    10010: "",           #APPLE_ROMANIAN;
+#    10017: "",           #APPLE_UKRAINIAN;
+    10029: "mac_latin2", #APPLE_CENTEURO;
+    10079: "mac_iceland",#APPLE_ICELAND;
+    10081: "mac_turkish",#APPLE_TURKISH;
+#    10082: "",           #APPLE_CROATIAN;
+    20127: "ascii",      #ASCII_US;
+    20866: "koi8",       #KOI8_R;
+    21866: "koi8",       #KOI8_U;
+    28591: "latin_1",    #ISO_8859_1;
+    28592: "iso8859_2",  #ISO_8859_2;
+    28593: "iso8859_3",  #ISO_8859_3;
+    28594: "iso8859_4",  #ISO_8859_4;
+    28595: "iso8859_5",  #ISO_8859_5;
+    28596: "iso8859_6",  #ISO_8859_6;
+    28597: "iso8859_7",  #ISO_8859_7;
+    28598: "iso8859_8",  #ISO_8859_8;
+    28599: "iso8859_9",  #ISO_8859_9;
+    28605: "iso8859_15", #ISO_8859_15;
+    50220: "iso2022_jp", #ISO_2022_JP;
+    50225: "iso2022_kr", #ISO_2022_KR;
+    51932: "euc_jp",     #EUC_JP;
+    51936: "gb2312",     #EUC_CN;
+    51949: "euc_kr",     #EUC_KR;
+#    57002: "",           #ISCII_DEVANAGARI;
+    65000: "utf_7",      #UTF7;
+    65001: "utf_8",      #UTF8;
+}
+
 # alot of records follow the id, sizeofrecord pattern
 # many of the dir records though seem to be id, sizeofstring,
 # stringbuffer, reserved, sizeofstring(unicode), stringbuffer(unicode)
@@ -25,10 +98,11 @@ class DefaultBuffReservedBuffReader:
 class StdReader:
     def __init__ (self, reader ):
         self.reader = reader
+    # subclass needs to implement this
+    def parse(self): 
+        pass
 
-class ProjectVersionReader:
-    def __init__ (self, reader ):
-        self.reader = reader
+class ProjectVersionReader( StdReader ):
     def parse(self):
         # reserved
         self.reader.readBytes(4)
@@ -43,9 +117,10 @@ class CodePageReader(StdReader):
         size = self.reader.readUnsignedInt( 4 )
         self.reader.codepage = self.reader.readUnsignedInt( size )
 
-        #need a map of codepage code (int) to codepage alias(s) from
-        # #FIXME codepage is hardcoded below
+        #default codepage to something reasonable
         self.reader.codepageName = "cp1252"
+        if codePageMap.has_key( self.reader.codepage ):
+            self.reader.codepageName = codePageMap[  self.reader.codepage ]
         print("  codepage: %i"%self.reader.codepage)
      
 class ProjectNameReader(StdReader):
