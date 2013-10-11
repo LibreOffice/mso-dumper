@@ -4,36 +4,8 @@ class VBAStreamBase:
     def __init__(self, chars, offset):
         self.mnOffset = offset
         self.chars = chars
-
-class UnCompressedVBAStream(VBAStreamBase):
-    def __packCopyToken(self, offset, length ):
-        lengthMask, offSetMask, bitCount, maximumLength = self.__copyTokenHelp()
-        temp1 = offset - 1
-        temp2 = 16 - bitCount
-        temp3 = length - 3
-        copyToken = (temp1 << temp2) | temp3
-        return copyToken
-
-    def __compressRawChunk(self):
-        self.CompressedCurrent = self.CompressedChunkStart + 2
-        self.DecompressedCurrent  = self.DecompressedChunkStart
-        PadCount = self.CHUNKSIZE
-        LastByte = self.DecompressedChunkStart + PadCount
-        if self.DecompressedBufferEnd < LastByte:
-           LastByte =  self.DecompressedBufferEnd
-
-        for index in xrange( self.DecompressedChunkStart,  LastByte ):
-            self.CompressedContainer[ self.CompressedCurrent ] = self.chars[ index ]
-            self.CompressedCurrent = self.CompressedCurrent + 1
-            self.DecompressedCurrent = self.DecompressedCurrent + 1
-            PadCount = PadCount - 1
-
-        for index in xrange( 0, PadCount ):
-            self.CompressedContainer[ self.CompressedCurrent ] = 0x0;   
-            self.CompressedCurrent = self.CompressedCurrent + 1
-
-    # #FIXME move to base class
-    def __copyTokenHelp(self):
+ 
+    def copyTokenHelp(self):
         difference = self.DecompressedCurrent - self.DecompressedChunkStart
         bitCount = 0
         while( ( 1 << bitCount ) < difference ):
@@ -47,97 +19,125 @@ class UnCompressedVBAStream(VBAStreamBase):
         maximumLength = ( 0xFFFF >> bitCount ) + 3
         return lengthMask, offSetMask, bitCount, maximumLength
 
-    def __matching( self, DecompressedEnd ):
-        Candidate = self.DecompressedCurrent - 1
-        BestLength = 0
-        while Candidate >= self.DecompressedChunkStart:
-            C = Candidate
-            D = self.DecompressedCurrent
-            Len = 0
-            while  D < DecompressedEnd and ( self.chars[ D ] == self.chars[ C ] ):
-                Len = Len + 1
-                C = C + 1
-                D = D + 1
-            if Len > BestLength:
-                BestLength = Len
-                BestCandidate = Candidate
-            Candidate = Candidate - 1
-        if BestLength >=  3:
-            lengthMask, offSetMask, bitCount, maximumLength = self.__copyTokenHelp()
-            Length = BestLength
-            if ( maximumLength < BestLength ):
-                Length = maximumLength 
-            Offset = self.DecompressedCurrent - BestCandidate
-        else:
-            Length = 0
-            Offset = 0
-        return Offset, Length
+class UnCompressedVBAStream(VBAStreamBase):
+    def __packCopyToken(self, offset, length ):
+        lengthMask, offSetMask, bitCount, maximumLength = self.copyTokenHelp()
+        temp1 = offset - 1
+        temp2 = 16 - bitCount
+        temp3 = length - 3
+        copyToken = (temp1 << temp2) | temp3
+        return copyToken
 
-    def __compressToken( self, CompressedEnd, DecompressedEnd, index, Flags ):
-        Offset = 0
-        Offset, Length = self.__matching( DecompressedEnd )
-        if Offset:
-            if (self.CompressedCurrent + 1) < CompressedEnd:
-                copyToken = self.__packCopyToken( Offset, Length )
+    def __compressRawChunk(self):
+        self.CompressedCurrent = self.CompressedChunkStart + 2
+        self.DecompressedCurrent  = self.DecompressedChunkStart
+        padCount = self.CHUNKSIZE
+        lastByte = self.DecompressedChunkStart + padCount
+        if self.DecompressedBufferEnd < lastByte:
+           lastByte =  self.DecompressedBufferEnd
+
+        for index in xrange( self.DecompressedChunkStart,  lastByte ):
+            self.CompressedContainer[ self.CompressedCurrent ] = self.chars[ index ]
+            self.CompressedCurrent = self.CompressedCurrent + 1
+            self.DecompressedCurrent = self.DecompressedCurrent + 1
+            padCount = padCount - 1
+
+        for index in xrange( 0, padCount ):
+            self.CompressedContainer[ self.CompressedCurrent ] = 0x0;   
+            self.CompressedCurrent = self.CompressedCurrent + 1
+
+    def __matching( self, decompressedEnd ):
+        candidate = self.DecompressedCurrent - 1
+        bestLength = 0
+        while candidate >= self.DecompressedChunkStart:
+            c = candidate
+            d = self.DecompressedCurrent
+            nLen = 0
+            while  d < decompressedEnd and ( self.chars[ d ] == self.chars[ c ] ):
+                nLen = nLen + 1
+                c = c + 1
+                d = d + 1
+            if nLen > bestLength:
+                bestLength = nLen
+                bestCandidate = candidate
+            candidate = candidate - 1
+        if bestLength >=  3:
+            lengthMask, offSetMask, bitCount, maximumLength = self.copyTokenHelp()
+            length = bestLength
+            if ( maximumLength < bestLength ):
+                length = maximumLength 
+            offset = self.DecompressedCurrent - bestCandidate
+        else:
+            length = 0
+            offset = 0
+        return offset, length
+
+    def __compressToken( self, compressedEnd, decompressedEnd, index, flags ):
+        offset = 0
+        offset, length = self.__matching( decompressedEnd )
+        if offset:
+            if (self.CompressedCurrent + 1) < compressedEnd:
+                copyToken = self.__packCopyToken( offset, length )
                 struct.pack_into("<H", self.CompressedContainer, self.CompressedCurrent, copyToken )
 
                 temp1 = ( 1 << index )
-                temp2 = Flags & ~temp1
-                Flags = temp2 | temp1
+                temp2 = flags & ~temp1
+                flags = temp2 | temp1
 
                 self.CompressedCurrent = self.CompressedCurrent + 2
-                self.DecompressedCurrent = self.DecompressedCurrent + Length
+                self.DecompressedCurrent = self.DecompressedCurrent + length
             else:
-                self.CompressedCurrent = CompressedEnd
+                self.CompressedCurrent = compressedEnd
         else:
-            if self.CompressedCurrent < CompressedEnd:
+            if self.CompressedCurrent < compressedEnd:
                 self.CompressedContainer[ self.CompressedCurrent ] = self.chars[ self.DecompressedCurrent ]
                 self.CompressedCurrent = self.CompressedCurrent + 1
                 self.DecompressedCurrent = self.DecompressedCurrent + 1
             else:
-                self.CompressedCurrent = CompressedEnd
-        return Flags
+                self.CompressedCurrent = compressedEnd
+        return flags
 
-    def __compressTokenSequence(self, CompressedEnd, DecompressedEnd ):
-        FlagByteIndex = self.CompressedCurrent
-        TokenFlags = 0
+    def __compressTokenSequence(self, compressedEnd, decompressedEnd ):
+        flagByteIndex = self.CompressedCurrent
+        tokenFlags = 0
         self.CompressedCurrent = self.CompressedCurrent + 1
         for index in xrange(0,8): 
-            if ( ( self.DecompressedCurrent < DecompressedEnd )
-                and (self.CompressedCurrent < CompressedEnd) ):
+            if ( ( self.DecompressedCurrent < decompressedEnd )
+                and (self.CompressedCurrent < compressedEnd) ):
 
-                TokenFlags = self.__compressToken( CompressedEnd, DecompressedEnd, index, TokenFlags )
-        self.CompressedContainer[ FlagByteIndex ] = TokenFlags
+                tokenFlags = self.__compressToken( compressedEnd, decompressedEnd, index, tokenFlags )
+        self.CompressedContainer[ flagByteIndex ] = tokenFlags
+
     def __CompressDecompressedChunk(self):
         self.CompressedContainer.extend(  bytearray(self.CHUNKSIZE + 2) )
-        CompressedEnd = self.CompressedChunkStart + 4098
+        compressedEnd = self.CompressedChunkStart + 4098
         self.CompressedCurrent = self.CompressedChunkStart + 2
-        DecompressedEnd = self.DecompressedBufferEnd
+        decompressedEnd = self.DecompressedBufferEnd
         if  (self.DecompressedChunkStart + self.CHUNKSIZE) <  self.DecompressedBufferEnd:
-            DecompressedEnd = (self.DecompressedChunkStart + self.CHUNKSIZE)
+            decompressedEnd = (self.DecompressedChunkStart + self.CHUNKSIZE)
 
-        while (self.DecompressedCurrent < DecompressedEnd) and (self.CompressedCurrent < CompressedEnd):
-                self.__compressTokenSequence( CompressedEnd, DecompressedEnd)
+        while (self.DecompressedCurrent < decompressedEnd) and (self.CompressedCurrent < compressedEnd):
+                self.__compressTokenSequence( compressedEnd, decompressedEnd)
 
-        if self.DecompressedCurrent < DecompressedEnd:
-            self.__compressRawChunk( DecompressedEnd - 1 )
-            CompressedFlag = 0
+        if self.DecompressedCurrent < decompressedEnd:
+            self.__compressRawChunk( decompressedEnd - 1 )
+            compressedFlag = 0
         else:
-            CompressedFlag = 1
-        Size = self.CompressedCurrent - self.CompressedChunkStart
-        Header = 0x0000
+            compressedFlag = 1
+        size = self.CompressedCurrent - self.CompressedChunkStart
+        header = 0x0000
         #Pack CompressedChunkSize with Size and Header
-        temp1=Header & 0xF000
-        temp2 = Size - 3
-        Header = temp1 | temp2
+        temp1=header & 0xF000
+        temp2 = size - 3
+        header = temp1 | temp2
         #Pack CompressedChunkFlag with CompressedFlag and Header
-        temp1 = Header & 0x7FFF
-        temp2 = CompressedFlag << 15
-        Header = temp1 | temp2
-        #CALL Pack CompressedChunkSignature with Header
-        temp1 = Header & 0x8FFF
+        temp1 = header & 0x7FFF
+        temp2 = compressedFlag << 15
+        header = temp1 | temp2
+        #Pack CompressedChunkSignature with Header
+        temp1 = header & 0x8FFF
         Header = temp1 | 0x3000
-        #SET the CompressedChunkHeader located at CompressedChunkStart TO Header
+        #CompressedChunkHeader located at CompressedChunkStart TO Header
         struct.pack_into("<H", self.CompressedContainer, self.CompressedChunkStart, Header )
 
         # trim buffer to size
@@ -168,22 +168,8 @@ class CompressedVBAStream(VBAStreamBase):
         self.CompressedCurrent += self.CHUNKSIZE
         self.DecompressedCurrent += self.CHUNKSIZE
 
-    def __copyTokenHelp(self):
-        difference = self.DecompressedCurrent - self.DecompressedChunkStart
-        bitCount = 0
-        while( ( 1 << bitCount ) < difference ):
-            bitCount +=1
-
-        if bitCount < 4:
-            bitCount = 4;
-
-        lengthMask = 0xFFFF >> bitCount
-        offSetMask = ~lengthMask
-#        maximumLength = ( 0xFFFF >> bitCOunt ) + 3
-        return lengthMask, offSetMask, bitCount
-
     def __unPackCopyToken (self, copyToken ):
-       lengthMask, offSetMask, bitCount = self.__copyTokenHelp() 
+       lengthMask, offSetMask, bitCount, maximumLength = self.copyTokenHelp() 
        length = ( copyToken & lengthMask ) + 3
        temp1 = copyToken & offSetMask
        temp2 = 16 - bitCount
@@ -263,7 +249,7 @@ class CompressedVBAStream(VBAStreamBase):
                 self.decompressCompressedChunk()
             return self.DecompressedContainer
         else:
-            raise Exception("error decompressing container invalid signature byte %i"% val)
+            raise Exception("error decompressing container invalid signature byte %i"%val)
          
         return None
 
