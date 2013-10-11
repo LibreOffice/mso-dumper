@@ -82,9 +82,9 @@ class OleContainer:
         nextLeft = child.Entry.DirIDLeft
         if ( nextLeft > 0 ):
             newEntry = DirNode( entries[ nextLeft ], nextLeft )
-            newEntry.HierachicalName = newEntry.Entry.Name
-            if len(  parent.HierachicalName ):
-                newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
+            newEntry.HierachicalName = parent.HierachicalName + newEntry.Entry.Name
+            if  newEntry.Entry.DirIDRoot > 0:
+                newEntry.HierachicalName = newEntry.HierachicalName + '/'
 
             self.__addSiblings( entries, parent, newEntry ) 
             parent.Nodes.insert( 0, newEntry )
@@ -93,9 +93,9 @@ class OleContainer:
         # add children to the right 
         if ( nextRight > 0 ):
             newEntry = DirNode( entries[ nextRight ], nextRight )
-            newEntry.HierachicalName = newEntry.Entry.Name
-            if len(  parent.HierachicalName ):
-                newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
+            newEntry.HierachicalName = parent.HierachicalName + newEntry.Entry.Name
+            if  newEntry.Entry.DirIDRoot > 0:
+                newEntry.HierachicalName = newEntry.HierachicalName + '/'
             self.__addSiblings( entries, parent, newEntry ) 
             parent.Nodes.append( newEntry )
 
@@ -103,11 +103,13 @@ class OleContainer:
 
         if ( parent.Entry.DirIDRoot > 0 ):
             newEntry = DirNode( entries[ parent.Entry.DirIDRoot ], parent.Entry.DirIDRoot )
-            if len(  parent.HierachicalName ):
-                newEntry.HierachicalName = parent.HierachicalName + '/' + newEntry.HierachicalName
+            newEntry.HierachicalName = parent.HierachicalName +  newEntry.Entry.Name
+            if ( newEntry.Entry.DirIDRoot > 0 ):
+                newEntry.HierachicalName =  newEntry.HierachicalName + '/'
+
             self.__addSiblings( entries, parent, newEntry )
-            parent.Nodes.append( newEntry )
-            
+            parent.Nodes.append( newEntry )            
+
         for child in parent.Nodes:
             if child.Entry.DirIDRoot > 0:
                 self.__buildTreeImpl( entries, child )
@@ -152,7 +154,7 @@ class OleContainer:
             obj.parseDirEntries()
             count = 0
             for entry in obj.entries:
-                print("Entry [0x%x] Name %s  Root 0x%x Left 0x%x Right %x")%( count, entry.Name, entry.DirIDRoot, entry.DirIDLeft, entry.DirIDRight )
+                print("Entry [%i] Name %s  Root %i Left %i Right %i")%( count, entry.Name, entry.DirIDRoot, entry.DirIDLeft, entry.DirIDRight )
                 count = count + 1
     def list(self, directory):
         if directory != None:
@@ -162,7 +164,7 @@ class OleContainer:
             self.__printHeader()
             self.__printListReport( rootNode, directory.entries )
             # need to print a footer ( total bytes, total files like unzip )
-
+            
     def extract(self, name, directory):
         if ( directory == None ):
             print "failed to extract %s"%name
