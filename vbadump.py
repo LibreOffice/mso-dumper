@@ -1,4 +1,30 @@
 #!/usr/bin/env python2
+########################################################################
+#
+#  Copyright (c) 2013 Noel Power
+#  
+#  Permission is hereby granted, free of charge, to any person
+#  obtaining a copy of this software and associated documentation
+#  files (the "Software"), to deal in the Software without
+#  restriction, including without limitation the rights to use,
+#  copy, modify, merge, publish, distribute, sublicense, and/or sell
+#  copies of the Software, and to permit persons to whom the
+#  Software is furnished to do so, subject to the following
+#  conditions:
+#  
+#  The above copyright notice and this permission notice shall be
+#  included in all copies or substantial portions of the Software.
+#  
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+#  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+#  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+#  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+#  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+#  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+#  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+#  OTHER DEALINGS IN THE SOFTWARE.
+#
+########################################################################
 
 import sys, os.path, optparse, math
 sys.path.append(sys.path[0]+"/src")
@@ -77,24 +103,6 @@ codePageMap = {
     65001: "utf_8",      #UTF8;
 }
 
-# alot of records follow the id, sizeofrecord pattern
-# many of the dir records though seem to be id, sizeofstring,
-# stringbuffer, reserved, sizeofstring(unicode), stringbuffer(unicode)
-class DefaultBuffReservedBuffReader:
-    def __init__ (self, reader ):
-        self.reader = reader
-    def parse(self):
-        # pos before header
-        print ("  skipping")
-        # buffer
-        size = self.reader.readUnsignedInt( 4 )
-        self.reader.readBytes(size)        
-        # reserved
-        self.reader.readBytes(2)        
-        # buffer
-        size = self.reader.readUnsignedInt( 4 )
-        self.reader.readBytes(size)    
-
 class StdReader:
     def __init__ (self, reader ):
         self.reader = reader
@@ -109,8 +117,8 @@ class ProjectVersionReader( StdReader ):
         # major
         major = self.reader.readUnsignedInt( 4 )
         minor = self.reader.readUnsignedInt( 2 )
-        print("  major: 0x%x"%major)
-        print("  minor: 0x%x"%minor)
+        print("  major: %i"%major)
+        print("  minor: %i"%minor)
 
 class CodePageReader(StdReader):
     def parse(self):
@@ -139,7 +147,21 @@ class DocStringRecordReader(StdReader):
         #unicode docstring
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
-        print("  DocString(utf-16): %s size[0x%x]"%(bytes.decode("utf-16").decode(self.reader.codepageName), size ))
+        print("  DocStringUnicode: %s size[0x%x]"%(bytes.decode("utf-16").decode(self.reader.codepageName), size ))
+
+class ReferenceProjectReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        sizeOfLibidAbsolute = self.reader.readUnsignedInt( 4 )
+        sLibidAbsolute =  self.reader.readBytes( sizeOfLibidAbsolute )
+        nSizeOfLibidRelative =   self.reader.readUnsignedInt( 4 )
+        sLibidRelative =  self.reader.readBytes( nSizeOfLibidRelative )
+        majorVersion = self.reader.readUnsignedInt( 4 )
+        minorVersion = self.reader.readUnsignedInt( 2 )
+        print("  LibidAbsolute: %s"%sLibidAbsolute.decode( self.reader.codepageName ) )
+        print("  LibidRelative: %s"%sLibidRelative.decode( self.reader.codepageName ) )
+        print("  MajorVersion: %i"%majorVersion )
+        print("  MinorVersion: %i"%minorVersion )
 
 class ConstantsRecordReader(StdReader):
     def parse(self):
@@ -203,7 +225,34 @@ class ModuleStreamNameReader(StdReader):
         size = self.reader.readUnsignedInt( 4 )
         nameUnicodeBytes = self.reader.readBytes( size )
         nameUnicode = nameUnicodeBytes.decode("utf-16").decode( self.reader.codepageName)
-        print("  ModuleStreamName(utf-16): %s"%nameUnicode)
+        print("  ModuleStreamNameUnicode: %s"%nameUnicode)
+
+class ReferenceNameRecordReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        nameBytes = self.reader.readBytes( size )
+        print("  ReferenceName: %s"%nameBytes.decode( self.reader.codepageName ))
+        #reserved
+        self.reader.readBytes( 2 )
+        size = self.reader.readUnsignedInt( 4 )
+        nameUnicodeBytes = self.reader.readBytes( size )
+        nameUnicode = nameUnicodeBytes.decode("utf-16").decode( self.reader.codepageName)
+        print("  ReferenceNameUnicode: %s"%nameUnicode)
+
+class ReferenceRegisteredReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        sizeOfLibid = self.reader.readUnsignedInt( 4 )
+        libidBytes = self.reader.readBytes( sizeOfLibid )
+        print("  Libid: %s"%libidBytes.decode( self.reader.codepageName ))
+        #reserved1 & reserved2
+        self.reader.readBytes( 6 )
+class ModuleNameUnicodeReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        nameUnicodeBytes = self.reader.readBytes( size )
+        nameUnicode = nameUnicodeBytes.decode("utf-16").decode( self.reader.codepageName)
+        print("  ModuleNameUnicode: %s"%nameUnicode)
 
 class ModuleOffSetReader(StdReader):
     def parse(self):
@@ -266,6 +315,61 @@ class LibFlagReader(StdReader):
         val = self.reader.readUnsignedInt( size )
         print("  LIBFLAGS: 0x%x"%val)
 
+class ModuleCookieReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        val = self.reader.readUnsignedInt( size )
+        print("  ModuleCookie: 0x%x"%val)
+
+class ModuleHelpContextReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        val = self.reader.readUnsignedInt( size )
+        print("  HelpConext: 0x%x"%val)
+
+class ProjectCookieReader(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        val = self.reader.readUnsignedInt( size )
+        print("  ProjectCookie: 0x%x"%val)
+
+class ReferenceOriginalRecord(StdReader):
+    def parse(self):
+        size = self.reader.readUnsignedInt( 4 )
+        sLibidOriginalBytes = self.reader.readBytes( size )
+        print("  LibIdOriginal: %s"%sLibidOriginalBytes.decode( self.reader.codepageName))
+
+class ReferenceControlReaderPart1(StdReader):
+    def parse(self):
+        sizeOfTwiddled = self.reader.readUnsignedInt( 4 )
+        sizeOfLibidTwiddled =  self.reader.readUnsignedInt( 4 )
+        sLibidTwiddledBytes =  self.reader.readBytes( sizeOfLibidTwiddled )
+        print("  LibIdTwiddled: %s"%sLibidTwiddledBytes.decode( self.reader.codepageName))
+        
+        # Reserved1 & Reserved2 ( suppose we could really read these and assert if 
+        # they don't conform to expected values ( 0x00000000 & 0x00000000 )
+        self.reader.readBytes( 6 )
+
+class ReferenceControlReaderPart2(StdReader):
+    def parse(self):
+        sizeExtended = self.reader.readUnsignedInt( 4 )
+        sizeOfLibidExtended =  self.reader.readUnsignedInt( 4 )
+        sLibidExtendedBytes =  self.reader.readBytes( sizeOfLibidExtended )
+        print("  LibidExtended: %s"%sLibidExtendedBytes.decode( self.reader.codepageName))
+        
+        # Reserved4 & Reserved5 ( suppose we could really read these and assert if 
+        # they don't conform to expected values ( 0x00000000 & 0x00000000 )
+        self.reader.readBytes( 6 )
+        origTypeLib = self.reader.readBytes( 16 )
+        sys.stdout.write("  GUID: " )
+        for i in xrange( 0, 16 ):
+            if i:
+                sys.stdout.write(" ")
+            sys.stdout.write("0x%x"%origTypeLib[ i ])
+        print("")
+        cookie = self.reader.readUnsignedInt( 4 )
+        print("  cookie: 0x%x"%cookie)
+
 # map of record id to array containing description of records and optional
 # a handler ( inspired by xlsstream.py )
 dirRecordData = {
@@ -286,26 +390,26 @@ dirRecordData = {
     0x0014: ["PROJECTLCIDINVOKE", "LcidInvokeRecord",LcidInvokeReader],
     #PROJECTREFERENCES
     # which contains any of the following sub records
-    0x0016: ["REFERENCENAME", "NameRecord", DefaultBuffReservedBuffReader ],
-    0x000D: ["REFERENCEREGISTERED", "ReferenceRegistered"],
-    0x000E: ["REFERENCEPROJECT", "ReferenceProject"],
-    0x002F: ["REFERENCECONTROL", "ReferenceControl"],
-    #the following "FAKE-#FIXME record is not really a record but actually
+    0x0016: ["REFERENCENAME", "NameRecord", ReferenceNameRecordReader ],
+    0x000D: ["REFERENCEREGISTERED", "ReferenceRegistered", ReferenceRegisteredReader],
+    0x000E: ["REFERENCEPROJECT", "ReferenceProject", ReferenceProjectReader],
+    0x002F: ["REFERENCECONTROL-Part1", "ReferenceControl", ReferenceControlReaderPart1],
+    #the following record is not really a record but actually
     #is a reserved word ( with fixed value 0x0030 ) in the middle of a
     #REFEREBCECONTROL record
-    0x0030: ["FAKE-#FIXME", "Fake record"],
-    0x0033: ["REFERENCEORIGINAL", "ReferenceOriginal"],
+    0x0030: ["REFERENCECONTROL-Part2", "ReferenceControl", ReferenceControlReaderPart2 ],
+    0x0033: ["REFERENCEORIGINAL", "ReferenceOriginal",ReferenceOriginalRecord],
     #
     0x000F: ["PROJECTMODULES", "ModulesRecord", ProjectModulesReader],
-    0x0013: ["PROJECTCOOKIE", "CookieRecord"],
+    0x0013: ["PROJECTCOOKIE", "CookieRecord", ProjectCookieReader],
     0x002B: ["PROJECTMODULETERM", "ModuleTerminator", ProjectModuleTermReader],
     0x0019: ["MODULENAME", "ModuleName",ModuleNameReader],
-    0x0047: ["MODULENAMEUNICODE", "ModuleNameUnicode"],
+    0x0047: ["MODULENAMEUNICODE", "ModuleNameUnicode", ModuleNameUnicodeReader ],
     0x001A: ["MODULESTREAMNAME", "ModuleStreamName", ModuleStreamNameReader],
-    0x001C: ["MODULEDOCSTRING", "ModuleDocString", DefaultBuffReservedBuffReader],
+    0x001C: ["MODULEDOCSTRING", "ModuleDocString", DocStringRecordReader],
     0x0031: ["MODULEOFFSET", "ModuleOffSet", ModuleOffSetReader],
-    0x001E: ["MODULEHELPCONTEXT", "ModuleHelpContext"],
-    0x002C: ["MODULECOOKIE", "ModuleCookie"],
+    0x001E: ["MODULEHELPCONTEXT", "ModuleHelpContext", ModuleHelpContextReader],
+    0x002C: ["MODULECOOKIE", "ModuleCookie", ModuleCookieReader ],
     0x0021: ["MODULETYPE", "ModuleTypeProcedural", ModuleTypeProceduralReader],
     0x0022: ["MODULETYPE", "ModuleTypeDocClassOrDesgn", ModuleTypeOtherReader],
     0x0025: ["MODULEREADONLY", "ModuleReadOnly"],
@@ -347,7 +451,6 @@ class DirStreamReader( globals.ByteStream ):
                 reader = dirRecordData[ recordID ][2]( self )
                 reader.parse()
             else:
-                print ("  skipping")
                 size = self.readUnsignedInt( 4 )
                 if size:
                     self.readBytes(size)        
