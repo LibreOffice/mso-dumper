@@ -3580,12 +3580,14 @@ class PlfLst(DOCDirStream):
 
 class LFO(DOCDirStream):
     """The LFO structure specifies the LSTF element that corresponds to a list that contains a paragraph."""
-    def __init__(self, plfLfo):
+    def __init__(self, plfLfo, name, index):
         DOCDirStream.__init__(self, plfLfo.bytes)
         self.pos = plfLfo.pos
+        self.name = name
+        self.index = index
 
     def dump(self):
-        print '<lfo type="LFO" offset="%d">' % self.pos
+        print '<%s type="LFO" index="%s" offset="%d">' % (self.name, self.index, self.pos)
         self.printAndSet("lsid", self.readInt32())
         self.printAndSet("unused1", self.readuInt32())
         self.printAndSet("unused2", self.readuInt32())
@@ -3593,7 +3595,7 @@ class LFO(DOCDirStream):
         self.printAndSet("ibstFltAutoNum", self.readuInt8())
         Grfhic(self).dump()
         self.printAndSet("unused3", self.readuInt8())
-        print '</lfo>'
+        print '</%s>' % self.name
 
 class LFOData(DOCDirStream):
     """The LFOData structure contains the Main Document CP of the corresponding LFO."""
@@ -3621,7 +3623,7 @@ class PlfLfo(DOCDirStream):
         self.printAndSet("lfoMac", self.readInt32())
         lfos = []
         for i in range(self.lfoMac):
-            lfo = LFO(self)
+            lfo = LFO(self, "rgLfo", i)
             lfos.append(lfo)
             lfo.dump()
             self.pos = lfo.pos
