@@ -120,21 +120,33 @@ class DOCDirStream:
         self.pos += 8
         return ret
 
-    def getString(self, limit = None):
+    def __getString(self, limit):
         bytes = []
         count = 0
+        pos = self.pos
         while True:
             if (not limit is None) and count == limit:
                 break
-            i = self.readuInt8()
-            j = self.readuInt8()
+            i = self.getuInt8(pos = pos)
+            pos += 1
+            j = self.getuInt8(pos = pos)
+            pos += 1
             if i != 0 or j != 0:
                 bytes.append(i)
                 bytes.append(j)
             else:
                 break
             count += 1
-        return globals.getUTF8FromUTF16("".join(map(lambda x: chr(x), bytes)), xml = True)
+        return (self.quoteAttr(globals.encodeName(globals.getUTF8FromUTF16("".join(map(lambda x: chr(x), bytes))))), pos)
+
+    def getString(self, limit = None):
+        ret, pos = self.__getString(limit)
+        return ret
+
+    def readString(self, limit = None):
+        ret, pos = self.__getString(limit)
+        self.pos = pos
+        return ret
 
     def getBit(self, byte, bitNumber):
         return (byte & (1 << bitNumber)) >> bitNumber

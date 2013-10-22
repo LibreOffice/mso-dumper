@@ -412,7 +412,7 @@ def getDouble (bytes):
     return struct.unpack('<d', text)[0]
 
 
-def getUTF8FromUTF16 (bytes, xml = False):
+def getUTF8FromUTF16 (bytes):
     # little endian utf-16 strings
     byteCount = len(bytes)
     loopCount = int(byteCount/2)
@@ -431,10 +431,7 @@ def getUTF8FromUTF16 (bytes, xml = False):
         try:    
             text += unicode(code, 'utf-8')
         except UnicodeDecodeError:
-            close = ""
-            if xml:
-                close="/"
-            text += "<%d invalid chars%s>"%(len(code), close)
+            text += "<%d invalid chars>"%len(code)
     return text
 
 class StreamWrap(object):

@@ -2035,10 +2035,10 @@ class DopTypography(DOCDirStream):
         self.printAndSet("cchLeadingPunct", self.readInt16())
 
         self.printAndSet("rgxchFPunct", self.getString(self.cchFollowingPunct), hexdump = False)
-        self.pos += (202 - 2 * self.cchFollowingPunct)
+        self.pos += 202
 
         self.printAndSet("rgxchLPunct", self.getString(self.cchLeadingPunct), hexdump = False)
-        self.pos += (102 - 2 * self.cchLeadingPunct)
+        self.pos += 102
 
         print '</dopTypography>'
         assert self.pos == self.dop.pos + DopTypography.size
@@ -2514,7 +2514,7 @@ class FFN(DOCDirStream):
         self.pos += 10
         FontSignature(self.bytes, self.pos).dump()
         self.pos += 24
-        print '<xszFfn value="%s"/>' % self.getString()
+        print '<xszFfn value="%s"/>' % self.readString()
         print '</ffn>'
 
 class SttbfFfn(DOCDirStream):
