@@ -117,6 +117,10 @@ class String(BaseRecordHandler):
     def parseBytes (self):
         name = globals.getTextBytes(self.readRemainingBytes())
         self.appendProperty(name)
+        # The MS doc says that the bytes are the low bytes of unicode
+        # chars, with the high byte ignored. Only latin1 could stand
+        # this transformation.
+        name = name.decode('cp1252').encode('UTF-8')
         self.appendLine("text: '%s'"%name)
 
 def ShapeString (*args):
