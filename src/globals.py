@@ -411,28 +411,22 @@ def getDouble (bytes):
     text = toTextBytes(bytes)
     return struct.unpack('<d', text)[0]
 
-
 def getUTF8FromUTF16 (bytes):
     # little endian utf-16 strings
     byteCount = len(bytes)
     loopCount = int(byteCount/2)
-    text = ''
+
+    # Truncate input to first null doublet
     for i in xrange(0, loopCount):
-        code = ''
-        lsbZero = bytes[i*2] == '\x00'
-        msbZero = bytes[i*2+1] == '\x00'
-        if msbZero and lsbZero:
-            return text
-        
-        if not msbZero:
-            code += bytes[i*2+1]
-        if not lsbZero:
-            code += bytes[i*2]
-        try:    
-            text += unicode(code, 'utf-8')
-        except UnicodeDecodeError:
-            text += "<%d invalid chars>"%len(code)
-    return text
+        if bytes[i*2] == '\x00':
+            if bytes[i*2+1] == '\x00':
+                bytes = bytes[0:i*2]
+                break
+
+    # Convert from utf-16 and return utf-8, using markers for
+    # conversion errors
+    text = unicode(bytes, 'UTF-16LE', errors='replace')
+    return text.encode('UTF-8')
 
 class StreamWrap(object):
     def __init__ (self,printer):
