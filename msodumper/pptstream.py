@@ -19,6 +19,11 @@ class PPTFile(object):
         self.version = None
         self.params = params
 
+        # If we are a text dumper, skip irrelevant records
+        global recData, textRecData
+        if params.noStructOutput and params.dumpText:
+            recData = textRecData
+
         self.header = ole.Header(self.chars, self.params)
         self.pos = self.header.parse()
 
@@ -113,6 +118,8 @@ class PPTDirStream(object):
 
 
     def printRecordHeader (self, startPos, recordInstance, recordVersion, recordType, size):
+        if self.params.noStructOutput and self.params.dumpText:
+            return
         self.__printSep('=')
         if recordType in recData:
             self.__print("[%s]"%recData[recordType][0])
@@ -124,6 +131,8 @@ class PPTDirStream(object):
 
 
     def printRecordDump (self, bytes, recordType):
+        if self.params.noStructOutput and self.params.dumpText:
+            return
         size = len(bytes)
         self.__printSep('-', 61, "%4.4Xh: "%recordType)
         for i in xrange(0, size):
@@ -188,6 +197,13 @@ class PPTDirStream(object):
 # IDs from OOo's svx/inc/svx/msdffdef.hxx (slightly adapted)
 #
 # opcode: [canonical name, handler (optional)]
+
+# A shorter recData which we use when extracting text (speeds things up by
+# skipping irrelevant records)
+textRecData = {
+    4000:  ["DFF_PST_TextCharsAtom", pptrecord.ShapeUniString],
+    4008:  ["DFF_PST_TextBytesAtom", pptrecord.ShapeString],
+    }
 
 recData = {
 

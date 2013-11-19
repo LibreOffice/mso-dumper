@@ -517,7 +517,11 @@ class AnimationInfo(BaseRecordHandler):
                      "graph by series","graph by category","element in series",
                      "element in category"]
         buildType = self.readUnsignedInt(1)
-        self.appendLine("build type: %s"%buildDesc[buildType])
+        try:
+            # can fail with index out of range
+            self.appendLine("build type: %s"%buildDesc[buildType])
+        except Exception, err:
+            error("AnimationInfo::parsebytes: %s: %s" % (str(buildType),str(err)))
 
         flyDesc = ["none","random","blinds","checker","cover","dissolve",
                    "fade","pull","random bar","strips","wipe","zoom","fly",

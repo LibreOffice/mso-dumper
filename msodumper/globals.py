@@ -257,6 +257,8 @@ Note the following:
 
 
 def dumpBytes (chars, subDivide=None):
+    if _noOutput:
+        return
     line = 0
     subDivideLine = None
     if subDivide != None:

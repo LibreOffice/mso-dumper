@@ -47,7 +47,14 @@ class PPTDumper(object):
             if len(dirname) == 0 or dirname == 'Root Entry':
                 continue
 
-            dirstrm = strm.getDirectoryStreamByName(dirname)
+            try:
+                dirstrm = strm.getDirectoryStreamByName(dirname)
+            except Exception, err:
+                error("getDirectoryStreamByName(%s): %s\n" % (dirname,str(err)))
+                # The previous version was killed by the exception
+                # here, so the equivalent is to break, but maybe there
+                # is no reason to do so.
+                break
             self.__printDirHeader(dirname, len(dirstrm.bytes))
             if  dirname == "PowerPoint Document":
                 if not self.__readSubStream(dirstrm):
