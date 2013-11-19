@@ -15,6 +15,8 @@ def usage (exname):
 
 Options:
   --help        displays this help message.
+  --no-struct-output suppress normal disassembly output
+  --dump-text   print the textual content
 """%exname
     print msg
 
@@ -74,7 +76,9 @@ def main (args):
 
     params = globals.Params()
     try:
-        opts, args = getopt.getopt(args, "h", ["help", "debug", "show-sector-chain"])
+        opts, args = getopt.getopt(args, "h",
+                                   ["help", "debug", "show-sector-chain",
+                                    "no-struct-output", "dump-text"])
         for opt, arg in opts:
             if opt in ['-h', '--help']:
                 usage(exname)
@@ -83,6 +87,11 @@ def main (args):
                 params.debug = True
             elif opt in ['--show-sector-chain']:
                 params.showSectorChain = True
+            elif opt in ['--no-struct-output']:
+                globals.muteOutput(1)
+                params.noStructOutput = True
+            elif opt in ['--dump-text']:
+                params.dumpText = True
             else:
                 error("unknown option %s\n"%opt)
                 usage()
@@ -95,7 +104,8 @@ def main (args):
     dumper = PPTDumper(args[0], params)
     if not dumper.dump():
         error("FAILURE\n")
-
+    if params.dumpText:
+        print(globals.textdump.replace("\r", "\n"))
 
 if __name__ == '__main__':
     main(sys.argv)

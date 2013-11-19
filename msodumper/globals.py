@@ -31,7 +31,8 @@ class Params(object):
         self.debug = False
         self.showSectorChain = False
         self.showStreamPos = False
-
+        self.noStructOutput = False
+        self.dumpText = False
 
 class ByteStream(object):
 
@@ -120,13 +121,25 @@ def getValueOrUnknown (list, idx, errmsg='(unknown)'):
 
     return errmsg
 
+textdump = b""
+
+_noOutput = 0
+
+def muteOutput(onoff):
+    global _noOutput
+    if onoff:
+        _noOutput = 1
+    else:
+        _noOutput = 0
 
 def output (msg):
-    sys.stdout.write(msg)
+    global _noOutput
+    if _noOutput == 0:
+        sys.stdout.write(msg)
 
 def outputln(msg):
     output(msg + "\n")
-
+    
 def error (msg):
     sys.stderr.write("Error: " + msg)
 

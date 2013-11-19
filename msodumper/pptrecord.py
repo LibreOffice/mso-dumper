@@ -44,6 +44,14 @@ append a line to be displayed.
         for line in self.lines:
             self.__print("%4.4Xh: %s"%(self.recordType, line))
 
+    def appendText(self, text):
+        global textdump
+        # unfortunaley we have no access to the globals.params, so we
+        # can't keep the text local and let output() behave according
+        # to params. Have to use a global if we want to keep a minimal
+        # modification
+        globals.textdump += text + "\n"
+        
     def appendLine (self, line):
         self.lines.append(line)
 
@@ -103,6 +111,7 @@ append a line to be displayed.
         yratio = self.readRatio()
         return "(%s,%s)"%(xratio, yratio)
 
+
 class String(BaseRecordHandler):
     """Textual content."""
 
@@ -114,6 +123,7 @@ class String(BaseRecordHandler):
         # this transformation.
         name = name.decode('cp1252').encode('UTF-8')
         self.appendLine("text: '%s'"%name)
+        self.appendText(name)
 
 def ShapeString (*args):
     args += "ShapeText",
@@ -126,7 +136,8 @@ class UniString(BaseRecordHandler):
         name = globals.getUTF8FromUTF16(globals.getTextBytes(self.readRemainingBytes()))
         self.appendProperty(name)
         self.appendLine("text: '%s'"%name)
-
+        self.appendText(name)
+            
 def ShapeUniString (*args):
     args += "ShapeText",
     return UniString(*args)
