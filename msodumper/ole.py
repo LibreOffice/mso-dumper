@@ -411,6 +411,9 @@ class SAT(object):
         nextID = self.array[initID]
         while nextID != -2:
             chain.append(nextID)
+            if nextID == self.array[nextID]:
+                # Beware of infinite loop: happens on bad files.
+                break
             nextID = self.array[nextID]
         return chain
 
