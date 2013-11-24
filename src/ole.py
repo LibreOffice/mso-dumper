@@ -1,7 +1,7 @@
 ########################################################################
 #
 #  Copyright (c) 2010 Kohei Yoshida
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -150,7 +150,7 @@ class Header(object):
         # short sector size (usually 64 bytes)
         print("Short sector size: %d (%d)"%(2**self.secSizeShort, self.secSizeShort))
 
-        # total number of sectors in SAT (equals the number of sector IDs 
+        # total number of sectors in SAT (equals the number of sector IDs
         # stored in the MSAT).
         print("Total number of sectors used in SAT: %d"%self.numSecSAT)
 
@@ -195,7 +195,7 @@ class Header(object):
         # short sector size (usually 64 bytes)
         self.secSizeShort = getSignedInt(self.bytes[32:34])
 
-        # total number of sectors in SAT (equals the number of sector IDs 
+        # total number of sectors in SAT (equals the number of sector IDs
         # stored in the MSAT).
         self.numSecSAT = getSignedInt(self.bytes[44:48])
 
@@ -241,7 +241,7 @@ class Header(object):
                     else:
                         self.MSAT.appendSectorID(id)
 
-        return 512 
+        return 512
 
 
     def getMSAT (self):
@@ -288,9 +288,9 @@ class Header(object):
 class MSAT(object):
     """Master Sector Allocation Table (MSAT)
 
-This class represents the master sector allocation table (MSAT) that stores 
-sector IDs that point to all the sectors that are used by the sector 
-allocation table (SAT).  The actual SAT are to be constructed by combining 
+This class represents the master sector allocation table (MSAT) that stores
+sector IDs that point to all the sectors that are used by the sector
+allocation table (SAT).  The actual SAT are to be constructed by combining
 all the sectors pointed by the sector IDs in order of occurrence.
 """
     def __init__ (self, sectorSize, bytes, params):
@@ -438,12 +438,12 @@ class SAT(object):
 class SSAT(SAT):
     """Short Sector Allocation Table (SSAT)
 
-SSAT contains an array of sector ID chains of all short streams, as oppposed 
+SSAT contains an array of sector ID chains of all short streams, as oppposed
 to SAT which contains an array of sector ID chains of all standard streams.
 The sector IDs included in the SSAT point to the short sectors in the short
 stream container stream.
 
-The first sector ID of SSAT is in the header, and the IDs of the remaining 
+The first sector ID of SSAT is in the header, and the IDs of the remaining
 sectors are contained in the SAT as a sector ID chain.
 """
 
@@ -481,7 +481,7 @@ entire file stream.
         Red = 0
         Black = 1
         Unknown = 99
-        
+
     class Entry:
         def __init__ (self):
             self.Name = ''
@@ -653,7 +653,7 @@ entire file stream.
                 strmLoc = "SSAT"
             print("(first sector ID: %d; size: %d; location: %s)"%
                   (entry.StreamSectorID, entry.StreamSize, strmLoc))
-    
+
             satObj = None
             secSize = 0
             if entry.StreamLocation == StreamLocation.SAT:
@@ -765,7 +765,7 @@ entire file stream.
 class DateTime:
     def __init__(self):
         self.day = 0
-        self.month = 0 
+        self.month = 0
         self.year = 0
         self.hour = 0
         self.second = 0
@@ -787,7 +787,7 @@ class DirNode:
         return self.HierachicalName
 
     def getChildren(self):
-        return self.Nodes  
+        return self.Nodes
 
     def getStream(self):
         return self.OleContainer.getStreamForEntry( self.Entry )
@@ -799,14 +799,14 @@ class OleContainer:
         self.header = None
         self.rootNode = None
         self.params = params
-        
+
     def __getModifiedTime(self, entry):
         # need parse/decode Entry.TimeModified
         # ( although the documentation indicates that it might not be
         # worth it 'cause they are not universally used
         modified  = DateTime
         modified.day = 0
-        modified.month = 0 
+        modified.month = 0
         modified.year = 0
         modified.hour = 0
         modified.second = 0
@@ -816,13 +816,13 @@ class OleContainer:
         if self.rootNode == None:
             file = open(self.filePath, 'rb')
             self.chars = file.read()
-            file.close()    
+            file.close()
             self.header = Header(self.chars, self.params)
             self.header.parse()
             self.obj = self.header.getDirectory()
             self.obj.parseDirEntries()
             count = 0
-            self.rootNode = self.__buildTree( self.obj.entries )   
+            self.rootNode = self.__buildTree( self.obj.entries )
 
     def __addSiblings( self, entries, parent, child ):
         # add left siblings
@@ -834,18 +834,18 @@ class OleContainer:
             if  newEntry.Entry.DirIDRoot > 0:
                 newEntry.HierachicalName = newEntry.HierachicalName + '/'
 
-            self.__addSiblings( entries, parent, newEntry ) 
+            self.__addSiblings( entries, parent, newEntry )
             parent.Nodes.insert( 0, newEntry )
 
         nextRight = child.Entry.DirIDRight
-        # add children to the right 
+        # add children to the right
         if ( nextRight > 0 ):
             newEntry = DirNode( entries[ nextRight ], self )
 #            newEntry.HierachicalName = parent.HierachicalName + globals.encodeName( newEntry.Entry.Name )
             newEntry.HierachicalName = parent.HierachicalName + newEntry.Entry.Name
             if  newEntry.Entry.DirIDRoot > 0:
                 newEntry.HierachicalName = newEntry.HierachicalName + '/'
-            self.__addSiblings( entries, parent, newEntry ) 
+            self.__addSiblings( entries, parent, newEntry )
             parent.Nodes.append( newEntry )
 
     def __buildTreeImpl(self, entries, parent ):
@@ -859,13 +859,13 @@ class OleContainer:
 
             self.__addSiblings( entries, parent, newEntry )
             parent.Nodes.append( newEntry )
-            
+
         for child in parent.Nodes:
             if child.Entry.DirIDRoot > 0:
                 self.__buildTreeImpl( entries, child )
 
     def __buildTree(self, entries ):
-        treeRoot = DirNode( entries[0], self ) 
+        treeRoot = DirNode( entries[0], self )
         self.__buildTreeImpl( entries, treeRoot )
         return treeRoot
 
@@ -876,8 +876,8 @@ class OleContainer:
             for child in node.Nodes:
                 result = self.__findEntryByHierachicalName( child, name )
                 if result != None:
-                    return result 
-        return None 
+                    return result
+        return None
 
     def __printListReport( self, treeNode ):
 
@@ -885,7 +885,7 @@ class OleContainer:
 
         if len( treeNode.HierachicalName ) > 0 :
             print '{0:8d}  {1:0<2d}-{2:0<2d}-{3:0<2d} {4:0<2d}:{5:0<2d}   {6}'.format(treeNode.Entry.StreamSize, dateInfo.day, dateInfo.month, dateInfo.year, dateInfo.hour, dateInfo.second, treeNode.HierachicalName )
-     
+
         for node in treeNode.Nodes:
             # ignore the root
             self.__printListReport( node )
@@ -897,7 +897,7 @@ class OleContainer:
 
     def list(self):
         # need to share the inititialisation and parse stuff between the different options
-       
+
         self.__parseFile()
         if  self.rootNode != None:
             self.__printHeader()
@@ -923,7 +923,7 @@ class OleContainer:
         if  self.rootNode != None:
             entry = self.__findEntryByHierachicalName( self.rootNode, name )
             bytes = self.getStreamForEntry( entry )
-            file = open(entry.Name, 'wb') 
+            file = open(entry.Name, 'wb')
             file.write( bytes )
             file.close
         else:
@@ -934,5 +934,5 @@ class OleContainer:
 
     def getRoot(self):
         self.__parseFile()
-        return self.rootNode 
+        return self.rootNode
 

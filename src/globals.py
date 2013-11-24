@@ -1,7 +1,7 @@
 ########################################################################
 #
 #  Copyright (c) 2010 Kohei Yoshida
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -193,7 +193,7 @@ def getUnicodeRichExtText (bytes):
     phoneticBytes = 0
     if hasPhonetic:
         phoneticBytes = strm.readUnsignedInt(4)
-        
+
     if isDoubleByte:
         # double-byte string (UTF-16)
         text = ''
@@ -221,9 +221,9 @@ def getRichText (bytes, textLen=None):
 Note the following:
 
   * The 1st byte always contains flag.
-  * The actual number of bytes read may differ depending on the values of the 
-    flags, so the client code should pass an open-ended stream of bytes and 
-    always query for the actual bytes read to adjust for the new stream 
+  * The actual number of bytes read may differ depending on the values of the
+    flags, so the client code should pass an open-ended stream of bytes and
+    always query for the actual bytes read to adjust for the new stream
     position when this function returns.
 """
 
@@ -460,13 +460,13 @@ def outputZipContent (bytes, printer, width=80):
             wrapper.flush()
         else:
             dumpBytes(contents)
-            
+
     zipFile.close()
 
 def stringizeColorRef(colorRef, colorName="color"):
     def split (packedColor):
         return ((packedColor & 0xFF0000) // 0x10000, (packedColor & 0xFF00) / 0x100, (packedColor & 0xFF))
-    
+
     colorValue = colorRef & 0xFFFFFF
     if colorRef & 0xFE000000 == 0xFE000000 or colorRef & 0xFF000000 == 0:
         colors = split(colorValue)

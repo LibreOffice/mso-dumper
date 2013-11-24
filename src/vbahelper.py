@@ -1,7 +1,7 @@
 ########################################################################
 #
 #  Copyright (c) 2013 Noel Power
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -26,12 +26,13 @@
 ########################################################################
 
 import  sys, struct
+
 class VBAStreamBase:
     CHUNKSIZE = 4096
     def __init__(self, chars, offset):
         self.mnOffset = offset
         self.chars = chars
- 
+
     def copyTokenHelp(self):
         difference = self.DecompressedCurrent - self.DecompressedChunkStart
         bitCount = 0
@@ -70,7 +71,7 @@ class UnCompressedVBAStream(VBAStreamBase):
             padCount = padCount - 1
 
         for index in xrange( 0, padCount ):
-            self.CompressedContainer[ self.CompressedCurrent ] = 0x0;   
+            self.CompressedContainer[ self.CompressedCurrent ] = 0x0;
             self.CompressedCurrent = self.CompressedCurrent + 1
 
     def __matching( self, decompressedEnd ):
@@ -92,7 +93,7 @@ class UnCompressedVBAStream(VBAStreamBase):
             lengthMask, offSetMask, bitCount, maximumLength = self.copyTokenHelp()
             length = bestLength
             if ( maximumLength < bestLength ):
-                length = maximumLength 
+                length = maximumLength
             offset = self.DecompressedCurrent - bestCandidate
         else:
             length = 0
@@ -128,7 +129,7 @@ class UnCompressedVBAStream(VBAStreamBase):
         flagByteIndex = self.CompressedCurrent
         tokenFlags = 0
         self.CompressedCurrent = self.CompressedCurrent + 1
-        for index in xrange(0,8): 
+        for index in xrange(0,8):
             if ( ( self.DecompressedCurrent < decompressedEnd )
                 and (self.CompressedCurrent < compressedEnd) ):
 
@@ -188,7 +189,6 @@ class UnCompressedVBAStream(VBAStreamBase):
         return self.CompressedContainer
 
 class CompressedVBAStream(VBAStreamBase):
-    
     def __decompressRawChunk (self):
         for i in xrange(0,self.CHUNKSIZE):
             self.DecompressedChunk[ self.DecompressedCurrent + i ] =  self.chars[self.CompressedCurrent + i ]
@@ -196,7 +196,7 @@ class CompressedVBAStream(VBAStreamBase):
         self.DecompressedCurrent += self.CHUNKSIZE
 
     def __unPackCopyToken (self, copyToken ):
-       lengthMask, offSetMask, bitCount, maximumLength = self.copyTokenHelp() 
+       lengthMask, offSetMask, bitCount, maximumLength = self.copyTokenHelp()
        length = ( copyToken & lengthMask ) + 3
        temp1 = copyToken & offSetMask
        temp2 = 16 - bitCount
@@ -204,15 +204,14 @@ class CompressedVBAStream(VBAStreamBase):
        return offSet, length
 
     def __byteCopy( self, srcOffSet, dstOffSet, length ):
- 
         destSize = len( self.DecompressedChunk )
         srcCurrent = srcOffSet
-        dstCurrent = dstOffSet 
+        dstCurrent = dstOffSet
         for i in xrange( 0, length ):
             self.DecompressedChunk[ dstCurrent ] = self.DecompressedChunk[ srcCurrent ]
             srcCurrent +=1
             dstCurrent +=1
-                
+
     def __decompressToken (self, index, flagByte):
         flagBit = ( ( flagByte >> index ) & 1 )
         if flagBit == 0:
@@ -220,7 +219,7 @@ class CompressedVBAStream(VBAStreamBase):
             self.CompressedCurrent += 1
             self.DecompressedCurrent += 1
         else:
-            copyToken = struct.unpack_from("<H", self.chars, self.CompressedCurrent)[0] 
+            copyToken = struct.unpack_from("<H", self.chars, self.CompressedCurrent)[0]
             offSet, length = self.__unPackCopyToken( copyToken )
             copySource =  self.DecompressedCurrent - offSet
             self.__byteCopy( copySource, self.DecompressedCurrent, length )
@@ -234,17 +233,16 @@ class CompressedVBAStream(VBAStreamBase):
             for i in xrange(0,8):
                 if  self.CompressedCurrent < self.CompressedEnd:
                     self.__decompressToken(i,flagByte)
- 
+
     def decompressCompressedChunk (self):
-        
         header = struct.unpack_from("<H",self.chars, self.CompressedChunkStart)[0]
         #extract size from header
-        size = header & 0xFFF 
+        size = header & 0xFFF
         size = size + 3
         #extract chunk sig from header
         sigflag = header >> 12
         sig = sigflag & 0x7
-        #extract chunk flag from sig 
+        #extract chunk flag from sig
         compressedChunkFlag = (( sigflag & 0x8 ) ==  0x8)
         self.DecompressedChunk = bytearray(self.CHUNKSIZE);
         self.DecompressedChunkStart = 0
@@ -277,6 +275,6 @@ class CompressedVBAStream(VBAStreamBase):
             return self.DecompressedContainer
         else:
             raise Exception("error decompressing container invalid signature byte %i"%val)
-         
+
         return None
 

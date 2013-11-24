@@ -1,7 +1,7 @@
 ########################################################################
 #
 #  Copyright (c) 2010 Kohei Yoshida
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -144,7 +144,7 @@ class RecordHeader:
 class ColorRef:
     def __init__ (self, byte):
         self.red   = (byte & 0x000000FF)
-        self.green = (byte & 0x0000FF00) / 256 
+        self.green = (byte & 0x0000FF00) / 256
         self.blue  = (byte & 0x00FF0000) / 65536
         self.flag  = (byte & 0xFF000000) / 16777216
 
@@ -264,7 +264,7 @@ class FDGGBlock:
         self.head = FDGG(strm)
         self.idcls = []
         # NOTE: The spec says head.cidcl stores the number of IDCL's, but each
-        # FDGGBlock only contains bytes enough to store (head.cidcl - 1) of 
+        # FDGGBlock only contains bytes enough to store (head.cidcl - 1) of
         # IDCL's.
         for i in xrange(0, self.head.cidcl-1):
             idcl = IDCL(strm)

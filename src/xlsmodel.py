@@ -1,7 +1,7 @@
 ########################################################################
 #
 #  Copyright (c) 2010 Kohei Yoshida
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -50,12 +50,12 @@ class Workbook(ModelBase):
         # private members
         self.__sheets = []
 
-    
+
     def appendSheet (self, sheetType):
         def raiseError(cause):
             def errorFunc():
                 raise Exception(cause)
-                
+
         HANDLERS = { 0x0005: WorkbookGlobal,
                      0x0006: raiseError("Unsupported sheet type: Visual Basic module"),
                      0x0010: lambda: Worksheet(len(self.__sheets)),
@@ -429,7 +429,7 @@ class Worksheet(SheetBase):
         elem = baseNode.appendElement('hidden-rows')
         for rowRange in self.__hiddenRows.getAllRanges():
             elem.appendElement('range').setAttr('span', "%d:%d"%(rowRange[0]+1, rowRange[1]+1))
-        
+
     def __appendAutoFilterNode (self, wb, baseNode):
         if len(self.__autoFilterArrows) <= 0:
             # No autofilter in this sheet.

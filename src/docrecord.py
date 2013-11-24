@@ -257,7 +257,7 @@ class Sepx(DOCDirStream):
             prl.dump()
             pos += prl.getSize()
         print '</sepx>'
-    
+
 class Sed(DOCDirStream):
     """The Sed structure specifies the location of the section properties."""
     size = 12 # defined by 2.8.26
@@ -665,7 +665,7 @@ class SPgbPropOperand(DOCDirStream):
     def __init__(self, parent):
         DOCDirStream.__init__(self, parent.bytes)
         self.pos = parent.pos
-    
+
     def dump(self):
         print '<sPgbPropOperand type="SPgbPropOperand" offset="%d">' % self.pos
         buf = self.readuInt8()
@@ -1318,7 +1318,7 @@ class Chpx(DOCDirStream):
         for prl in self.prls:
             prl.dump()
         print '</chpx>'
-    
+
 class PapxInFkp(DOCDirStream):
     """The PapxInFkp structure specifies a set of text properties."""
     def __init__(self, bytes, mainStream, offset):
@@ -1335,7 +1335,7 @@ class PapxInFkp(DOCDirStream):
             grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, self.cb)
         grpPrlAndIstd.dump()
         print '</papxInFkp>'
-    
+
 class BxPap(DOCDirStream):
     """The BxPap structure specifies the offset of a PapxInFkp in PapxFkp."""
     size = 13 # in bytes, see 2.9.23
@@ -2742,7 +2742,7 @@ class StshiLsd(DOCDirStream):
         DOCDirStream.__init__(self, bytes)
         self.stshi = stshi
         self.pos = offset
-    
+
     def dump(self):
         print '<stshiLsd type="StshiLsd" offset="%d">' % (self.pos)
         self.printAndSet("cbLSD", self.readuInt16())

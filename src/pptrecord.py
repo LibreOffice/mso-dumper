@@ -41,7 +41,7 @@ append a line to be displayed.
         pass
 
     def __print (self, text):
-        try:    
+        try:
             print(self.prefix + text)
         except UnicodeEncodeError:
             print(self.prefix + "<%d invalid chars>"%len(text))
@@ -105,7 +105,7 @@ append a line to be displayed.
         numer = self.readSignedInt(4)
         denom = self.readSignedInt(4)
         return "%d/%d"%(numer, denom)
-    
+
     def readScaling (self):
         xratio = self.readRatio()
         yratio = self.readRatio()
@@ -504,7 +504,7 @@ class AnimationInfo(BaseRecordHandler):
         orderID = self.readSignedInt(2)
         if orderID == -2:
             self.appendLine("order: follow master slide")
-        else:    
+        else:
             self.appendLine("order: ID %4.4Xh"%orderID)
 
         self.appendLine("num slides to play object: %d"%self.readUnsignedInt(2))
@@ -570,7 +570,7 @@ class AnimNode(BaseRecordHandler):
             self.appendLine("nodeKind: animation")
         elif nodeKind == 24:
             self.appendLine("nodeKind: transitionFilter")
-        else:    
+        else:
             self.appendLine("nodeKind: unknown/ignore")
 
 
@@ -579,17 +579,17 @@ class AnimAttributeValue(BaseRecordHandler):
 
     def handleByte (self):
         self.appendLine("byte value: %2.2Xh"%self.readUnsignedInt(1))
-        
+
     def handleLong (self):
         self.appendLine("long value: %d"%self.readUnsignedInt(4))
-        
+
     def handleFloat (self):
         self.appendLine("float value: %f"%globals.getFloat(self.readBytes(4)))
-        
+
     def handleString (self):
         value = globals.getUTF8FromUTF16(globals.getTextBytes(self.readRemainingBytes()))
         self.appendLine("text value: '%s'"%value)
-    
+
     valueHandlers=[handleByte,handleLong,handleFloat,handleString]
 
     def parseBytes (self):
@@ -653,7 +653,7 @@ class AnimValue(BaseRecordHandler):
     def handleAutoReverse (self):
         if self.readUnsignedInt(4) != 0:
             self.appendLine("autoReverse is on")
-    
+
     valueHandlers=[handleRepeat,handleDefault,handleDefault,handleAccelerate,handleDecelerate,handleAutoReverse]
 
     def parseBytes (self):

@@ -1,7 +1,7 @@
 ########################################################################
 #
 #  Copyright (c) 2010 Kohei Yoshida
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -10,10 +10,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -25,7 +25,7 @@
 #
 ########################################################################
 
-# This file (node.py) gets copied in several of my projects.  Find out a way 
+# This file (node.py) gets copied in several of my projects.  Find out a way
 # to avoid making duplicate copies in each of my projects.
 
 import sys
@@ -33,9 +33,9 @@ import sys
 class NodeType:
     # unknown node type.
     Unknown = 0
-    # the document root - typically has only one child element, but it can 
+    # the document root - typically has only one child element, but it can
     # have multiple children.
-    Root    = 1 
+    Root    = 1
     # node that has name and attributes, and may have child nodes.
     Element = 2
     # node that only has textural content.
@@ -183,7 +183,7 @@ def printNode (fd, node, level, breakLine):
     elif node.nodeType == NodeType.Element:
         hasChildren = len(node.getChildNodes()) > 0
 
-        # We add '<' and '>' (or '/>') after the element content gets 
+        # We add '<' and '>' (or '/>') after the element content gets
         # encoded.
         line = node.name
         if len(node.attrs) > 0:

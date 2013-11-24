@@ -2,7 +2,7 @@
 ########################################################################
 #
 #  Copyright (c) 2011 Sergey Kishchenko
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -11,10 +11,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -36,7 +36,7 @@ class TokenStream(object):
     def __init__(self, tokens):
         self.tokens = tokens
         self.currentIndex = 0
-    
+
     def readToken(self):
         if self.currentIndex >= len(self.tokens):
             return None
@@ -58,16 +58,16 @@ class BaseParser(object):
             return "NONIMPL"
         else:
             return str(parser)
-        
+
     def __lshift__(self, other):
         if isinstance(self, Seq):
             self.appendParser(other)
             return self
         else:
             return Seq(self, other)
-        
+
 def safeParse(parser, stream):
-    #print "TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex]))  
+    #print "TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex]))
 
     parsed = None
     try:
@@ -89,7 +89,7 @@ def getParsedOrNone(parser, stream):
 class Term(BaseParser):
     def __init__(self, tokenType):
         self.__tokenType = tokenType
-        
+
     def parse(self, stream):
         curIndex = stream.currentIndex
         token = stream.readToken()
@@ -98,7 +98,7 @@ class Term(BaseParser):
         else:
             stream.currentIndex = curIndex
             return None
-        
+
     def __str__(self):
         return 'Term(%s)' % str(self.__tokenType)
 
@@ -108,31 +108,31 @@ class Opt(BaseParser):
 
     def parse(self, stream):
         return getParsedOrNone(self.__parser, stream)
-    
+
     def __str__(self):
         return 'Opt(%s)' % str(self.__parser)
 
 class Req(BaseParser):
     def __init__(self, parser):
         self.__parser = parser
-    
+
     def parse(self, stream):
         parsed = safeParse(self.__parser, stream)
         if parsed is None:
             currentToken = "<<<End Of Token Stream>>>"
             if stream.currentIndex < len(stream.tokens):
                 currentToken = stream.tokens[stream.currentIndex]
-            raise ParseException("%s failed but it is required, next token is [%s]" % 
+            raise ParseException("%s failed but it is required, next token is [%s]" %
                                  (str(self.__parser), str(currentToken)))
         return parsed
-    
+
     def __str__(self):
         return 'Req(%s)' % str(self.__parser)
-            
+
 class AnyButThis(BaseParser):
     def __init__(self, parser):
         self.__parser = parser
-    
+
     def parse(self, stream):
         curIndex = stream.currentIndex
         parsed = getParsedOrNone(self.__parser, stream)
@@ -151,7 +151,7 @@ class Many(BaseParser):
         self.__parser = parser
         self.__min = min
         self.__max = max
-        
+
     def parse(self, stream):
         if self.__min == 0 and self.__max == 0:
             return None
@@ -175,21 +175,21 @@ class Many(BaseParser):
 class OneOf(BaseParser):
     def __init__(self, *args):
         self.__parsers = args
-        
+
     def parse(self, stream):
         for parser in self.__parsers:
             parsed = getParsedOrNone(parser, stream)
             if not parsed is None:
                 return parsed
         raise ParseException("No suitable options: [%s]" % ','.join(str(x) for x in self.__parsers))
-    
+
     def __str__(self):
         return 'OneOf(%s)' % ','.join(str(x) for x in self.__parsers)
 
 class Seq(BaseParser):
     def __init__(self, *args):
         self.__parsers = list(args)
-        
+
     def parse(self, stream):
         parsedList = []
         for parser in self.__parsers:
@@ -197,10 +197,10 @@ class Seq(BaseParser):
             if not parsed is None:
                 parsedList.append(parsed)
         return parsedList
-    
+
     def appendParser(self, parser):
         self.__parsers.append(parser)
-        
+
     def __str__(self):
         return 'Seq(%s)' % ','.join(str(x) for x in self.__parsers)
 
@@ -208,14 +208,14 @@ class Group(BaseParser):
     def __init__(self, name, parser):
         self.__name = name
         self.__parser = parser
-    
+
     def parse(self, stream):
         parsed = self.__parser.parse(stream)
         if not parsed is None:
             return (self.__name, parsed)
         else:
             return None
-    
+
     def __str__(self):
         return 'Group(%s, %s)' % (self.__name, str(self.__parser))
 
@@ -239,14 +239,14 @@ class VCenter(BaseParser):
     PARSER = Term(xlsrecord.VCenter)
 
 class MarginBaseParser(BaseParser): pass
-class LeftMargin(MarginBaseParser): pass        
-class RightMargin(MarginBaseParser): pass        
-class TopMargin(MarginBaseParser): pass        
-class BottomMargin(MarginBaseParser): pass        
-class Pls(BaseParser): 
+class LeftMargin(MarginBaseParser): pass
+class RightMargin(MarginBaseParser): pass
+class TopMargin(MarginBaseParser): pass
+class BottomMargin(MarginBaseParser): pass
+class Pls(BaseParser):
     PARSER = Term(xlsrecord.Pls)
 
-class Continue(BaseParser): pass        
+class Continue(BaseParser): pass
 
 class Setup(BaseParser):
     PARSER = Term(xlsrecord.Setup)
@@ -255,43 +255,43 @@ class PAGESETUP(BaseParser):
     #PAGESETUP = Header Footer HCenter VCenter [LeftMargin] [RightMargin] [TopMargin]
     #[BottomMargin] [Pls *Continue] Setup
     PARSER = Group('page-setup', Req(Header()) << Req(Footer()) << Req(HCenter()) << Req(VCenter()) <<
-                   LeftMargin() << RightMargin() << TopMargin() << BottomMargin() << 
+                   LeftMargin() << RightMargin() << TopMargin() << BottomMargin() <<
                    Seq(Pls(), Many('continues', Continue())) << Setup())
 
 
 class PrintSize(BaseParser):
     PARSER = Term(xlsrecord.PrintSize)
 
-class HeaderFooter(BaseParser): pass        
-class BACKGROUND(BaseParser): pass        
+class HeaderFooter(BaseParser): pass
+class BACKGROUND(BaseParser): pass
 
 class Fbi(BaseParser):
     PARSER = Term(xlsrecord.Fbi)
-    
-class Fbi2(BaseParser): pass        
-class ClrtClient(BaseParser): pass        
+
+class Fbi2(BaseParser): pass
+class ClrtClient(BaseParser): pass
 
 class PROTECTION(BaseParser):
     PARSER = Term(xlsrecord.Protect)
 
-class Palette(BaseParser): pass        
-class SXViewLink(BaseParser): pass        
-class PivotChartBits(BaseParser): pass        
-class SBaseRef(BaseParser): pass        
-class MsoDrawingGroup(BaseParser): pass        
+class Palette(BaseParser): pass
+class SXViewLink(BaseParser): pass
+class PivotChartBits(BaseParser): pass
+class SBaseRef(BaseParser): pass
+class MsoDrawingGroup(BaseParser): pass
 
 
-class MSODRAWING(BaseParser): pass        
-class TEXTOBJECT(BaseParser): pass        
-class OBJ(BaseParser): pass        
-class MsoDrawingSelection(BaseParser): pass        
+class MSODRAWING(BaseParser): pass
+class TEXTOBJECT(BaseParser): pass
+class OBJ(BaseParser): pass
+class MsoDrawingSelection(BaseParser): pass
 
 class OBJECTS(BaseParser):
     #*(MSODRAWING *(TEXTOBJECT / OBJ)) [MsoDrawingSelection]
-    PARSER = Group('objects', Many('drawings', Seq(Req(MSODRAWING()), 
-                                                   Many('obj-list', 
-                                                        OneOf(TEXTOBJECT(), OBJ())))) << 
-                              MsoDrawingSelection()) 
+    PARSER = Group('objects', Many('drawings', Seq(Req(MSODRAWING()),
+                                                   Many('obj-list',
+                                                        OneOf(TEXTOBJECT(), OBJ())))) <<
+                              MsoDrawingSelection())
 
 class Units(BaseParser):
     PARSER = Term(xlsrecord.Units)
@@ -311,7 +311,7 @@ class PlotArea(BaseParser):
 class CrtLink(BaseParser):
     PARSER = Term(xlsrecord.CrtLink)
 
-class FONTLIST(BaseParser): pass        
+class FONTLIST(BaseParser): pass
 
 class Frame(BaseParser):
     PARSER = Term(xlsrecord.Frame)
@@ -321,18 +321,18 @@ class LineFormat(BaseParser):
 
 class AreaFormat(BaseParser):
     PARSER = Term(xlsrecord.AreaFormat)
-    
+
 class PICF(BaseParser): pass # PICF = Begin PicF End
 
 class GelFrame(BaseParser):
     PARSER = Term(xlsrecord.GelFrame)
 
-class GELFRAME(BaseParser): 
+class GELFRAME(BaseParser):
     #GELFRAME = 1*2GelFrame *Continue [PICF]
-    PARSER = Group('gel-frame-root', Many('gel-frame-list', GelFrame(), min=1, max=2) << 
+    PARSER = Group('gel-frame-root', Many('gel-frame-list', GelFrame(), min=1, max=2) <<
                                      Many('continue-list', Continue()) << Opt(PICF()))
 
-class SHAPEPROPS(BaseParser): pass        
+class SHAPEPROPS(BaseParser): pass
 
 class FRAME(BaseParser):
     PARSER = Group('frame', Req(Frame()) << Req(Begin()) << Req(LineFormat()) << Req(AreaFormat()) <<
@@ -357,13 +357,13 @@ class BRAI(BaseParser):
 class AI(BaseParser):
     PARSER = Req(BRAI()) << SeriesText()
 
-class SerParent(BaseParser): pass        
-class SerAuxTrend(BaseParser): pass        
-class SerAuxErrBar(BaseParser): pass        
-class SerToCrt(BaseParser): 
+class SerParent(BaseParser): pass
+class SerAuxTrend(BaseParser): pass
+class SerAuxErrBar(BaseParser): pass
+class SerToCrt(BaseParser):
     PARSER = Term(xlsrecord.SerToCrt)
-    
-class LegendException(BaseParser): pass        
+
+class LegendException(BaseParser): pass
 
 class DataFormat(BaseParser):
     PARSER = Term(xlsrecord.DataFormat)
@@ -371,13 +371,13 @@ class DataFormat(BaseParser):
 class Chart3DBarShape(BaseParser):
     PARSER = Term(xlsrecord.Chart3DBarShape)
 
-class PieFormat(BaseParser): 
+class PieFormat(BaseParser):
     PARSER = Term(xlsrecord.PieFormat)
 
-class SerFmt(BaseParser):  
+class SerFmt(BaseParser):
     PARSER = Term(xlsrecord.SerFmt)
 
-class MarkerFormat(BaseParser): 
+class MarkerFormat(BaseParser):
     PARSER = Term(xlsrecord.MarkerFormat)
 
 class Text(BaseParser):
@@ -391,10 +391,10 @@ class FontX(BaseParser):
 
 class AlRuns(BaseParser): pass
 
-class ObjectLink(BaseParser): 
+class ObjectLink(BaseParser):
     PARSER = Term(xlsrecord.ObjectLink)
-    
-class DataLabExtContents(BaseParser): 
+
+class DataLabExtContents(BaseParser):
     PARSER = Term(xlsrecord.DataLabExtContents)
 
 class CrtLayout12(BaseParser): pass
@@ -414,9 +414,9 @@ class ATTACHEDLABEL(BaseParser):
 class SS(BaseParser):
     #SS = DataFormat Begin [Chart3DBarShape] [LineFormat AreaFormat PieFormat] [SerFmt]
     #[GELFRAME] [MarkerFormat] [AttachedLabel] *2SHAPEPROPS [CRTMLFRT] End
-    PARSER = Group('ss', Seq(Req(DataFormat()), Req(Begin()), Chart3DBarShape(), 
+    PARSER = Group('ss', Seq(Req(DataFormat()), Req(Begin()), Chart3DBarShape(),
                              Opt(Seq(Req(LineFormat()), Req(AreaFormat()), Req(PieFormat()))),
-                             SerFmt(), Opt(GELFRAME()), MarkerFormat(), AttachedLabel(), 
+                             SerFmt(), Opt(GELFRAME()), MarkerFormat(), AttachedLabel(),
                              Many('shape-props-list', SHAPEPROPS(), max=2), CRTMLFRT(),
                              Req(End())))
 
@@ -431,13 +431,13 @@ class SERIESFORMAT(BaseParser):
     #*(LegendException [Begin ATTACHEDLABEL [TEXTPROPS] End]) End
     PARSER = Group('series-fmt', Req(Series()) << Req(Begin()) << Many('ai-list', AI(), min=4, max=4) <<
                 Many('ss-list', SS()) << OneOf(SerToCrt(), Seq(SerParent(), OneOf(SerAuxTrend(), SerAuxErrBar()))) <<
-                Many('legend-exceptions', Group('legend-exception-root', 
-                                                Seq(Req(LegendException()), 
+                Many('legend-exceptions', Group('legend-exception-root',
+                                                Seq(Req(LegendException()),
                                                     Seq(Req(Begin()), Req(ATTACHEDLABEL()), TEXTPROPS(), Req(End()))))) <<
                 EndBlock() << Req(End()))
 
 
-        
+
 class ShtProps(BaseParser):
     PARSER = Term(xlsrecord.CHProperties)
 
@@ -469,7 +469,7 @@ class CatSerRange(BaseParser):
 class AxcExt(BaseParser):
     PARSER = Term(xlsrecord.AxcExt)
 
-class CatLab(BaseParser): 
+class CatLab(BaseParser):
     PARSER = Term(xlsrecord.CatLab)
 
 class IFmtRecord(BaseParser): pass
@@ -491,9 +491,9 @@ class ChartFrtInfo(BaseParser):
 class AXS(BaseParser):
     # AXS = [IFmtRecord] [Tick] [FontX] *4(AxisLine LineFormat) [AreaFormat] [GELFRAME]
     # *4SHAPEPROPS [TextPropsStream *ContinueFrt12]
-    PARSER = Group('axs', IFmtRecord() << Tick() << FontX() << 
+    PARSER = Group('axs', IFmtRecord() << Tick() << FontX() <<
                 Many('axis-lines', Seq(Req(AxisLine()), Req(LineFormat())), max=4) <<
-                AreaFormat() << Opt(GELFRAME()) << Many('shape-props-list', SHAPEPROPS(), max=4) << 
+                AreaFormat() << Opt(GELFRAME()) << Many('shape-props-list', SHAPEPROPS(), max=4) <<
                 Opt(Seq(Req(TextPropsStream()), Many('continue-frt12-list', ContinueFrt12()))))
 
 class IVAXIS(BaseParser):
@@ -501,10 +501,10 @@ class IVAXIS(BaseParser):
     # IVAXIS = Axis Begin [CatSerRange] AxcExt [CatLab] AXS [CRTMLFRT] End
     # it seems it's usual too have several future records indicators just after AxcExt and before the End:
     # IVAXIS = Axis Begin [CatSerRange] AxcExt ([ChartFrtInfo] *StartBlock) [CatLab] AXS [CRTMLFRT] [EndBlock] End
-    
-    PARSER = Group('ivaxis', Req(Axis()) << Req(Begin()) << CatSerRange() << Req(AxcExt()) << 
-                Group('future', Seq(ChartFrtInfo(), 
-                                    Many('start-blocks', StartBlock()))) << CatLab() << 
+
+    PARSER = Group('ivaxis', Req(Axis()) << Req(Begin()) << CatSerRange() << Req(AxcExt()) <<
+                Group('future', Seq(ChartFrtInfo(),
+                                    Many('start-blocks', StartBlock()))) << CatLab() <<
                 Req(AXS()) << Opt(CRTMLFRT()) << EndBlock() << Req(End()))
 
 class ValueRange(BaseParser):
@@ -514,19 +514,19 @@ class AXM(BaseParser): pass
 
 class DVAXIS(BaseParser):
     #DVAXIS = Axis Begin [ValueRange] [AXM] AXS [CRTMLFRT] End
-    PARSER = Group('dvaxis', Req(Axis()) << Req(Begin()) << ValueRange() << AXM() << Req(AXS()) << CRTMLFRT() << 
+    PARSER = Group('dvaxis', Req(Axis()) << Req(Begin()) << ValueRange() << AXM() << Req(AXS()) << CRTMLFRT() <<
                 Req(End()))
 
-class SERIESAXIS(BaseParser): 
+class SERIESAXIS(BaseParser):
     #SERIESAXIS = Axis Begin [CatSerRange] AXS [CRTMLFRT] End
-    PARSER = Group('series-axis', Req(Axis()) << Req(Begin()) << CatSerRange() << 
+    PARSER = Group('series-axis', Req(Axis()) << Req(Begin()) << CatSerRange() <<
                                   Req(AXS()) << Opt(CRTMLFRT()) << Req(End()))
 
 class AXES(BaseParser):
     #AXES = [IVAXIS DVAXIS [SERIESAXIS] / DVAXIS DVAXIS] *3ATTACHEDLABEL [PlotArea FRAME]
     # TODO: recheck it. The rule above leaks some brackets :(
-    PARSER = Group('axes', Seq(OneOf(Seq(Req(IVAXIS()), Req(DVAXIS()), Opt(SERIESAXIS())), 
-                                     Seq(Req(DVAXIS()), Req(DVAXIS()))), 
+    PARSER = Group('axes', Seq(OneOf(Seq(Req(IVAXIS()), Req(DVAXIS()), Opt(SERIESAXIS())),
+                                     Seq(Req(DVAXIS()), Req(DVAXIS()))),
                                Many('attached-labels', ATTACHEDLABEL(), max=3),
                                Opt(Seq(Req(PlotArea()), Req(FRAME())))))
 
@@ -534,7 +534,7 @@ class AXES(BaseParser):
 class ChartFormat(BaseParser):
     PARSER = Term(xlsrecord.ChartFormat)
 
-class BobPop(BaseParser): 
+class BobPop(BaseParser):
     PARSER = Term(xlsrecord.BobPop)
 
 class BobPopCustom(BaseParser): pass
@@ -542,30 +542,30 @@ class BobPopCustom(BaseParser): pass
 class Bar(BaseParser):
     PARSER = Term(xlsrecord.CHBar)
 
-class Line(BaseParser): 
+class Line(BaseParser):
     PARSER = Term(xlsrecord.CHLine)
-    
+
 class Pie(BaseParser):
     PARSER = Term(xlsrecord.CHPie)
-    
+
 class Area(BaseParser):
     PARSER = Term(xlsrecord.CHArea)
-    
-class Scatter(BaseParser): 
+
+class Scatter(BaseParser):
     PARSER = Term(xlsrecord.CHScatter)
-    
-class Radar(BaseParser): 
+
+class Radar(BaseParser):
     PARSER = Term(xlsrecord.CHRadar)
-    
+
 class RadarArea(BaseParser): pass
 
-class Surf(BaseParser): 
+class Surf(BaseParser):
      PARSER = Term(xlsrecord.CHSurf)
 
-class SeriesList(BaseParser):  
+class SeriesList(BaseParser):
      PARSER = Term(xlsrecord.SeriesList)
-     
-class Chart3d(BaseParser): 
+
+class Chart3d(BaseParser):
     PARSER = Term(xlsrecord.Chart3d)
 
 
@@ -574,26 +574,26 @@ class Legend(BaseParser):
 
 class LD(BaseParser):
     #LD = Legend Begin Pos ATTACHEDLABEL [FRAME] [CrtLayout12] [TEXTPROPS] [CRTMLFRT] End
-    PARSER = Group('ld', Req(Legend()) << Req(Begin()) << Req(Pos()) << Req(ATTACHEDLABEL()) << 
+    PARSER = Group('ld', Req(Legend()) << Req(Begin()) << Req(Pos()) << Req(ATTACHEDLABEL()) <<
                 Opt(FRAME()) << CrtLayout12() << TEXTPROPS() << CRTMLFRT() << Req(End()))
 
 class DropBar(BaseParser):
     PARSER = Term(xlsrecord.DropBar)
 
-class DROPBAR(BaseParser): 
+class DROPBAR(BaseParser):
     # DROPBAR = DropBar Begin LineFormat AreaFormat [GELFRAME] [SHAPEPROPS] End
-    PARSER = Group('drop-bar-root', Req(DropBar()) << Req(Begin()) << Req(LineFormat()) << 
-                                    Req(AreaFormat()) << Opt(GELFRAME()) << Opt(SHAPEPROPS()) << 
+    PARSER = Group('drop-bar-root', Req(DropBar()) << Req(Begin()) << Req(LineFormat()) <<
+                                    Req(AreaFormat()) << Opt(GELFRAME()) << Opt(SHAPEPROPS()) <<
                                     Req(End()))
-class CrtLine(BaseParser): 
+class CrtLine(BaseParser):
     PARSER = Term(xlsrecord.CrtLine)
-    
+
 class CrtLayout12A(BaseParser): pass
 
-class Dat(BaseParser): 
+class Dat(BaseParser):
     PARSER = Term(xlsrecord.Dat)
 
-class DAT(BaseParser): 
+class DAT(BaseParser):
     #DAT = Dat Begin LD End
     PARSER = Group('dat-root', Req(Dat()) << Req(Begin()) << Req(LD()) << Req(End()))
 
@@ -605,15 +605,15 @@ class CRT(BaseParser):
     #*2DFTTEXT [DataLabExtContents] [SS] *4SHAPEPROPS End
     # It seems there are optional StartBlock and EndBlock on the last line:
     #*2DFTTEXT [StartBlock] [DataLabExtContents]  [SS] *4SHAPEPROPS [EndBlock] End
-    
-    
+
+
     PARSER = Group('crt', Req(ChartFormat()) << Req(Begin()) << OneOf(Bar(), Line(), Opt(Seq(Req(BobPop()), BobPopCustom())),
                                                                   Pie(), Area(), Scatter(), Radar(),
                                                                   RadarArea(), Surf()) <<
-                Req(CrtLink()) << SeriesList() << Chart3d() << Opt(LD()) << Many('drop-bars', DROPBAR(), max=2) << 
-                Many('crt-lines', Seq(Req(CrtLine()), 
+                Req(CrtLink()) << SeriesList() << Chart3d() << Opt(LD()) << Many('drop-bars', DROPBAR(), max=2) <<
+                Many('crt-lines', Seq(Req(CrtLine()),
                                       Req(LineFormat()))) << Many('dft-texts', DFTTEXT()) <<
-                StartBlock() << DataLabExtContents() << Opt(SS()) << 
+                StartBlock() << DataLabExtContents() << Opt(SS()) <<
                 Many('shape-props-list', SHAPEPROPS(), max=4) << EndBlock() << Req(End()))
 
 class AXISPARENT(BaseParser):
@@ -641,9 +641,9 @@ class CHARTFORMATS(BaseParser):
                 Many('ss-list', SS()) << Req(ShtProps()) << Many('dft-texts', DFTTEXT(), max=2) <<
                 Req(AxesUsed()) << Many('axis-roots', AXISPARENT(), min=1, max=2) <<
                 CrtLayout12A() << Opt(DAT()) << Many('attached-labels', ATTACHEDLABEL()) <<
-                Opt(CRTMLFRT()) << Many('datalab-exts', Seq(Opt(Seq(Req(DataLabExt()), 
-                                                                    Req(StartObject()))), 
-                                                            Req(ATTACHEDLABEL()), 
+                Opt(CRTMLFRT()) << Many('datalab-exts', Seq(Opt(Seq(Req(DataLabExt()),
+                                                                    Req(StartObject()))),
+                                                            Req(ATTACHEDLABEL()),
                                                             EndObject())) <<
                 Opt(TEXTPROPS()) << Many('crtmlfrt-list', CRTMLFRT()) << EndBlock() << Req(End()))
 
@@ -665,11 +665,11 @@ class Label(BaseParser):
 
 class SERIESDATA(BaseParser):
     #SERIESDATA = Dimensions 3(SIIndex *(Number / BoolErr / Blank / Label))
-    PARSER = Group('series-data', Req(Dimensions()) << Many('si-index-list', 
-                                                          Seq(Req(SIIndex()), 
-                                                              Many('values', 
-                                                                   OneOf(Number(), BoolErr(), 
-                                                                         Blank(), Label()))), 
+    PARSER = Group('series-data', Req(Dimensions()) << Many('si-index-list',
+                                                          Seq(Req(SIIndex()),
+                                                              Many('values',
+                                                                   OneOf(Number(), BoolErr(),
+                                                                         Blank(), Label()))),
                                                           min=3, max=3))
 
 class CodeName(BaseParser): pass
@@ -690,15 +690,15 @@ class CHARTSHEETCONTENT(BaseParser):
     PARSER = Group('chart', WriteProtect() << SheetExt() << WebPub() << Many('hf-pictures', HFPicture()) <<
               Req(PAGESETUP()) << Req(PrintSize()) << HeaderFooter() << BACKGROUND() <<
               Many('fbi-list', Fbi()) << Many('fbi2-list', Fbi2()) <<
-              ClrtClient() << PROTECTION() << Palette() << SXViewLink() << PivotChartBits() << 
-              SBaseRef() << MsoDrawingGroup() << Req(OBJECTS()) << Req(Units()) << 
+              ClrtClient() << PROTECTION() << Palette() << SXViewLink() << PivotChartBits() <<
+              SBaseRef() << MsoDrawingGroup() << Req(OBJECTS()) << Req(Units()) <<
               Req(CHARTFORMATS()) << Req(SERIESDATA()) << Many('windows', WINDOW()) <<
               Many('custom-views', CUSTOMVIEW()) << CodeName() << CRTMLFRT() << Req(EOF()))
-    
+
 class XlsParser(BaseParser):
     def __init__(self, tokens):
         self.__tokenStream = TokenStream(tokens)
-        
+
     def parse(self, stream):
         PARSERS = {0x0005: None, # WorkbookGlobal
                    0x0006: None,# Visual Basic module,
@@ -709,18 +709,18 @@ class XlsParser(BaseParser):
                    }
         parsedList = []
         bofParser = Req(BOF())
-        
+
         while True:
             bof = None
             try:
                 bof = safeParse(bofParser, stream)
             except ParseException:
-                pass 
+                pass
             if bof is None: # we should break only in case stream is ended
                 break
             bof.dumpData() # we need to dump data to make it parse the record
             parser = PARSERS[bof.dataType]
-            
+
             try:
                 if not parser is None:
                     parsed = (parser[0], parser[1]().parse(stream))
@@ -730,11 +730,11 @@ class XlsParser(BaseParser):
                     parsed = parser.parse(stream) # skipping the unknown stream
                     parsedList.append(parsed)
             except ParseException:
-                print ("Parse failed, previous token is [%s], next tokens are [%s]" % (stream.tokens[stream.currentIndex-1], 
+                print ("Parse failed, previous token is [%s], next tokens are [%s]" % (stream.tokens[stream.currentIndex-1],
                                                                                        ','.join(map(str,stream.tokens[stream.currentIndex:stream.currentIndex+5]))))
                 raise
         return parsedList
-    
+
     def __dumpRoot(self, parsed):
         if parsed is None:
             return None
@@ -744,12 +744,10 @@ class XlsParser(BaseParser):
             return map(self.__dumpRoot, parsed)
         else:
             return parsed.dumpData()
-        
+
     def dumpData(self):
         parsed = self.parse(self.__tokenStream)
         if parsed is None:
             return None
         return self.__dumpRoot(parsed)
-        
-    
-    
+
