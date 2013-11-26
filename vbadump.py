@@ -27,8 +27,8 @@
 ########################################################################
 
 import sys, os.path, optparse, math
-sys.path.append(sys.path[0]+"/src")
-import ole, globals, node, olestream, vbahelper
+
+from msodumper import ole, globals, node, olestream, vbahelper
 
 #codepage -> codepagename map
 # note: there are some missing entries ( the commented out ones ) that

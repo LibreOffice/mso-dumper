@@ -27,8 +27,8 @@
 ########################################################################
 
 import sys, os.path, optparse
-sys.path.append(sys.path[0]+"/src")
-import vbahelper
+
+from msodumper import vbahelper
 
 def main():
 
