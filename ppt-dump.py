@@ -27,10 +27,8 @@
 ########################################################################
 
 import sys, os.path, getopt
-sys.path.append(sys.path[0]+"/src")
-import ole, pptstream, globals, olestream
-
-from globals import error
+from msodumper import ole, pptstream, globals, olestream
+from msodumper.globals import error
 
 def usage (exname):
     exname = os.path.basename(exname)

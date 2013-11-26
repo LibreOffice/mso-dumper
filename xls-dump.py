@@ -27,12 +27,11 @@
 ########################################################################
 
 import sys, os.path, optparse
-sys.path.append(sys.path[0]+"/src")
-import ole, xlsstream, globals, node, xlsmodel, olestream
-import xlsparser
-import msocrypto
 
-from globals import error
+from msodumper import ole, xlsstream, globals, node, xlsmodel, olestream
+from msodumper import xlsparser, msocrypto
+
+from msodumper.globals import error
 
 def equalsName (name, array):
     if len(name) != len(array):
