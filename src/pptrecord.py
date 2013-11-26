@@ -1,17 +1,9 @@
 # -*- tab-width: 4; indent-tabs-mode: nil -*-
-########################################################################
 #
-#    OpenOffice.org - a multi-platform office productivity suite
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-#    Author:
-#      Kohei Yoshida  <kyoshida@novell.com>
-#      Thorsten Behrens <tbehrens@novell.com>
-#
-#   The Contents of this file are made available subject to the terms
-#   of GNU Lesser General Public License Version 2.1 and any later
-#   version.
-#
-########################################################################
 
 import globals
 
@@ -1725,3 +1717,5 @@ placeholderEnum = {
     25: ["PT_VerticalObject"],
     26: ["PT_Picture"]
 }
+
+# vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
