@@ -98,19 +98,18 @@ class PPTDirStream(object):
         return globals.getUnsignedInt(self.readBytes(size))
 
 
-    def __print (self, text):
-        globals.outputln(self.prefix + text)
+    def __print (self, text, recordType = -1):
+        globals.outputln(self.prefix + text, recordType = recordType)
 
 
-    def __printSep (self, c='-', w=68, prefix=''):
-        self.__print(prefix + c*w)
+    def __printSep (self, c='-', w=68, prefix='', recordType = -1):
+        self.__print(prefix + c*w, recordType)
 
 
     def readRecords (self):
         try:
             # read until data is exhausted (min record size: 8 bytes)
             while self.pos+8 < self.size:
-                globals.outputln("")
                 self.readRecord()
             return True
         except EndOfStream:
@@ -120,30 +119,30 @@ class PPTDirStream(object):
     def printRecordHeader (self, startPos, recordInstance, recordVersion, recordType, size):
         if self.params.noStructOutput and self.params.dumpText:
             return
-        self.__printSep('=')
+        self.__printSep('=', recordType = recordType)
         if recordType in recData:
-            self.__print("[%s]"%recData[recordType][0])
+            self.__print("[%s]"%recData[recordType][0], recordType)
         else:
-            self.__print("[anon record]")
+            self.__print("[anon record]", recordType)
         self.__print("(type: %4.4Xh (%d) inst: %4.4Xh (%d), vers: %4.4Xh, start: %d, size: %d)"%
-              (recordType, recordType, recordInstance, recordInstance, recordVersion, startPos, size))
-        self.__printSep('=')
+              (recordType, recordType, recordInstance, recordInstance, recordVersion, startPos, size), recordType)
+        self.__printSep('=', recordType = recordType)
 
 
     def printRecordDump (self, bytes, recordType):
         if self.params.noStructOutput and self.params.dumpText:
             return
         size = len(bytes)
-        self.__printSep('-', 61, "%4.4Xh: "%recordType)
+        self.__printSep('-', 61, "%4.4Xh: "%recordType, recordType = recordType)
         for i in xrange(0, size):
             if (i+1) % 16 == 1:
-                output(self.prefix + "%4.4Xh: "%recordType)
-            output("%2.2X "%ord(bytes[i]))
+                output(self.prefix + "%4.4Xh: "%recordType, recordType = recordType)
+            output("%2.2X "%ord(bytes[i]), recordType = recordType)
             if (i+1) % 16 == 0 and i != size-1:
-                globals.outputln("")
+                globals.outputln("", recordType = recordType)
         if size > 0:
-            globals.outputln("")
-            self.__printSep('-', 61, "%4.4Xh: "%recordType)
+            globals.outputln("", recordType = recordType)
+            self.__printSep('-', 61, "%4.4Xh: "%recordType, recordType = recordType)
 
 
     def readRecord (self):
@@ -154,6 +153,7 @@ class PPTDirStream(object):
         recordType = self.readUnsignedInt(2)
         size = self.readUnsignedInt(4)
 
+        globals.outputln("", recordType = recordType)
         self.printRecordHeader(startPos, recordInstance, recordVersion, recordType, size)
         bytes = self.readBytes(size)
 
@@ -173,13 +173,13 @@ class PPTDirStream(object):
                 self.handlePPT10BinaryTags(bytes,recordInfo)
         elif recordInfo is not None:
             handler = recordInfo[1](recordType, recordInstance, size, bytes, self.properties, self.prefix)
-            globals.outputln("")
+            globals.outputln("", recordType = recordType)
             # call special record handler, if any
             if handler is not None:
                 handler.output()
             self.printRecordDump(bytes, recordType)
         elif size > 0:
-            globals.outputln("")
+            globals.outputln("", recordType = recordType)
             self.printRecordDump(bytes, recordType)
 
     def checkPPT10BinaryTag (recordType, recordInstance, size, bytes, properties, prefix):

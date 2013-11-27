@@ -33,6 +33,12 @@ class Params(object):
         self.showStreamPos = False
         self.noStructOutput = False
         self.dumpText = False
+        self.dumpedIds = []
+        self.noRawDump = False
+        
+# Global parameters / run configuration, to be set up by the main
+# program during initialization
+params = Params()
 
 class ByteStream(object):
 
@@ -123,22 +129,15 @@ def getValueOrUnknown (list, idx, errmsg='(unknown)'):
 
 textdump = b""
 
-_noOutput = 0
-
-def muteOutput(onoff):
-    global _noOutput
-    if onoff:
-        _noOutput = 1
-    else:
-        _noOutput = 0
-
-def output (msg):
-    global _noOutput
-    if _noOutput == 0:
+def output (msg, recordType = -1):
+    if params.noStructOutput:
+        return
+    if recordType == -1 or not params.dumpedIds or \
+           recordType in params.dumpedIds:
         sys.stdout.write(msg)
 
-def outputln(msg):
-    output(msg + "\n")
+def outputln(msg, recordType = -1):
+    output(msg + "\n", recordType)
     
 def error (msg):
     sys.stderr.write("Error: " + msg)
@@ -257,7 +256,7 @@ Note the following:
 
 
 def dumpBytes (chars, subDivide=None):
-    if _noOutput:
+    if params.noStructOutput or params.noRawDumps:
         return
     line = 0
     subDivideLine = None

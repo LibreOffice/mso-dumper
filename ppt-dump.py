@@ -81,24 +81,29 @@ def main (args):
         usage(exname)
         return
 
-    params = globals.Params()
     try:
         opts, args = getopt.getopt(args, "h",
                                    ["help", "debug", "show-sector-chain",
-                                    "no-struct-output", "dump-text"])
+                                    "no-struct-output", "dump-text",
+                                    "id-select=", "no-raw-dumps"])
         for opt, arg in opts:
             if opt in ['-h', '--help']:
                 usage(exname)
                 return
             elif opt in ['--debug']:
-                params.debug = True
+                globals.params.debug = True
             elif opt in ['--show-sector-chain']:
-                params.showSectorChain = True
+                globals.params.showSectorChain = True
             elif opt in ['--no-struct-output']:
-                globals.muteOutput(1)
-                params.noStructOutput = True
+                globals.params.noStructOutput = True
             elif opt in ['--dump-text']:
-                params.dumpText = True
+                globals.params.dumpText = True
+            elif opt in ['--no-raw-dumps']:
+                globals.params.noRawDumps = True
+            elif opt in ['--id-select']:
+                globals.params.dumpedIds = arg.split(",")
+                globals.params.dumpedIds = \
+                    set([int(val) for val in globals.params.dumpedIds if val])
             else:
                 error("unknown option %s\n"%opt)
                 usage()
@@ -108,10 +113,10 @@ def main (args):
         usage(exname)
         return
 
-    dumper = PPTDumper(args[0], params)
+    dumper = PPTDumper(args[0], globals.params)
     if not dumper.dump():
         error("FAILURE\n")
-    if params.dumpText:
+    if globals.params.dumpText:
         print(globals.textdump.replace("\r", "\n"))
 
 if __name__ == '__main__':
