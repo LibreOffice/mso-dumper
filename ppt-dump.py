@@ -15,9 +15,11 @@ def usage (exname):
 
 Options:
   --help        displays this help message.
-  --no-struct-output suppress normal disassembly output
-  --dump-text   print the textual content
-"""%exname
+  --no-struct-output suppress normal structure analysis output
+  --dump-text   extract and print the textual content
+  --no-raw-dumps suppress raw hex dumps of uninterpreted areas
+  --id-select=id1[,id2 ...] limit output to selected record Ids
+""" % exname
     print msg
 
 
