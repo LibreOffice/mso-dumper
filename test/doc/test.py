@@ -8,7 +8,6 @@
 
 import sys
 sys.path.append(sys.path[0]+"/../..")
-sys.path.append(sys.path[0]+"/../../src")
 doc_dumper = __import__('doc-dump')
 from xml.etree import ElementTree
 import unittest
