@@ -1,10 +1,9 @@
-########################################################################
+# -*- tab-width: 4; indent-tabs-mode: nil -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-########################################################################
 
 import globals
 
@@ -75,3 +74,5 @@ class EncryptionInfo(object):
 
     def outputAgile (self):
         print (self.bytes)
+
+# vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
