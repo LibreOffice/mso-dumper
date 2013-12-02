@@ -15,12 +15,12 @@ class MonikerStream(object):
         self.strm = globals.ByteStream(bytes)
 
     def read (self):
-        print ("moniker size: %d"%(len(self.strm.bytes)-16))
+        globals.outputln("moniker size: %d"%(len(self.strm.bytes)-16))
         clsID = self.strm.readBytes(16)
-        print ("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
-        print ("stream data (implemention specific):")
+        globals.outputln("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
+        globals.outputln("stream data (implemention specific):")
         globals.dumpBytes(self.strm.readRemainingBytes())
-        print ("")
+        globals.outputln("")
 
 class OLEStream(object):
 
@@ -29,13 +29,13 @@ class OLEStream(object):
 
     def read (self):
         ver = self.strm.readUnsignedInt(4)
-        print ("version: 0x%8.8X"%ver)
+        globals.outputln("version: 0x%8.8X"%ver)
         flags = self.strm.readUnsignedInt(4)
-        print ("flags: %d"%flags)
+        globals.outputln("flags: %d"%flags)
         linkUpdateOption = self.strm.readUnsignedInt(4)
-        print ("link update option: %d"%linkUpdateOption)
+        globals.outputln("link update option: %d"%linkUpdateOption)
         reserved = self.strm.readUnsignedInt(4)
-        print ("")
+        globals.outputln("")
 
         # Reserved moniker (must be ignored)
         monikerSize = self.strm.readUnsignedInt(4)
@@ -56,9 +56,9 @@ class OLEStream(object):
             strm.read()
 
         clsIDIndicator = self.strm.readSignedInt(4)
-        print ("cls ID indicator: %d"%clsIDIndicator)
+        globals.outputln("cls ID indicator: %d"%clsIDIndicator)
         clsID = self.strm.readBytes(16)
-        print ("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
+        globals.outputln("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
 #       globals.dumpBytes(self.strm.bytes, 512)
 
 class CompObjStream(object):
@@ -71,7 +71,7 @@ class CompObjStream(object):
         reserved = self.strm.readBytes(4)
         ver = self.strm.readUnsignedInt(4)
         reserved = self.strm.readBytes(20)
-        print ("version: 0x%4.4X"%ver)
+        globals.outputln("version: 0x%4.4X"%ver)
 
         # LengthPrefixedAnsiString
         length = self.strm.readUnsignedInt(4)
@@ -80,7 +80,7 @@ class CompObjStream(object):
             # must be null-terminated.
             raise CompObjStreamError()
 
-        print ("display name: " + displayName[:-1])
+        globals.outputln("display name: " + displayName[:-1])
 
         # ClipboardFormatOrAnsiString
         marker = self.strm.readUnsignedInt(4)
@@ -89,13 +89,13 @@ class CompObjStream(object):
             pass
         elif marker == 0xFFFFFFFF or marker == 0xFFFFFFFE:
             clipFormatID = self.strm.readUnsignedInt(4)
-            print ("clipboard format ID: %d"%clipFormatID)
+            globals.outputln("clipboard format ID: %d"%clipFormatID)
         else:
             clipName = self.strm.readBytes(marker)
             if ord(clipName[-1]) != 0x00:
                 # must be null-terminated.
                 raise CompObjStreamError()
-            print ("clipboard format name: %s"%clipName[:-1])
+            globals.outputln("clipboard format name: %s"%clipName[:-1])
 
         # LengthPrefixedAnsiString
         length = self.strm.readUnsignedInt(4)
@@ -108,7 +108,7 @@ class CompObjStream(object):
             # must be null-terminated.
             raise CompObjStreamError()
 
-        print ("reserved name : %s"%reserved[:-1])
+        globals.outputln("reserved name : %s"%reserved[:-1])
         unicodeMarker = self.strm.readUnsignedInt(4)
         if unicodeMarker != 0x71B239F4:
             raise CompObjStreamError()
@@ -117,7 +117,7 @@ class CompObjStream(object):
         length = self.strm.readUnsignedInt(4)
         if length > 0:
             s = globals.getUTF8FromUTF16(self.strm.readBytes(length*2))
-            print ("display name (unicode): %s"%s)
+            globals.outputln("display name (unicode): %s"%s)
 
         # ClipboardFormatOrAnsiString
         marker = self.strm.readUnsignedInt(4)
@@ -126,13 +126,13 @@ class CompObjStream(object):
             pass
         elif marker == 0xFFFFFFFF or marker == 0xFFFFFFFE:
             clipFormatID = self.strm.readUnsignedInt(4)
-            print ("clipboard format ID: %d"%clipFormatID)
+            globals.outputln("clipboard format ID: %d"%clipFormatID)
         else:
             clipName = globals.getUTF8FromUTF16(self.strm.readBytes(marker*2))
             if ord(clipName[-1]) != 0x00:
                 # must be null-terminated.
                 raise CompObjStreamError()
-            print ("clipboard format name: %s"%clipName[:-1])
+            globals.outputln("clipboard format name: %s"%clipName[:-1])
 
 class PropertySetStream(object):
 
@@ -144,59 +144,59 @@ class PropertySetStream(object):
         if byteorder != 0xFFFE:
             raise PropertySetStreamError()
         ver = self.strm.readUnsignedInt(2)
-        print ("version: 0x%4.4X"%ver)
+        globals.outputln("version: 0x%4.4X"%ver)
         sID = self.strm.readUnsignedInt(4)
-        print ("system identifier: 0x%4.4X"%sID)
+        globals.outputln("system identifier: 0x%4.4X"%sID)
         clsID = self.strm.readBytes(16)
-        print ("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
+        globals.outputln("CLS ID: %s"%globals.getRawBytes(clsID, True, False))
         sets = self.strm.readUnsignedInt(4)
-        print ("number of property sets: 0x%4.4X"%sets)
+        globals.outputln("number of property sets: 0x%4.4X"%sets)
         fmtID0 = self.strm.readBytes(16)
-        print ("FMT ID 0: %s"%globals.getRawBytes(fmtID0, True, False))
+        globals.outputln("FMT ID 0: %s"%globals.getRawBytes(fmtID0, True, False))
         offset0 = self.strm.readUnsignedInt(4)
-        print ("offset 0: 0x%4.4X"%offset0)
+        globals.outputln("offset 0: 0x%4.4X"%offset0)
         if sets > 1:
             fmtID1 = self.strm.readBytes(16)
-            print ("FMT ID 1: %s"%globals.getRawBytes(fmtID0, True, False))
+            globals.outputln("FMT ID 1: %s"%globals.getRawBytes(fmtID0, True, False))
             offset1 = self.strm.readUnsignedInt(4)
-            print ("offset 1: 0x%4.4X\n"%offset1)
+            globals.outputln("offset 1: 0x%4.4X\n"%offset1)
         self.readSet(offset0)
         if sets > 1:
             self.strm.setCurrentPos(offset1);
             self.readSet(offset1)
 
     def readSet (self, setOffset):
-        print ("-----------------------------")
-        print ("Property set")
-        print ("-----------------------------")
+        globals.outputln("-----------------------------")
+        globals.outputln("Property set")
+        globals.outputln("-----------------------------")
         size = self.strm.readUnsignedInt(4)
-        print ("size: 0x%4.4X"%size)
+        globals.outputln("size: 0x%4.4X"%size)
         props = self.strm.readUnsignedInt(4)
-        print ("number of properties: 0x%4.4X"%props)
+        globals.outputln("number of properties: 0x%4.4X"%props)
         pos = 0
         while pos < props:
             self.strm.setCurrentPos(setOffset + 8 + pos*8);
             id = self.strm.readUnsignedInt(4)
             offset = self.strm.readUnsignedInt(4)
-            print ("ID: 0x%4.4X offset: 0x%4.4X"%(id, offset))
+            globals.outputln("ID: 0x%4.4X offset: 0x%4.4X"%(id, offset))
             self.strm.setCurrentPos(setOffset + offset);
             type = self.strm.readUnsignedInt(2)
             padding = self.strm.readUnsignedInt(2)
             if padding != 0:
                 raise PropertySetStreamError()
-            print ("type: 0x%4.4X"%type)
+            globals.outputln("type: 0x%4.4X"%type)
             if type == 2:
                 value = self.strm.readSignedInt(2)
-                print ("VT_I2: %d"%value)
+                globals.outputln("VT_I2: %d"%value)
             elif type == 0x41:
                 blobSize = self.strm.readUnsignedInt(4)
-                print ("VT_BLOB size: 0x%4.4X"%blobSize)
-                print ("------------------------------------------------------------------------")
+                globals.outputln("VT_BLOB size: 0x%4.4X"%blobSize)
+                globals.outputln("------------------------------------------------------------------------")
                 globals.dumpBytes(self.strm.bytes[self.strm.pos:self.strm.pos+blobSize], blobSize)
-                print ("------------------------------------------------------------------------")
+                globals.outputln("------------------------------------------------------------------------")
             else:
-                print ("unknown type")
+                globals.outputln("unknown type")
             pos += 1
-        print ("")
+        globals.outputln("")
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

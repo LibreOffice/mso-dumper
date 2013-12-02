@@ -124,6 +124,9 @@ def getValueOrUnknown (list, idx, errmsg='(unknown)'):
 def output (msg):
     sys.stdout.write(msg)
 
+def outputln(msg):
+    output(msg + "\n")
+
 def error (msg):
     sys.stderr.write("Error: " + msg)
 

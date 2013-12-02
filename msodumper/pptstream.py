@@ -24,15 +24,15 @@ class PPTFile(object):
 
 
     def __printSep (self, c='-', w=68, prefix=''):
-        print(prefix + c*w)
+        globals.outputln(prefix + c*w)
 
 
     def printStreamInfo (self):
         self.__printSep('=', 68)
-        print("PPT File Format Dumper by Kohei Yoshida & Thorsten Behrens")
-        print("  total stream size: %d bytes"%self.size)
+        globals.outputln("PPT File Format Dumper by Kohei Yoshida & Thorsten Behrens")
+        globals.outputln("  total stream size: %d bytes"%self.size)
         self.__printSep('=', 68)
-        print('')
+        globals.outputln('')
 
 
     def printHeader (self):
@@ -94,7 +94,7 @@ class PPTDirStream(object):
 
 
     def __print (self, text):
-        print(self.prefix + text)
+        globals.outputln(self.prefix + text)
 
 
     def __printSep (self, c='-', w=68, prefix=''):
@@ -105,7 +105,7 @@ class PPTDirStream(object):
         try:
             # read until data is exhausted (min record size: 8 bytes)
             while self.pos+8 < self.size:
-                print("")
+                globals.outputln("")
                 self.readRecord()
             return True
         except EndOfStream:
@@ -131,9 +131,9 @@ class PPTDirStream(object):
                 output(self.prefix + "%4.4Xh: "%recordType)
             output("%2.2X "%ord(bytes[i]))
             if (i+1) % 16 == 0 and i != size-1:
-                print("")
+                globals.outputln("")
         if size > 0:
-            print("")
+            globals.outputln("")
             self.__printSep('-', 61, "%4.4Xh: "%recordType)
 
 
@@ -164,13 +164,13 @@ class PPTDirStream(object):
                 self.handlePPT10BinaryTags(bytes,recordInfo)
         elif recordInfo is not None:
             handler = recordInfo[1](recordType, recordInstance, size, bytes, self.properties, self.prefix)
-            print("")
+            globals.outputln("")
             # call special record handler, if any
             if handler is not None:
                 handler.output()
             self.printRecordDump(bytes, recordType)
         elif size > 0:
-            print("")
+            globals.outputln("")
             self.printRecordDump(bytes, recordType)
 
     def checkPPT10BinaryTag (recordType, recordInstance, size, bytes, properties, prefix):

@@ -34,9 +34,9 @@ append a line to be displayed.
 
     def __print (self, text):
         try:
-            print(self.prefix + text)
+            globals.outputln(self.prefix + text)
         except UnicodeEncodeError:
-            print(self.prefix + "<%d invalid chars>"%len(text))
+            globals.outputln(self.prefix + "<%d invalid chars>"%len(text))
 
     def output (self):
         self.parseBytes()

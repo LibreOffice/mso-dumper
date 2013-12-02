@@ -96,10 +96,10 @@ class Header(object):
             output("\n")
 
         def printSep (c, w, prefix=''):
-            print(prefix + c*w)
+            globals.outputln(prefix + c*w)
 
         printSep('=', globals.OutputWidth)
-        print("Compound Document Header")
+        globals.outputln("Compound Document Header")
         printSep('-', globals.OutputWidth)
 
         if self.params.debug:
@@ -113,47 +113,47 @@ class Header(object):
         printRawBytes(self.uId)
 
         # revision and version
-        print("Revision: %d  Version: %d"%(self.revision, self.version))
+        globals.outputln("Revision: %d  Version: %d"%(self.revision, self.version))
 
         # byte order
         output("Byte order: ")
         if self.byteOrder == ByteOrder.LittleEndian:
-            print("little endian")
+            globals.outputln("little endian")
         elif self.byteOrder == ByteOrder.BigEndian:
-            print("big endian")
+            globals.outputln("big endian")
         else:
-            print("unknown")
+            globals.outputln("unknown")
 
         # sector size (usually 512 bytes)
-        print("Sector size: %d (%d)"%(2**self.secSize, self.secSize))
+        globals.outputln("Sector size: %d (%d)"%(2**self.secSize, self.secSize))
 
         # short sector size (usually 64 bytes)
-        print("Short sector size: %d (%d)"%(2**self.secSizeShort, self.secSizeShort))
+        globals.outputln("Short sector size: %d (%d)"%(2**self.secSizeShort, self.secSizeShort))
 
         # total number of sectors in SAT (equals the number of sector IDs
         # stored in the MSAT).
-        print("Total number of sectors used in SAT: %d"%self.numSecSAT)
+        globals.outputln("Total number of sectors used in SAT: %d"%self.numSecSAT)
 
-        print("Sector ID of the first sector of the directory stream: %d"%
+        globals.outputln("Sector ID of the first sector of the directory stream: %d"%
               self.__secIDFirstDirStrm)
 
-        print("Minimum stream size: %d"%self.minStreamSize)
+        globals.outputln("Minimum stream size: %d"%self.minStreamSize)
 
         if self.__secIDFirstSSAT == -2:
-            print("Sector ID of the first SSAT sector: [none]")
+            globals.outputln("Sector ID of the first SSAT sector: [none]")
         else:
-            print("Sector ID of the first SSAT sector: %d"%self.__secIDFirstSSAT)
+            globals.outputln("Sector ID of the first SSAT sector: %d"%self.__secIDFirstSSAT)
 
-        print("Total number of sectors used in SSAT: %d"%self.numSecSSAT)
+        globals.outputln("Total number of sectors used in SSAT: %d"%self.numSecSSAT)
 
         if self.__secIDFirstMSAT == -2:
             # There is no more sector ID stored outside the header.
-            print("Sector ID of the first MSAT sector: [end of chain]")
+            globals.outputln("Sector ID of the first MSAT sector: [end of chain]")
         else:
             # There is more sector IDs than 109 IDs stored in the header.
-            print("Sector ID of the first MSAT sector: %d"%(self.__secIDFirstMSAT))
+            globals.outputln("Sector ID of the first MSAT sector: %d"%(self.__secIDFirstMSAT))
 
-        print("Total number of sectors used to store additional MSAT: %d"%self.numSecMSAT)
+        globals.outputln("Total number of sectors used to store additional MSAT: %d"%self.numSecMSAT)
 
 
     def parse (self):
@@ -285,13 +285,13 @@ all the sectors pointed by the sector IDs in order of occurrence.
         self.secIDs.append(id)
 
     def output (self):
-        print('')
-        print("="*globals.OutputWidth)
-        print("Master Sector Allocation Table (MSAT)")
-        print("-"*globals.OutputWidth)
+        globals.outputln('')
+        globals.outputln("="*globals.OutputWidth)
+        globals.outputln("Master Sector Allocation Table (MSAT)")
+        globals.outputln("-"*globals.OutputWidth)
 
         for id in self.secIDs:
-            print("sector ID: %5d   (pos: %7d)"%(id, 512+id*self.sectorSize))
+            globals.outputln("sector ID: %5d   (pos: %7d)"%(id, 512+id*self.sectorSize))
 
     def getSATSectorPosList (self):
         list = []
@@ -379,27 +379,27 @@ class SAT(object):
                 sectorMElse += 1
             else:
                 sectorLiveTotal += 1
-        print("total sector count:          %4d"%sectorTotal)
-        print("* live sector count:         %4d"%sectorP)
-        print("* end-of-chain sector count: %4d"%sectorM2)  # end-of-chain is also live
+        globals.outputln("total sector count:          %4d"%sectorTotal)
+        globals.outputln("* live sector count:         %4d"%sectorP)
+        globals.outputln("* end-of-chain sector count: %4d"%sectorM2)  # end-of-chain is also live
 
-        print("* free sector count:         %4d"%sectorM1)
-        print("* SAT sector count:          %4d"%sectorM3)
-        print("* MSAT sector count:         %4d"%sectorM4)
-        print("* other sector count:        %4d"%sectorMElse)
+        globals.outputln("* free sector count:         %4d"%sectorM1)
+        globals.outputln("* SAT sector count:          %4d"%sectorM3)
+        globals.outputln("* MSAT sector count:         %4d"%sectorM4)
+        globals.outputln("* other sector count:        %4d"%sectorMElse)
 
 
     def output (self):
-        print('')
-        print("="*globals.OutputWidth)
-        print("Sector Allocation Table (SAT)")
-        print("-"*globals.OutputWidth)
+        globals.outputln('')
+        globals.outputln("="*globals.OutputWidth)
+        globals.outputln("Sector Allocation Table (SAT)")
+        globals.outputln("-"*globals.OutputWidth)
         if self.params.debug:
             self.outputRawBytes()
-            print("-"*globals.OutputWidth)
+            globals.outputln("-"*globals.OutputWidth)
             for i in xrange(0, len(self.array)):
-                print("%5d: %5d"%(i, self.array[i]))
-            print("-"*globals.OutputWidth)
+                globals.outputln("%5d: %5d"%(i, self.array[i]))
+            globals.outputln("-"*globals.OutputWidth)
 
         self.outputArrayStats()
 
@@ -428,13 +428,13 @@ sectors are contained in the SAT as a sector ID chain.
 """
 
     def output (self):
-        print('')
-        print("="*globals.OutputWidth)
-        print("Short Sector Allocation Table (SSAT)")
-        print("-"*globals.OutputWidth)
+        globals.outputln('')
+        globals.outputln("="*globals.OutputWidth)
+        globals.outputln("Short Sector Allocation Table (SSAT)")
+        globals.outputln("-"*globals.OutputWidth)
         if self.params.debug:
             self.outputRawBytes()
-            print("-"*globals.OutputWidth)
+            globals.outputln("-"*globals.OutputWidth)
             for i in xrange(0, len(self.array)):
                 item = self.array[i]
                 output("%3d : %3d\n"%(i, item))
@@ -556,21 +556,21 @@ entire file stream.
 
 
     def output (self, debug=False):
-        print('')
-        print("="*globals.OutputWidth)
-        print("Directory")
+        globals.outputln('')
+        globals.outputln("="*globals.OutputWidth)
+        globals.outputln("Directory")
 
         if debug:
-            print("-"*globals.OutputWidth)
-            print("sector(s) used:")
+            globals.outputln("-"*globals.OutputWidth)
+            globals.outputln("sector(s) used:")
             for secID in self.sectorIDs:
-                print("  sector %d"%secID)
+                globals.outputln("  sector %d"%secID)
 
-            print("")
+            globals.outputln("")
             for secID in self.sectorIDs:
-                print("-"*globals.OutputWidth)
-                print("  Raw Hex Dump (sector %d)"%secID)
-                print("-"*globals.OutputWidth)
+                globals.outputln("-"*globals.OutputWidth)
+                globals.outputln("  Raw Hex Dump (sector %d)"%secID)
+                globals.outputln("-"*globals.OutputWidth)
                 pos = globals.getSectorPos(secID, self.sectorSize)
                 globals.dumpBytes(self.bytes[pos:pos+self.sectorSize], 128)
 
@@ -578,45 +578,45 @@ entire file stream.
             self.__outputEntry(entry, debug)
 
     def __outputEntry (self, entry, debug):
-        print("-"*globals.OutputWidth)
+        globals.outputln("-"*globals.OutputWidth)
         if len(entry.Name) > 0:
             name = entry.Name
             if ord(name[0]) <= 5:
                 name = "<%2.2Xh>%s"%(ord(name[0]), name[1:])
-            print("name: %s   (name buffer size: %d bytes)"%(name, entry.CharBufferSize))
+            globals.outputln("name: %s   (name buffer size: %d bytes)"%(name, entry.CharBufferSize))
         else:
-            print("name: [empty]   (name buffer size: %d bytes)"%entry.CharBufferSize)
+            globals.outputln("name: [empty]   (name buffer size: %d bytes)"%entry.CharBufferSize)
 
         if self.params.debug:
-            print("-"*globals.OutputWidth)
+            globals.outputln("-"*globals.OutputWidth)
             globals.dumpBytes(entry.bytes)
-            print("-"*globals.OutputWidth)
+            globals.outputln("-"*globals.OutputWidth)
 
         output("type: ")
         if entry.Type == Directory.Type.Empty:
-            print("empty")
+            globals.outputln("empty")
         elif entry.Type == Directory.Type.LockBytes:
-            print("lock bytes")
+            globals.outputln("lock bytes")
         elif entry.Type == Directory.Type.Property:
-            print("property")
+            globals.outputln("property")
         elif entry.Type == Directory.Type.RootStorage:
-            print("root storage")
+            globals.outputln("root storage")
         elif entry.Type == Directory.Type.UserStorage:
-            print("user storage")
+            globals.outputln("user storage")
         elif entry.Type == Directory.Type.UserStream:
-            print("user stream")
+            globals.outputln("user stream")
         else:
-            print("[unknown type]")
+            globals.outputln("[unknown type]")
 
         output("node color: ")
         if entry.NodeColor == Directory.NodeColor.Red:
-            print("red")
+            globals.outputln("red")
         elif entry.NodeColor == Directory.NodeColor.Black:
-            print("black")
+            globals.outputln("black")
         elif entry.NodeColor == Directory.NodeColor.Unknown:
-            print("[unknown color]")
+            globals.outputln("[unknown color]")
 
-        print("linked dir entries: left: %d; right: %d; root: %d"%
+        globals.outputln("linked dir entries: left: %d; right: %d; root: %d"%
               (entry.DirIDLeft, entry.DirIDRight, entry.DirIDRoot))
 
         self.__outputRaw("unique ID",  entry.UniqueID)
@@ -626,12 +626,12 @@ entire file stream.
 
         output("stream info: ")
         if entry.StreamSectorID < 0 or entry.StreamSize == 0:
-            print("[empty stream]")
+            globals.outputln("[empty stream]")
         else:
             strmLoc = "SAT"
             if entry.StreamLocation == StreamLocation.SSAT:
                 strmLoc = "SSAT"
-            print("(first sector ID: %d; size: %d; location: %s)"%
+            globals.outputln("(first sector ID: %d; size: %d; location: %s)"%
                   (entry.StreamSectorID, entry.StreamSize, strmLoc))
 
             satObj = None
@@ -644,8 +644,8 @@ entire file stream.
                 secSize = self.header.getShortSectorSize()
             if satObj != None:
                 chain = satObj.getSectorIDChain(entry.StreamSectorID)
-                print("sector count: %d"%len(chain))
-                print("total sector size: %d"%(len(chain)*secSize))
+                globals.outputln("sector count: %d"%len(chain))
+                globals.outputln("total sector size: %d"%(len(chain)*secSize))
                 if self.params.showSectorChain:
                     self.__outputSectorChain(chain)
 
@@ -657,7 +657,7 @@ entire file stream.
             frag = "%d, "%id
             fragLen = len(frag)
             if lineLen + fragLen > 68:
-                print(line)
+                globals.outputln(line)
                 line = frag
                 lineLen = fragLen
             else:
@@ -667,7 +667,7 @@ entire file stream.
             line = line[:-2]
             lineLen -= 2
         if lineLen > 0:
-            print(line)
+            globals.outputln(line)
 
 
     def __outputRaw (self, name, bytes):
@@ -677,7 +677,7 @@ entire file stream.
         output("%s: "%name)
         for byte in bytes:
             output("%2.2X "%ord(byte))
-        print("")
+        globals.outputln("")
 
     def getDirectoryEntries (self):
         return self.entries
@@ -864,16 +864,16 @@ class OleContainer:
         dateInfo = self.__getModifiedTime( treeNode.Entry )
 
         if len( treeNode.HierachicalName ) > 0 :
-            print '{0:8d}  {1:0<2d}-{2:0<2d}-{3:0<2d} {4:0<2d}:{5:0<2d}   {6}'.format(treeNode.Entry.StreamSize, dateInfo.day, dateInfo.month, dateInfo.year, dateInfo.hour, dateInfo.second, treeNode.HierachicalName )
+            globals.outputln('{0:8d}  {1:0<2d}-{2:0<2d}-{3:0<2d} {4:0<2d}:{5:0<2d}   {6}'.format(treeNode.Entry.StreamSize, dateInfo.day, dateInfo.month, dateInfo.year, dateInfo.hour, dateInfo.second, treeNode.HierachicalName ))
 
         for node in treeNode.Nodes:
             # ignore the root
             self.__printListReport( node )
 
     def __printHeader(self):
-        print ("OLE: %s")%self.filePath
-        print (" Length     Date   Time    Name")
-        print ("--------    ----   ----    ----")
+        globals.outputln("OLE: %s")%self.filePath
+        globals.outputln(" Length     Date   Time    Name")
+        globals.outputln("--------    ----   ----    ----")
 
     def list(self):
         # need to share the inititialisation and parse stuff between the different options
@@ -907,7 +907,7 @@ class OleContainer:
             file.write( bytes )
             file.close
         else:
-            print("failed to initialise ole container")
+            globals.outputln("failed to initialise ole container")
 
     def read(self):
         self.__parseFile()
