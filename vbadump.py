@@ -109,13 +109,13 @@ class CodePageReader(StdReader):
         if codePageMap.has_key( self.reader.codepage ):
             self.reader.codepageName = codePageMap[  self.reader.codepage ]
         print("  codepage: %i"%self.reader.codepage)
-     
+
 class ProjectNameReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         bytes = self.reader.readBytes( size )
         print("  ProjectName: %s"%bytes.decode(self.reader.codepageName))
-                 
+
 class DocStringRecordReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
@@ -238,8 +238,8 @@ class ModuleOffSetReader(StdReader):
         size = self.reader.readUnsignedInt( 4 )
         moduleInfo = self.reader.CurrentModule
         moduleInfo.offset = self.reader.readUnsignedInt( size )
-     
-        print("  Offset: 0x%x"%moduleInfo.offset) 
+
+        print("  Offset: 0x%x"%moduleInfo.offset)
 
 class ProjectModuleTermReader(StdReader):
     def parse(self):
@@ -266,13 +266,13 @@ class SysKindReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         val = self.reader.readUnsignedInt( size )
-        sysKind = "Unknown" 
+        sysKind = "Unknown"
         if val == 0:
-           sysKind = "16 bit windows" 
+           sysKind = "16 bit windows"
         elif val == 1:
-           sysKind = "32 bit windows" 
+           sysKind = "32 bit windows"
         elif val == 2:
-           sysKind = "Macintosh" 
+           sysKind = "Macintosh"
         print("  SysType: %s"%sysKind)
 
 class LcidReader(StdReader):
@@ -280,13 +280,12 @@ class LcidReader(StdReader):
         size = self.reader.readUnsignedInt( 4 )
         val = self.reader.readUnsignedInt( size )
         print("  LCID: 0x%x ( expected 0x409 )"%val)
-   
+
 class LcidInvokeReader(StdReader):
     def parse(self):
         size = self.reader.readUnsignedInt( 4 )
         val = self.reader.readUnsignedInt( size )
         print("  LCIDINVOKE: 0x%x ( expected 0x409 )"%val)
-   
 
 class LibFlagReader(StdReader):
     def parse(self):
@@ -324,8 +323,8 @@ class ReferenceControlReaderPart1(StdReader):
         sizeOfLibidTwiddled =  self.reader.readUnsignedInt( 4 )
         sLibidTwiddledBytes =  self.reader.readBytes( sizeOfLibidTwiddled )
         print("  LibIdTwiddled: %s"%sLibidTwiddledBytes.decode( self.reader.codepageName))
-        
-        # Reserved1 & Reserved2 ( suppose we could really read these and assert if 
+
+        # Reserved1 & Reserved2 ( suppose we could really read these and assert if
         # they don't conform to expected values ( 0x00000000 & 0x00000000 )
         self.reader.readBytes( 6 )
 
@@ -335,8 +334,8 @@ class ReferenceControlReaderPart2(StdReader):
         sizeOfLibidExtended =  self.reader.readUnsignedInt( 4 )
         sLibidExtendedBytes =  self.reader.readBytes( sizeOfLibidExtended )
         print("  LibidExtended: %s"%sLibidExtendedBytes.decode( self.reader.codepageName))
-        
-        # Reserved4 & Reserved5 ( suppose we could really read these and assert if 
+
+        # Reserved4 & Reserved5 ( suppose we could really read these and assert if
         # they don't conform to expected values ( 0x00000000 & 0x00000000 )
         self.reader.readBytes( 6 )
         origTypeLib = self.reader.readBytes( 16 )
@@ -393,16 +392,16 @@ dirRecordData = {
     0x0022: ["MODULETYPE", "ModuleTypeDocClassOrDesgn", ModuleTypeOtherReader],
     0x0025: ["MODULEREADONLY", "ModuleReadOnly"],
     0x0028: ["MODULEPRIVATE", "ModulePrivate"],
-}    
+}
 
 
 class ModuleInfo:
     def __init__(self):
         self.name = ""
         self.offset = 0
-        self.streamname = "" 
-        
-class DirStreamReader( globals.ByteStream ): 
+        self.streamname = ""
+
+class DirStreamReader( globals.ByteStream ):
     def __init__ (self, bytes ):
         globals.ByteStream.__init__(self, bytes)
         self.Modules = []
@@ -432,7 +431,7 @@ class DirStreamReader( globals.ByteStream ):
             else:
                 size = self.readUnsignedInt( 4 )
                 if size:
-                    self.readBytes(size)        
+                    self.readBytes(size)
 
 class VBAContainer:
     def __init__( self, root ):
@@ -477,7 +476,7 @@ class VBAContainer:
         dirName = self.vbaRoot.getHierarchicalName() + "VBA/dir"
         dirNode = self.__findNodeByHierarchicalName( self.vbaRoot, dirName )
         if dirNode != None:
-            #decompress 
+            #decompress
             bytes = dirNode.getStream()
             compressed = vbahelper.CompressedVBAStream( bytes, 0 )
             bytes = compressed.decompress()
@@ -496,7 +495,7 @@ class VBAContainer:
                         #straight text file
                         print("%s"%bytes.decode(reader.codepageName))
                     else:
-                        globals.dumpBytes( bytes, 512) 
+                        globals.dumpBytes( bytes, 512)
             for module in reader.Modules:
                 fullStreamName = self.vbaRoot.getHierarchicalName() + "VBA/" + module.streamname
                 moduleNode = self.__findNodeByHierarchicalName( self.vbaRoot, fullStreamName )
@@ -515,17 +514,17 @@ def main():
 
     if ( len ( sys.argv ) <= 1 ):
         print("usage: vbadump: file")
-        sys.exit(1) 
+        sys.exit(1)
     # prepare for supporting more options
     options, args = parser.parse_args()
 
-    params = globals.Params()    
+    params = globals.Params()
 
     container = ole.OleContainer( args[ 0 ], params )
 
     container.read()
     root = container.getRoot()
-    vba = VBAContainer( root ) 
+    vba = VBAContainer( root )
     vba.dump()
 
     exit(0)

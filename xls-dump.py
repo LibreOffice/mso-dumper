@@ -2,7 +2,7 @@
 ########################################################################
 #
 #  Copyright (c) 2010 Kohei Yoshida
-#  
+#
 #  Permission is hereby granted, free of charge, to any person
 #  obtaining a copy of this software and associated documentation
 #  files (the "Software"), to deal in the Software without
@@ -11,10 +11,10 @@
 #  copies of the Software, and to permit persons to whom the
 #  Software is furnished to do so, subject to the following
 #  conditions:
-#  
+#
 #  The above copyright notice and this permission notice shall be
 #  included in all copies or substantial portions of the Software.
-#  
+#
 #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -85,7 +85,7 @@ class XLDumper(object):
         dirs = self.strm.getDirectoryEntries()
         docroot = node.Root()
         root = docroot.appendElement('xls-dump')
-        
+
         for d in dirs:
             if d.Name != "Workbook":
                 # for now, we only dump the Workbook directory stream.
@@ -112,7 +112,7 @@ class XLDumper(object):
             wbmodel = self.__buildWorkbookModel(dirstrm)
             wbmodel.encrypted = self.strmData.encrypted
             root.appendChild(wbmodel.createDOM())
-        
+
         node.prettyPrint(sys.stdout, docroot)
 
     def dump (self):
@@ -136,7 +136,7 @@ class XLDumper(object):
 
             elif dirname == "Workbook":
                 success = True
-                while success: 
+                while success:
                     success = self.__readSubStream(dirstrm)
 
             elif dirname == "Revision Log":
@@ -196,7 +196,7 @@ class XLDumper(object):
                 self.__dumpDataAsXML(x, root)
         else:
             pass # we're skipping all unknown elems
-        
+
     def __readSubStreamXML (self, strm):
         handlers = []
         try:

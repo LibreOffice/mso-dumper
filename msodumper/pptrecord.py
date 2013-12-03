@@ -52,7 +52,7 @@ append a line to be displayed.
         # to params. Have to use a global if we want to keep a minimal
         # modification
         globals.textdump += text + "\n"
-        
+
     def appendLine (self, line):
         self.lines.append(line)
 
@@ -138,7 +138,7 @@ class UniString(BaseRecordHandler):
         self.appendProperty(name)
         self.appendLine("text: '%s'"%name)
         self.appendText(name)
-            
+
 def ShapeUniString (*args):
     args += "ShapeText",
     return UniString(*args)

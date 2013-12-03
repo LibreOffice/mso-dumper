@@ -35,7 +35,7 @@ class Params(object):
         self.dumpText = False
         self.dumpedIds = []
         self.noRawDump = False
-        
+
 # Global parameters / run configuration, to be set up by the main
 # program during initialization
 params = Params()
@@ -138,7 +138,7 @@ def output (msg, recordType = -1):
 
 def outputln(msg, recordType = -1):
     output(msg + "\n", recordType)
-    
+
 def error (msg):
     sys.stderr.write("Error: " + msg)
 

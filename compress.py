@@ -20,7 +20,7 @@ def main():
     decompressed = vbahelper.UnCompressedVBAStream( chars, offset )
     compressed = decompressed.compress()
     sys.stdout.write(compressed)
-    
+
     exit(0)
 
 if __name__ == '__main__':

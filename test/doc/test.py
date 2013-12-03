@@ -111,7 +111,7 @@ class Test(unittest.TestCase):
         self.dump('comment')
         comments = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfandTxt/plcfandTxt/aCP')
         self.assertEqual(2, len(comments))
-        
+
         self.assertEqual('This is a comment.\\x0D', comments[0].findall('transformed')[0].attrib['value'])
         self.assertEqual('This is also commented.\\x0D', comments[1].findall('transformed')[0].attrib['value'])
 
