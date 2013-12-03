@@ -5,8 +5,8 @@ BuildRequires:  python
 Version:        0.2
 Release:        1
 BuildArch:      noarch
-License:        LGPL v2 or later
-Packager:       Kohei Yoshida  <kyoshida@novell.com>
+License:        MPLv2
+Packager:       Kohei Yoshida  <kohei.yoshida@collabora.com>
 Source:         mso-dumper-0.2.tar.gz
 Group:          Development/Tools/Debuggers
 Summary:        Dumper tool for Microsoft Office binary file format
@@ -21,9 +21,14 @@ formats are supported.
 
 Authors:
 --------
-    Kohei Yoshida <kyoshida@novell.com>
-    Thorsten Behrens <tbehrens@novell.com>
-    Fredrik Ekholdt (for xmlpp.py)  
+    Kohei Yoshida <kohei.yoshida@collabora.com>
+    Thorsten Behrens <tbehrens@suse.com>
+    Miklos Vajna <vmiklos@collabora.com>
+    Noel Power <nopower@suse.com>
+    Jean-Francois Dockes <jf@dockes.org>
+    Sergey Kishchenko <voidwrk@gmail.com>
+    Fredrik Ekholdt (for xmlpp.py)
+    and contributors
 
 %prep
 %setup -q

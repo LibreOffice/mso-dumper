@@ -34,7 +34,7 @@ class PPTFile(object):
 
     def printStreamInfo (self):
         self.__printSep('=', 68)
-        globals.outputln("PPT File Format Dumper by Kohei Yoshida & Thorsten Behrens")
+        globals.outputln("PPT File Format Dumper by K. Yoshida, T. Behrens & contributors")
         globals.outputln("  total stream size: %d bytes"%self.size)
         self.__printSep('=', 68)
         globals.outputln('')
