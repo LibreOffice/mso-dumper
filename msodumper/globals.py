@@ -256,7 +256,7 @@ Note the following:
 
 
 def dumpBytes (chars, subDivide=None):
-    if params.noStructOutput or params.noRawDumps:
+    if params.noStructOutput or params.noRawDump:
         return
     line = 0
     subDivideLine = None
