@@ -684,7 +684,14 @@ associated token classes will be without the leading underscore (_)."""
     def __init__ (self, header, bytes):
         self.header = header
         self.tokens = []
-        self.strm = globals.ByteStream(bytes)
+        try:
+            # We are sometimes called with None bytes
+            self.strm = globals.ByteStream(bytes)
+        except:
+            if not globals.params.catchExceptions:
+                raise
+            globals.error("FormulaParser: init called with None source\n")
+            self.strm = globals.ByteStream("")
 
     def parse (self):
         while not self.strm.isEndOfRecord():

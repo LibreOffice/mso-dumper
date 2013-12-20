@@ -285,7 +285,12 @@ Like parseBytes(), the derived classes must overwrite this method."""
         try:
             self.parseBytes()
             for line in self.lines:
-                print (headerStr + line)
+                try:
+                    print (headerStr + line)
+                except:
+                    if not globals.params.catchExceptions:
+                        raise
+                    print (headerStr + "(xlsrecord:unprintable)")
         except globals.ByteStreamError:
             print(headerStr + "Error interpreting the record!")
 

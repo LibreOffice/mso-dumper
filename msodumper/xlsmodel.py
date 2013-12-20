@@ -381,7 +381,13 @@ class Worksheet(SheetBase):
             nd.setAttr('first-defined-cell', self.__firstDefinedCell.getName())
 
         if self.__firstFreeCell != None:
-            nd.setAttr('first-free-cell', self.__firstFreeCell.getName())
+            try:
+                nd.setAttr('first-free-cell', self.__firstFreeCell.getName())
+            except Exception as e:
+                if not globals.params.catchExceptions:
+                    raise
+                globals.error("createDOM: trying set firstFreeCell: %s\n" % e)
+                pass
 
         self.__appendAutoFilterNode(wb, nd) # autofilter (if exists)
         self.__appendHiddenRowsNode(wb, nd) # hidden rows
@@ -521,8 +527,13 @@ class FormulaCell(CellBase):
         nd = node.Element('formula-cell')
         if self.tokens != None:
             parser = formula.FormulaParser(None, self.tokens)
-            parser.parse()
-            nd.setAttr('formula', parser.getText())
+            try:
+                parser.parse()
+                nd.setAttr('formula', parser.getText())
+            except:
+                if not globals.params.catchExceptions:
+                    raise
+                pass
             s = globals.getRawBytes(self.tokens, True, False)
             nd.setAttr('token-bytes', s)
             if self.cachedResult != None:

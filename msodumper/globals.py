@@ -171,42 +171,50 @@ class UnicodeRichExtText(object):
 
 def getUnicodeRichExtText (bytes):
     ret = UnicodeRichExtText()
+    # Avoid myriad of messages when in "catching" mode
+    if params.catchExceptions and (bytes is None or len(bytes) == 0):
+        return ret, 0
     strm = ByteStream(bytes)
-    textLen = strm.readUnsignedInt(2)
-    flags = strm.readUnsignedInt(1)
-    #  0 0 0 0 0 0 0 0
-    # |-------|D|C|B|A|
-    isDoubleByte = (flags & 0x01) > 0 # A
-    ignored      = (flags & 0x02) > 0 # B
-    hasPhonetic  = (flags & 0x04) > 0 # C
-    isRichStr    = (flags & 0x08) > 0 # D
+    try:
+        textLen = strm.readUnsignedInt(2)
+        flags = strm.readUnsignedInt(1)
+        #  0 0 0 0 0 0 0 0
+        # |-------|D|C|B|A|
+        isDoubleByte = (flags & 0x01) > 0 # A
+        ignored      = (flags & 0x02) > 0 # B
+        hasPhonetic  = (flags & 0x04) > 0 # C
+        isRichStr    = (flags & 0x08) > 0 # D
 
-    numElem = 0
-    if isRichStr:
-        numElem = strm.readUnsignedInt(2)
+        numElem = 0
+        if isRichStr:
+            numElem = strm.readUnsignedInt(2)
 
-    phoneticBytes = 0
-    if hasPhonetic:
-        phoneticBytes = strm.readUnsignedInt(4)
+        phoneticBytes = 0
+        if hasPhonetic:
+            phoneticBytes = strm.readUnsignedInt(4)
 
-    if isDoubleByte:
-        # double-byte string (UTF-16)
-        text = ''
-        for i in xrange(0, textLen):
-            text += toTextBytes(strm.readBytes(2)).decode('utf-16')
-        ret.baseText = text
-    else:
-        # single-byte string
-        ret.baseText = toTextBytes(strm.readBytes(textLen))
+        if isDoubleByte:
+            # double-byte string (UTF-16)
+            text = ''
+            for i in xrange(0, textLen):
+                text += toTextBytes(strm.readBytes(2)).decode('utf-16')
+            ret.baseText = text
+        else:
+            # single-byte string
+            ret.baseText = toTextBytes(strm.readBytes(textLen))
 
-    if isRichStr:
-        for i in xrange(0, numElem):
-            posChar = strm.readUnsignedInt(2)
-            fontIdx = strm.readUnsignedInt(2)
+        if isRichStr:
+            for i in xrange(0, numElem):
+                posChar = strm.readUnsignedInt(2)
+                fontIdx = strm.readUnsignedInt(2)
 
-    if hasPhonetic:
-        ret.phoneticBytes = strm.readBytes(phoneticBytes)
-
+        if hasPhonetic:
+            ret.phoneticBytes = strm.readBytes(phoneticBytes)
+    except Exception as e:
+        if not params.catchExceptions:
+            raise
+        error("getUnicodeRichExtText: %s\n" % e)
+        return ret, len(bytes)
     return ret, strm.getCurrentPos()
 
 

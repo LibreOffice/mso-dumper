@@ -475,7 +475,12 @@ class XLDirStream(object):
         pos, header, size, bytes = self.__readRecordBytes()
         handler = self.__getRecordHandler(header, size, bytes)
         if handler != None:
-            handler.fillModel(model)
+            try:
+                handler.fillModel(model)
+            except Exception as e:
+                if not globals.params.catchExceptions:
+                    raise
+                globals.error("XLDirStream:fillModel: %s\n" % e)
         self.__postReadRecord(header)
 
 

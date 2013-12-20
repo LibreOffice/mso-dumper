@@ -207,12 +207,15 @@ def main ():
         help="Show the position of each record relative to the stream.")
     parser.add_option("--dump-mode", dest="dump_mode", default="flat", metavar="MODE",
         help="Specify the dump mode.  Possible values are: 'flat', 'xml', or 'canonical-xml'.  The default value is 'flat'.")
+    parser.add_option("--catch", action="store_true", dest="catch_exceptions", default=False,
+        help="Catch exceptions and try to continue.")
     options, args = parser.parse_args()
-    params = globals.Params()
+    params = globals.params
     params.debug = options.debug
     params.showSectorChain = options.show_sector_chain
     params.showStreamPos = options.show_stream_pos
-
+    params.catchExceptions = options.catch_exceptions
+    
     if len(args) < 1:
         globals.error("takes at least one argument\n")
         parser.print_help()
