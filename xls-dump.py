@@ -73,7 +73,7 @@ class XLDumper(object):
             dirstrm = self.strm.getDirectoryStream(d)
             data = self.__readSubStreamXML(dirstrm)
             self.__dumpDataAsXML(data, root)
-        node.prettyPrint(sys.stdout, docroot)
+        node.prettyPrint(sys.stdout, docroot, utf8 = self.params.utf8)
 
     def dumpCanonicalXML (self):
         self.__parseFile()
@@ -92,7 +92,7 @@ class XLDumper(object):
             wbmodel.encrypted = self.strmData.encrypted
             root.appendChild(wbmodel.createDOM())
 
-        node.prettyPrint(sys.stdout, docroot)
+        node.prettyPrint(sys.stdout, docroot, utf8 = self.params.utf8)
 
     def dump (self):
         self.__parseFile()
@@ -209,12 +209,15 @@ def main ():
         help="Specify the dump mode.  Possible values are: 'flat', 'xml', or 'canonical-xml'.  The default value is 'flat'.")
     parser.add_option("--catch", action="store_true", dest="catch_exceptions", default=False,
         help="Catch exceptions and try to continue.")
+    parser.add_option("--utf-8", action="store_true", dest="utf8", default=False,
+        help="Output strings as UTF-8.")
     options, args = parser.parse_args()
     params = globals.params
     params.debug = options.debug
     params.showSectorChain = options.show_sector_chain
     params.showStreamPos = options.show_stream_pos
     params.catchExceptions = options.catch_exceptions
+    params.utf8 = options.utf8
     
     if len(args) < 1:
         globals.error("takes at least one argument\n")

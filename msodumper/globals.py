@@ -35,7 +35,9 @@ class Params(object):
         self.dumpText = False
         self.dumpedIds = []
         self.noRawDump = False
-
+        self.catchExceptions = False
+        self.utf8 = False
+        
 # Global parameters / run configuration, to be set up by the main
 # program during initialization
 params = Params()
@@ -195,14 +197,16 @@ def getUnicodeRichExtText (bytes):
 
         if isDoubleByte:
             # double-byte string (UTF-16)
-            text = ''
-            for i in xrange(0, textLen):
-                text += toTextBytes(strm.readBytes(2)).decode('utf-16')
-            ret.baseText = text
+            ret.baseText = \
+                unicode(strm.readBytes(2*textLen), 'UTF-16LE', errors='replace')
         else:
-            # single-byte string
-            ret.baseText = toTextBytes(strm.readBytes(textLen))
-
+            # "Compressed Unicode" string. UTF-16 without the zero
+            # octets. These have to be latin1
+            if params.utf8:
+                ret.baseText = strm.readBytes(textLen).decode('cp1252')
+            else:
+                # If utf8 is not set, we'll print hex bytes, keep data as is
+                ret.baseText = strm.readBytes(textLen)
         if isRichStr:
             for i in xrange(0, numElem):
                 posChar = strm.readUnsignedInt(2)
@@ -254,11 +258,14 @@ Note the following:
     totalByteLen = strm.getCurrentPos() + textLen + extraBytes
     if is16Bit:
         totalByteLen += textLen # double the text length since each char is 2 bytes.
-        text = ''
-        for i in xrange(0, textLen):
-            text += toTextBytes(strm.readBytes(2)).decode('utf-16')
+        text = unicode(strm.readBytes(2*textLen), 'UTF-16LE', errors='replace')
     else:
-        text = toTextBytes(strm.readBytes(textLen))
+        if params.utf8:
+            # Compressed Unicode-> latin1
+            text = strm.readBytes(textLen).decode('cp1252')
+        else:
+            # Old behaviour with hex dump
+            text = strm.readBytes(textLen)
 
     return (text, totalByteLen)
 
@@ -344,20 +351,15 @@ def getRawBytes (bytes, spaced=True, reverse=True):
     return text
 
 
+# TBD: getTextBytes is now only called from pptrecord.
+# getTextBytes() and toTextBytes() are probably not
+# needed any more now that we store text as str not list.
+# toTextBytes() has been changed to do nothing until we're sure we can dump it
 def getTextBytes (bytes):
     return toTextBytes(bytes)
 
-
 def toTextBytes (bytes):
-    n = len(bytes)
-    text = ''
-    for i in xrange(0, n):
-        b = bytes[i]
-        if type(b) == type(0x00):
-            b = struct.pack('B', b)
-        text += b
-    return text
-
+    return bytes
 
 def getSignedInt (bytes):
     # little endian

@@ -119,17 +119,31 @@ encodeTable = {
     '\'': 'apos'
 }
 
-def encodeString (sin):
+# If utf8 is set, the input is either utf-8 bytes or Python
+# Unicode. Output utf-8 instead of hex-dump.
+def encodeString (sin, utf8 = False):
     sout = ''
-    for c in sin:
-        if ord(c) >= 128:
-            # encode non-ascii ranges.
-            sout += "\\x%2.2x"%ord(c)
-        elif encodeTable.has_key(c):
-            # encode html symbols.
-            sout += '&' + encodeTable[c] + ';'
+    if utf8:
+        if isinstance(sin, unicode):
+            sout1 = sin.encode('UTF-8')
         else:
-            sout += c
+            sout1 = sin
+        # Escape special characters as entities
+        for c in sout1:
+            if c in encodeTable:
+                sout += '&' + encodeTable[c] + ';'
+            else:
+                sout += c
+    else:
+        for c in sin:
+            if ord(c) >= 128:
+                # encode non-ascii ranges.
+                sout += "\\x%2.2x"%ord(c)
+            elif encodeTable.has_key(c):
+                # encode html symbols.
+                sout += '&' + encodeTable[c] + ';'
+            else:
+                sout += c
 
     return sout
 
@@ -146,10 +160,11 @@ def convertAttrValue (val):
 
     return val
 
-def prettyPrint (fd, node):
-    printNode(fd, node, 0, True)
+# If utf8 is set, the input is either utf-8 bytes or unicode
+def prettyPrint (fd, node, utf8 = False):
+    printNode(fd, node, 0, True, utf8 = utf8)
 
-def printNode (fd, node, level, breakLine):
+def printNode (fd, node, level, breakLine, utf8 = False):
     singleIndent = ''
     lf = ''
     if breakLine:
@@ -159,7 +174,7 @@ def printNode (fd, node, level, breakLine):
     if node.nodeType == NodeType.Root:
         # root node itself only contains child nodes.
         for child in node.getChildNodes():
-            printNode(fd, child, level, True)
+            printNode(fd, child, level, True, utf8 = utf8)
     elif node.nodeType == NodeType.Element:
         hasChildren = len(node.getChildNodes()) > 0
 
@@ -174,7 +189,7 @@ def printNode (fd, node, level, breakLine):
                 if val == None:
                     continue
                 val = convertAttrValue(val)
-                line += " " + key + '="' + encodeString(val) + '"'
+                line += " " + key + '="' + encodeString(val, utf8 = utf8) + '"'
 
         if hasChildren:
             breakChildren = breakLine and not node.hasContent()
@@ -183,7 +198,7 @@ def printNode (fd, node, level, breakLine):
                 line += "\n"
             fd.write (indent + line)
             for child in node.getChildNodes():
-                printNode(fd, child, level+1, breakChildren)
+                printNode(fd, child, level+1, breakChildren, utf8 = utf8)
             line = "</%s>%s"%(node.name, lf)
             if breakChildren:
                 line = indent + line
@@ -194,7 +209,7 @@ def printNode (fd, node, level, breakLine):
 
     elif node.nodeType == NodeType.Content:
         content = node.content
-        content = encodeString(content)
+        content = encodeString(content, utf8 = utf8)
         if len(content) > 0:
             fd.write (indent + content + lf)
 

@@ -428,13 +428,11 @@ class XLDirStream(object):
         return bytes
 
     def readByteArray (self, size=1):
-        bytes = []
-        for i in xrange(0, size):
-            if self.pos >= self.size:
-                raise EndOfStream
-            bytes.append(ord(self.bytes[self.pos]))
-            self.pos += 1
-        return bytes
+        if self.pos + size >= self.size:
+            raise EndOfStream
+        curpos = self.pos
+        self.pos += size
+        return self.bytes[curpos:self.pos]
 
     def __printSep (self, c, w, prefix=''):
         print(prefix + c*w)
@@ -520,7 +518,7 @@ class XLDirStream(object):
         for i in xrange(0, size):
             if (i+1) % 16 == 1:
                 output("%4.4Xh: "%header)
-            output("%2.2X "%bytes[i])
+            output("%2.2X "% ord(bytes[i]))
             if (i+1) % 16 == 0 and i != size-1:
                 print("")
         if size > 0:
