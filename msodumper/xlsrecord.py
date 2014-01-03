@@ -1484,23 +1484,31 @@ class Protect(BaseRecordHandler):
 class RK(BaseRecordHandler):
     """Cell with encoded integer or floating-point value"""
 
-    def parseBytes (self):
-        row = globals.getSignedInt(self.bytes[0:2])
-        col = globals.getSignedInt(self.bytes[2:4])
-        xf  = globals.getSignedInt(self.bytes[4:6])
+    def __parseBytes (self):
+        self.row = globals.getSignedInt(self.bytes[0:2])
+        self.col = globals.getSignedInt(self.bytes[2:4])
+        self.xf  = globals.getSignedInt(self.bytes[4:6])
 
         rkval = globals.getSignedInt(self.bytes[6:10])
-        auxData = RKAuxData()
-        realVal = decodeRK(rkval, auxData)
+        self.auxData = RKAuxData()
+        self.realVal = decodeRK(rkval, self.auxData)
 
-        self.appendCellPosition(col, row)
-        self.appendLine("XF record ID: %d"%xf)
-        self.appendLine("multiplied by 100: %d"%auxData.multi100)
-        if auxData.signedInt:
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendCellPosition(self.col, self.row)
+        self.appendLine("XF record ID: %d"%self.xf)
+        self.appendLine("multiplied by 100: %d"%self.auxData.multi100)
+        if self.auxData.signedInt:
             self.appendLine("type: signed integer")
         else:
             self.appendLine("type: floating point")
-        self.appendLine("value: %g"%realVal)
+        self.appendLine("value: %g"%self.realVal)
+
+    def fillModel (self, model):
+        self.__parseBytes()
+        sheet = model.getCurrentSheet()
+        cell = xlsmodel.NumberCell(self.realVal)
+        sheet.setCell(self.col, self.row, cell)
 
 class Scl(BaseRecordHandler):
 
