@@ -203,6 +203,8 @@ class Header(object):
             # additional sectors are used to store more SAT sector IDs.
             secID = self.__secIDFirstMSAT
             size = self.getSectorSize()
+            if size < 4:
+                raise Exception("ole.Header::parse: got %d as sector size!" % size)
             inLoop = True
             while inLoop:
                 pos = 512 + secID*size
