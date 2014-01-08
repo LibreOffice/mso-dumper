@@ -449,12 +449,43 @@ class XLDirStream(object):
         bytes = self.readByteArray(size)
         return pos, header, size, bytes
 
-    def __getRecordHandler (self, header, size, bytes):
+    def __readRecAndContBytes(self):
+        '''Read record itself and possible CONTINUE blocks.'''
+
+        pos, header, size, bytes = self.__readRecordBytes()
+
+        # Records boundaries/offset list (only useful if there are
+        # CONTINUE records)
+        roflist = [size]
+        
+        # Read possible CONTINUE records, and concatenate the data
+        while self.peekNext() == 0x3c:
+            cpos, cheader, csize, cbytes = self.__readRecordBytes()
+            bytes += cbytes
+            size += csize
+            roflist.append(size)
+
+        return pos, header, size, bytes, roflist
+
+    def peekNext (self):
+        '''Check type of next record without changing stream state'''
+        
+        if self.size - self.pos < 4:
+            raise EndOfStream
+
+        pos = self.pos
+        header = self.readRaw(2)
+        if header == 0x0000:
+            raise EndOfStream
+        self.pos = pos
+        return header
+        
+    def __getRecordHandler (self, header, size, bytes, roflist):
         # record handler that parses the raw bytes and displays more
         # meaningful information.
         handler = None
         if recData.has_key(header) and len(recData[header]) >= 3:
-            handler = recData[header][2](header, size, bytes, self.strmData)
+            handler = recData[header][2](header, size, bytes, self.strmData, roflist)
 
         if handler != None and self.strmData.encrypted:
             # record handler exists.  Parse the record and display more info
@@ -470,8 +501,8 @@ class XLDirStream(object):
             self.strmData.encrypted = True
 
     def fillModel (self, model):
-        pos, header, size, bytes = self.__readRecordBytes()
-        handler = self.__getRecordHandler(header, size, bytes)
+        pos, header, size, bytes, roflist = self.__readRecAndContBytes()
+        handler = self.__getRecordHandler(header, size, bytes, roflist)
         if handler != None:
             try:
                 handler.fillModel(model)
@@ -483,11 +514,11 @@ class XLDirStream(object):
 
 
     def getNextRecordHandler (self):
-        pos, header, size, bytes = self.__readRecordBytes()
-        return self.__getRecordHandler(header, size, bytes)
+        pos, header, size, bytes, roflist = self.__readRecAndContBytes()
+        return self.__getRecordHandler(header, size, bytes, roflist)
 
     def readRecord (self):
-        pos, header, size, bytes = self.__readRecordBytes()
+        pos, header, size, bytes, roflist = self.__readRecAndContBytes()
 
         # record handler that parses the raw bytes and displays more
         # meaningful information.
@@ -500,12 +531,12 @@ class XLDirStream(object):
             print("%4.4Xh: %s - %s (%4.4Xh)"%
                   (header, recData[header][0], recData[header][1], header))
             if len(recData[header]) >= 3:
-                handler = recData[header][2](header, size, bytes, self.strmData)
+                handler = recData[header][2](header, size, bytes, self.strmData, roflist)
         elif self.type == DirType.RevisionLog and recDataRev.has_key(header):
             print("%4.4Xh: %s - %s (%4.4Xh)"%
                   (header, recDataRev[header][0], recDataRev[header][1], header))
             if len(recDataRev[header]) >= 3:
-                handler = recDataRev[header][2](header, size, bytes, self.strmData)
+                handler = recDataRev[header][2](header, size, bytes, self.strmData, roflist)
         else:
             print("%4.4Xh: [unknown record name] (%4.4Xh)"%(header, header))
 

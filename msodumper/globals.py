@@ -164,25 +164,55 @@ def encodeName (name, lowOnly = False, lowLimit = 0x20):
 
     return newname
 
+# Uncompress "compressed" UTF-16. This compression strips high bytes
+# from a string when they are all 0. Just restore them.
+def uncompCompUnicode(bytes):
+    out = ""
+    for b in bytes:
+        out += b
+        out += '\0'
+    return out
 
 class UnicodeRichExtText(object):
     def __init__ (self):
-        self.baseText = ''
+        self.baseText = unicode()
         self.phoneticBytes = []
 
+# Linear search for index of first element in sorted list strictly
+# bigger than a given value. Might be converted to binary search, but our
+# lists (CONTINUE record offsets) are small. If the returned index is
+# the list size (last valid index+1), the input value is beyond the
+# max list value
+def find_first_bigger(ilist, value):
+    i = 0
+    while i < len(ilist) and value >= ilist[i]:
+        i +=1
+    return i
 
-def getUnicodeRichExtText (bytes):
+def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
+    if len(rofflist) == 0:
+        rofflist = [len(bytes)]
     ret = UnicodeRichExtText()
     # Avoid myriad of messages when in "catching" mode
     if params.catchExceptions and (bytes is None or len(bytes) == 0):
         return ret, 0
+
+    if len(rofflist) == 0 or rofflist[len(rofflist)-1] != len(bytes):
+        error("bad input to getUnicodeRichExtText: empty offset list or last offset != size. size %d list %s" % (len(bytes), str(rofflist)))
+        raise ByteStreamError()
+
     strm = ByteStream(bytes)
+    strm.setCurrentPos(offset)
+
     try:
         textLen = strm.readUnsignedInt(2)
         flags = strm.readUnsignedInt(1)
         #  0 0 0 0 0 0 0 0
         # |-------|D|C|B|A|
-        isDoubleByte = (flags & 0x01) > 0 # A
+        if (flags & 0x01) > 0: # A
+            bytesPerChar = 2
+        else:
+            bytesPerChar = 1
         ignored      = (flags & 0x02) > 0 # B
         hasPhonetic  = (flags & 0x04) > 0 # C
         isRichStr    = (flags & 0x08) > 0 # D
@@ -195,18 +225,42 @@ def getUnicodeRichExtText (bytes):
         if hasPhonetic:
             phoneticBytes = strm.readUnsignedInt(4)
 
-        if isDoubleByte:
-            # double-byte string (UTF-16)
-            ret.baseText = \
-                unicode(strm.readBytes(2*textLen), 'UTF-16LE', errors='replace')
-        else:
-            # "Compressed Unicode" string. UTF-16 without the zero
-            # octets. These have to be latin1
-            if params.utf8:
-                ret.baseText = strm.readBytes(textLen).decode('cp1252')
-            else:
-                # If utf8 is not set, we'll print hex bytes, keep data as is
-                ret.baseText = strm.readBytes(textLen)
+        # Reading the string proper. This is made a bit more
+        # complicated by the fact that the format can switch from
+        # compressed (latin data with high zeros stripped) to normal
+        # (UTF-16LE) whenever a string encounters a CONTINUE record
+        # boundary. The new format is indicated by a single byte at
+        # the start of the CONTINUE record payload.
+        while textLen > 0:
+            #print("Reading Unicode with bytesPerChar %d" % bytesPerChar)
+            bytesToRead = textLen * bytesPerChar
+
+            # Truncate to next record boundary
+            ibound = find_first_bigger(rofflist, strm.getCurrentPos())
+            if ibound == len(rofflist):
+                # Just try to read and let the stream raise an exception
+                strm.readBytes(bytesToRead)
+                return
+            
+            bytesToRead = min(bytesToRead, \
+                              rofflist[ibound]- strm.getCurrentPos())
+            newdata = strm.readBytes(bytesToRead)
+            if bytesPerChar == 1:
+                newdata = uncompCompUnicode(newdata)
+
+            ret.baseText +=  unicode(newdata, 'UTF-16LE', errors='replace')
+
+            textLen -= bytesToRead // bytesPerChar
+            
+            # If there is still data to read, we hit a record boundary. Read
+            # the grbit byte for detecting possible compression switch
+            if textLen > 0:
+                grbit = strm.readUnsignedInt(1)
+                if (grbit & 1) != 0:
+                    bytesPerChar = 2
+                else:
+                    bytesPerChar = 1
+                
         if isRichStr:
             for i in xrange(0, numElem):
                 posChar = strm.readUnsignedInt(2)
@@ -219,7 +273,7 @@ def getUnicodeRichExtText (bytes):
             raise
         error("getUnicodeRichExtText: %s\n" % e)
         return ret, len(bytes)
-    return ret, strm.getCurrentPos()
+    return ret, strm.getCurrentPos() - offset
 
 
 def getRichText (bytes, textLen=None):

@@ -128,15 +128,18 @@ def encodeString (sin, utf8 = False):
             sout1 = sin.encode('UTF-8')
         else:
             sout1 = sin
-        # Escape special characters as entities
+        # Escape special characters as entities. Can't keep zero bytes either
+        # (bad XML). They can only arrive here if there is a bug somewhere.
         for c in sout1:
-            if c in encodeTable:
+            if ord(c) == 0:
+                sout += '(nullbyte)'
+            elif c in encodeTable:
                 sout += '&' + encodeTable[c] + ';'
             else:
                 sout += c
     else:
         for c in sin:
-            if ord(c) >= 128:
+            if ord(c) >= 128 or ord(c) == 0:
                 # encode non-ascii ranges.
                 sout += "\\x%2.2x"%ord(c)
             elif encodeTable.has_key(c):

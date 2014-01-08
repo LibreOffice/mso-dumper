@@ -249,11 +249,12 @@ class DXFN12NoCB(object):
 
 class BaseRecordHandler(globals.ByteStream):
 
-    def __init__ (self, header, size, bytes, strmData):
+    def __init__ (self, header, size, bytes, strmData, roflist = []):
         globals.ByteStream.__init__(self, bytes)
         self.header = header
         self.lines = []
         self.strmData = strmData
+        self.roflist = roflist
 
     def parseBytes (self):
         """Parse the original bytes and generate human readable output.
@@ -1599,7 +1600,7 @@ class SST(BaseRecordHandler):
         self.strCount = self.readSignedInt(4) # total number of unique strings.
         self.sharedStrings = []
         for i in xrange(0, self.strCount):
-            extText, bytesRead = globals.getUnicodeRichExtText(self.bytes[self.getCurrentPos():])
+            extText, bytesRead = globals.getUnicodeRichExtText(self.bytes, self.getCurrentPos(), self.roflist)
             self.readBytes(bytesRead) # advance current position.
             self.sharedStrings.append(extText)
 
@@ -1922,7 +1923,7 @@ class SupBook(BaseRecordHandler):
         self.moveBack(2)
         pos = self.getCurrentPos()
         while pos < self.size:
-            ret, bytesLen = globals.getUnicodeRichExtText(self.bytes[pos:])
+            ret, bytesLen = globals.getUnicodeRichExtText(self.bytes, pos)
             name = ret.baseText
             self.moveForward(bytesLen)
             self.names.append(name)
@@ -2167,7 +2168,7 @@ class Crn(BaseRecordHandler):
             elif typeId == 0x02:
                 # string
                 pos = self.getCurrentPos()
-                ret, length = globals.getUnicodeRichExtText(self.bytes[pos:])
+                ret, length = globals.getUnicodeRichExtText(self.bytes, pos)
                 text = ret.baseText
                 text = globals.encodeName(text)
                 self.moveForward(length)
