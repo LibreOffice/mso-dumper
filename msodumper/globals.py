@@ -178,12 +178,10 @@ class UnicodeRichExtText(object):
         self.baseText = unicode()
         self.phoneticBytes = []
 
-# Linear search for index of first element in sorted list strictly
-# bigger than a given value. Might be converted to binary search, but our
-# lists (CONTINUE record offsets) are small. If the returned index is
-# the list size (last valid index+1), the input value is beyond the
-# max list value
-def find_first_bigger(ilist, value):
+# Search sorted list for first element strictly bigger than input
+# value. Should be binary search, but CONTINUE record offsets list are
+# usually small. Return list size if value >= last list element
+def findFirstBigger(ilist, value):
     i = 0
     while i < len(ilist) and value >= ilist[i]:
         i +=1
@@ -236,7 +234,7 @@ def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
             bytesToRead = textLen * bytesPerChar
 
             # Truncate to next record boundary
-            ibound = find_first_bigger(rofflist, strm.getCurrentPos())
+            ibound = findFirstBigger(rofflist, strm.getCurrentPos())
             if ibound == len(rofflist):
                 # Just try to read and let the stream raise an exception
                 strm.readBytes(bytesToRead)
