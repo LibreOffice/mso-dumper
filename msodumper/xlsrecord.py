@@ -627,16 +627,27 @@ class BOF(BaseRecordHandler):
         self.buildYear = self.readUnsignedInt(2)
 
         # file history flags
-        self.flags = self.readUnsignedInt(4)
-        self.win     = (self.flags & 0x00000001)
-        self.risc    = (self.flags & 0x00000002)
-        self.beta    = (self.flags & 0x00000004)
-        self.winAny  = (self.flags & 0x00000008)
-        self.macAny  = (self.flags & 0x00000010)
-        self.betaAny = (self.flags & 0x00000020)
-        self.riscAny = (self.flags & 0x00000100)
-        self.lowestExcelVer = self.readSignedInt(4)
-
+        try:
+            self.flags = self.readUnsignedInt(4)
+            self.win     = (self.flags & 0x00000001)
+            self.risc    = (self.flags & 0x00000002)
+            self.beta    = (self.flags & 0x00000004)
+            self.winAny  = (self.flags & 0x00000008)
+            self.macAny  = (self.flags & 0x00000010)
+            self.betaAny = (self.flags & 0x00000020)
+            self.riscAny = (self.flags & 0x00000100)
+            self.lowestExcelVer = self.readSignedInt(4)
+        except:
+            self.flags = 0
+            self.win     = 0
+            self.risc    = 0
+            self.beta    = 0
+            self.winAny  = 0
+            self.macAny  = 0
+            self.betaAny = 0
+            self.riscAny = 0
+            self.lowestExcelVer = 0
+            
     def parseBytes (self):
         self.__parseBytes()
         # BIFF version
