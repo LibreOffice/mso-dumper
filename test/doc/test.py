@@ -137,6 +137,19 @@ class Test(unittest.TestCase):
         # The bookmark covers Hello
         self.assertEqual('Hello', bookmarkEnds[0].findall('transformed')[0].attrib['value'])
 
+    def test_bookmark_nested(self):
+        self.dump('bookmark-nested')
+
+        bookmarkStarts = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfBkf/plcfBkf/aCP')
+        bookmarkEnds = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfBkl/plcfBkl/aCP')
+        self.assertEqual(2, len(bookmarkStarts))
+        self.assertEqual(2, len(bookmarkEnds))
+
+        # The outer bookmark should cover the inner one.
+        # This was 'aaa bbb', not 'bbb': the bookmark start was incorrect.
+        self.assertEqual('bbb', bookmarkEnds[0].findall('transformed')[0].attrib['value'])
+        self.assertEqual('aaa bbb ccc', bookmarkEnds[1].findall('transformed')[0].attrib['value'])
+
     def test_zoom(self):
         self.dump('zoom')
         dopBase = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbDop/dop/dop2007/dop2003/dop2002/dop2000/dop97/dop95/dopBase')[0]
