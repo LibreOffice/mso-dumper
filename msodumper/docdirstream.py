@@ -9,10 +9,11 @@ import globals
 import struct
 from xml.sax.saxutils import quoteattr
 
+
 class DOCDirStream:
     """Represents one single word file subdirectory, like e.g. 'WordDocument'."""
 
-    def __init__(self, bytes, params = None, name = None, mainStream = None, doc = None):
+    def __init__(self, bytes, params=None, name=None, mainStream=None, doc=None):
         self.bytes = bytes
         self.size = len(self.bytes)
         self.pos = 0
@@ -21,7 +22,7 @@ class DOCDirStream:
         self.mainStream = mainStream
         self.doc = doc
 
-    def printAndSet(self, key, value, hexdump = True, end = True, offset = False, silent = False, dict = None, default = None):
+    def printAndSet(self, key, value, hexdump=True, end=True, offset=False, silent=False, dict=None, default=None):
         setattr(self, key, value)
         if silent:
             return
@@ -42,39 +43,39 @@ class DOCDirStream:
 
     def quoteAttr(self, value):
         """Wrapper around xml.sax.saxutils.quoteattr, assumes the caller will put " around the result."""
-        ret = quoteattr("'"+value+"'")
-        return ret[2:len(ret)-2]
+        ret = quoteattr("'" + value + "'")
+        return ret[2:len(ret) - 2]
 
-    def getuInt8(self, bytes = None, pos = None):
+    def getuInt8(self, bytes=None, pos=None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
-        return struct.unpack("<B", bytes[pos:pos+1])[0]
+        return struct.unpack("<B", bytes[pos:pos + 1])[0]
 
     def readuInt8(self):
         ret = self.getuInt8()
         self.pos += 1
         return ret
 
-    def getuInt16(self, bytes = None, pos = None):
+    def getuInt16(self, bytes=None, pos=None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
-        return struct.unpack("<H", bytes[pos:pos+2])[0]
+        return struct.unpack("<H", bytes[pos:pos + 2])[0]
 
     def readuInt16(self):
         ret = self.getuInt16()
         self.pos += 2
         return ret
 
-    def getInt16(self, bytes = None, pos = None):
+    def getInt16(self, bytes=None, pos=None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
-        return struct.unpack("<h", bytes[pos:pos+2])[0]
+        return struct.unpack("<h", bytes[pos:pos + 2])[0]
 
     def readInt16(self):
         ret = self.getInt16()
@@ -82,38 +83,38 @@ class DOCDirStream:
         return ret
 
     def getuInt24(self):
-        return struct.unpack("<I", self.bytes[self.pos:self.pos+3] + "\x00")[0]
+        return struct.unpack("<I", self.bytes[self.pos:self.pos + 3] + "\x00")[0]
 
-    def getuInt32(self, bytes = None, pos = None):
+    def getuInt32(self, bytes=None, pos=None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
-        return struct.unpack("<I", bytes[pos:pos+4])[0]
+        return struct.unpack("<I", bytes[pos:pos + 4])[0]
 
     def readuInt32(self):
         ret = self.getuInt32()
         self.pos += 4
         return ret
 
-    def getInt32(self, bytes = None, pos = None):
+    def getInt32(self, bytes=None, pos=None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
-        return struct.unpack("<i", bytes[pos:pos+4])[0]
+        return struct.unpack("<i", bytes[pos:pos + 4])[0]
 
     def readInt32(self):
         ret = self.getInt32()
         self.pos += 4
         return ret
 
-    def getuInt64(self, bytes = None, pos = None):
+    def getuInt64(self, bytes=None, pos=None):
         if not bytes:
             bytes = self.bytes
         if not pos:
             pos = self.pos
-        return struct.unpack("<Q", bytes[pos:pos+8])[0]
+        return struct.unpack("<Q", bytes[pos:pos + 8])[0]
 
     def readuInt64(self):
         ret = self.getuInt64()
@@ -127,9 +128,9 @@ class DOCDirStream:
         while True:
             if (not limit is None) and count == limit:
                 break
-            i = self.getuInt8(pos = pos)
+            i = self.getuInt8(pos=pos)
             pos += 1
-            j = self.getuInt8(pos = pos)
+            j = self.getuInt8(pos=pos)
             pos += 1
             if i != 0 or j != 0:
                 bytes.append(i)
@@ -139,11 +140,11 @@ class DOCDirStream:
             count += 1
         return (self.quoteAttr(globals.encodeName(globals.getUTF8FromUTF16("".join(map(lambda x: chr(x), bytes))))), pos)
 
-    def getString(self, limit = None):
+    def getString(self, limit=None):
         ret, pos = self.__getString(limit)
         return ret
 
-    def readString(self, limit = None):
+    def readString(self, limit=None):
         ret, pos = self.__getString(limit)
         self.pos = pos
         return ret
@@ -170,11 +171,11 @@ class DOCDirStream:
         raise Exception
 
     def readBytes(self, length):
-        r = self.bytes[self.pos:self.pos+length]
+        r = self.bytes[self.pos:self.pos + length]
         self.pos += length
         return r
 
-    def moveForward (self, byteCount):
+    def moveForward(self, byteCount):
         self.pos += byteCount
 
     def appendLine(self, line):
