@@ -11,6 +11,7 @@ sys.setdefaultencoding("utf-8")
 
 from msodumper import globals, docstream
 
+
 class DOCDumper:
     def __init__(self, filepath, params):
         self.filepath = filepath
@@ -29,6 +30,7 @@ class DOCDumper:
                 continue
             strm.getDirectoryStreamByName(dirname).dump()
         print '</streams>'
+
 
 def main(args):
     exname, args = args[0], args[1:]
