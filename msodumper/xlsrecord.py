@@ -2704,7 +2704,7 @@ class ShrFmla(BaseRecordHandler):
             ftext = None
             try:
                 parser = formula.FormulaParser(self.header, self.tokens)
-                parser.parse()
+                parser.parse(formula.ParsedFormulaType.Shared)
                 ftext = parser.getText()
             except formula.FormulaParserError as e:
                 ftext = "(Error: %s)"%e.args[0]

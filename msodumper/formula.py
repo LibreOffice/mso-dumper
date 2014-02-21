@@ -112,6 +112,12 @@ class TokenType:
     Area3d = 0
     Unknown = 9999
 
+class ParsedFormulaType:
+    Cell = 0
+    Name = 1
+    Shared = 2
+    Unknown = 9999
+
 def getPtgDataType (opcode):
     return (opcode & 0x60) / (2**5)
 
@@ -129,11 +135,11 @@ class PtgDataType(object):
         return 'unknown'
 
 class PtgBase(object):
-    def __init__ (self, strm, opcode1, opcode2=None):
-        self.opcode1 = opcode1
-        self.opcode2 = opcode2
+    def __init__ (self, strm, opcode, parseType):
+        self.opcode = opcode
         self.strm = strm
         self.tokenType = TokenType.Unknown
+        self.parseType = parseType
 
     def parse (self):
         self.parseBytes()
@@ -163,7 +169,7 @@ class PtgMissArg(PtgBase):
 
 class PtgMemFunc(PtgBase):
     def parseBytes(self):
-        self.dataType = getPtgDataType(self.opcode1)
+        self.dataType = getPtgDataType(self.opcode)
         self.length = self.strm.readUnsignedInt(2)
 
     def getText (self):
@@ -634,7 +640,7 @@ class PtgFuncVar(PtgBase):
     }
 
     def parseBytes (self):
-        self.dataType = (self.opcode1 & 0x60)/32  # 0x1 = reference, 0x2 = value, 0x3 = array
+        self.dataType = (self.opcode & 0x60)/32  # 0x1 = reference, 0x2 = value, 0x3 = array
         self.argCount = self.strm.readUnsignedInt(1)
         tab = self.strm.readUnsignedInt(2)
         self.funcType = (tab & 0x7FFF)
@@ -667,6 +673,7 @@ _tokenMap = {
     0x43: PtgName,
     0x44: PtgRef,
     0x59: PtgNameX,
+    0x5A: PtgRef3d,
     0x5B: _Area3d,
     0x7B: _Area3d,
 
@@ -693,14 +700,14 @@ associated token classes will be without the leading underscore (_)."""
             globals.error("FormulaParser: init called with None source\n")
             self.strm = globals.ByteStream("")
 
-    def parse (self):
+    def parse (self, parseType=ParsedFormulaType.Cell):
         while not self.strm.isEndOfRecord():
             b = self.strm.readUnsignedInt(1)
             if not _tokenMap.has_key(b):
                 # Unknown token.  Stop parsing.
                 raise FormulaParserError("unknown token 0x%2.2X"%b)
 
-            token = _tokenMap[b](self.strm, b)
+            token = _tokenMap[b](self.strm, b, parseType)
             token.parse()
             self.tokens.append(token)
 
