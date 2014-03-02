@@ -7,15 +7,15 @@
 
 # see 2.6.5 of the spec
 picMap = {
-        0x6C02: "sprmPicBrcTop80",
-        0x6C03: "sprmPicBrcLeft80",
-        0x6C04: "sprmPicBrcBottom80",
-        0x6C05: "sprmPicBrcRight80",
-        0xCE08: "sprmPicBrcTop",
-        0xCE09: "sprmPicBrcLeft",
-        0xCE0A: "sprmPicBrcBottom",
-        0xCE0B: "sprmPicBrcRight",
-        }
+    0x6C02: "sprmPicBrcTop80",
+    0x6C03: "sprmPicBrcLeft80",
+    0x6C04: "sprmPicBrcBottom80",
+    0x6C05: "sprmPicBrcRight80",
+    0xCE08: "sprmPicBrcTop",
+    0xCE09: "sprmPicBrcLeft",
+    0xCE0A: "sprmPicBrcBottom",
+    0xCE0B: "sprmPicBrcRight",
+}
 
 # see 2.6.4 of the spec
 secMap = {
@@ -78,7 +78,7 @@ secMap = {
     0x5042: "sprmSNfcEdnRef",
     0xD243: "sprmSPropRMark",
     0x7044: "sprmSPgnStart",
-        }
+}
 
 # see 2.6.3 of the spec
 tblMap = {
@@ -162,7 +162,7 @@ tblMap = {
     0x3488: "sprmTCHorzBands",
     0x3489: "sprmTCVertBands",
     0x548A: "sprmTJc",
-        }
+}
 
 # see 2.6.2 of the spec
 parMap = {
@@ -259,7 +259,7 @@ parMap = {
     0xC66F: "sprmPPropRMark",
     0x2470: "sprmPFMirrorIndents",
     0x2471: "sprmPTtwo",
-        }
+}
 
 # see 2.6.1 of the spec
 chrMap = {
@@ -348,6 +348,6 @@ chrMap = {
     0x4888: "sprmCPbiGrf",
     0xCA89: "sprmCPropRMark",
     0x2A90: "sprmCFSdtVanish",
-        }
+}
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
