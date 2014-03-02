@@ -7,11 +7,12 @@
 #
 
 import sys
-sys.path.append(sys.path[0]+"/../..")
+sys.path.append(sys.path[0] + "/../..")
 doc_dumper = __import__('doc-dump')
 from xml.etree import ElementTree
 import unittest
 import os
+
 
 class Test(unittest.TestCase):
     def dump(self, name):
@@ -33,7 +34,7 @@ class Test(unittest.TestCase):
     def getFontId(self, name):
         fonts = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbSttbfFfn/sttbfFfn/cchData')
         for i in fonts:
-            if len (i.findall('ffn/xszFfn[@value="%s"]' % name)) == 1:
+            if len(i.findall('ffn/xszFfn[@value="%s"]' % name)) == 1:
                 return int(i.attrib['index'])
 
     def getRuns(self):

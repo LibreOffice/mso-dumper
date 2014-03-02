@@ -15,9 +15,10 @@ import sys
 import os
 import bisect
 
+
 class DOCFile:
     """Represents the whole word file - feed will all bytes."""
-    def __init__ (self, chars, params):
+    def __init__(self, chars, params):
         self.chars = chars
         self.size = len(self.chars)
         self.params = params
@@ -61,9 +62,10 @@ class DOCFile:
     def getName(self):
         return "native"
 
+
 class GsfDOCFile(DOCFile):
     """Same as DOCFile, but uses gsf to read the OLE streams."""
-    def __init__ (self, chars, params, gsf):
+    def __init__(self, chars, params, gsf):
         self.gsf = gsf
         DOCFile.__init__(self, chars, params)
 
@@ -87,7 +89,7 @@ class GsfDOCFile(DOCFile):
             return
         for i in range(self.gsf.gsf_infile_num_children(gsfInfile)):
             child = self.gsf.gsf_infile_child_by_index(gsfInfile, i)
-            childName = ctypes.string_at(self.gsf.gsf_infile_name_by_index(gsfInfile,i))
+            childName = ctypes.string_at(self.gsf.gsf_infile_name_by_index(gsfInfile, i))
             childSize = self.gsf.gsf_input_size(child)
             childData = ""
             while True:
@@ -110,6 +112,7 @@ class GsfDOCFile(DOCFile):
     def getName(self):
         return "gsf"
 
+
 def createDOCFile(chars, params):
     hasGsf = True
     try:
@@ -123,16 +126,18 @@ def createDOCFile(chars, params):
     else:
         return DOCFile(chars, params)
 
+
 class TableStream(DOCDirStream):
     def __init__(self, bytes, params, name, doc):
-        DOCDirStream.__init__(self, bytes, params, name, doc = doc)
+        DOCDirStream.__init__(self, bytes, params, name, doc=doc)
 
     def dump(self):
         print '<stream name="%s" size="%s"/>' % (self.name, self.size)
 
+
 class WordDocumentStream(DOCDirStream):
     def __init__(self, bytes, params, doc):
-        DOCDirStream.__init__(self, bytes, params, "WordDocument", doc = doc)
+        DOCDirStream.__init__(self, bytes, params, "WordDocument", doc=doc)
 
     def dump(self):
         print '<stream name="WordDocument" size="%d">' % self.size
@@ -151,10 +156,10 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("cbRgFcLcb", self.readuInt16())
 
         self.blobOffset = self.pos
-        cswNew = self.getuInt16(pos = self.__getCswNewOffset())
+        cswNew = self.getuInt16(pos=self.__getCswNewOffset())
 
         if cswNew != 0:
-            self.nFibNew = self.getuInt16(pos = self.__getCswNewOffset() + 2)
+            self.nFibNew = self.getuInt16(pos=self.__getCswNewOffset() + 2)
             self.nFib = self.nFibNew
         else:
             self.nFibNew = 0
@@ -162,7 +167,7 @@ class WordDocumentStream(DOCDirStream):
         self.dumpFibRgFcLcb("fibRgFcLcbBlob")
         self.pos = self.__getCswNewOffset()
 
-        self.printAndSet("cswNew", self.readuInt16(), offset = True)
+        self.printAndSet("cswNew", self.readuInt16(), offset=True)
         if self.cswNew != 0:
             self.dumpFibRgCswNew("fibRgCswNew")
         print '</fib>'
@@ -222,7 +227,7 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("fComplex", self.getBit(buf, 2))
         self.printAndSet("fHasPic", self.getBit(buf, 3))
 
-        self.printAndSet("cQuickSaves", ((buf & (2**4-1 << 4)) >> 4), hexdump=False)
+        self.printAndSet("cQuickSaves", ((buf & (2 ** 4 - 1 << 4)) >> 4), hexdump=False)
 
         self.printAndSet("fEncrypted", self.getBit(buf, 8))
         self.printAndSet("fWhichTblStm", self.getBit(buf, 9))
@@ -237,7 +242,7 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("nFibBack", self.readuInt16())
 
         if self.fEncrypted == 1 and self.fObfuscated == 0:
-            self.printAndSet("lKey", self.readuInt32(), end = False)
+            self.printAndSet("lKey", self.readuInt32(), end=False)
             print '<EncryptionVersionInfo>'
             tableStream = self.getTableStream()
             self.printAndSet("vMajor", tableStream.readuInt16())
@@ -264,7 +269,7 @@ class WordDocumentStream(DOCDirStream):
         self.printAndSet("fLoadOverridePage", self.getBit(buf, 2))
         self.printAndSet("reserved1", self.getBit(buf, 3))
         self.printAndSet("reserved2", self.getBit(buf, 4))
-        self.printAndSet("fSpare0",  (buf & (2**3-1)))
+        self.printAndSet("fSpare0", (buf & (2 ** 3 - 1)))
 
         self.printAndSet("reserved3", self.readuInt16())
         self.printAndSet("reserved4", self.readuInt16())
@@ -287,29 +292,29 @@ class WordDocumentStream(DOCDirStream):
         print '<%s type="FibRgLw97" size="88 bytes">' % name
 
         fields = [
-                "cbMac",
-                "reserved1",
-                "reserved2",
-                "ccpText",
-                "ccpFtn",
-                "ccpHdd",
-                "reserved3",
-                "ccpAtn",
-                "ccpEdn",
-                "ccpTxbx",
-                "ccpHdrTxbx",
-                "reserved4",
-                "reserved5",
-                "reserved6",
-                "reserved7",
-                "reserved8",
-                "reserved9",
-                "reserved10",
-                "reserved11",
-                "reserved12",
-                "reserved13",
-                "reserved14",
-                ]
+            "cbMac",
+            "reserved1",
+            "reserved2",
+            "ccpText",
+            "ccpFtn",
+            "ccpHdd",
+            "reserved3",
+            "ccpAtn",
+            "ccpEdn",
+            "ccpTxbx",
+            "ccpHdrTxbx",
+            "reserved4",
+            "reserved5",
+            "reserved6",
+            "reserved7",
+            "reserved8",
+            "reserved9",
+            "reserved10",
+            "reserved11",
+            "reserved12",
+            "reserved13",
+            "reserved14",
+        ]
         for i in fields:
             self.printAndSet(i, self.readuInt32())
 
@@ -518,17 +523,17 @@ class WordDocumentStream(DOCDirStream):
             ["lcbSttbListNames", self.handleLcbSttbListNames],
             ["fcSttbfUssr"],
             ["lcbSttbfUssr"],
-                ]
+        ]
 
         # Parse Clx early, as it's needed by other structures.
         posOrig = self.pos
         for i in fields:
             value = self.readInt32()
             if i[0] == "fcClx":
-                self.printAndSet(i[0], value, silent = True)
+                self.printAndSet(i[0], value, silent=True)
             elif i[0] == "lcbClx":
-                self.printAndSet(i[0], value, silent = True)
-                i[1](silent = True)
+                self.printAndSet(i[0], value, silent=True)
+                i[1](silent=True)
         self.pos = posOrig
 
         for i in fields:
@@ -538,7 +543,7 @@ class WordDocumentStream(DOCDirStream):
             needsIgnoring = ["lcbStshfOrig", "lcbPlcfBteLvc", "lcbPlcfLvcPre10"]
             # a member needs handling if it defines the size of a struct and it's non-zero
             needsHandling = i[0].startswith("lcb") and value != 0 and (not i[0] in needsIgnoring)
-            self.printAndSet(i[0], value, end = ((not hasHandler) and (not needsHandling)), offset = True)
+            self.printAndSet(i[0], value, end=((not hasHandler) and (not needsHandling)), offset=True)
             if hasHandler or needsHandling:
                 if needsHandling:
                     if hasHandler:
@@ -550,7 +555,7 @@ class WordDocumentStream(DOCDirStream):
     def handleDop(self):
         docrecord.Dop(self).dump()
 
-    def handleLcbClx(self, silent = False):
+    def handleLcbClx(self, silent=False):
         offset = self.fcClx
         size = self.lcbClx
         self.clx = docrecord.Clx(self.getTableStream().bytes, self, offset, size)
@@ -613,7 +618,7 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbPlcfAtnBkl(self):
         offset = self.fcPlcfAtnBkl
         size = self.lcbPlcfAtnBkl
-        plcfBkl = docrecord.PlcfBkl(self, offset, size, start = self.plcfAtnBkf)
+        plcfBkl = docrecord.PlcfBkl(self, offset, size, start=self.plcfAtnBkf)
         plcfBkl.dump()
 
     def handleLcbPlcfBkf(self):
@@ -625,7 +630,7 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbPlcfBkl(self):
         offset = self.fcPlcfBkl
         size = self.lcbPlcfBkl
-        plcfBkl = docrecord.PlcfBkl(self, offset, size, start = self.plcfBkf)
+        plcfBkl = docrecord.PlcfBkl(self, offset, size, start=self.plcfBkf)
         plcfBkl.dump()
 
     def handleLcbPlcfSed(self):
@@ -746,7 +751,7 @@ class WordDocumentStream(DOCDirStream):
             "lcbPgdEdnOld",
             "fcBkdEdnOld",
             "lcbBkdEdnOld",
-                ]
+        ]
         for i in fields:
             self.printAndSet(i, self.readuInt32())
 
@@ -809,7 +814,7 @@ class WordDocumentStream(DOCDirStream):
             "lcbPlcflvcNewXP",
             "fcPlcflvcMixedXP",
             "lcbPlcflvcMixedXP",
-                ]
+        ]
         for i in fields:
             self.printAndSet(i, self.readuInt32())
 
@@ -869,7 +874,7 @@ class WordDocumentStream(DOCDirStream):
             "fcAfdEdn",
             "fcAfd",
             "lcbAfd",
-                ]
+        ]
         for i in fields:
             self.printAndSet(i, self.readuInt32())
 
@@ -913,7 +918,7 @@ class WordDocumentStream(DOCDirStream):
             "lcbOssTheme",
             "fcColorSchemeMapping",
             "lcbColorSchemeMapping",
-                ]
+        ]
         for i in fields:
             self.printAndSet(i, self.readuInt32())
 
@@ -952,7 +957,7 @@ class WordDocumentStream(DOCDirStream):
         aPcd = plcPcd.aPcd[index]
         fcCompressed = aPcd.fc
         if fcCompressed.fCompressed == 1:
-            pos = (fcCompressed.fc/2) + (cp - plcPcd.aCp[index])
+            pos = (fcCompressed.fc / 2) + (cp - plcPcd.aCp[index])
             return pos, True
         else:
             pos = fcCompressed.fc + 2 * (cp - plcPcd.aCp[index])
@@ -964,11 +969,11 @@ class WordDocumentStream(DOCDirStream):
             return globals.encodeName(self.bytes[pos])
         else:
             try:
-                return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16'), lowOnly = True)
+                return globals.encodeName(self.bytes[pos:pos + 2].decode('utf-16'), lowOnly=True)
             except UnicodeDecodeError:
-                reason = 'could not decode bytes in position %d-%d (%s-%s)' % (pos, pos+1, hex(ord(self.bytes[pos])), hex(ord(self.bytes[pos+1])))
+                reason = 'could not decode bytes in position %d-%d (%s-%s)' % (pos, pos + 1, hex(ord(self.bytes[pos])), hex(ord(self.bytes[pos + 1])))
                 print '<todo what="WordDocumentStream::retrieveCP(): %s"/>' % reason
-                return globals.encodeName(self.bytes[pos:pos+2].decode('utf-16', errors="replace"), lowOnly = True)
+                return globals.encodeName(self.bytes[pos:pos + 2].decode('utf-16', errors="replace"), lowOnly=True)
 
     def retrieveCPs(self, start, end):
         """Retrieves a range of characters."""
