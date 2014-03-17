@@ -2636,6 +2636,8 @@ class FeatureHeader(BaseRecordHandler):
         featureTypeText = 'unknown'
         if featureTypeId == 2:
             featureTypeText = 'enhanced protection'
+        elif featureTypeId == 3:
+            featureTypeText = 'ignored formula errors'
         elif featureTypeId == 4:
             featureTypeText = 'smart tag'
         featureHdr = self.readUnsignedInt(1) # must be 1
@@ -2649,7 +2651,7 @@ class FeatureHeader(BaseRecordHandler):
         self.appendLine("size of header data: %d (%s)"%(sizeHdrData, sizeHdrDataText))
 
         if featureTypeId == 2 and sizeHdrData == -1:
-            # enhanced protection optionsss
+            # enhanced protection options
             flags = self.readUnsignedInt(4)
             self.appendLine("enhanced protection flag: 0x%8.8X"%flags)
 
@@ -2683,6 +2685,53 @@ class FeatureHeader(BaseRecordHandler):
             self.appendLine("  use autofilter:          %s"%self.getEnabledDisabled(optUseAutofilter))
             self.appendLine("  use pivot table reports: %s"%self.getEnabledDisabled(optUsePivotReports))
             self.appendLine("  select unlocked cells:   %s"%self.getEnabledDisabled(optSelectUnlockedCells))
+
+        return
+
+class FeatureData(BaseRecordHandler):
+
+    def parseBytes (self):
+        recordType = self.readUnsignedInt(2)
+        frtFlag = self.readUnsignedInt(2) # currently 0
+        self.readBytes(8) # reserved (currently all 0)
+        featureTypeId = self.readUnsignedInt(2)
+        featureTypeText = 'unknown'
+        if featureTypeId == 2:
+            featureTypeText = 'enhanced protection'
+        elif featureTypeId == 3:
+            featureTypeText = 'ignored formula errors'
+        elif featureTypeId == 4:
+            featureTypeText = 'smart tag'
+        self.readBytes(1) # reserved1, must be 0
+        self.readBytes(4) # reserved2, must be 0
+        cref = self.readUnsignedInt(2)
+        cbFeatData = self.readUnsignedInt(4)
+        cbFeatDataText = 'byte size'
+        self.readBytes(2) # reserved3, must be 0
+
+        refs = []
+        for i in xrange(0, cref):
+            refs.append(Ref8U(self))
+
+        self.appendLine("record type: 0x%4.4X (must match the header)"%recordType)
+        self.appendLine("feature type: %d (%s)"%(featureTypeId, featureTypeText))
+        self.appendLine("size of feature data: %d (%s)"%(cbFeatData, cbFeatDataText))
+
+        # http://msdn.microsoft.com/en-us/library/dd911261.aspx
+        # Documentation isn't very clear on this, for cbFeatData it says must
+        # be 0 if 'isf' (featureTypeId) is not ISFFEC2 (type 3) but for rgbFeat
+        # (the variable data field) lists structures for each of the possible
+        # types. However, so far there was no FeatProtection structure data for
+        # ISFPROTECTION encountered.
+
+        if featureTypeId == 3 and cbFeatData > 0:
+            # ignored formula errors, ISFFEC2, FeatFormulaErr2 structure
+            self.readBytes(cbFeatData)
+            self.appendLine("FeatFormulaErr2 yet not handled")
+
+        for ref in refs:
+            self.appendLine("applied to range: (col=%d,row=%d) - (col=%d,row=%d)"%
+                (ref.col1, ref.row1, ref.col2, ref.row2))
 
         return
 
