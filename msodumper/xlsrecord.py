@@ -15,6 +15,24 @@ class RecordError(Exception): pass
 # -------------------------------------------------------------------
 # record handler classes
 
+class Ref8(object):
+
+    def __init__ (self, strm):
+        self.row1 = strm.readUnsignedInt(2)
+        self.row2 = strm.readUnsignedInt(2)
+        self.col1 = strm.readUnsignedInt(2)
+        self.col2 = strm.readUnsignedInt(2)
+
+    def toString (self):
+        string = ("(col=%d,row=%d) - (col=%d,row=%d)"%
+                (self.col1, self.row1, self.col2, self.row2))
+        if self.col1 == 0 and self.col2 == 0xFF:
+            string += ", entire column"
+        if self.row1 == 0 and self.row2 == 0xFFFF:
+            string += ", entire row"
+        return string
+
+
 class RefU(object):
 
     def __init__ (self, strm):
@@ -3531,6 +3549,23 @@ class SXViewSource(BaseRecordHandler):
             srcType = 'scenario (temporary internal structure)'
 
         self.appendLine("data source type: %s"%srcType)
+
+
+class MergeCells(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.cmcs = self.readUnsignedInt(2)
+        self.rgref = []
+        for i in xrange(0, self.cmcs):
+            self.rgref.append(Ref8(self))
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.appendLine("%d merge ranges:"%self.cmcs)
+        i = 0
+        for ref in self.rgref:
+            i += 1
+            self.appendLine("%d: %s"%(i,ref.toString()))
 
 
 class Sxvd(BaseRecordHandler):

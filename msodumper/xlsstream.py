@@ -143,7 +143,7 @@ recData = {
     0x00E1: ["INTERFACEHDR", "Beginning of User Interface Records"],
     0x00E2: ["INTERFACEEND", "End of User Interface Records"],
     0x00E3: ["SXVS", "PivotCache Source Data Type", xlsrecord.SXViewSource],
-    0x00E5: ["MERGECELLS", "Merged cells in the document"],
+    0x00E5: ["MERGECELLS", "Merged cells in the document", xlsrecord.MergeCells],
     0x00EA: ["TABIDCONF", "Sheet Tab ID of Conflict History"],
     0x00EB: ["MSODRAWINGGROUP", "Microsoft Office Drawing Group", xlsrecord.MSODrawingGroup],
     0x00EC: ["MSODRAWING", "Microsoft Office Drawing", xlsrecord.MSODrawing],
