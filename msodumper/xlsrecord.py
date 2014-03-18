@@ -2717,17 +2717,24 @@ class FeatureData(BaseRecordHandler):
         self.appendLine("feature type: %d (%s)"%(featureTypeId, featureTypeText))
         self.appendLine("size of feature data: %d (%s)"%(cbFeatData, cbFeatDataText))
 
-        # http://msdn.microsoft.com/en-us/library/dd911261.aspx
-        # Documentation isn't very clear on this, for cbFeatData it says must
-        # be 0 if 'isf' (featureTypeId) is not ISFFEC2 (type 3) but for rgbFeat
-        # (the variable data field) lists structures for each of the possible
-        # types. However, so far there was no FeatProtection structure data for
-        # ISFPROTECTION encountered.
-
-        if featureTypeId == 3 and cbFeatData > 0:
+        if featureTypeId == 2:
+            # enhanced protection, ISFPROTECTION, FeatProtection structure
+            Areserved = self.readUnsignedInt(4)
+            wPassword = self.readUnsignedInt(4)
+            stTitle = self.readXLUnicodeString()
+            self.appendLine("stTitle: %s"%stTitle)
+            if Areserved & 1 == 1:
+                # SDContainer
+                cbSD = self.readUnsignedInt(4)
+                self.appendLine("cbSD: %d"%cbSD)
+                self.readBytes(cbSD)
+        elif featureTypeId == 3 and cbFeatData > 0:
             # ignored formula errors, ISFFEC2, FeatFormulaErr2 structure
             self.readBytes(cbFeatData)
-            self.appendLine("FeatFormulaErr2 yet not handled")
+            self.appendLine("FeatFormulaErr2 not handled")
+        elif featureTypeId == 4:
+            # smart tag, ISFFACTOID, FeatSmartTag structure
+            self.appendLine("FeatSmartTag not handled")
 
         for ref in refs:
             self.appendLine("applied to range: (col=%d,row=%d) - (col=%d,row=%d)"%
