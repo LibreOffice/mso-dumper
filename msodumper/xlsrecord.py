@@ -2740,6 +2740,8 @@ class FeatureData(BaseRecordHandler):
             Areserved = self.readUnsignedInt(4)
             wPassword = self.readUnsignedInt(4)
             stTitle = self.readXLUnicodeString()
+            self.appendLine("A and reserved: 0x%8.8X"%Areserved)
+            self.appendLine("wPassword: 0x%8.8X"%wPassword)
             self.appendLine("stTitle: %s"%stTitle)
             if Areserved & 0x80000000 == 0x80000000:
                 # SDContainer
