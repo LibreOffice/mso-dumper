@@ -1109,6 +1109,21 @@ Fts = {
 }
 
 
+class SHD(DOCDirStream):
+    """The Shd structure specifies the colors and pattern that are used for background shading."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<shd type="SHD" offset="%d">' % self.pos
+        COLORREF(self).dump("cvFore")
+        COLORREF(self).dump("cvBack")
+        self.printAndSet("ipat", self.readuInt16(), dict=Ipat)
+        print '</shd>'
+
+
 class TCGRF(DOCDirStream):
     """A TCGRF structure specifies the text layout and cell merge properties for a single cell in a table."""
     def __init__(self, parent):
@@ -1172,6 +1187,20 @@ class TDefTableOperand(DOCDirStream):
             TC80(self, i).dump()
             i += 1
         print '</tDefTableOperand>'
+
+
+class SHDOperand(DOCDirStream):
+    """The SDHOperand structure is an operand that is used by several Sprm
+    structures to specify the background shading to be applied."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<shdOperand>'
+        self.printAndSet("cb", self.readuInt8())
+        SHD(self).dump()
+        print '</shdOperand>'
 
 
 class BrcOperand(DOCDirStream):
@@ -1245,6 +1274,10 @@ class Sprm(DOCDirStream):
         else:
             if self.sprm == 0xd608:
                 self.ct = TDefTableOperand(self)
+            elif self.sprm == 0xca71:
+                self.ct = SHDOperand(self)
+            else:
+                print '<todo what="Sprm::__init__() unhandled sprm of size %s: %s"/>' % (self.getOperandSize(), hex(self.sprm))
 
     def dump(self):
         sgcmap = {
