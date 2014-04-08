@@ -2743,7 +2743,7 @@ class FeatureData(BaseRecordHandler):
             self.appendLine("A and reserved: 0x%8.8X"%Areserved)
             self.appendLine("wPassword: 0x%8.8X"%wPassword)
             self.appendLine("stTitle: %s"%stTitle)
-            if Areserved & 0x80000000 == 0x80000000:
+            if Areserved & 0x00000001 == 0x00000001:
                 # SDContainer
                 cbSD = self.readUnsignedInt(4)
                 self.appendLine("cbSD: %d"%cbSD)
