@@ -14,6 +14,13 @@ FormatSignature = {
     0x46535045: "EPS_SIGNATURE"
 }
 
+RegionMode = {
+    0x01: "RGN_AND",
+    0x02: "RGN_OR",
+    0x03: "RGN_XOR",
+    0x04: "RGN_DIFF",
+    0x05: "RGN_COPY"
+}
 
 class EMFStream(DOCDirStream):
     def __init__(self, bytes):
@@ -72,6 +79,50 @@ class EmrRestoredc(EMFRecord):
         self.printAndSet("SavedDC", self.readInt32(), hexdump=False)
         assert self.pos - posOrig == self.Size
 
+
+class EmrExtselectcliprgn(EMFRecord):
+    """Combines the specified region with the current clip region using the specified mode."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("RgnDataSize", self.readuInt32())
+        self.printAndSet("RegionMode", self.readuInt32(), dict=RegionMode)
+        RegionData(self, "RgnData", self.RgnDataSize).dump()
+        assert self.pos - posOrig == self.Size
+
+
+class RegionData(EMFRecord):
+    """The RegionData object specifies data that defines a region, which is made of non-overlapping rectangles."""
+    def __init__(self, parent, name, size):
+        EMFRecord.__init__(self, parent)
+        self.name = name
+        self.size = size
+
+    def dump(self):
+        print '<%s>' % self.name
+        header = RegionDataHeader(self)
+        header.dump()
+        for i in range(header.CountRects):
+            wmfrecord.RectL(self, "Data").dump()
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
+class RegionDataHeader(EMFRecord):
+    """The RegionDataHeader object describes the properties of a RegionData object."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        self.printAndSet("Size", self.readuInt32())
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("CountRects", self.readuInt32())
+        self.printAndSet("RgnSize", self.readuInt32())
+        wmfrecord.RectL(self, "Bounds").dump()
+        self.parent.pos = self.pos
 
 class EmrHeader(EMFRecord):
     """The EMR_HEADER record types define the starting points of EMF metafiles."""
@@ -222,7 +273,7 @@ RecordType = {
     0x00000048: ['EMR_FRAMERGN'],
     0x00000049: ['EMR_INVERTRGN'],
     0x0000004A: ['EMR_PAINTRGN'],
-    0x0000004B: ['EMR_EXTSELECTCLIPRGN'],
+    0x0000004B: ['EMR_EXTSELECTCLIPRGN', EmrExtselectcliprgn],
     0x0000004C: ['EMR_BITBLT'],
     0x0000004D: ['EMR_STRETCHBLT'],
     0x0000004E: ['EMR_MASKBLT'],
