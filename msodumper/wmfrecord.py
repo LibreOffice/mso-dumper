@@ -50,4 +50,21 @@ class SizeL(WMFRecord):
         print '</%s>' % self.name
         self.parent.pos = self.pos
 
+
+class PointL(WMFRecord):
+    """The PointL Object defines the coordinates of a point."""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "pointL"
+
+    def dump(self):
+        print '<%s type="PointL">' % self.name
+        self.printAndSet("x", self.readInt32(), hexdump=False)
+        self.printAndSet("y", self.readInt32(), hexdump=False)
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

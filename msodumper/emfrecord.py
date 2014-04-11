@@ -22,6 +22,7 @@ RegionMode = {
     0x05: "RGN_COPY"
 }
 
+
 class EMFStream(DOCDirStream):
     def __init__(self, bytes):
         DOCDirStream.__init__(self, bytes)
@@ -80,6 +81,19 @@ class EmrRestoredc(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrSetviewportorgex(EMFRecord):
+    """Defines the viewport origin."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        wmfrecord.PointL(self, "Origin").dump()
+        assert self.pos - posOrig == self.Size
+
+
 class EmrExtselectcliprgn(EMFRecord):
     """Combines the specified region with the current clip region using the specified mode."""
     def __init__(self, parent):
@@ -111,6 +125,7 @@ class RegionData(EMFRecord):
         print '</%s>' % self.name
         self.parent.pos = self.pos
 
+
 class RegionDataHeader(EMFRecord):
     """The RegionDataHeader object describes the properties of a RegionData object."""
     def __init__(self, parent):
@@ -123,6 +138,7 @@ class RegionDataHeader(EMFRecord):
         self.printAndSet("RgnSize", self.readuInt32())
         wmfrecord.RectL(self, "Bounds").dump()
         self.parent.pos = self.pos
+
 
 class EmrHeader(EMFRecord):
     """The EMR_HEADER record types define the starting points of EMF metafiles."""
@@ -211,7 +227,7 @@ RecordType = {
     0x00000009: ['EMR_SETWINDOWEXTEX'],
     0x0000000A: ['EMR_SETWINDOWORGEX'],
     0x0000000B: ['EMR_SETVIEWPORTEXTEX'],
-    0x0000000C: ['EMR_SETVIEWPORTORGEX'],
+    0x0000000C: ['EMR_SETVIEWPORTORGEX', EmrSetviewportorgex],
     0x0000000D: ['EMR_SETBRUSHORGEX'],
     0x0000000E: ['EMR_EOF'],
     0x0000000F: ['EMR_SETPIXELV'],
