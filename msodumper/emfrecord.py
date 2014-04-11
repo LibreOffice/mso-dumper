@@ -60,6 +60,19 @@ class EmrSavedc(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrRestoredc(EMFRecord):
+    """This record saves the current state of the playback device context."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("SavedDC", self.readInt32(), hexdump=False)
+        assert self.pos - posOrig == self.Size
+
+
 class EmrHeader(EMFRecord):
     """The EMR_HEADER record types define the starting points of EMF metafiles."""
     def __init__(self, parent):
@@ -169,7 +182,7 @@ RecordType = {
     0x0000001F: ['EMR_SCALEVIEWPORTEXTEX'],
     0x00000020: ['EMR_SCALEWINDOWEXTEX'],
     0x00000021: ['EMR_SAVEDC', EmrSavedc],
-    0x00000022: ['EMR_RESTOREDC'],
+    0x00000022: ['EMR_RESTOREDC', EmrRestoredc],
     0x00000023: ['EMR_SETWORLDTRANSFORM'],
     0x00000024: ['EMR_MODIFYWORLDTRANSFORM'],
     0x00000025: ['EMR_SELECTOBJECT'],
