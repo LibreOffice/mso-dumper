@@ -81,6 +81,28 @@ class EmrRestoredc(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+# The ICMMode enumeration defines values that specify when to turn on and off ICM (Image Color Management).
+ICMMode = {
+    0x01: "ICM_OFF",
+    0x02: "ICM_ON",
+    0x03: "ICM_QUERY",
+    0x04: "ICM_DONE_OUTSIDEDC"
+}
+
+
+class EmrSeticmmode(EMFRecord):
+    """Specifies ICM to be enabled, disabled, or queried on the playback device context."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("ICMMode", self.readuInt32(), dict=ICMMode)
+        assert self.pos - posOrig == self.Size
+
+
 class EmrComment(EMFRecord):
     """The EMR_COMMENT record contains arbitrary private data."""
     def __init__(self, parent):
@@ -271,7 +293,7 @@ RecordType = {
     0x00000021: ['EMR_SAVEDC', EmrSavedc],
     0x00000022: ['EMR_RESTOREDC', EmrRestoredc],
     0x00000023: ['EMR_SETWORLDTRANSFORM'],
-    0x00000024: ['EMR_MODIFYWORLDTRANSFORM'],
+    0x00000024: ['EMR_MODIFYWORLDTRANSFORM', EmrModifyworldtransform],
     0x00000025: ['EMR_SELECTOBJECT'],
     0x00000026: ['EMR_CREATEPEN'],
     0x00000027: ['EMR_CREATEBRUSHINDIRECT'],
@@ -332,7 +354,7 @@ RecordType = {
     0x0000005F: ['EMR_EXTCREATEPEN'],
     0x00000060: ['EMR_POLYTEXTOUTA'],
     0x00000061: ['EMR_POLYTEXTOUTW'],
-    0x00000062: ['EMR_SETICMMODE'],
+    0x00000062: ['EMR_SETICMMODE', EmrSeticmmode],
     0x00000063: ['EMR_CREATECOLORSPACE'],
     0x00000064: ['EMR_SETCOLORSPACE'],
     0x00000065: ['EMR_DELETECOLORSPACE'],
