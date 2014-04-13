@@ -123,6 +123,7 @@ class LogBrushEx(EMFRecord):
         self.parent.pos = self.pos
 
 
+# Defines modes for using specified transform data to modify the world-space to page-space transform of the playback device context.
 ModifyWorldTransformMode = {
     0x01: "MWT_IDENTITY",
     0x02: "MWT_LEFTMULTIPLY",
