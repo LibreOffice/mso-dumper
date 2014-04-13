@@ -81,6 +81,26 @@ class EmrRestoredc(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrComment(EMFRecord):
+    """The EMR_COMMENT record contains arbitrary private data."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("DataSize", self.readuInt32(), hexdump=False)
+        commentIdentifier = self.getuInt32()
+        if commentIdentifier == 0x00000000:  # EMR_COMMENT_EMFSPOOL
+            print '<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFSPOOL"/>'
+        elif commentIdentifier == 0x2B464D45:  # EMR_COMMENT_EMFPLUS
+            print '<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFPLUS"/>'
+        elif commentIdentifier == 0x43494447:  # EMR_COMMENT_PUBLIC
+            print '<todo what="EmrComment::dump(): handle EMR_COMMENT_PUBLIC"/>'
+        else:
+            print '<todo what="EmrComment::dump(): handle EMR_COMMENT"/>'
+
+
 class EmrSetviewportorgex(EMFRecord):
     """Defines the viewport origin."""
     def __init__(self, parent):
@@ -284,7 +304,7 @@ RecordType = {
     0x00000042: ['EMR_WIDENPATH'],
     0x00000043: ['EMR_SELECTCLIPPATH'],
     0x00000044: ['EMR_ABORTPATH'],
-    0x00000046: ['EMR_COMMENT'],
+    0x00000046: ['EMR_COMMENT', EmrComment],
     0x00000047: ['EMR_FILLRGN'],
     0x00000048: ['EMR_FRAMERGN'],
     0x00000049: ['EMR_INVERTRGN'],
