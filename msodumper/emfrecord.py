@@ -81,6 +81,56 @@ class EmrRestoredc(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrCreatebrushindirect(EMFRecord):
+    """Defines a logical brush with a LogBrushEx object."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("ihBrush", self.readuInt32(), hexdump=False)
+        LogBrushEx(self, "LogBrush").dump()
+        assert self.pos - posOrig == self.Size
+
+
+# The HatchStyle enumeration is an extension to the WMF HatchStyle enumeration.
+EmfHatchStyle = {
+    0x0006: "HS_SOLIDCLR",
+    0x0007: "HS_DITHEREDCLR",
+    0x0008: "HS_SOLIDTEXTCLR",
+    0x0009: "HS_DITHEREDTEXTCLR",
+    0x000A: "HS_SOLIDBKCLR",
+    0x000B: "HS_DITHEREDBKCLR"
+}
+HatchStyle = dict(wmfrecord.HatchStyle.items() + EmfHatchStyle.items())
+
+
+class LogBrushEx(EMFRecord):
+    """The LogBrushEx object defines the style, color, and pattern of a device-independent brush."""
+    def __init__(self, parent, name):
+        EMFRecord.__init__(self, parent)
+        self.name = name
+
+    def dump(self):
+        posOrig = self.pos
+        print '<%s>' % self.name
+        self.printAndSet("BrushStyle", self.readuInt32(), dict=wmfrecord.BrushStyle)
+        wmfrecord.ColorRef(self, "Color").dump()
+        self.printAndSet("BrushHatch", self.readuInt32(), dict=HatchStyle)
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
+
+ModifyWorldTransformMode = {
+    0x01: "MWT_IDENTITY",
+    0x02: "MWT_LEFTMULTIPLY",
+    0x03: "MWT_RIGHTMULTIPLY",
+    0x04: "MWT_SET"
+}
+
+
 class EmrModifyworldtransform(EMFRecord):
     """Modifies the current world-space to page-space transform."""
     def __init__(self, parent):
@@ -91,7 +141,8 @@ class EmrModifyworldtransform(EMFRecord):
         self.printAndSet("Type", self.readuInt32())
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         XForm(self, "Xform").dump()
-        #assert self.pos - posOrig == self.Size
+        self.printAndSet("ModifyWorldTransformMode", self.readuInt32(), dict=ModifyWorldTransformMode)
+        assert self.pos - posOrig == self.Size
 
 
 class XForm(EMFRecord):
@@ -327,7 +378,7 @@ RecordType = {
     0x00000024: ['EMR_MODIFYWORLDTRANSFORM', EmrModifyworldtransform],
     0x00000025: ['EMR_SELECTOBJECT'],
     0x00000026: ['EMR_CREATEPEN'],
-    0x00000027: ['EMR_CREATEBRUSHINDIRECT'],
+    0x00000027: ['EMR_CREATEBRUSHINDIRECT', EmrCreatebrushindirect],
     0x00000028: ['EMR_DELETEOBJECT'],
     0x00000029: ['EMR_ANGLEARC'],
     0x0000002A: ['EMR_ELLIPSE'],
