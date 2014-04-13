@@ -81,6 +81,37 @@ class EmrRestoredc(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrModifyworldtransform(EMFRecord):
+    """Modifies the current world-space to page-space transform."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        XForm(self, "Xform").dump()
+        #assert self.pos - posOrig == self.Size
+
+
+class XForm(EMFRecord):
+    """The XForm object defines a two-dimensional, linear transform matrix."""
+    def __init__(self, parent, name):
+        EMFRecord.__init__(self, parent)
+        self.name = name
+
+    def dump(self):
+        print '<%s>' % self.name
+        self.printAndSet("M11", self.readFloat32())
+        self.printAndSet("M12", self.readFloat32())
+        self.printAndSet("M21", self.readFloat32())
+        self.printAndSet("M22", self.readFloat32())
+        self.printAndSet("Dx", self.readFloat32())
+        self.printAndSet("Dy", self.readFloat32())
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
+
 # The ICMMode enumeration defines values that specify when to turn on and off ICM (Image Color Management).
 ICMMode = {
     0x01: "ICM_OFF",

@@ -32,7 +32,7 @@ class DOCDirStream:
                 attrs += ' name="%s"' % dict[value]
             else:
                 attrs += ' name="%s"' % default
-        if hexdump:
+        if hexdump and type(value) != float:
             value = hex(value)
         if offset:
             attrs += ' offset="%s"' % hex(self.pos)
@@ -106,6 +106,18 @@ class DOCDirStream:
 
     def readInt32(self):
         ret = self.getInt32()
+        self.pos += 4
+        return ret
+
+    def getFloat32(self, bytes=None, pos=None):
+        if not bytes:
+            bytes = self.bytes
+        if not pos:
+            pos = self.pos
+        return struct.unpack("<f", bytes[pos:pos + 4])[0]
+
+    def readFloat32(self):
+        ret = self.getFloat32()
         self.pos += 4
         return ret
 
