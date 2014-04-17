@@ -94,6 +94,20 @@ class PointL(WMFRecord):
         self.parent.pos = self.pos
 
 
+class PointS(WMFRecord):
+    """The PointS Object defines the x- and y-coordinates of a point."""
+    def __init__(self, parent, name):
+        WMFRecord.__init__(self, parent)
+        self.name = name
+
+    def dump(self):
+        print '<%s type="PointS">' % self.name
+        self.printAndSet("x", self.readInt16(), hexdump=False)
+        self.printAndSet("y", self.readInt16(), hexdump=False)
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
+
 class ColorRef(WMFRecord):
     """The ColorRef Object defines the RGB color."""
     def __init__(self, parent, name):
