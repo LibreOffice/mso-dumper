@@ -305,6 +305,18 @@ class EmrBeginpath(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrEndpath(EMFRecord):
+    """This record closes a path bracket and selects the path defined by the bracket into the playback device context."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        assert self.pos - posOrig == self.Size
+
+
 class RegionData(EMFRecord):
     """The RegionData object specifies data that defines a region, which is made of non-overlapping rectangles."""
     def __init__(self, parent, name, size):
@@ -471,7 +483,7 @@ RecordType = {
     0x00000039: ['EMR_SETARCDIRECTION'],
     0x0000003A: ['EMR_SETMITERLIMIT'],
     0x0000003B: ['EMR_BEGINPATH', EmrBeginpath],
-    0x0000003C: ['EMR_ENDPATH'],
+    0x0000003C: ['EMR_ENDPATH', EmrEndpath],
     0x0000003D: ['EMR_CLOSEFIGURE'],
     0x0000003E: ['EMR_FILLPATH'],
     0x0000003F: ['EMR_STROKEANDFILLPATH'],
