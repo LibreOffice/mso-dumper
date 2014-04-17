@@ -234,6 +234,47 @@ class EmrExtselectcliprgn(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+# Specifies the indexes of predefined logical graphics objects that can be used in graphics operations.
+StockObject = {
+    0x80000000: "WHITE_BRUSH",
+    0x80000001: "LTGRAY_BRUSH",
+    0x80000002: "GRAY_BRUSH",
+    0x80000003: "DKGRAY_BRUSH",
+    0x80000004: "BLACK_BRUSH",
+    0x80000005: "NULL_BRUSH",
+    0x80000006: "WHITE_PEN",
+    0x80000007: "BLACK_PEN",
+    0x80000008: "NULL_PEN",
+    0x8000000A: "OEM_FIXED_FONT",
+    0x8000000B: "ANSI_FIXED_FONT",
+    0x8000000C: "ANSI_VAR_FONT",
+    0x8000000D: "SYSTEM_FONT",
+    0x8000000E: "DEVICE_DEFAULT_FONT",
+    0x8000000F: "DEFAULT_PALETTE",
+    0x80000010: "SYSTEM_FIXED_FONT",
+    0x80000011: "DEFAULT_GUI_FONT",
+    0x80000012: "DC_BRUSH",
+    0x80000013: "DC_PEN"
+}
+
+
+class EmrSelectobject(EMFRecord):
+    """Combines the specified region with the current clip region using the specified mode."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        ihObject = self.getuInt32(pos=self.pos)
+        if ihObject < 0x80000000:
+            self.printAndSet("ihObject", self.readuInt32())
+        else:
+            self.printAndSet("ihObject", self.readuInt32(), dict=StockObject)
+        assert self.pos - posOrig == self.Size
+
+
 class RegionData(EMFRecord):
     """The RegionData object specifies data that defines a region, which is made of non-overlapping rectangles."""
     def __init__(self, parent, name, size):
@@ -377,7 +418,7 @@ RecordType = {
     0x00000022: ['EMR_RESTOREDC', EmrRestoredc],
     0x00000023: ['EMR_SETWORLDTRANSFORM'],
     0x00000024: ['EMR_MODIFYWORLDTRANSFORM', EmrModifyworldtransform],
-    0x00000025: ['EMR_SELECTOBJECT'],
+    0x00000025: ['EMR_SELECTOBJECT', EmrSelectobject],
     0x00000026: ['EMR_CREATEPEN'],
     0x00000027: ['EMR_CREATEBRUSHINDIRECT', EmrCreatebrushindirect],
     0x00000028: ['EMR_DELETEOBJECT'],
