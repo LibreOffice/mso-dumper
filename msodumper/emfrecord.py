@@ -219,6 +219,26 @@ class EmrSetviewportorgex(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+# Defines values that specify how to calculate the region of a polygon that is to be filled.
+PolygonFillMode = {
+    0x01: "ALTERNATE",  # Selects alternate mode (fills the area between odd-numbered and even-numbered polygon sides on each scan line).
+    0x02: "WINDING"     # Selects winding mode (fills any region with a nonzero winding value).
+}
+
+
+class EmrSetpolyfillmode(EMFRecord):
+    """Defines polygon fill mode."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("PolygonFillMode", self.readuInt32(), dict=PolygonFillMode)
+        assert self.pos - posOrig == self.Size
+
+
 class EmrExtselectcliprgn(EMFRecord):
     """Combines the specified region with the current clip region using the specified mode."""
     def __init__(self, parent):
@@ -442,7 +462,7 @@ RecordType = {
     0x00000010: ['EMR_SETMAPPERFLAGS'],
     0x00000011: ['EMR_SETMAPMODE'],
     0x00000012: ['EMR_SETBKMODE'],
-    0x00000013: ['EMR_SETPOLYFILLMODE'],
+    0x00000013: ['EMR_SETPOLYFILLMODE', EmrSetpolyfillmode],
     0x00000014: ['EMR_SETROP2'],
     0x00000015: ['EMR_SETSTRETCHBLTMODE'],
     0x00000016: ['EMR_SETTEXTALIGN'],
