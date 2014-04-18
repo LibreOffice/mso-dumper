@@ -336,6 +336,21 @@ class EmrPolypolygon16(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrSelectclippath(EMFRecord):
+    """Specifies the current path as a clipping region for the playback device
+    context, combining the new region with any existing clipping region using
+    the specified mode."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("RegionMode", self.readuInt32(), dict=RegionMode)
+        assert self.pos - posOrig == self.Size
+
+
 class EmrBeginpath(EMFRecord):
     """This record opens a path bracket in the current playback device context."""
     def __init__(self, parent):
@@ -533,7 +548,7 @@ RecordType = {
     0x00000040: ['EMR_STROKEPATH'],
     0x00000041: ['EMR_FLATTENPATH'],
     0x00000042: ['EMR_WIDENPATH'],
-    0x00000043: ['EMR_SELECTCLIPPATH'],
+    0x00000043: ['EMR_SELECTCLIPPATH', EmrSelectclippath],
     0x00000044: ['EMR_ABORTPATH'],
     0x00000046: ['EMR_COMMENT', EmrComment],
     0x00000047: ['EMR_FILLRGN'],
