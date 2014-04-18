@@ -295,6 +295,24 @@ class EmrSelectobject(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrDeleteobject(EMFRecord):
+    """Specifies the index of the object to be deleted from the EMF Object
+    Table."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        ihObject = self.getuInt32(pos=self.pos)
+        if ihObject < 0x80000000:
+            self.printAndSet("ihObject", self.readuInt32())
+        else:
+            self.printAndSet("ihObject", self.readuInt32(), dict=StockObject)
+        assert self.pos - posOrig == self.Size
+
+
 class EmrPolygon16(EMFRecord):
     """Draws a polygon consisting of two or more vertexes connected by straight lines."""
     def __init__(self, parent):
@@ -521,7 +539,7 @@ RecordType = {
     0x00000025: ['EMR_SELECTOBJECT', EmrSelectobject],
     0x00000026: ['EMR_CREATEPEN'],
     0x00000027: ['EMR_CREATEBRUSHINDIRECT', EmrCreatebrushindirect],
-    0x00000028: ['EMR_DELETEOBJECT'],
+    0x00000028: ['EMR_DELETEOBJECT', EmrDeleteobject],
     0x00000029: ['EMR_ANGLEARC'],
     0x0000002A: ['EMR_ELLIPSE'],
     0x0000002B: ['EMR_RECTANGLE'],
