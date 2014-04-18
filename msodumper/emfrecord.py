@@ -313,6 +313,29 @@ class EmrPolygon16(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrPolypolygon16(EMFRecord):
+    """Paints a series of closed polygons."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        wmfrecord.RectL(self, "Bounds").dump()
+        self.printAndSet("NumberOfPolygons", self.readuInt32(), hexdump=False)
+        self.printAndSet("Count", self.readuInt32(), hexdump=False)
+        print '<PolygonPointCounts>'
+        for i in range(self.NumberOfPolygons):
+            self.printAndSet("PolygonPointCount", self.readuInt32(), hexdump=False)
+        print '</PolygonPointCounts>'
+        print '<aPoints>'
+        for i in range(self.Count):
+            wmfrecord.PointS(self, "aPoint").dump()
+        print '</aPoints>'
+        assert self.pos - posOrig == self.Size
+
+
 class EmrBeginpath(EMFRecord):
     """This record opens a path bracket in the current playback device context."""
     def __init__(self, parent):
@@ -533,7 +556,7 @@ RecordType = {
     0x00000058: ['EMR_POLYBEZIERTO16'],
     0x00000059: ['EMR_POLYLINETO16'],
     0x0000005A: ['EMR_POLYPOLYLINE16'],
-    0x0000005B: ['EMR_POLYPOLYGON16'],
+    0x0000005B: ['EMR_POLYPOLYGON16', EmrPolypolygon16],
     0x0000005C: ['EMR_POLYDRAW16'],
     0x0000005D: ['EMR_CREATEMONOBRUSH'],
     0x0000005E: ['EMR_CREATEDIBPATTERNBRUSHPT'],
