@@ -386,6 +386,20 @@ class EmrMovetoex(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrLineto(EMFRecord):
+    """Draws a line from the current position up to, but not including, the
+    specified point."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        wmfrecord.PointL(self, "Point").dump()
+        assert self.pos - posOrig == self.Size
+
+
 class EmrSelectclippath(EMFRecord):
     """Specifies the current path as a clipping region for the playback device
     context, combining the new region with any existing clipping region using
@@ -585,7 +599,7 @@ RecordType = {
     0x00000033: ['EMR_RESIZEPALETTE'],
     0x00000034: ['EMR_REALIZEPALETTE'],
     0x00000035: ['EMR_EXTFLOODFILL'],
-    0x00000036: ['EMR_LINETO'],
+    0x00000036: ['EMR_LINETO', EmrLineto],
     0x00000037: ['EMR_ARCTO'],
     0x00000038: ['EMR_POLYDRAW'],
     0x00000039: ['EMR_SETARCDIRECTION'],
