@@ -354,6 +354,20 @@ class EmrPolypolygon16(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrMovetoex(EMFRecord):
+    """Specifies the coordinates of a new drawing position, in logical
+    units."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        wmfrecord.PointL(self, "Offset").dump()
+        assert self.pos - posOrig == self.Size
+
+
 class EmrSelectclippath(EMFRecord):
     """Specifies the current path as a clipping region for the playback device
     context, combining the new region with any existing clipping region using
@@ -526,7 +540,7 @@ RecordType = {
     0x00000018: ['EMR_SETTEXTCOLOR'],
     0x00000019: ['EMR_SETBKCOLOR'],
     0x0000001A: ['EMR_OFFSETCLIPRGN'],
-    0x0000001B: ['EMR_MOVETOEX'],
+    0x0000001B: ['EMR_MOVETOEX', EmrMovetoex],
     0x0000001C: ['EMR_SETMETARGN'],
     0x0000001D: ['EMR_EXCLUDECLIPRECT'],
     0x0000001E: ['EMR_INTERSECTCLIPRECT'],
