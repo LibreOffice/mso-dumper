@@ -457,6 +457,23 @@ class EmrEndpath(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrEof(EMFRecord):
+    """Indicates the end of the metafile and specifies a palette."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("nPalEntries", self.readuInt32(), hexdump=False)
+        self.printAndSet("offPalEntries", self.readuInt32(), hexdump=False)
+        if self.nPalEntries > 0:
+            print '<todo what="EmrEof::dump(): handle nPalEntries > 0"/>'
+        self.printAndSet("SizeLast", self.readuInt32(), hexdump=False)
+        assert self.pos - posOrig == self.Size
+
+
 class RegionData(EMFRecord):
     """The RegionData object specifies data that defines a region, which is made of non-overlapping rectangles."""
     def __init__(self, parent, name, size):
@@ -577,7 +594,7 @@ RecordType = {
     0x0000000B: ['EMR_SETVIEWPORTEXTEX'],
     0x0000000C: ['EMR_SETVIEWPORTORGEX', EmrSetviewportorgex],
     0x0000000D: ['EMR_SETBRUSHORGEX'],
-    0x0000000E: ['EMR_EOF'],
+    0x0000000E: ['EMR_EOF', EmrEof],
     0x0000000F: ['EMR_SETPIXELV'],
     0x00000010: ['EMR_SETMAPPERFLAGS'],
     0x00000011: ['EMR_SETMAPMODE'],
