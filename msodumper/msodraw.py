@@ -7,6 +7,9 @@
 
 import globals, xlsmodel
 import sys
+import textwrap
+import zlib
+import base64
 from pptrecord import shapeTypes
 
 def indent (level):
@@ -33,6 +36,9 @@ def hexdump(value):
         ret.append("%02x" % ord(i))
     return "".join(ret)
 
+def inflate(bytes):
+    return textwrap.fill(base64.b64encode(zlib.decompress(bytes)), width=160)
+
 class RecordHeader:
 
     size = 8
@@ -54,6 +60,7 @@ class RecordHeader:
         FClientAnchor           = 0xF010
         FClientData             = 0xF011
         FConnectorRule          = 0xF012
+        BlipEMF                 = 0xF01A
         BlipPNG                 = 0xF01E
         FDGSL                   = 0xF119
         SplitMenuColorContainer = 0xF11E
@@ -290,6 +297,62 @@ class FDGSL:
         recHdl.appendLine("  ID of shape in focus: %d"%self.shapeFocus)
         for shape in self.shapesSelected:
             recHdl.appendLine("  ID of shape selected: %d"%shape)
+
+class MetafileHeader:
+    """[MS-ODRAW] 2.2.31 The OfficeArtMetafileHeader record specifies how to process a metafile."""
+    def __init__(self, strm):
+        self.strm = strm
+
+    def parseBytes(self, rh):
+        self.cbSize = self.strm.readUnsignedInt(4)
+        self.strm.readBytes(16) # TODO rcBounds
+        self.strm.readBytes(8) # TODO ptSize
+        self.cbSave = self.strm.readUnsignedInt(4)
+        self.compression = self.strm.readUnsignedInt(1)
+        self.filter = self.strm.readUnsignedInt(1)
+
+    def appendLines(self, recHdl, rh):
+        pass
+
+    def dumpXml(self, recHdl, model, rh):
+        recHdl.appendLine('<metafileHeader type="OfficeArtMetafileHeader">')
+        recHdl.appendLine('<cbSize value="%s"/>' % self.cbSize)
+        recHdl.appendLine('<cbSave value="%s"/>' % self.cbSave)
+        recHdl.appendLine('<compression value="%s"/>' % hex(self.compression))
+        recHdl.appendLine('<filter value="%s"/>' % hex(self.filter))
+        recHdl.appendLine('</metafileHeader>')
+
+class BlipEMF:
+    """[MS-ODRAW] 2.2.24 The OfficeArtBlipEMF record specifies BLIP file data for the enhanced metafile format (EMF)."""
+    def __init__(self, strm):
+        self.strm = strm
+
+    def __parseBytes(self, rh):
+        pos = self.strm.pos
+        self.rgbUid1 = self.strm.readBytes(16)
+        if rh.recInstance == 0x3D5:
+            self.rgbUid2 = self.strm.readBytes(16)
+        else:
+            self.rgbUid2 = None
+        self.metafileHeader = MetafileHeader(self.strm)
+        self.metafileHeader.parseBytes(rh)
+        self.BLIPFileData = self.strm.readBytes(self.metafileHeader.cbSave)
+
+    def appendLines(self, recHdl, rh):
+        pass
+
+    def dumpXml(self, recHdl, model, rh):
+        recHdl.appendLine('<blipEmf type="OfficeArtBlipEMF">')
+        self.__parseBytes(rh)
+        recHdl.appendLine('<rgbUid1 value="%s"/>' % hexdump(self.rgbUid1))
+        if self.rgbUid2:
+            recHdl.appendLine('<rgbUid2 value="%s"/>' % hexdump(self.rgbUid2))
+        self.metafileHeader.dumpXml(recHdl, model, rh)
+        if self.metafileHeader.compression == 0x00:
+            recHdl.appendLine('<BLIPFileData value="%s"/>' % inflate(self.BLIPFileData))
+        else:
+            recHdl.appendLine('<todo what="BlipEMF::dumpXml(): unexpected metafileHeader.compression == %s"/>' % hex(self.metafileHeader.compression))
+        recHdl.appendLine('</blipEmf>')
 
 class BlipPNG:
     def __init__(self, strm):
@@ -1286,6 +1349,7 @@ recData = {
     RecordHeader.Type.FConnectorRule: FConnectorRule,
     RecordHeader.Type.FDGSL: FDGSL,
     RecordHeader.Type.BlipPNG: BlipPNG,
+    RecordHeader.Type.BlipEMF: BlipEMF,
     RecordHeader.Type.FClientAnchor: FClientAnchorSheet,
     RecordHeader.Type.FClientData: FClientData,
     RecordHeader.Type.FClientTextbox: FClientTextbox,
