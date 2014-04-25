@@ -22,6 +22,12 @@ RegionMode = {
     0x05: "RGN_COPY"
 }
 
+DIBColors = {
+    0x00: "DIB_RGB_COLORS",
+    0x01: "DIB_PAL_COLORS",
+    0x02: "DIB_PAL_INDICES"
+}
+
 
 class EMFStream(DOCDirStream):
     def __init__(self, bytes):
@@ -497,6 +503,33 @@ class EmrStrokeandfillpath(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrBitblt(EMFRecord):
+    """Specifies a block transfer of pixels from a source bitmap to a destination rectangle."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        wmfrecord.RectL(self, "Bounds").dump()
+        self.printAndSet("xDest", self.readInt32(), hexdump=False)
+        self.printAndSet("yDest", self.readInt32(), hexdump=False)
+        self.printAndSet("cxDest", self.readInt32(), hexdump=False)
+        self.printAndSet("cyDest", self.readInt32(), hexdump=False)
+        self.printAndSet("BitBltRasterOperation", self.readuInt32(), dict=wmfrecord.RasterPolishMap)
+        self.printAndSet("xSrc", self.readInt32(), hexdump=False)
+        self.printAndSet("ySrc", self.readInt32(), hexdump=False)
+        XForm(self, "XformSrc").dump()
+        wmfrecord.ColorRef(self, "BkColorSrc").dump()
+        self.printAndSet("UsageSrc", self.readInt32(), dict=DIBColors)
+        self.printAndSet("offBmiSrc", self.readuInt32())
+        self.printAndSet("cbBmiSrc", self.readuInt32())
+        self.printAndSet("offBitsSrc", self.readuInt32())
+        self.printAndSet("cbBitsSrc", self.readuInt32())
+        assert self.pos - posOrig == self.Size
+
+
 class EmrEof(EMFRecord):
     """Indicates the end of the metafile and specifies a palette."""
     def __init__(self, parent):
@@ -695,7 +728,7 @@ RecordType = {
     0x00000049: ['EMR_INVERTRGN'],
     0x0000004A: ['EMR_PAINTRGN'],
     0x0000004B: ['EMR_EXTSELECTCLIPRGN', EmrExtselectcliprgn],
-    0x0000004C: ['EMR_BITBLT'],
+    0x0000004C: ['EMR_BITBLT', EmrBitblt],
     0x0000004D: ['EMR_STRETCHBLT'],
     0x0000004E: ['EMR_MASKBLT'],
     0x0000004F: ['EMR_PLGBLT'],
