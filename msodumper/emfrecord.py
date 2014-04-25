@@ -469,6 +469,20 @@ class EmrClosefigure(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrFillpath(EMFRecord):
+    """Closes any open figures in the current path and fills the path's
+    interior with the current brush and polygon-filling mode."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        wmfrecord.RectL(self, "Bounds").dump()
+        assert self.pos - posOrig == self.Size
+
+
 class EmrEof(EMFRecord):
     """Indicates the end of the metafile and specifies a palette."""
     def __init__(self, parent):
@@ -654,7 +668,7 @@ RecordType = {
     0x0000003B: ['EMR_BEGINPATH', EmrBeginpath],
     0x0000003C: ['EMR_ENDPATH', EmrEndpath],
     0x0000003D: ['EMR_CLOSEFIGURE', EmrClosefigure],
-    0x0000003E: ['EMR_FILLPATH'],
+    0x0000003E: ['EMR_FILLPATH', EmrFillpath],
     0x0000003F: ['EMR_STROKEANDFILLPATH'],
     0x00000040: ['EMR_STROKEPATH'],
     0x00000041: ['EMR_FLATTENPATH'],
