@@ -28,6 +28,29 @@ DIBColors = {
     0x02: "DIB_PAL_INDICES"
 }
 
+# The PenStyle enumeration defines the attributes of pens that can be used in graphics operations.
+PenStyle = {
+    0x00000000: "PS_COSMETIC",
+    0x00000000: "PS_ENDCAP_ROUND",
+    0x00000000: "PS_JOIN_ROUND",
+    0x00000000: "PS_SOLID",
+    0x00000001: "PS_DASH",
+    0x00000002: "PS_DOT",
+    0x00000003: "PS_DASHDOT",
+    0x00000004: "PS_DASHDOTDOT",
+    0x00000005: "PS_NULL",
+    0x00000006: "PS_INSIDEFRAME",
+    0x00000007: "PS_USERSTYLE",
+    0x00000008: "PS_ALTERNATE",
+    0x00000100: "PS_ENDCAP_SQUARE",
+    0x00000200: "PS_ENDCAP_FLAT",
+    0x00001000: "PS_JOIN_BEVEL",
+    0x00002000: "PS_JOIN_MITER",
+    0x00010000: "PS_GEOMETRIC",
+    # Additional combinations
+    0x00010200: "PS_GEOMETRIC, PS_ENDCAP_FLAT",
+}
+
 
 class EMFStream(DOCDirStream):
     def __init__(self, bytes):
@@ -530,6 +553,50 @@ class EmrBitblt(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class LogPenEx(EMFRecord):
+    """The LogPenEx object specifies the style, width, and color of an extended logical pen."""
+    def __init__(self, parent, name):
+        EMFRecord.__init__(self, parent)
+        self.name = name
+
+    def dump(self):
+        print '<%s type="LogPenEx">' % self.name
+        self.printAndSet("PenStyle", self.readuInt32(), dict=PenStyle)
+        self.printAndSet("Width", self.readuInt32())
+        self.printAndSet("BrushStyle", self.readuInt32(), dict=wmfrecord.BrushStyle)
+        wmfrecord.ColorRef(self, "ColorRef").dump()
+        if self.BrushStyle == 0x0002:  # "BS_HATCHED"
+            self.printAndSet("BrushHatch", self.readuInt32(), dict=wmfrecord.HatchStyle)
+        else:
+            self.printAndSet("BrushHatch", self.readuInt32())
+        self.printAndSet("NumStyleEntries", self.readuInt32())
+        if self.NumStyleEntries > 0:
+            print '<todo what="LogPenEx::dump(): self.NumStyleEntries != 0"/>'
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
+
+class EmrExtcreatepen(EMFRecord):
+    """Defines an extended logical pen."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("ihPen", self.readuInt32(), hexdump=False)
+        self.printAndSet("offBmi", self.readuInt32(), hexdump=False)
+        self.printAndSet("cbBmi", self.readuInt32(), hexdump=False)
+        self.printAndSet("offBits", self.readuInt32(), hexdump=False)
+        self.printAndSet("cbBits", self.readuInt32(), hexdump=False)
+        LogPenEx(self, "elp").dump()
+        if self.cbBmi:
+            print '<todo what="LogPenEx::dump(): self.cbBmi != 0"/>'
+        if self.cbBits:
+            print '<todo what="LogPenEx::dump(): self.cbBits != 0"/>'
+
+
 class EmrEof(EMFRecord):
     """Indicates the end of the metafile and specifies a palette."""
     def __init__(self, parent):
@@ -747,7 +814,7 @@ RecordType = {
     0x0000005C: ['EMR_POLYDRAW16'],
     0x0000005D: ['EMR_CREATEMONOBRUSH'],
     0x0000005E: ['EMR_CREATEDIBPATTERNBRUSHPT'],
-    0x0000005F: ['EMR_EXTCREATEPEN'],
+    0x0000005F: ['EMR_EXTCREATEPEN', EmrExtcreatepen],
     0x00000060: ['EMR_POLYTEXTOUTA'],
     0x00000061: ['EMR_POLYTEXTOUTW'],
     0x00000062: ['EMR_SETICMMODE', EmrSeticmmode],
