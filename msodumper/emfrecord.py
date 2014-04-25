@@ -457,6 +457,18 @@ class EmrEndpath(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+class EmrClosefigure(EMFRecord):
+    """This record closes an open figure in a path."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        assert self.pos - posOrig == self.Size
+
+
 class EmrEof(EMFRecord):
     """Indicates the end of the metafile and specifies a palette."""
     def __init__(self, parent):
@@ -641,7 +653,7 @@ RecordType = {
     0x0000003A: ['EMR_SETMITERLIMIT'],
     0x0000003B: ['EMR_BEGINPATH', EmrBeginpath],
     0x0000003C: ['EMR_ENDPATH', EmrEndpath],
-    0x0000003D: ['EMR_CLOSEFIGURE'],
+    0x0000003D: ['EMR_CLOSEFIGURE', EmrClosefigure],
     0x0000003E: ['EMR_FILLPATH'],
     0x0000003F: ['EMR_STROKEANDFILLPATH'],
     0x00000040: ['EMR_STROKEPATH'],
