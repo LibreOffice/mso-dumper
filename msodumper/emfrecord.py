@@ -7,6 +7,9 @@
 
 from docdirstream import DOCDirStream
 import wmfrecord
+import base64
+import textwrap
+
 
 # The FormatSignature enumeration defines valuesembedded data in EMF records.
 FormatSignature = {
@@ -597,6 +600,44 @@ class EmrExtcreatepen(EMFRecord):
             print '<todo what="LogPenEx::dump(): self.cbBits != 0"/>'
 
 
+class EmrStretchdibits(EMFRecord):
+    """Specifies a block transfer of pixels from a source bitmap to a
+    destination rectangle."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        wmfrecord.RectL(self, "Bounds").dump()
+        self.printAndSet("xDest", self.readInt32(), hexdump=False)
+        self.printAndSet("yDest", self.readInt32(), hexdump=False)
+        self.printAndSet("xSrc", self.readInt32(), hexdump=False)
+        self.printAndSet("ySrc", self.readInt32(), hexdump=False)
+        self.printAndSet("cxSrc", self.readInt32(), hexdump=False)
+        self.printAndSet("cySrc", self.readInt32(), hexdump=False)
+        self.printAndSet("offBmiSrc", self.readuInt32(), hexdump=False)
+        self.printAndSet("cbBmiSrc", self.readuInt32(), hexdump=False)
+        self.printAndSet("offBitsSrc", self.readuInt32(), hexdump=False)
+        self.printAndSet("cbBitsSrc", self.readuInt32(), hexdump=False)
+        self.printAndSet("UsageSrc", self.readInt32(), dict=DIBColors)
+        self.printAndSet("BitBltRasterOperation", self.readuInt32(), dict=wmfrecord.RasterPolishMap)
+        self.printAndSet("cxDest", self.readInt32(), hexdump=False)
+        self.printAndSet("cyDest", self.readInt32(), hexdump=False)
+        print '<BitmapBuffer>'
+        if self.cbBmiSrc:
+            self.pos = posOrig + self.offBmiSrc
+            self.BmiSrc = self.readBytes(self.cbBmiSrc)
+            print '<BmiSrc value="%s"/>' % base64.b64encode(self.BmiSrc)
+        if self.cbBitsSrc:
+            self.pos = posOrig + self.offBitsSrc
+            self.BitsSrc = self.readBytes(self.cbBitsSrc)
+            print '<BitsSrc value="%s"/>' % base64.b64encode(self.BitsSrc)
+        print '</BitmapBuffer>'
+        assert self.pos - posOrig == self.Size
+
+
 class EmrEof(EMFRecord):
     """Indicates the end of the metafile and specifies a palette."""
     def __init__(self, parent):
@@ -800,7 +841,7 @@ RecordType = {
     0x0000004E: ['EMR_MASKBLT'],
     0x0000004F: ['EMR_PLGBLT'],
     0x00000050: ['EMR_SETDIBITSTODEVICE'],
-    0x00000051: ['EMR_STRETCHDIBITS'],
+    0x00000051: ['EMR_STRETCHDIBITS', EmrStretchdibits],
     0x00000052: ['EMR_EXTCREATEFONTINDIRECTW'],
     0x00000053: ['EMR_EXTTEXTOUTA'],
     0x00000054: ['EMR_EXTTEXTOUTW'],
