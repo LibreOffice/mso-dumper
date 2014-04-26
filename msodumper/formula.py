@@ -106,6 +106,21 @@ def parseCellRangeAddress (bytes):
     obj.lastCol = (obj.lastCol & 0x00FF)
     return obj
 
+
+class RgceLocRel(object):
+
+    def __init__ (self, strm):
+        self.row = strm.readSignedInt(2)
+        self.col = strm.readSignedInt(2)
+        self.colRelative = ((self.col & 0x4000) != 0)
+        self.rowRelative = ((self.col & 0x8000) != 0)
+        self.col = (self.col & 0x00FF)
+        self.loc = CellAddress(self.col, self.row, self.colRelative, self.rowRelative)
+
+    def getText (self):
+        return self.loc.toString()
+
+
 # ============================================================================
 
 class TokenType:
@@ -657,6 +672,25 @@ class PtgFuncVar(PtgBase):
 
         return "(func: %s; arg: %d)"%(PtgFuncVar.funcTab[self.funcType], self.argCount)
 
+
+class PtgRefN(PtgBase):
+    """Reference to a single cell"""
+
+    def parseBytes (self):
+        self.loc = RgceLocRel(self.strm)
+
+    def getText (self):
+        colrel = "abs"
+        if self.loc.colRelative:
+            colrel = "rel"
+
+        rowrel = "abs"
+        if self.loc.rowRelative:
+            rowrel = "rel"
+
+        return "(single-ref: col=%d[%s],row=%d[%s])"%(self.loc.col, colrel, self.loc.row, rowrel)
+
+
 _tokenMap = {
     0x01: PtgExp,
     0x10: PtgUnion,
@@ -678,7 +712,8 @@ _tokenMap = {
     0x7B: _Area3d,
 
     0x3A: PtgRef3d,
-    0x42: PtgFuncVar
+    0x42: PtgFuncVar,
+    0x4C: PtgRefN
 }
 
 class FormulaParser(object):
