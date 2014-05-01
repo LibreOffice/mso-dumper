@@ -235,7 +235,7 @@ class EmrComment(EMFRecord):
         elif commentIdentifier == 0x43494447:  # EMR_COMMENT_PUBLIC
             print '<todo what="EmrComment::dump(): handle EMR_COMMENT_PUBLIC"/>'
         else:
-            print '<todo what="EmrComment::dump(): handle EMR_COMMENT"/>'
+            print '<todo what="EmrComment::dump(): handle EMR_COMMENT: %s"/>' % hex(commentIdentifier)
 
 
 class EmrSetviewportorgex(EMFRecord):
