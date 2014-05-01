@@ -271,6 +271,29 @@ class EmrSetpolyfillmode(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+# Used to specify how color data is added to or removed from bitmaps that are
+# stretched or compressed.
+StretchMode = {
+    0x01: "STRETCH_ANDSCANS",
+    0x02: "STRETCH_ORSCANS",
+    0x03: "STRETCH_DELETESCANS",
+    0x04: "STRETCH_HALFTONE",
+}
+
+
+class EmrSetstretchbltmode(EMFRecord):
+    """Specifies bitmap stretch mode."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        self.printAndSet("StretchMode", self.readuInt32(), dict=StretchMode)
+        assert self.pos - posOrig == self.Size
+
+
 class EmrExtselectcliprgn(EMFRecord):
     """Combines the specified region with the current clip region using the specified mode."""
     def __init__(self, parent):
@@ -782,7 +805,7 @@ RecordType = {
     0x00000012: ['EMR_SETBKMODE'],
     0x00000013: ['EMR_SETPOLYFILLMODE', EmrSetpolyfillmode],
     0x00000014: ['EMR_SETROP2'],
-    0x00000015: ['EMR_SETSTRETCHBLTMODE'],
+    0x00000015: ['EMR_SETSTRETCHBLTMODE', EmrSetstretchbltmode],
     0x00000016: ['EMR_SETTEXTALIGN'],
     0x00000017: ['EMR_SETCOLORADJUSTMENT'],
     0x00000018: ['EMR_SETTEXTCOLOR'],
