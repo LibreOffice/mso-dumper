@@ -52,6 +52,7 @@ PenStyle = {
     0x00010000: "PS_GEOMETRIC",
     # Additional combinations
     0x00010200: "PS_GEOMETRIC, PS_ENDCAP_FLAT",
+    0x00011100: "PS_GEOMETRIC, PS_JOIN_BEVEL, PS_ENDCAP_SQUARE",
 }
 
 
