@@ -1212,6 +1212,27 @@ class TableBordersOperand(DOCDirStream):
         print '</tableBordersOperand>'
 
 
+class TableBordersOperand80(DOCDirStream):
+    """The TableBordersOperand80 structure is an operand that specifies the
+    borders which are applied to a row of table cells."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<tableBordersOperand80>'
+        self.printAndSet("cb", self.readuInt8())
+        posOrig = self.pos
+        Brc80MayBeNil(self, "brcTop").dump()
+        Brc80MayBeNil(self, "brcLeft").dump()
+        Brc80MayBeNil(self, "brcBottom").dump()
+        Brc80MayBeNil(self, "brcRight").dump()
+        Brc80MayBeNil(self, "brcHorizontalInside").dump()
+        Brc80MayBeNil(self, "brcVerticalInside").dump()
+        assert self.pos == posOrig + 0x18
+        print '</tableBordersOperand80>'
+
+
 class SHDOperand(DOCDirStream):
     """The SDHOperand structure is an operand that is used by several Sprm
     structures to specify the background shading to be applied."""
@@ -1301,6 +1322,8 @@ class Sprm(DOCDirStream):
                 self.ct = SHDOperand(self)
             elif self.sprm == 0xd613:
                 self.ct = TableBordersOperand(self)
+            elif self.sprm == 0xd605:
+                self.ct = TableBordersOperand80(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size %s: %s"/>' % (self.getOperandSize(), hex(self.sprm))
 
