@@ -1406,8 +1406,8 @@ class Prl(DOCDirStream):
 
 class GrpPrlAndIstd(DOCDirStream):
     """The GrpPrlAndIstd structure specifies the style and properties that are applied to a paragraph, a table row, or a table cell."""
-    def __init__(self, bytes, offset, size):
-        DOCDirStream.__init__(self, bytes)
+    def __init__(self, bytes, offset, size, mainStream=None):
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -1417,7 +1417,7 @@ class GrpPrlAndIstd(DOCDirStream):
         self.printAndSet("istd", self.getuInt16())
         pos += 2
         while (self.size - (pos - self.pos)) > 0:
-            prl = Prl(self, pos)
+            prl = Prl(self, pos, mainStream=self.mainStream)
             prl.dump()
             pos += prl.getSize()
         print '</grpPrlAndIstd>'
@@ -1451,7 +1451,7 @@ class Chpx(DOCDirStream):
 class PapxInFkp(DOCDirStream):
     """The PapxInFkp structure specifies a set of text properties."""
     def __init__(self, bytes, mainStream, offset):
-        DOCDirStream.__init__(self, bytes)
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
 
     def dump(self):
@@ -1459,9 +1459,9 @@ class PapxInFkp(DOCDirStream):
         self.printAndSet("cb", self.readuInt8())
         if self.cb == 0:
             self.printAndSet("cb_", self.readuInt8())
-            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_)
+            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_, mainStream=self.mainStream)
         else:
-            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, self.cb)
+            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, self.cb, mainStream=self.mainStream)
         grpPrlAndIstd.dump()
         print '</papxInFkp>'
 
@@ -1471,7 +1471,7 @@ class BxPap(DOCDirStream):
     size = 13  # in bytes, see 2.9.23
 
     def __init__(self, bytes, mainStream, offset, parentoffset):
-        DOCDirStream.__init__(self, bytes)
+        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.parentpos = parentoffset
 
