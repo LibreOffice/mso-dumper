@@ -1299,6 +1299,10 @@ class Sprm(DOCDirStream):
             self.operand = self.getuInt32()
             if self.sprm == 0x6a03 and transformed == r"\x01":
                 self.ct = PICFAndOfficeArtData(self)
+            elif self.sprm == 0x6646:  # sprmPHugePapx
+                dataStream = mainStream.doc.getDirectoryStreamByName("Data")
+                dataStream.pos = self.operand
+                self.ct = PrcData(dataStream)
         elif self.getOperandSize() == 7:
             self.operand = self.getuInt64() & 0x0fffffff
         elif self.getOperandSize() == 9:
