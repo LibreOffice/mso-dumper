@@ -434,9 +434,11 @@ class COLORREF(DOCDirStream):
 
 class BRC(DOCDirStream):
     """The Brc structure specifies a border."""
-    def __init__(self, parent):
+    def __init__(self, parent, name="brc"):
         DOCDirStream.__init__(self, parent.bytes)
         self.pos = parent.pos
+        self.parent = parent
+        self.name = name
         self.posOrig = self.pos
         self.cv = COLORREF(self)
         self.dptLineWidth = self.readuInt8()
@@ -448,7 +450,7 @@ class BRC(DOCDirStream):
         self.fReserved = (buf & 0xff80) >> 7  # 8..16th bits
 
     def dump(self):
-        print '<brc type="BRC" offset="%d">' % self.posOrig
+        print '<%s type="BRC" offset="%d">' % (self.name, self.posOrig)
         self.cv.dump("cv")
         self.printAndSet("dptLineWidth", self.dptLineWidth)
         self.printAndSet("brcType", self.brcType, dict=BrcType)
@@ -456,7 +458,8 @@ class BRC(DOCDirStream):
         self.printAndSet("fShadow", self.fShadow)
         self.printAndSet("fFrame", self.fFrame)
         self.printAndSet("fReserved", self.fReserved)
-        print '</brc>'
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
 
 
 class PChgTabsDel(DOCDirStream):
@@ -1189,6 +1192,26 @@ class TDefTableOperand(DOCDirStream):
         print '</tDefTableOperand>'
 
 
+class TableBordersOperand(DOCDirStream):
+    """The TableBordersOperand structure specifies a set of borders for a table row."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<tableBordersOperand>'
+        self.printAndSet("cb", self.readuInt8())
+        posOrig = self.pos
+        BRC(self, "brcTop").dump()
+        BRC(self, "brcLeft").dump()
+        BRC(self, "brcBottom").dump()
+        BRC(self, "brcRight").dump()
+        BRC(self, "brcHorizontalInside").dump()
+        BRC(self, "brcVerticalInside").dump()
+        assert self.pos == posOrig + 0x30
+        print '</tableBordersOperand>'
+
+
 class SHDOperand(DOCDirStream):
     """The SDHOperand structure is an operand that is used by several Sprm
     structures to specify the background shading to be applied."""
@@ -1276,6 +1299,8 @@ class Sprm(DOCDirStream):
                 self.ct = TDefTableOperand(self)
             elif self.sprm == 0xca71:
                 self.ct = SHDOperand(self)
+            elif self.sprm == 0xd613:
+                self.ct = TableBordersOperand(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size %s: %s"/>' % (self.getOperandSize(), hex(self.sprm))
 
