@@ -15,6 +15,32 @@ class RecordError(Exception): pass
 # -------------------------------------------------------------------
 # record handler classes
 
+class ColRelU(object):
+
+    def __init__ (self, strm):
+        self.col = strm.readUnsignedInt(2)
+        self.colRelative = (self.col & 0x4000) != 0
+        self.rowRelative = (self.col & 0x8000) != 0
+        self.col = self.col & 0x3FFF
+
+
+class RgceLoc(object):
+
+    def __init__ (self, strm):
+        self.row = strm.readUnsignedInt(2)
+        self.column = ColRelU(strm)
+
+    def toString (self):
+        s = ''
+        if not self.column.colRelative:
+            s += '$'
+        s += formula.toColName(self.column.col)
+        if not self.column.rowRelative:
+            s += '$'
+        s += "%d"%(self.row+1)
+        return s
+
+
 class Ref8(object):
 
     def __init__ (self, strm):
@@ -57,6 +83,14 @@ class Ref8U(object):
         self.row2 = strm.readUnsignedInt(2)
         self.col1 = strm.readUnsignedInt(2)
         self.col2 = strm.readUnsignedInt(2)
+
+    def toString (self):
+        rge = formula.CellRange()
+        rge.firstRow = self.row1
+        rge.firstCol = self.col1
+        rge.lastRow = self.row2
+        rge.lastCol = self.col2
+        return rge.toString()
 
 
 class RKAuxData(object):
@@ -4010,100 +4044,200 @@ class SXRng(BaseRecordHandler):
 # -------------------------------------------------------------------
 # CT - Change Tracking
 
-class CTCellContent(BaseRecordHandler):
+class RRD(object):
 
-    EXC_CHTR_TYPE_MASK       = 0x0007
-    EXC_CHTR_TYPE_FORMATMASK = 0xFF00
-    EXC_CHTR_TYPE_EMPTY      = 0x0000
-    EXC_CHTR_TYPE_RK         = 0x0001
-    EXC_CHTR_TYPE_DOUBLE     = 0x0002
-    EXC_CHTR_TYPE_STRING     = 0x0003
-    EXC_CHTR_TYPE_BOOL       = 0x0004
-    EXC_CHTR_TYPE_FORMULA    = 0x0005
+    RevType = {
+        0x0000: "insert row",                  # REVTINSRW
+        0x0001: "insert column",               # REVTINSCOL
+        0x0002: "delete row",                  # REVTDELRW
+        0x0003: "delete column",               # REVTDELCOL
+        0x0004: "cell move",                   # REVTMOVE
+        0x0005: "insert sheet",                # REVTINSERTSH
+        0x0007: "sort",                        # REVTSORT
+        0x0008: "cell change",                 # REVTCHANGECELL
+        0x0009: "rename sheet",                # REVTRENSHEET
+        0x000A: "defined name change",         # REVTDEFNAME
+        0x000B: "format revision",             # REVTFORMAT
+        0x000C: "autoformat revision",         # REVTAUTOFMT
+        0x000D: "comment revision",            # REVTNOTE
+        0x0020: "header (meta-data) revision", # REVTHEADER
+        0x0025: "conflict",                    # REVTCONFLICT
+        0x002B: "custom view add",             # REVTADDVIEW
+        0x002C: "custom view delete",          # REVTDELVIEW
+        0x002E: "query table field removal"    # REVTTRASHQTFIELD
+    }
+
+    def __init__ (self, parent):
+        self.parent = parent
+        self.cbMemory = parent.readUnsignedInt(4)
+        self.revid = parent.readSignedInt(4)
+        self.revt = parent.readUnsignedInt(2)
+
+        flags = parent.readUnsignedInt(2)
+        self.fAccepted        = (flags & 0x0001) != 0
+        self.fUndoAction      = (flags & 0x0002) != 0
+        unused                = (flags & 0x0004) != 0
+        self.fDelAtEdgeOfSort = (flags & 0x0008) != 0
+        self.tabid = parent.readUnsignedInt(2)
 
     def parseBytes (self):
-        size = globals.getSignedInt(self.readBytes(4))
-        id = globals.getSignedInt(self.readBytes(4))
-        opcode = globals.getSignedInt(self.readBytes(2))
-        accept = globals.getSignedInt(self.readBytes(2))
-        tabCreateId = globals.getSignedInt(self.readBytes(2))
-        valueType = globals.getSignedInt(self.readBytes(2))
-        self.appendLine("header: (size=%d; index=%d; opcode=0x%2.2X; accept=%d)"%(size, id, opcode, accept))
-        self.appendLine("sheet creation id: %d"%tabCreateId)
+        self.parent.appendLineInt("memory size", self.cbMemory)
+        self.parent.appendLine("revision ID: %d"%self.revid)
+        self.parent.appendLine("revision type: %s (0x%4.4X)"%(globals.getValueOrUnknown(RRD.RevType, self.revt), self.revt))
+        self.parent.appendLineBoolean("accepted", self.fAccepted)
+        self.parent.appendLineBoolean("undo action", self.fUndoAction)
+        self.parent.appendLineBoolean("deleted at edge of sorted range", self.fDelAtEdgeOfSort)
+        self.parent.appendLineInt("sheet index", self.tabid)
 
-        oldType = (valueType/(2*2*2) & CTCellContent.EXC_CHTR_TYPE_MASK)
-        newType = (valueType & CTCellContent.EXC_CHTR_TYPE_MASK)
-        self.appendLine("value type: (old=%4.4Xh; new=%4.4Xh)"%(oldType, newType))
-        self.readBytes(2) # ignore next 2 bytes.
 
-        row = globals.getSignedInt(self.readBytes(2))
-        col = globals.getSignedInt(self.readBytes(2))
-        cell = formula.CellAddress(col, row)
-        self.appendLine("cell position: %s"%cell.getName())
+class RRDChgCell(BaseRecordHandler):
 
-        oldSize = globals.getSignedInt(self.readBytes(2))
-        self.readBytes(4) # ignore 4 bytes.
+    class CellType:
+        Blank                       = 0x0000
+        RKNumber                    = 0x0001
+        Xnum                        = 0x0002
+        XLUnicodeRichExtendedString = 0x0003
+        Bes                         = 0x0004
+        CellParsedFormula           = 0x0005
 
-        fmtType = (valueType & CTCellContent.EXC_CHTR_TYPE_FORMATMASK)
-        if fmtType == 0x1100:
-            self.readBytes(16)
-        elif fmtType == 0x1300:
-            self.readBytes(8)
+    CellTypes = [
+        "blank",            # 0x0
+        "RK",               # 0x1
+        "double",           # 0x2
+        "string",           # 0x3
+        "boolean or error", # 0x4
+        "formula"           # 0x5
+    ]
 
-        self.readCell(oldType, "old cell type")
-        self.readCell(newType, "new cell type")
+    NumFmtTypes = {
+        0x0000: "automatic",
+        0x0004: "number, two decimal places, use the 1000 separator (,)",
+        0x000B: "currency, two decimal places, use parentheses for negative values",
+        0x000D: "percentage, zero decimal places",
+        0x000E: "percentage, two decimal places",
+        0x000F: "scientific",
+        0x0010: "engineering",
+        0x0011: "fraction, up to one digit numerator and denominator",
+        0x0012: "fraction, up to two digit numerator and denominator",
+        0x0013: "date (MM-DD-YY)",
+        0x0015: "date (DD-MMM)",
+        0x0017: "time (H:MM AM/PM)",
+        0x001B: "date/time, 24 hour format (M/D/YY H:MM)",
+        0x0022: "accounting (currency with decimal point aligned, and centered minus-sign for 0-value), two decimal places, use currency symbol"
+    }
 
-    def readCell (self, cellType, cellName):
+    def __parseBytes (self):
+        self.rrd = RRD(self)
+        flags = self.readUnsignedInt(2)
+        self.vt    = (flags & 0x0007)
+        flags /= 2**3 # shift 3 bits
+        self.vtOld = (flags & 0x0007)
+        flags /= 2**3 # shift 3 bits
+        self.f123Prefix  = (flags & 0x0001)
+        unused           = (flags & 0x0002)
+        self.fOldFmt     = (flags & 0x0004)
+        self.fOldFmtNull = (flags & 0x0008)
+        self.fXfDxf      = (flags & 0x0010)
+        self.fStyXfDxf   = (flags & 0x0020)
+        self.fDxf        = (flags & 0x0040)
+        self.fDxfNull    = (flags & 0x0080)
 
-        cellTypeText = 'unknown'
+        self.ifmtDisp = self.readUnsignedInt(1)
 
-        if cellType == CTCellContent.EXC_CHTR_TYPE_FORMULA:
-            cellTypeText, formulaBytes, formulaText = self.readFormula()
-            self.appendLine("%s: %s"%(cellName, cellTypeText))
-            self.appendLine("formula bytes: %s"%globals.getRawBytes(formulaBytes, True, False))
-            self.appendLine("tokens: %s"%formulaText)
+        flags = self.readUnsignedInt(1)
+        self.fPhShow        = (flags & 0x01)
+        self.fPhShowOld     = (flags & 0x02)
+        self.fEOLFmlaUpdate = (flags & 0x04)
+
+        self.loc = RgceLoc(self)
+
+        self.cbOldVal = self.readUnsignedInt(4)
+        self.cetxpRst = self.readUnsignedInt(2)
+
+        if self.fOldFmt or self.fDxf:
+            # TODO : Parse DXFN
             return
 
-        if cellType == CTCellContent.EXC_CHTR_TYPE_EMPTY:
-            cellTypeText = 'empty'
-        elif cellType == CTCellContent.EXC_CHTR_TYPE_RK:
-            cellTypeText = self.readRK()
-        elif cellType == CTCellContent.EXC_CHTR_TYPE_DOUBLE:
-            cellTypeText = self.readDouble()
-        elif cellType == CTCellContent.EXC_CHTR_TYPE_STRING:
-            cellTypeText = self.readString()
-        elif cellType == CTCellContent.EXC_CHTR_TYPE_BOOL:
-            cellTypeText = self.readBool()
-        elif cellType == CTCellContent.EXC_CHTR_TYPE_FORMULA:
-            cellTypeText, formulaText = self.readFormula()
+        if self.vtOld == RRDChgCell.CellType.Blank:
+            pass
+        elif self.vtOld == RRDChgCell.CellType.RKNumber:
+            self.rkOld = decodeRK(self.readUnsignedInt(4))
+        elif self.vtOld == RRDChgCell.CellType.Xnum:
+            self.numOld = self.readDouble()
+        else:
+            # TODO : Handle other value types.
+            return
 
-        self.appendLine("%s: %s"%(cellName, cellTypeText))
+        if self.vt == RRDChgCell.CellType.Blank:
+            pass
+        elif self.vt == RRDChgCell.CellType.RKNumber:
+            self.rk = decodeRK(self.readUnsignedInt(4))
+        elif self.vt == RRDChgCell.CellType.Xnum:
+            self.num = self.readDouble()
+        else:
+            # TODO : Handle other value types.
+            return
 
-    def readRK (self):
-        valRK = globals.getSignedInt(self.readBytes(4))
-        return 'RK value'
+    def parseBytes (self):
+        self.__parseBytes()
+        self.rrd.parseBytes()
+        self.appendLineString("old cell type", globals.getValueOrUnknown(RRDChgCell.CellTypes,self.vtOld))
+        self.appendLineString("new cell type", globals.getValueOrUnknown(RRDChgCell.CellTypes,self.vt))
+        self.appendLineBoolean("prefix characters present", self.f123Prefix)
+        self.appendLineBoolean("old formatting available", self.fOldFmt)
+        self.appendLineBoolean("old formatting empty", self.fOldFmtNull)
+        self.appendLineBoolean("reset to cell style first", self.fXfDxf)
+        self.appendLineBoolean("clear cell format first", self.fStyXfDxf)
+        self.appendLineBoolean("format has changed", self.fDxf)
+        self.appendLineBoolean("new formatting empty", self.fDxfNull)
+        self.appendLineString("number format for new value", globals.getValueOrUnknown(RRDChgCell.NumFmtTypes,self.ifmtDisp))
+        self.appendLineBoolean("new cell has phonetic string", self.fPhShow)
+        self.appendLineBoolean("old cell has phonetic string", self.fPhShowOld)
+        self.appendLineBoolean("new cell is formula update", self.fEOLFmlaUpdate)
+        self.appendLineString("cell position", self.loc.toString())
+        self.appendLineInt("old cell content size", self.cbOldVal)
+        self.appendLineInt("number of RRDRstEtxp records", self.cetxpRst)
 
-    def readDouble (self):
-        val = globals.getDouble(self.readBytes(4))
-        return "value %f"%val
+        if self.fOldFmt or self.fDxf:
+            # TODO : Parse DXFN.
+            return
 
-    def readString (self):
-        size = globals.getSignedInt(self.readBytes(2))
-        pos = self.getCurrentPos()
-        name, byteLen = globals.getRichText(self.bytes[pos:], size)
-        self.setCurrentPos(pos + byteLen)
-        return "string '%s'"%name
+        if self.vtOld == RRDChgCell.CellType.Blank:
+            self.appendLine("old value: blank")
+        elif self.vtOld == RRDChgCell.CellType.RKNumber:
+            self.appendLine("old value: %g"%self.rkOld)
+        elif self.vtOld == RRDChgCell.CellType.Xnum:
+            self.appendLine("old value: %g"%self.numOld)
+        else:
+            return
 
-    def readBool (self):
-        bool = globals.getSignedInt(self.readBytes(2))
-        return "bool (%d)"%bool
+        if self.vt == RRDChgCell.CellType.Blank:
+            self.appendLine("new value: blank")
+        elif self.vt == RRDChgCell.CellType.RKNumber:
+            self.appendLine("new value: %g"%self.rk)
+        elif self.vt == RRDChgCell.CellType.Xnum:
+            self.appendLine("new value: %g"%self.num)
+        else:
+            return
 
-    def readFormula (self):
-        size = globals.getSignedInt(self.readBytes(2))
-        fmlaBytes = self.readBytes(size)
-        o = formula.FormulaParser(self.header, fmlaBytes)
-        o.parse()
-        return "formula", fmlaBytes, o.getText()
+
+class RRDInsDel(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.rrd = RRD(self)
+        flags = self.readUnsignedInt(2)
+        self.fEndOfList = (flags & 0x0001) != 0
+        self.refn = Ref8U(self)
+        self.cUcr = self.readUnsignedInt(4)
+        # TODO : parse optional undo data.
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.rrd.parseBytes()
+        self.appendLineBoolean("row inserted at bottom", self.fEndOfList)
+        self.appendLineString("range", self.refn.toString())
+        self.appendLineInt("number of items in undo data", self.cUcr)
+
 
 # -------------------------------------------------------------------
 # CH - Chart

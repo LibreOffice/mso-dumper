@@ -307,9 +307,9 @@ recData = {
 }
 
 recDataRev = {
-    0x0137: ["INSERT*", "Change Track Insert"],
+    0x0137: ["RRDINSDEL", "Insertion / deletion of rows / columns", xlsrecord.RRDInsDel],
     0x0138: ["INFO*", "Change Track Info"],
-    0x013B: ["CELLCONTENT*", "Change Track Cell Content", xlsrecord.CTCellContent],
+    0x013B: ["RRDCHGCELL", "Change cell revision", xlsrecord.RRDChgCell],
     0x013D: ["SHEETID*", "Change Track Sheet Identifier"],
     0x0140: ["MOVERANGE*", "Change Track Move Range"],
     0x014D: ["INSERTSHEET*", "Change Track Insert Sheet"],
