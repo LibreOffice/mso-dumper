@@ -4229,6 +4229,7 @@ class RRDChgCell(BaseRecordHandler):
             # TODO : Parse DXFN
             return
 
+        # old value
         if self.vtOld == RRDChgCell.CellType.Blank:
             pass
         elif self.vtOld == RRDChgCell.CellType.RKNumber:
@@ -4241,10 +4242,8 @@ class RRDChgCell(BaseRecordHandler):
             self.besOld = Bes(self)
         elif self.vtOld == RRDChgCell.CellType.CellParsedFormula:
             self.xpeOld = CellParsedFormula(self)
-        else:
-            # TODO : Handle other value types.
-            return
 
+        # new value
         if self.vt == RRDChgCell.CellType.Blank:
             pass
         elif self.vt == RRDChgCell.CellType.RKNumber:
@@ -4257,9 +4256,6 @@ class RRDChgCell(BaseRecordHandler):
             self.bes = Bes(self)
         elif self.vt == RRDChgCell.CellType.CellParsedFormula:
             self.xpe = CellParsedFormula(self)
-        else:
-            # TODO : Handle other value types.
-            return
 
     def parseBytes (self):
         self.__parseBytes()
@@ -4285,6 +4281,7 @@ class RRDChgCell(BaseRecordHandler):
             # TODO : Parse DXFN.
             return
 
+        # old value
         if self.vtOld == RRDChgCell.CellType.Blank:
             self.appendLine("old value: blank")
         elif self.vtOld == RRDChgCell.CellType.RKNumber:
@@ -4297,9 +4294,8 @@ class RRDChgCell(BaseRecordHandler):
             self.appendLineString("old value", self.besOld.toString())
         elif self.vtOld == RRDChgCell.CellType.CellParsedFormula:
             self.appendLineString("old value", self.xpeOld.toString())
-        else:
-            return
 
+        # new value
         if self.vt == RRDChgCell.CellType.Blank:
             self.appendLine("new value: blank")
         elif self.vt == RRDChgCell.CellType.RKNumber:
@@ -4312,8 +4308,6 @@ class RRDChgCell(BaseRecordHandler):
             self.appendLineString("new value", self.bes.toString())
         elif self.vt == RRDChgCell.CellType.CellParsedFormula:
             self.appendLineString("new value", self.xpe.toString())
-        else:
-            return
 
 
 class RRDInsDel(BaseRecordHandler):
