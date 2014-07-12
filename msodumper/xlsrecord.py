@@ -15,6 +15,46 @@ class RecordError(Exception): pass
 # -------------------------------------------------------------------
 # record handler classes
 
+class Bes(object):
+    """Boolean or error value"""
+
+    ErrorValues = {
+        0x00: "#NULL!",
+        0x07: "#DIV/0!",
+        0x0F: "#VALUE!",
+        0x17: "#REF!",
+        0x1D: "#NAME?",
+        0x24: "#NUM!",
+        0x2A: "#N/A",
+        0x2B: "#GETTING_DATA"
+    }
+
+    def __init__ (self, strm):
+        self.bBoolErr = strm.readUnsignedInt(1)
+        self.fError = strm.readUnsignedInt(1) != 0
+
+    def toString (self):
+        if self.fError:
+            return "(error:%s)"%globals.getValueOrUnknown(Bes.ErrorValues,self.bBoolErr,"???")
+        elif self.bBoolErr:
+            return "(boolean:true)"
+        else:
+            return "(boolean:false)"
+
+
+class CellParsedFormula(object):
+
+    def __init__ (self, strm):
+        cce = strm.readUnsignedInt(2)
+        bytes = strm.readBytes(cce)
+        parser = formula.FormulaParser(strm.header, bytes)
+        parser.parse()
+        self.text = parser.getText()
+
+    def toString (self):
+        return self.text
+
+
 class ColRelU(object):
 
     def __init__ (self, strm):
@@ -416,6 +456,37 @@ Like parseBytes(), the derived classes must overwrite this method."""
 
     def readXLUnicodeStringNoCch (self, cch):
         return self.readUnicodeString(cch)
+
+    def readXLUnicodeRichExtendedString (self):
+        cch = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(1)
+        fHighByte = (flags & 0x01) != 0  # double byte string
+        fExtSt    = (flags & 0x04) != 0  # phonetic string data
+        fRichSt   = (flags & 0x08) != 0  # rich text
+
+        cRun = 0
+        if fRichSt:
+            cRun = self.readUnsignedInt(2) # number of elemetns in rgRun
+
+        cbExtRst = 0
+        if fExtSt:
+            cbExtRst = self.readSignedInt(4) # byte count of ExtRst
+
+        if fHighByte:
+            rgb = unicode(self.readBytes(2*cch), 'UTF-16LE', errors='replace')
+        elif globals.params.utf8:
+            # Compressed Unicode-> latin1
+            rgb = self.readBytes(cch).decode('cp1252')
+        else:
+            # Old behaviour with hex dump
+            rgb = self.readBytes(cch)
+
+        # optional FormatRun array.  Ignore this for now.
+        self.readBytes(cRun*4) # Each FormatRun is 4-byte long.
+
+        # optional ExtRst.  Ignore this for now.
+        self.readBytes(cbExtRst)
+        return rgb
 
     def readLongRGB (self):
         r = self.readUnsignedInt(1)
@@ -4164,6 +4235,12 @@ class RRDChgCell(BaseRecordHandler):
             self.rkOld = decodeRK(self.readUnsignedInt(4))
         elif self.vtOld == RRDChgCell.CellType.Xnum:
             self.numOld = self.readDouble()
+        elif self.vtOld == RRDChgCell.CellType.XLUnicodeRichExtendedString:
+            self.stOld = self.readXLUnicodeRichExtendedString()
+        elif self.vtOld == RRDChgCell.CellType.Bes:
+            self.besOld = Bes(self)
+        elif self.vtOld == RRDChgCell.CellType.CellParsedFormula:
+            self.xpeOld = CellParsedFormula(self)
         else:
             # TODO : Handle other value types.
             return
@@ -4174,6 +4251,12 @@ class RRDChgCell(BaseRecordHandler):
             self.rk = decodeRK(self.readUnsignedInt(4))
         elif self.vt == RRDChgCell.CellType.Xnum:
             self.num = self.readDouble()
+        elif self.vt == RRDChgCell.CellType.XLUnicodeRichExtendedString:
+            self.st = self.readXLUnicodeRichExtendedString()
+        elif self.vt == RRDChgCell.CellType.Bes:
+            self.bes = Bes(self)
+        elif self.vt == RRDChgCell.CellType.CellParsedFormula:
+            self.xpe = CellParsedFormula(self)
         else:
             # TODO : Handle other value types.
             return
@@ -4208,6 +4291,12 @@ class RRDChgCell(BaseRecordHandler):
             self.appendLine("old value: %g"%self.rkOld)
         elif self.vtOld == RRDChgCell.CellType.Xnum:
             self.appendLine("old value: %g"%self.numOld)
+        elif self.vtOld == RRDChgCell.CellType.XLUnicodeRichExtendedString:
+            self.appendLineString("old value", self.stOld)
+        elif self.vtOld == RRDChgCell.CellType.Bes:
+            self.appendLineString("old value", self.besOld.toString())
+        elif self.vtOld == RRDChgCell.CellType.CellParsedFormula:
+            self.appendLineString("old value", self.xpeOld.toString())
         else:
             return
 
@@ -4217,6 +4306,12 @@ class RRDChgCell(BaseRecordHandler):
             self.appendLine("new value: %g"%self.rk)
         elif self.vt == RRDChgCell.CellType.Xnum:
             self.appendLine("new value: %g"%self.num)
+        elif self.vt == RRDChgCell.CellType.XLUnicodeRichExtendedString:
+            self.appendLineString("new value", self.st)
+        elif self.vt == RRDChgCell.CellType.Bes:
+            self.appendLineString("new value", self.bes.toString())
+        elif self.vt == RRDChgCell.CellType.CellParsedFormula:
+            self.appendLineString("new value", self.xpe.toString())
         else:
             return
 
