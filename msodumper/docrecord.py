@@ -6,6 +6,7 @@
 #
 
 import struct
+import locale
 import globals
 from docdirstream import DOCDirStream
 import docsprm
@@ -3070,7 +3071,8 @@ class Xst(DOCDirStream):
     def dump(self):
         print '<xst type="Xst" offset="%d">' % self.pos
         self.printAndSet("cch", self.readuInt16())
-        print '<rgtchar value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * self.cch].decode('utf-16'), lowOnly=True)
+        lowOnly = locale.getdefaultlocale()[1] == "UTF-8"
+        print '<rgtchar value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * self.cch].decode('utf-16'), lowOnly=lowOnly)
         self.pos += 2 * self.cch
         print '</xst>'
 
