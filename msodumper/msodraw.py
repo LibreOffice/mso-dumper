@@ -349,7 +349,11 @@ class BlipEMF:
             recHdl.appendLine('<rgbUid2 value="%s"/>' % hexdump(self.rgbUid2))
         self.metafileHeader.dumpXml(recHdl, model, rh)
         if self.metafileHeader.compression == 0x00:
-            recHdl.appendLine('<BLIPFileData value="%s"/>' % inflate(self.BLIPFileData))
+            # No idea if this is a reasonable limit.
+            if len(self.BLIPFileData) > pow(2, 18):
+                recHdl.appendLine('<info what="BLIPFileData size is too large (%s bytes), skipping"/>' % len(self.BLIPFileData))
+            else:
+                recHdl.appendLine('<BLIPFileData value="%s"/>' % inflate(self.BLIPFileData))
         else:
             recHdl.appendLine('<todo what="BlipEMF::dumpXml(): unexpected metafileHeader.compression == %s"/>' % hex(self.metafileHeader.compression))
         recHdl.appendLine('</blipEmf>')
