@@ -321,6 +321,11 @@ Note the following:
 
     return (text, totalByteLen)
 
+def toCharOrDot (char):
+    if 32 < ord(char) and ord(char) < 127:
+        return char
+    else:
+        return '.'
 
 def dumpBytes (chars, subDivide=None):
     if params.noStructOutput or params.noRawDump:
@@ -345,10 +350,7 @@ def dumpBytes (chars, subDivide=None):
             output(fmt%i)
 
         byte = ord(chars[i])
-        if 32 < byte and byte < 127:
-            lineBuf += chars[i]
-        else:
-            lineBuf += '.'
+        lineBuf += toCharOrDot(chars[i])
         output("%2.2X "%byte)
 
         if (i+1)%4 == 0:

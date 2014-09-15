@@ -216,14 +216,14 @@ recData = {
     0x0862: ["SHEETLAYOUT", "Tab Color below Sheet Name"],
     0x0863: ["BOOKEXT", "Extra Book Info"],
     0x0864: ["SXADDL", "Pivot Table Additional Info", xlsrecord.SXAddlInfo],
-    0x0867: ["FEATHDR", "Shared Feature Header, specifies the beginning of a collection of records", xlsrecord.FeatureHeader],
+    0x0867: ["FEATHDR", "Shared Feature Header", xlsrecord.FeatureHeader],
     0x0868: ["FEAT", "Shared Feature Data (wrongly named RANGEPROTECTION elsewhere)", xlsrecord.FeatureData],
     0x086A: ["DATALABEXT", "Extended Data Label"],
     0x086B: ["DATALABEXTCONTENTS", "Contents of an extended data label", xlsrecord.DataLabExtContents],
     0x086C: ["CELLWATCH", "Reference to a watched cell"],
-    0x0871: ["FEATHDR11", "Common information for all tables on a sheet and specifies the beginning of a collection"],
-    0x0872: ["FEATURE11", "Shared feature data. The only shared feature type stored in this record is a table in a worksheet."],
-    0x0873: ["DROPDOWNOBJIDS", "Object identifiers that can be reused by the application when creating the dropdown objects for the AutoFilter at runtime in a sheet"],
+    0x0871: ["FEATHDR11", "Common information for all tables on a sheet"],
+    0x0872: ["FEATURE11", "Shared feature data"],
+    0x0873: ["DROPDOWNOBJIDS", "Object identifiers of autofilter dropdown objects"],
     0x0875: ["CONTINUEFRT11", "Continuation of the data in a preceding Future Record Type record that has data longer than 8,224 bytes"],
     0x0876: ["DCONN", "Information for a single data connection"],
     0x0877: ["LIST12", "Additional formatting information for a table"],
@@ -562,14 +562,26 @@ class XLDirStream(object):
         else:
             print("%4.4Xh:   size = %d"%(header, size))
 
+        # print the raw bytes, with 16 bytes per line.
         self.__printSep('-', globals.OutputWidth-len(headerStr), headerStr)
+        lines = []
         for i in xrange(0, size):
-            if (i+1) % 16 == 1:
-                output("%4.4Xh: "%header)
-            output("%2.2X "% ord(bytes[i]))
-            if (i+1) % 16 == 0 and i != size-1:
-                print("")
-        if size > 0:
+            if i % 16 == 0:
+                lines.append([])
+            lines[-1].append(bytes[i])
+
+        for line in lines:
+            output("%4.4Xh: "%header)
+            n = len(line)
+            for byte in line:
+                output("%2.2X "%ord(byte))
+            for i in xrange(n, 16):
+                output("   ")
+            output('  ')
+
+            for byte in line:
+                output(globals.toCharOrDot(byte))
+
             print("")
 
         if handler != None and not self.strmData.encrypted:
