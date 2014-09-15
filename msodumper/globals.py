@@ -449,6 +449,9 @@ def getUnsignedInt (bytes):
     elif n == 4:
         # int, long - 4 bytes
         return struct.unpack('<L', text)[0]
+    elif n == 8:
+        # long long - 8 bytes
+        return struct.unpack('<Q', text)[0]
 
     raise ByteConvertError
 
