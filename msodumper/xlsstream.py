@@ -226,7 +226,7 @@ recData = {
     0x086B: ["DATALABEXTCONTENTS", "Contents of an extended data label", xlsrecord.DataLabExtContents],
     0x086C: ["CELLWATCH", "Reference to a watched cell"],
     0x0871: ["FEATHDR11", "Common information for all tables on a sheet"],
-    0x0872: ["FEATURE11", "Shared feature data for a table in a worksheet"],
+    0x0872: ["FEATURE11", "Shared feature data for a table in a worksheet", xlsrecord.Feature11],
     0x0873: ["DROPDOWNOBJIDS", "Object identifiers of autofilter dropdown objects"],
     0x0875: ["CONTINUEFRT11", "Continuation of the data in a preceding Future Record Type record that has data longer than 8,224 bytes"],
     0x0876: ["DCONN", "Information for a single data connection"],

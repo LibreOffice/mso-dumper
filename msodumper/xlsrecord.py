@@ -339,10 +339,74 @@ class DXFN12NoCB(object):
     def appendLines (self, hdl):
         self.dxfn.appendLines(hdl)
 
-class BaseRecordHandler(globals.ByteStream):
+
+class XLStream(globals.ByteStream):
+
+    def __init__ (self, bytes):
+        globals.ByteStream.__init__(self, bytes)
+
+    def readXLUnicodeString (self):
+        return self.readUnicodeString()
+
+    def readShortXLUnicodeString (self):
+        cch = self.readUnsignedInt(1)
+        return self.readUnicodeString(cch)
+
+    def readXLUnicodeStringNoCch (self, cch):
+        return self.readUnicodeString(cch)
+
+    def readXLUnicodeRichExtendedString (self):
+        cch = self.readUnsignedInt(2)
+        flags = self.readUnsignedInt(1)
+        fHighByte = (flags & 0x01) != 0  # double byte string
+        fExtSt    = (flags & 0x04) != 0  # phonetic string data
+        fRichSt   = (flags & 0x08) != 0  # rich text
+
+        cRun = 0
+        if fRichSt:
+            cRun = self.readUnsignedInt(2) # number of elemetns in rgRun
+
+        cbExtRst = 0
+        if fExtSt:
+            cbExtRst = self.readSignedInt(4) # byte count of ExtRst
+
+        if fHighByte:
+            rgb = unicode(self.readBytes(2*cch), 'UTF-16LE', errors='replace')
+        elif globals.params.utf8:
+            # Compressed Unicode-> latin1
+            rgb = self.readBytes(cch).decode('cp1252')
+        else:
+            # Old behaviour with hex dump
+            rgb = self.readBytes(cch)
+
+        # optional FormatRun array.  Ignore this for now.
+        self.readBytes(cRun*4) # Each FormatRun is 4-byte long.
+
+        # optional ExtRst.  Ignore this for now.
+        self.readBytes(cbExtRst)
+        return rgb
+
+    def readLongRGB (self):
+        r = self.readUnsignedInt(1)
+        g = self.readUnsignedInt(1)
+        b = self.readUnsignedInt(1)
+        self.readBytes(1) # reserved
+        return LongRGB(r, g, b)
+
+    def readICV (self):
+        return ICV(self.readUnsignedInt(2))
+
+    def readCFRTID (self):
+        return CFRTID(self.readUnsignedInt(2),self.readUnsignedInt(2))
+
+    def readFrtHeader (self):
+        return FrtHeader(self.readUnsignedInt(2), self.readUnsignedInt(2))
+
+
+class BaseRecordHandler(XLStream):
 
     def __init__ (self, header, size, bytes, strmData, roflist = []):
-        globals.ByteStream.__init__(self, bytes)
+        XLStream.__init__(self, bytes)
         self.header = header
         self.lines = []
         self.strmData = strmData
@@ -447,62 +511,6 @@ Like parseBytes(), the derived classes must overwrite this method."""
         else:
             return falseStr
 
-    def readXLUnicodeString (self):
-        return self.readUnicodeString()
-
-    def readShortXLUnicodeString (self):
-        cch = self.readUnsignedInt(1)
-        return self.readUnicodeString(cch)
-
-    def readXLUnicodeStringNoCch (self, cch):
-        return self.readUnicodeString(cch)
-
-    def readXLUnicodeRichExtendedString (self):
-        cch = self.readUnsignedInt(2)
-        flags = self.readUnsignedInt(1)
-        fHighByte = (flags & 0x01) != 0  # double byte string
-        fExtSt    = (flags & 0x04) != 0  # phonetic string data
-        fRichSt   = (flags & 0x08) != 0  # rich text
-
-        cRun = 0
-        if fRichSt:
-            cRun = self.readUnsignedInt(2) # number of elemetns in rgRun
-
-        cbExtRst = 0
-        if fExtSt:
-            cbExtRst = self.readSignedInt(4) # byte count of ExtRst
-
-        if fHighByte:
-            rgb = unicode(self.readBytes(2*cch), 'UTF-16LE', errors='replace')
-        elif globals.params.utf8:
-            # Compressed Unicode-> latin1
-            rgb = self.readBytes(cch).decode('cp1252')
-        else:
-            # Old behaviour with hex dump
-            rgb = self.readBytes(cch)
-
-        # optional FormatRun array.  Ignore this for now.
-        self.readBytes(cRun*4) # Each FormatRun is 4-byte long.
-
-        # optional ExtRst.  Ignore this for now.
-        self.readBytes(cbExtRst)
-        return rgb
-
-    def readLongRGB (self):
-        r = self.readUnsignedInt(1)
-        g = self.readUnsignedInt(1)
-        b = self.readUnsignedInt(1)
-        self.readBytes(1) # reserved
-        return LongRGB(r, g, b)
-
-    def readICV (self):
-        return ICV(self.readUnsignedInt(2))
-
-    def readCFRTID (self):
-        return CFRTID(self.readUnsignedInt(2),self.readUnsignedInt(2))
-
-    def readFrtHeader (self):
-        return FrtHeader(self.readUnsignedInt(2), self.readUnsignedInt(2))
 
 class AutofilterInfo(BaseRecordHandler):
 
@@ -2749,6 +2757,129 @@ class XF(BaseRecordHandler):
             pass
 
 
+class SharedFeatureType(object):
+
+    ISFPROTECTION = 0x0002
+    ISFFEC2       = 0x0003
+    ISFFACTOID    = 0x0004
+    ISFLIST       = 0x0005
+
+    @staticmethod
+    def toString (val):
+        if val == SharedFeatureType.ISFPROTECTION:
+            return "ISFPROTECTION (enhanced protection)"
+        elif val == SharedFeatureType.ISFFEC2:
+            return "ISFFEC2 (ignore formula errors)"
+        elif val == SharedFeatureType.ISFFACTOID:
+            return "ISFFACTOID (smart tag)"
+        elif val == SharedFeatureType.ISFLIST:
+            return "ISFLIST (list)"
+        else:
+            return ""
+
+
+class SourceType(object):
+
+    LTRANGE        = 0x00000000 # Range
+    LTSHAREPOINT   = 0x00000001 # Read/write Web-based data provider list
+    LTXML          = 0x00000002 # XML Mapper data
+    LTEXTERNALDATA = 0x00000003 # External data source (query table)
+
+    @staticmethod
+    def toString (val):
+        if val == SourceType.LTRANGE:
+            return "LTRANGE"
+        elif val == SourceType.LTSHAREPOINT:
+            return "LTSHAREPOINT"
+        elif val == SourceType.LTXML:
+            return "LTXML"
+        elif val == SourceType.LTEXTERNALDATA:
+            return "LTEXTERNALDATA"
+        else:
+            return ""
+
+
+class TableFeatureType(object):
+
+    def __init__ (self, strm):
+        self.lt = strm.readUnsignedInt(4)
+        self.idList = strm.readUnsignedInt(4)
+        self.crwHeader = strm.readUnsignedInt(4) != 0
+        self.crwTotals = strm.readUnsignedInt(4) != 0
+        self.idFieldNext = strm.readUnsignedInt(4)
+        self.cbFSData = strm.readUnsignedInt(4) # must be equal to 64
+        self.rupBuild = strm.readUnsignedInt(2)
+        strm.readBytes(2) # ignored
+
+        flags = strm.readUnsignedInt(2)
+        # unused2                      = (flags & 0x0001) != 0 # A
+        self.fAutoFilter               = (flags & 0x0002) != 0 # B
+        self.fPersistAutoFilter        = (flags & 0x0004) != 0 # C
+        self.fShowInsertRow            = (flags & 0x0008) != 0 # D
+        self.fInsertRowInsCells        = (flags & 0x0010) != 0 # E
+        self.fLoadPldwIdDeleted        = (flags & 0x0020) != 0 # F
+        self.fShownTotalRow            = (flags & 0x0040) != 0 # G
+        # reserved1                    = (flags & 0x0080) != 0 # H
+        self.fNeedsCommit              = (flags & 0x0100) != 0 # I
+        self.fSingleCell               = (flags & 0x0200) != 0 # J
+        # reserved2                    = (flags & 0x0400) != 0 # K
+        self.fApplyAutoFilter          = (flags & 0x0800) != 0 # L
+        self.fForceInsertToBeVis       = (flags & 0x1000) != 0 # M
+        self.fCompressedXml            = (flags & 0x2000) != 0 # N
+        self.fLoadCSPName              = (flags & 0x4000) != 0 # O
+        self.fLoadPldwIdChanged        = (flags & 0x8000) != 0 # P
+
+        flags = strm.readUnsignedInt(2)
+        self.verXL = (flags & 0x000F)
+
+        self.fLoadEntryId              = (flags & 0x0010) != 0 # Q
+        self.fLoadPllstclInvalid       = (flags & 0x0020) != 0 # R
+        self.fGoodRupBld               = (flags & 0x0040) != 0 # S
+        # unused3                      = (flags & 0x0080) != 0 # T
+        self.fPublished                = (flags & 0x0100) != 0 # U
+
+        self.lPosStmCache = strm.readUnsignedInt(4)
+        self.cbStmCache = strm.readUnsignedInt(4)
+        self.cchStmCache = strm.readUnsignedInt(4)
+
+        self.lem = strm.readUnsignedInt(4) # table edit mode
+        self.rgbHashParam = strm.readBytes(16)
+        self.rgbName = strm.readXLUnicodeString()
+
+    def appendLines (self, hdl):
+        hdl.appendLineString("source type", SourceType.toString(self.lt))
+        hdl.appendLineInt("table ID", self.idList)
+        hdl.appendLineBoolean("table has a header", self.crwHeader)
+        hdl.appendLineBoolean("table has a total row", self.crwTotals)
+        hdl.appendLineInt("next ID to use", self.idFieldNext)
+        hdl.appendLineInt("structure size", self.cbFSData)
+        hdl.appendLineInt("build ID", self.rupBuild)
+        hdl.appendLineBoolean("has autofilter", self.fAutoFilter)
+        hdl.appendLineBoolean("autofilter preserved on refresh", self.fPersistAutoFilter)
+        hdl.appendLineBoolean("insert row visible", self.fShowInsertRow)
+        hdl.appendLineBoolean("rows below shifted down", self.fInsertRowInsCells)
+        hdl.appendLineBoolean("idDeleted field is present", self.fLoadPldwIdDeleted)
+        hdl.appendLineBoolean("total row was ever visible", self.fShownTotalRow)
+        hdl.appendLineBoolean("table mods needs commit to source", self.fNeedsCommit)
+        hdl.appendLineBoolean("single cell table", self.fSingleCell)
+        hdl.appendLineBoolean("auto filter applied", self.fApplyAutoFilter)
+        hdl.appendLineBoolean("insert row forced visible", self.fForceInsertToBeVis)
+        hdl.appendLineBoolean("cached data compressed", self.fCompressedXml)
+        hdl.appendLineBoolean("cSPName field present", self.fLoadCSPName)
+        hdl.appendLineBoolean("idChanged field present", self.fLoadPldwIdChanged)
+        hdl.appendLineInt("Excel version", self.verXL)
+        hdl.appendLineBoolean("entryId field present", self.fLoadEntryId)
+        hdl.appendLineBoolean("cellInvalid field present", self.fLoadPllstclInvalid)
+        hdl.appendLineBoolean("rupBuild field valid", self.fGoodRupBld)
+        hdl.appendLineBoolean("table published", self.fPublished)
+        hdl.appendLineInt("cached data position in List Data stream", self.lPosStmCache)
+        hdl.appendLineInt("cached data size in List Data stream", self.cbStmCache)
+        hdl.appendLineInt("number of characters in cached data", self.cchStmCache)
+
+        # TODO : dump more data
+
+        hdl.appendLineString("table name", self.rgbName)
+
 class FeatureHeader(BaseRecordHandler):
     """Beginning of a collection of records."""
 
@@ -2868,6 +2999,39 @@ class FeatureData(BaseRecordHandler):
 
         return
 
+
+class Feature11(BaseRecordHandler):
+
+    def __parseBytes (self):
+        self.frtRefHeaderU = FrtRefHeaderU(self)
+        self.isf = self.readUnsignedInt(2) # SharedFeatureType
+        self.readBytes(5) # ignored
+        self.cref2 = self.readUnsignedInt(2)
+        self.cbFeatData = self.readUnsignedInt(4) # size of rgbFeat
+        self.readBytes(2) # ignored
+        self.refs2 = []
+        for i in xrange(0, self.cref2):
+            ref = Ref8U(self)
+            self.refs2.append(ref)
+
+        if self.cbFeatData == 0:
+            bytes = self.readRemainingBytes()
+        else:
+            bytes = self.readBytes(self.cbFeatData)
+        strm = XLStream(bytes)
+
+        self.rgbFeat = TableFeatureType(strm)
+
+
+    def parseBytes (self):
+        self.__parseBytes()
+        self.frtRefHeaderU.appendLines(self)
+        self.appendLineString("feature data type", SharedFeatureType.toString(self.isf))
+        for ref in self.refs2:
+            self.appendLineString("reference", ref.toString())
+        self.rgbFeat.appendLines(self)
+
+
 class ShrFmla(BaseRecordHandler):
 
     def __parseBytes (self):
@@ -2903,11 +3067,27 @@ class FrtFlags(object):
 
     def __init__ (self, strm):
         grbitFrt = strm.readUnsignedInt(2)
-        self.fFrtRef   = (grbitFrt & 0x0001) # record specifies a range of cells
-        self.fFrtAlert = (grbitFrt & 0x0002) # whether to alert the user of possible problems when saving the file
+        self.flag = grbitFrt
+        self.fFrtRef   = (grbitFrt & 0x0001) != 0 # record specifies a range of cells
+        self.fFrtAlert = (grbitFrt & 0x0002) != 0 # whether to alert the user of possible problems when saving the file
 
     def appendLines (self, hdl):
-        pass
+        hdl.appendLine("flag value: 0x%4.4X"%self.flag)
+        hdl.appendLineBoolean("range of cells", self.fFrtRef)
+        hdl.appendLineBoolean("alert when saving", self.fFrtAlert)
+
+
+class FrtRefHeaderU(object):
+
+    def __init__ (self, strm):
+        self.rt = strm.readUnsignedInt(2)
+        self.grbitFrt = FrtFlags(strm)
+        self.ref8 = Ref8U(strm)
+
+    def appendLines (self, hdl):
+        hdl.appendLine("header value: 0x%4.4X"%self.rt)
+        self.grbitFrt.appendLines(hdl)
+        hdl.appendLineString("reference", self.ref8.toString())
 
 
 class XLUnicodeStringSegmentedSXAddl(object):
