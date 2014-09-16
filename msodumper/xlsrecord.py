@@ -2845,6 +2845,16 @@ class TableFeatureType(object):
         self.lem = strm.readUnsignedInt(4) # table edit mode
         self.rgbHashParam = strm.readBytes(16)
         self.rgbName = strm.readXLUnicodeString()
+        self.cFieldData = strm.readUnsignedInt(2)
+        if self.fLoadCSPName:
+            self.cSPName = strm.readXLUnicodeString()
+        if self.fLoadEntryId:
+            self.entryId = strm.readXLUnicodeString()
+
+        # TODO : fieldData
+        # TODO : idDeleted
+        # TODO : idChanged
+        # TODO : cellInvalid
 
     def appendLines (self, hdl):
         hdl.appendLineString("source type", SourceType.toString(self.lt))
@@ -2879,6 +2889,14 @@ class TableFeatureType(object):
         # TODO : dump more data
 
         hdl.appendLineString("table name", self.rgbName)
+        hdl.appendLineInt("column count", self.cFieldData)
+
+        if self.fLoadCSPName:
+            hdl.appendLineString("cryptographic service provider name", self.cSPName)
+        if self.fLoadEntryId:
+            hdl.appendLineString("unique table identifier", self.entryId)
+
+
 
 class FeatureHeader(BaseRecordHandler):
     """Beginning of a collection of records."""
