@@ -1329,6 +1329,8 @@ class Sprm(DOCDirStream):
                 self.ct = TableBordersOperand(self)
             elif self.sprm == 0xd605:
                 self.ct = TableBordersOperand80(self)
+            elif self.sprm == 0xc60d:
+                self.ct = PChgTabsPapxOperand(self)
             else:
                 print '<todo what="Sprm::__init__() unhandled sprm of size %s: %s"/>' % (self.getOperandSize(), hex(self.sprm))
 
