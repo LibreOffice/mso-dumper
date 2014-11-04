@@ -1057,7 +1057,31 @@ class NilPICFAndBinData(DOCDirStream):
 
     def dump(self):
         print '<NilPICFAndBinData>'
-        print '<todo what="NilPICFAndBinData::dump()"/>'
+        # self -> sprm -> prl -> chpx -> chpxFkp
+        chpxFkp = self.parent.parent.parent.parent
+        self.printAndSet("lcb", self.readInt32())
+        self.printAndSet("cbHeader", self.readInt16())
+        self.printAndSet("ignored0", self.readInt32())
+        self.printAndSet("ignored1", self.readInt32())
+        self.printAndSet("ignored2", self.readInt32())
+        self.printAndSet("ignored3", self.readInt32())
+        self.printAndSet("ignored4", self.readInt32())
+        self.printAndSet("ignored5", self.readInt32())
+        self.printAndSet("ignored6", self.readInt32())
+        self.printAndSet("ignored7", self.readInt32())
+        self.printAndSet("ignored8", self.readInt32())
+        self.printAndSet("ignored9", self.readInt32())
+        self.printAndSet("ignored10", self.readInt32())
+        self.printAndSet("ignored11", self.readInt32())
+        self.printAndSet("ignored12", self.readInt32())
+        self.printAndSet("ignored13", self.readInt32())
+        self.printAndSet("ignored14", self.readInt32())
+        self.printAndSet("ignored15", self.readInt16())
+        fieldType = chpxFkp.transformeds[-2]
+        if fieldType == " FORMTEXT ":
+            print '<todo what="NilPICFAndBinData::dump(): FORMTEXT"/>'
+        else:
+            print '<todo what="NilPICFAndBinData::dump(): handle %s"/>' % fieldType
         print '</NilPICFAndBinData>'
 
 
@@ -1461,8 +1485,9 @@ class GrpPrlAndIstd(DOCDirStream):
 
 class Chpx(DOCDirStream):
     """The Chpx structure specifies a set of properties for text."""
-    def __init__(self, bytes, mainStream, offset, transformed=None):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+    def __init__(self, parent, mainStream, offset, transformed=None):
+        DOCDirStream.__init__(self, parent.bytes, mainStream=mainStream)
+        self.parent = parent
         self.pos = offset
         self.transformed = transformed
 
@@ -1531,6 +1556,7 @@ class ChpxFkp(DOCDirStream):
         print '<chpxFkp type="ChpxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
         self.crun = self.getuInt8(pos=self.pos + self.size - 1)
         pos = self.pos
+        self.transformeds = []
         for i in range(self.crun):
             # rgfc
             start = self.getuInt32(pos=pos)
@@ -1538,12 +1564,13 @@ class ChpxFkp(DOCDirStream):
             print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
             self.transformed = self.quoteAttr(self.pnFkpChpx.mainStream.retrieveOffset(start, end))
             print '<transformed value="%s"/>' % self.transformed
+            self.transformeds.append(self.transformed)
             pos += 4
 
             # rgbx
             offset = PLC.getPLCOffset(self.pos, self.crun, 1, i)
             chpxOffset = self.getuInt8(pos=offset) * 2
-            chpx = Chpx(self.bytes, self.mainStream, self.pos + chpxOffset, self.transformed)
+            chpx = Chpx(self, self.mainStream, self.pos + chpxOffset, self.transformed)
             chpx.dump()
             print '</rgfc>'
 
