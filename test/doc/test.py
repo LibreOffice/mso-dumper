@@ -227,6 +227,15 @@ class Test(unittest.TestCase):
         actual = self.root.findall(xpath)[0].attrib['value']
         self.assertEqual(expected, actual)
 
+    def test_formtext(self):
+        self.dump('formtext')
+
+        # make sure we find that the max length is 5 chars
+        expected = "0x5"
+        xpath = 'stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfBteChpx/plcBteChpx/aFC/aPnBteChpx/chpxFkp/rgfc/chpx/prl/sprm/NilPICFAndBinData/FFData/cch'
+        actual = self.root.findall(xpath)[0].attrib['value']
+        self.assertEqual(expected, actual)
+
 if __name__ == '__main__':
     unittest.main()
 

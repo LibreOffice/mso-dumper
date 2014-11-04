@@ -1045,6 +1045,91 @@ class PICF(DOCDirStream):
         print '</picf>'
 
 
+IType = {
+    0: "iTypeText",
+    1: "iTypeChck",
+    2: "iTypeDrop"
+}
+
+
+ITypeTxt = {
+    0: "iTypeTxtReg",
+    1: "iTypeTxtNum",
+    2: "iTypeTxtDate",
+    3: "iTypeTxtCurDate",
+    4: "iTypeTxtCurTime",
+    5: "iTypeTxtCalc"
+}
+
+
+class FFDataBits(DOCDirStream):
+    """The FFDataBits structure specifies the type and properties for a form
+    field that is specified by a FFData."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        print '<FFDataBits>'
+        buf = self.readuInt8()
+        self.printAndSet("iType", buf & 0x0003, dict=IType)  # 1..2nd bits
+        self.printAndSet("iRes", buf & 0x007c)  # 3..7th bits
+        self.printAndSet("fOwnHelp", self.getBit(buf, 8))
+        buf = self.readuInt8()
+        self.printAndSet("fOwnStat", self.getBit(buf, 1))
+        self.printAndSet("fProt", self.getBit(buf, 2))
+        self.printAndSet("iSize", self.getBit(buf, 3))
+        self.printAndSet("iTypeTxt", buf & 0x0038, dict=ITypeTxt)  # 4..6th bits
+        self.printAndSet("fRecalc", self.getBit(buf, 7))
+        self.printAndSet("fHasListBox", self.getBit(buf, 8))
+        print '</FFDataBits>'
+        self.parent.pos = self.pos
+
+
+class FFData(DOCDirStream):
+    """The FFData structure specifies form field data for a text box, check
+    box, or drop-down list box. (Page 348 of [MS-DOC] spec.)"""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+
+    def dump(self):
+        print '<FFData>'
+        self.printAndSet("version", self.readuInt32())
+        self.bits = FFDataBits(self)
+        self.bits.dump()
+        self.printAndSet("cch", self.readuInt16())
+        self.printAndSet("hps", self.readuInt16())
+        xstzName = Xstz(self, "xstzName")
+        xstzName.dump()
+        self.pos = xstzName.pos
+        xstzTextDef = Xstz(self, "xstzTextDef")
+        xstzTextDef.dump()
+        self.pos = xstzTextDef.pos
+        if self.bits.iType == 1 or self.bits.iType == 2:  # iTypeChck or iTypeDrop
+            self.printAndSet("wDef", self.readuInt16())
+        xstzTextFormat = Xstz(self, "xstzTextFormat")
+        xstzTextFormat.dump()
+        self.pos = xstzTextFormat.pos
+        xstzHelpText = Xstz(self, "xstzHelpText")
+        xstzHelpText.dump()
+        self.pos = xstzHelpText.pos
+        xstzStatText = Xstz(self, "xstzStatText")
+        xstzStatText.dump()
+        self.pos = xstzStatText.pos
+        xstzEntryMcr = Xstz(self, "xstzEntryMcr")
+        xstzEntryMcr.dump()
+        self.pos = xstzEntryMcr.pos
+        xstzExitMcr = Xstz(self, "xstzExitMcr")
+        xstzExitMcr.dump()
+        self.pos = xstzExitMcr.pos
+        if self.bits.iType == 2:  # iTypeDrop
+            print '<todo what="FFData::dump(): handle hsttbDropList for iTypeDrop"/>'
+        print '</FFData>'
+
+
 class NilPICFAndBinData(DOCDirStream):
     """The NilPICFAndBinData structure that holds header information and binary
     data for a hyperlink, form field, or add-in field. The NilPICFAndBinData
@@ -1079,7 +1164,7 @@ class NilPICFAndBinData(DOCDirStream):
         self.printAndSet("ignored15", self.readInt16())
         fieldType = chpxFkp.transformeds[-2]
         if fieldType == " FORMTEXT ":
-            print '<todo what="NilPICFAndBinData::dump(): FORMTEXT"/>'
+            FFData(self).dump()
         else:
             print '<todo what="NilPICFAndBinData::dump(): handle %s"/>' % fieldType
         print '</NilPICFAndBinData>'
@@ -3137,17 +3222,18 @@ class Xst(DOCDirStream):
 
 class Xstz(DOCDirStream):
     """The Xstz structure is a string. The string is prepended by its length and is null-terminated."""
-    def __init__(self, parent):
+    def __init__(self, parent, name="xstz"):
         DOCDirStream.__init__(self, parent.bytes)
         self.pos = parent.pos
+        self.name = name
 
     def dump(self):
-        print '<xstz type="Xstz" offset="%d">' % self.pos
+        print '<%s type="Xstz" offset="%d">' % (self.name, self.pos)
         xst = Xst(self)
         xst.dump()
         self.pos = xst.pos
         self.printAndSet("chTerm", self.readuInt16())
-        print '</xstz>'
+        print '</%s>' % self.name
 
 
 class UpxPapx(DOCDirStream):
