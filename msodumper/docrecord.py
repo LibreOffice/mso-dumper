@@ -1045,6 +1045,22 @@ class PICF(DOCDirStream):
         print '</picf>'
 
 
+class NilPICFAndBinData(DOCDirStream):
+    """The NilPICFAndBinData structure that holds header information and binary
+    data for a hyperlink, form field, or add-in field. The NilPICFAndBinData
+    structure MUST be stored in the Data Stream."""
+    def __init__(self, parent):
+        dataStream = parent.mainStream.doc.getDirectoryStreamByName("Data")
+        DOCDirStream.__init__(self, dataStream.bytes)
+        self.pos = parent.operand
+        self.parent = parent
+
+    def dump(self):
+        print '<NilPICFAndBinData>'
+        print '<todo what="NilPICFAndBinData::dump()"/>'
+        print '</NilPICFAndBinData>'
+
+
 class PICFAndOfficeArtData(DOCDirStream):
     """The PICFAndOfficeArtData structure specifies header information and
     binary data for a picture."""
@@ -1268,6 +1284,7 @@ class Sprm(DOCDirStream):
     def __init__(self, parent, mainStream=None, transformed=None):
         DOCDirStream.__init__(self, parent.bytes, mainStream=mainStream)
         self.parent = parent
+        self.transformed = transformed
         self.pos = parent.pos
         self.operandSizeMap = {
             0: 1,
@@ -1298,8 +1315,9 @@ class Sprm(DOCDirStream):
             self.operand = self.getuInt24()
         elif self.getOperandSize() == 4:
             self.operand = self.getuInt32()
-            if self.sprm == 0x6a03 and transformed == r"\x01":
-                self.ct = PICFAndOfficeArtData(self)
+            if self.sprm == 0x6a03 and transformed == r"\x01":  # sprmCPicLocation
+                # Can't decide right now, depends on if there will be an sprmCFData later or not.
+                self.ct = True
             elif self.sprm == 0x6646:  # sprmPHugePapx
                 dataStream = mainStream.doc.getDirectoryStreamByName("Data")
                 dataStream.pos = self.operand
@@ -1368,6 +1386,17 @@ class Sprm(DOCDirStream):
                 attrs.append('operand="%s"' % hex(self.operand))
         print '<sprm %s%s>' % (" ".join(attrs), {True: "/", False: ""}[close])
         if self.ct:
+            if type(self.ct) == bool:
+                if self.sprm == 0x6a03 and self.transformed == r"\x01":
+                    haveCFData = False
+                    for prl in self.parent.parent.prls:
+                        if prl.sprm.sprm == 0x0806:  # sprmCFData
+                            haveCFData = True
+                            break
+                    if haveCFData:
+                        self.ct = NilPICFAndBinData(self)
+                    else:
+                        self.ct = PICFAndOfficeArtData(self)
             self.ct.dump()
             print '</sprm>'
 
