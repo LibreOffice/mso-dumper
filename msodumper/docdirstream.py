@@ -138,7 +138,7 @@ class DOCDirStream:
         count = 0
         pos = self.pos
         while True:
-            if (not limit is None) and count == limit:
+            if (limit is not None) and count == limit:
                 break
             i = self.getuInt8(pos=pos)
             pos += 1
