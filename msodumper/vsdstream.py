@@ -209,19 +209,22 @@ class PropertySetStream(DOCDirStream):
         self.printAndSet("CLSID2", self.readuInt32())
         self.printAndSet("CLSID3", self.readuInt32())
         self.printAndSet("NumPropertySets", self.readuInt32())
-        GUID(self, "FMTID").dump()
+        GUID(self, "FMTID0").dump()
         self.printAndSet("Offset0", self.readuInt32())
+        PropertySet(self, self.Offset0).dump()
         if self.NumPropertySets == 0x00000002:
-            print '<todo what="PropertySetStream::dump: handle NumPropertySets == 0x00000002"/>'
-        PropertySet(self).dump()
+            GUID(self, "FMTID1").dump()
+            self.printAndSet("Offset1", self.readuInt32())
+            self.propertyIds = {}
+            PropertySet(self, self.Offset1).dump()
         print '</propertySetStream>'
 
 
 class PropertySet(DOCDirStream):
-    def __init__(self, parent):
+    def __init__(self, parent, offset):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
-        self.pos = parent.Offset0
+        self.pos = offset
 
     def getCodePage(self):
         for index, idAndOffset in enumerate(self.idsAndOffsets):
