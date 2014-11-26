@@ -159,17 +159,26 @@ class PropertySet(DOCDirStream):
         self.parent = parent
         self.pos = parent.Offset0
 
+    def getCodePage(self):
+        for index, idAndOffset in enumerate(self.idsAndOffsets):
+            if idAndOffset.PropertyIdentifier == 0x00000001:  # CODEPAGE_PROPERTY_IDENTIFIER
+                return self.typedPropertyValues[index].Value
+
     def dump(self):
         self.posOrig = self.pos
         print '<propertySet type="PropertySet" offset="%s">' % self.pos
         self.printAndSet("Size", self.readuInt32())
         self.printAndSet("NumProperties", self.readuInt32())
-        self.idsAndOffsets = {}
+        self.idsAndOffsets = []
         for i in range(self.NumProperties):
-            self.idsAndOffsets[i] = PropertyIdentifierAndOffset(self, i)
-            self.idsAndOffsets[i].dump()
+            idAndOffset = PropertyIdentifierAndOffset(self, i)
+            idAndOffset.dump()
+            self.idsAndOffsets.append(idAndOffset)
+        self.typedPropertyValues = []
         for i in range(self.NumProperties):
-            TypedPropertyValue(self, i).dump()
+            typedPropertyValue = TypedPropertyValue(self, i)
+            typedPropertyValue.dump()
+            self.typedPropertyValues.append(typedPropertyValue)
         print '</propertySet>'
 
 PropertyIdentifier = {
@@ -269,6 +278,7 @@ class CodePageString(DOCDirStream):
     def __init__(self, parent, name):
         DOCDirStream.__init__(self, parent.bytes)
         self.pos = parent.pos
+        self.parent = parent
         self.name = name
 
     def dump(self):
@@ -280,7 +290,12 @@ class CodePageString(DOCDirStream):
             if c == 0:
                 break
             bytes.append(c)
-        print '<Characters value="%s"/>' % "".join(map(lambda c: chr(c), bytes))
+        encoding = ""
+        if self.parent.parent.getCodePage() == 1252:
+            # http://msdn.microsoft.com/en-us/goglobal/bb964654
+            encoding = "latin1"
+        if len(encoding):
+            print '<Characters value="%s"/>' % "".join(map(lambda c: chr(c), bytes)).decode(encoding).encode('utf-8')
         print '</%s>' % self.name
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
