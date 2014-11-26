@@ -182,10 +182,7 @@ class PropertySetStream(DOCDirStream):
         self.printAndSet("CLSID2", self.readuInt32())
         self.printAndSet("CLSID3", self.readuInt32())
         self.printAndSet("NumPropertySets", self.readuInt32())
-        self.printAndSet("FMTID00", self.readuInt32())
-        self.printAndSet("FMTID01", self.readuInt32())
-        self.printAndSet("FMTID02", self.readuInt32())
-        self.printAndSet("FMTID03", self.readuInt32())
+        GUID(self, "FMTID").dump()
         self.printAndSet("Offset0", self.readuInt32())
         if self.NumPropertySets == 0x00000002:
             print '<todo what="PropertySetStream::dump: handle NumPropertySets == 0x00000002"/>'
@@ -362,5 +359,24 @@ class CodePageString(DOCDirStream):
         else:
             print '<todo what="CodePageString::dump: unhandled codepage %s"/>' % codepage
         print '</%s>' % self.name
+
+
+class GUID(DOCDirStream):
+    def __init__(self, parent, name):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+        self.name = name
+
+    def dump(self):
+        Data1 = self.readuInt32()
+        Data2 = self.readuInt16()
+        Data3 = self.readuInt16()
+        Data4 = []
+        for i in range(8):
+            Data4.append(self.readuInt8())
+        value = "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x" % (Data1, Data2, Data3, Data4[0], Data4[1], Data4[2], Data4[3], Data4[4], Data4[5], Data4[6], Data4[7])
+        print '<%s type="GUID" value="%s"/>' % (self.name, value)
+        self.parent.pos = self.pos
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
