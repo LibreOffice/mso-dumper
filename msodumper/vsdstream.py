@@ -119,12 +119,17 @@ def createVSDFile(chars, params):
         return VSDFile(chars, params)
 
 
+PropertyIdentifierDocumentSummaryInformation = {
+}
+
+
 class DocumentSummaryInformationStream(DOCDirStream):
     def __init__(self, bytes, params, doc):
         DOCDirStream.__init__(self, bytes, params, "\x05DocumentSummaryInformation", doc=doc)
 
     def dump(self):
         print '<stream name="\\x05DocumentSummaryInformation" size="%d">' % self.size
+        PropertySetStream(self, PropertyIdentifierDocumentSummaryInformation).dump()
         print '</stream>'
 
 
@@ -264,6 +269,45 @@ PropertyType = {
     0x0047: "VT_CF",
     0x0048: "VT_CLSID",
     0x0049: "VT_VERSIONED_STREAM",
+    0x1002: "VT_VECTOR | VT_I2",
+    0x1003: "VT_VECTOR | VT_I4",
+    0x1004: "VT_VECTOR | VT_R4",
+    0x1005: "VT_VECTOR | VT_R8",
+    0x1006: "VT_VECTOR | VT_CY",
+    0x1007: "VT_VECTOR | VT_DATE",
+    0x1008: "VT_VECTOR | VT_BSTR",
+    0x100A: "VT_VECTOR | VT_ERROR",
+    0x100B: "VT_VECTOR | VT_BOOL",
+    0x100C: "VT_VECTOR | VT_VARIANT",
+    0x1010: "VT_VECTOR | VT_I1",
+    0x1011: "VT_VECTOR | VT_UI1",
+    0x1012: "VT_VECTOR | VT_UI2",
+    0x1013: "VT_VECTOR | VT_UI4",
+    0x1014: "VT_VECTOR | VT_I8",
+    0x1015: "VT_VECTOR | VT_UI8",
+    0x101E: "VT_VECTOR | VT_LPSTR",
+    0x101F: "VT_VECTOR | VT_LPWSTR",
+    0x1040: "VT_VECTOR | VT_FILETIME",
+    0x1047: "VT_VECTOR | VT_CF",
+    0x1048: "VT_VECTOR | VT_CLSID",
+    0x2002: "VT_ARRAY | VT_I2",
+    0x2003: "VT_ARRAY | VT_I4",
+    0x2004: "VT_ARRAY | VT_R4",
+    0x2005: "VT_ARRAY | VT_R8",
+    0x2006: "VT_ARRAY | VT_CY",
+    0x2007: "VT_ARRAY | VT_DATE",
+    0x2008: "VT_ARRAY | VT_BSTR",
+    0x200A: "VT_ARRAY | VT_ERROR",
+    0x200B: "VT_ARRAY | VT_BOOL",
+    0x200C: "VT_ARRAY | VT_VARIANT",
+    0x200E: "VT_ARRAY | VT_DECIMAL",
+    0x2010: "VT_ARRAY | VT_I1",
+    0x2011: "VT_ARRAY | VT_UI1",
+    0x2012: "VT_ARRAY | VT_UI2",
+    0x2013: "VT_ARRAY | VT_UI4",
+    0x2016: "VT_ARRAY | VT_INT",
+    0x2017: "VT_ARRAY | VT_UINT",
+
 }
 
 
