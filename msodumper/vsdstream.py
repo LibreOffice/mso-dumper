@@ -119,7 +119,34 @@ def createVSDFile(chars, params):
         return VSDFile(chars, params)
 
 
-PropertyIdentifierDocumentSummaryInformation = {
+PIDDSI = {
+    0x00000001: "PIDDSI_CODEPAGE",
+    0x00000002: "PIDDSI_CATEGORY",
+    0x00000003: "PIDDSI_PRESFORMAT",
+    0x00000004: "PIDDSI_BYTECOUNT",
+    0x00000005: "PIDDSI_LINECOUNT",
+    0x00000006: "PIDDSI_PARACOUNT",
+    0x00000007: "PIDDSI_SLIDECOUNT",
+    0x00000008: "PIDDSI_NOTECOUNT",
+    0x00000009: "PIDDSI_HIDDENCOUNT",
+    0x0000000A: "PIDDSI_MMCLIPCOUNT",
+    0x0000000B: "PIDDSI_SCALE",
+    0x0000000C: "PIDDSI_HEADINGPAIR",
+    0x0000000D: "PIDDSI_DOCPARTS",
+    0x0000000E: "PIDDSI_MANAGER",
+    0x0000000F: "PIDDSI_COMPANY",
+    0x00000010: "PIDDSI_LINKSDIRTY",
+    0x00000011: "PIDDSI_CCHWITHSPACES",
+    0x00000013: "PIDDSI_SHAREDDOC",
+    0x00000014: "PIDDSI_LINKBASE",
+    0x00000015: "PIDDSI_HLINKS",
+    0x00000016: "PIDDSI_HYPERLINKSCHANGED",
+    0x00000017: "PIDDSI_VERSION",
+    0x00000018: "PIDDSI_DIGSIG",
+    0x0000001A: "PIDDSI_CONTENTTYPE",
+    0x0000001B: "PIDDSI_CONTENTSTATUS",
+    0x0000001C: "PIDDSI_LANGUAGE",
+    0x0000001D: "PIDDSI_DOCVERSION",
 }
 
 
@@ -129,11 +156,11 @@ class DocumentSummaryInformationStream(DOCDirStream):
 
     def dump(self):
         print '<stream name="\\x05DocumentSummaryInformation" size="%d">' % self.size
-        PropertySetStream(self, PropertyIdentifierDocumentSummaryInformation).dump()
+        PropertySetStream(self, PIDDSI).dump()
         print '</stream>'
 
 
-PropertyIdentifierSummaryInformation = {
+PIDSI = {
     0x00000001: "CODEPAGE_PROPERTY_IDENTIFIER",
     0x00000002: "PIDSI_TITLE",
     0x00000003: "PIDSI_SUBJECT",
@@ -162,7 +189,7 @@ class SummaryInformationStream(DOCDirStream):
 
     def dump(self):
         print '<stream name="\\x05SummaryInformation" size="%d">' % self.size
-        PropertySetStream(self, PropertyIdentifierSummaryInformation).dump()
+        PropertySetStream(self, PIDSI).dump()
         print '</stream>'
 
 
