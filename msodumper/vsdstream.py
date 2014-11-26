@@ -46,6 +46,8 @@ class VSDFile:
     def getStreamFromBytes(self, name, bytes):
         if name == "\x05SummaryInformation":
             return SummaryInformationStream(bytes, self.params, doc=self)
+        elif name == "\x05DocumentSummaryInformation":
+            return DocumentSummaryInformationStream(bytes, self.params, doc=self)
         else:
             return DOCDirStream(bytes, self.params, name, doc=self)
 
@@ -117,20 +119,53 @@ def createVSDFile(chars, params):
         return VSDFile(chars, params)
 
 
+class DocumentSummaryInformationStream(DOCDirStream):
+    def __init__(self, bytes, params, doc):
+        DOCDirStream.__init__(self, bytes, params, "\x05DocumentSummaryInformation", doc=doc)
+
+    def dump(self):
+        print '<stream name="\\x05DocumentSummaryInformation" size="%d">' % self.size
+        print '</stream>'
+
+
+PropertyIdentifierSummaryInformation = {
+    0x00000001: "CODEPAGE_PROPERTY_IDENTIFIER",
+    0x00000002: "PIDSI_TITLE",
+    0x00000003: "PIDSI_SUBJECT",
+    0x00000004: "PIDSI_AUTHOR",
+    0x00000005: "PIDSI_KEYWORDS",
+    0x00000006: "PIDSI_COMMENTS",
+    0x00000007: "PIDSI_TEMPLATE",
+    0x00000008: "PIDSI_LASTAUTHOR",
+    0x00000009: "PIDSI_REVNUMBER",
+    0x0000000A: "PIDSI_EDITTIME",
+    0x0000000B: "PIDSI_LASTPRINTED",
+    0x0000000C: "PIDSI_CREATE_DTM",
+    0x0000000D: "PIDSI_LASTSAVE_DTM",
+    0x0000000E: "PIDSI_PAGECOUNT",
+    0x0000000F: "PIDSI_WORDCOUNT",
+    0x00000010: "PIDSI_CHARCOUNT",
+    0x00000011: "PIDSI_THUMBNAIL",
+    0x00000012: "PIDSI_APPNAME",
+    0x00000013: "PIDSI_DOC_SECURITY",
+}
+
+
 class SummaryInformationStream(DOCDirStream):
     def __init__(self, bytes, params, doc):
         DOCDirStream.__init__(self, bytes, params, "\x05SummaryInformation", doc=doc)
 
     def dump(self):
         print '<stream name="\\x05SummaryInformation" size="%d">' % self.size
-        PropertySetStream(self).dump()
+        PropertySetStream(self, PropertyIdentifierSummaryInformation).dump()
         print '</stream>'
 
 
 class PropertySetStream(DOCDirStream):
-    def __init__(self, parent):
+    def __init__(self, parent, PropertyIds):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
+        self.propertyIds = PropertyIds
 
     def dump(self):
         print '<propertySetStream type="PropertySetStream" offset="%s">' % self.pos
@@ -181,28 +216,6 @@ class PropertySet(DOCDirStream):
             self.typedPropertyValues.append(typedPropertyValue)
         print '</propertySet>'
 
-PropertyIdentifier = {
-    0x00000001: "CODEPAGE_PROPERTY_IDENTIFIER",
-    0x00000002: "PIDSI_TITLE",
-    0x00000003: "PIDSI_SUBJECT",
-    0x00000004: "PIDSI_AUTHOR",
-    0x00000005: "PIDSI_KEYWORDS",
-    0x00000006: "PIDSI_COMMENTS",
-    0x00000007: "PIDSI_TEMPLATE",
-    0x00000008: "PIDSI_LASTAUTHOR",
-    0x00000009: "PIDSI_REVNUMBER",
-    0x0000000A: "PIDSI_EDITTIME",
-    0x0000000B: "PIDSI_LASTPRINTED",
-    0x0000000C: "PIDSI_CREATE_DTM",
-    0x0000000D: "PIDSI_LASTSAVE_DTM",
-    0x0000000E: "PIDSI_PAGECOUNT",
-    0x0000000F: "PIDSI_WORDCOUNT",
-    0x00000010: "PIDSI_CHARCOUNT",
-    0x00000011: "PIDSI_THUMBNAIL",
-    0x00000012: "PIDSI_APPNAME",
-    0x00000013: "PIDSI_DOC_SECURITY",
-}
-
 
 class PropertyIdentifierAndOffset(DOCDirStream):
     def __init__(self, parent, index):
@@ -213,7 +226,7 @@ class PropertyIdentifierAndOffset(DOCDirStream):
 
     def dump(self):
         print '<propertyIdentifierAndOffset%s type="PropertyIdentifierAndOffset" offset="%s">' % (self.index, self.pos)
-        self.printAndSet("PropertyIdentifier", self.readuInt32(), dict=PropertyIdentifier)
+        self.printAndSet("PropertyIdentifier", self.readuInt32(), dict=self.parent.parent.propertyIds)
         self.printAndSet("Offset", self.readuInt32())
         print '</propertyIdentifierAndOffset%s>' % self.index
         self.parent.pos = self.pos
