@@ -290,12 +290,20 @@ class CodePageString(DOCDirStream):
             if c == 0:
                 break
             bytes.append(c)
+        codepage = self.parent.parent.getCodePage()
+        if codepage < 0:
+            codepage += 2 ** 16  # signed -> unsigned
         encoding = ""
-        if self.parent.parent.getCodePage() == 1252:
+        if codepage == 1252:
             # http://msdn.microsoft.com/en-us/goglobal/bb964654
             encoding = "latin1"
+        elif codepage == 65001:
+            # http://msdn.microsoft.com/en-us/library/windows/desktop/dd374130%28v=vs.85%29.aspx
+            encoding = "utf-8"
         if len(encoding):
             print '<Characters value="%s"/>' % "".join(map(lambda c: chr(c), bytes)).decode(encoding).encode('utf-8')
+        else:
+            print '<todo what="CodePageString::dump: unhandled codepage %s"/>' % codepage
         print '</%s>' % self.name
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
