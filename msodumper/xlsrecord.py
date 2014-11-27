@@ -737,7 +737,8 @@ class BOF(BaseRecordHandler):
     buildId = {
         0x0DBB: 'Excel 97',
         0x0EDE: 'Excel 97',
-        0x2775: 'Excel XP'
+        0x2775: 'Excel XP',
+        0x3267: 'Excel 2010'
     }
 
     def getBuildIdName (self, value):
@@ -778,7 +779,7 @@ class BOF(BaseRecordHandler):
             self.betaAny = 0
             self.riscAny = 0
             self.lowestExcelVer = 0
-            
+
     def parseBytes (self):
         self.__parseBytes()
         # BIFF version
