@@ -26,8 +26,6 @@ class VSDDumper:
         if strm.error:
             print '<error what="%s"/>' % strm.error
         for dirname in dirnames:
-            if len(dirname) == 0 or dirname in ['Root Entry']:
-                continue
             strm.getDirectoryStreamByName(dirname).dump()
         print '</streams>'
 

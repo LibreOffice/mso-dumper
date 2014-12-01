@@ -55,68 +55,8 @@ class VSDFile:
         return "native"
 
 
-class GsfVSDFile(VSDFile):
-    """Same as VSDFile, but uses gsf to read the OLE streams."""
-    def __init__(self, chars, params, gsf):
-        self.gsf = gsf
-        VSDFile.__init__(self, chars, params)
-
-    def disableStderr(self):
-        nil = os.open(os.devnull, os.O_WRONLY)
-        self.savedStderr = os.dup(2)
-        os.dup2(nil, 2)
-
-    def enableStderr(self):
-        os.dup2(self.savedStderr, 2)
-
-    def init(self):
-        self.streams = {}
-        self.gsf.gsf_init()
-        gsfInput = self.gsf.gsf_input_memory_new(self.chars, len(self.chars), False)
-        self.disableStderr()
-        gsfInfile = self.gsf.gsf_infile_msole_new(gsfInput, None)
-        self.enableStderr()
-        if not gsfInfile:
-            self.error = "gsf_infile_msole_new() failed"
-            return
-        for i in range(self.gsf.gsf_infile_num_children(gsfInfile)):
-            child = self.gsf.gsf_infile_child_by_index(gsfInfile, i)
-            childName = ctypes.string_at(self.gsf.gsf_infile_name_by_index(gsfInfile, i))
-            childSize = self.gsf.gsf_input_size(child)
-            childData = ""
-            while True:
-                bufSize = 1024
-                pos = self.gsf.gsf_input_tell(child)
-                if pos == childSize:
-                    break
-                elif pos + bufSize > childSize:
-                    bufSize = childSize - pos
-                childData += ctypes.string_at(self.gsf.gsf_input_read(child, bufSize, None), bufSize)
-            self.streams[childName] = childData
-        self.gsf.gsf_shutdown()
-
-    def getDirectoryNames(self):
-        return self.streams.keys()
-
-    def getDirectoryStreamByName(self, name):
-        return self.getStreamFromBytes(name, self.streams[name])
-
-    def getName(self):
-        return "gsf"
-
-
 def createVSDFile(chars, params):
-    hasGsf = True
-    try:
-        gsf = ctypes.cdll.LoadLibrary('libgsf-1.so')
-        gsf.gsf_input_read.restype = ctypes.c_void_p
-    except:
-        hasGsf = False
-
-    if hasGsf:
-        return GsfVSDFile(chars, params, gsf)
-    else:
-        return VSDFile(chars, params)
+    return VSDFile(chars, params)
 
 
 PIDDSI = {
