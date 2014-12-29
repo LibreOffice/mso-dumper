@@ -249,6 +249,14 @@ class PtgRef(PtgBase):
     def getText (self):
         return "(ref: row=%d,col=%d,rowRelative=%d,colRelative=%d)"%(self.row, self.col.col, self.col.rowRelative, self.col.colRelative)
 
+class PtgArea(PtgBase):
+    def parseBytes (self):
+        bytes = self.strm.readBytes(8)
+        self.cellRange = parseCellRangeAddress(bytes)
+
+    def getText (self):
+        return "(cell range: " + self.cellRange.getName() + ")"
+
 class PtgNameX(PtgBase):
     def parseBytes (self):
         self.xti = self.strm.readUnsignedInt(2)
@@ -718,6 +726,7 @@ _tokenMap = {
     0x1E: PtgInt,
     0x22: PtgFuncVar,
     0x24: PtgRef,
+    0x25: PtgArea,
     0x29: PtgMemFunc,
     0x2D: PtgAreaN,
     0x3B: _Area3d,
