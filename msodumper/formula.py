@@ -175,6 +175,13 @@ class PtgExp(PtgBase):
     def getText (self):
         return "(ptgexp: row=%d, col=%d)"%(self.row, self.col)
 
+class PtgAdd(PtgBase):
+    def parseBytes (self):
+        pass
+
+    def getText (self):
+        return "(add)"
+
 class PtgMissArg(PtgBase):
     def parseBytes (self):
         pass
@@ -189,6 +196,15 @@ class PtgMemFunc(PtgBase):
 
     def getText (self):
         return "(mem func: type=%s size=%d)"%(PtgDataType.getText(self.dataType), self.length)
+
+class PtgAreaN(PtgBase):
+    def parseBytes(self):
+        self.dataType = getPtgDataType(self.opcode)
+        bytes = self.strm.readBytes(8)
+        self.cellRange = parseCellRangeAddress(bytes)
+
+    def getText (self):
+        return "(cell range: " + self.cellRange.getName() + ")"
 
 class PtgStr(PtgBase):
     def parseBytes (self):
@@ -693,6 +709,7 @@ class PtgRefN(PtgBase):
 
 _tokenMap = {
     0x01: PtgExp,
+    0x03: PtgAdd,
     0x10: PtgUnion,
     0x15: PtgParen,
     0x16: PtgMissArg,
@@ -702,6 +719,7 @@ _tokenMap = {
     0x22: PtgFuncVar,
     0x24: PtgRef,
     0x29: PtgMemFunc,
+    0x2D: PtgAreaN,
     0x3B: _Area3d,
     0x40: PtgArray,
     0x43: PtgName,
