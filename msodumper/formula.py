@@ -221,6 +221,9 @@ class PtgAtt(PtgBase):
             # PtgAttSemi: volatile
             self.attName = 'volatile'
             self.strm.readBytes(2) # ignore bytes
+        elif attType == 0x10:
+            self.attName = 'sum'
+            self.strm.readBytes(2) # ignore bytes
         else:
             raise FormulaParserError("unknown attribute token type (0x%2.2X)"%attType)
 
