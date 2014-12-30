@@ -182,6 +182,13 @@ class PtgAdd(PtgBase):
     def getText (self):
         return "(add)"
 
+class PtgDiv(PtgBase):
+    def parseBytes (self):
+        pass
+
+    def getText (self):
+        return "(div)"
+
 class PtgMissArg(PtgBase):
     def parseBytes (self):
         pass
@@ -267,6 +274,13 @@ class PtgNameX(PtgBase):
 
     def getText (self):
         return "(name: xti=%d, name=%d)"%(self.xti, self.nameID)
+
+class PtgNum(PtgBase):
+    def parseBytes (self):
+        self.value = self.strm.readDouble()
+
+    def getText (self):
+        return "(value: " + str(self.value) + " )"
 
 class PtgInt(PtgBase):
     def parseBytes (self):
@@ -721,12 +735,14 @@ class PtgRefN(PtgBase):
 _tokenMap = {
     0x01: PtgExp,
     0x03: PtgAdd,
+    0x06: PtgDiv,
     0x10: PtgUnion,
     0x15: PtgParen,
     0x16: PtgMissArg,
     0x17: PtgStr,
     0x19: PtgAtt,
     0x1E: PtgInt,
+    0x1F: PtgNum,
     0x22: PtgFuncVar,
     0x24: PtgRef,
     0x25: PtgArea,
