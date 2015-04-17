@@ -7,7 +7,6 @@
 
 import ole
 import ctypes
-import struct
 from docdirstream import DOCDirStream
 import docrecord
 import globals
