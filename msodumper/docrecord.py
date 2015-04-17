@@ -624,13 +624,14 @@ class Shd80(DOCDirStream):
     """The Shd80 structure specifies the colors and pattern that are used for background shading."""
     size = 2  # in bytes, see 2.9.245
 
-    def __init__(self, parent):
+    def __init__(self, parent, index):
         DOCDirStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
+        self.index = index
 
     def dump(self):
-        print '<shd80 type="Shd80" offset="%d">' % self.pos
+        print '<shd80 type="Shd80" offset="%d" index="%d">' % (self.pos, self.index)
         buf = self.readuInt16()
         self.printAndSet("icoFore", buf & 0x001f, dict=Ico)  # 1..5th bits
         self.printAndSet("icoBack", (buf & 0x03e0) >> 5, dict=Ico)  # 6..10th bits
@@ -650,7 +651,7 @@ class DefTableShd80Operand(DOCDirStream):
         print '<defTableShd80Operand type="DefTableShd80Operand" offset="%d">' % self.pos
         self.printAndSet("cb", self.readuInt8())
         for i in xrange(self.cb / Shd80.size):
-            Shd80(self).dump()
+            Shd80(self, i).dump()
         print '</defTableShd80Operand>'
 
 
