@@ -16,7 +16,7 @@ sys.path.append(sys.path[0] + "/..")
 
 import msodumper.docdirstream
 import msodumper.globals
-import msodumper.vsdstream
+import msodumper.msometa
 import time
 
 
@@ -47,7 +47,7 @@ class OLEStream(msodumper.docdirstream.DOCDirStream):
         print '<RightSiblingID value="0x%x"/>' % RightSiblingID
         ChildID = self.readuInt32()
         print '<ChildID value="0x%x"/>' % ChildID
-        msodumper.vsdstream.GUID(self, "CLSID").dump()
+        msodumper.msometa.GUID(self, "CLSID").dump()
         StateBits = self.readuInt32()
         print '<StateBits value="0x%x"/>' % StateBits
         FILETIME(self, "CreationTime").dump()
@@ -131,8 +131,7 @@ class OLEDumper:
 
 
 def main(args):
-    exname, args = args[0], args[1:]
-    dumper = OLEDumper(args[0])
+    dumper = OLEDumper(args[1])
     dumper.dump()
 
 if __name__ == '__main__':
