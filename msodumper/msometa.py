@@ -269,7 +269,7 @@ class CodePageString(DOCDirStream):
         print '<%s type="CodePageString">' % self.name
         self.printAndSet("Size", self.readuInt32())
         bytes = []
-        for i in range(self.Size):
+        for dummy in range(self.Size):
             c = self.readuInt8()
             if c == 0:
                 break
@@ -305,7 +305,7 @@ class GUID(DOCDirStream):
         Data2 = self.readuInt16()
         Data3 = self.readuInt16()
         Data4 = []
-        for i in range(8):
+        for dummy in range(8):
             Data4.append(self.readuInt8())
         value = "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x" % (Data1, Data2, Data3, Data4[0], Data4[1], Data4[2], Data4[3], Data4[4], Data4[5], Data4[6], Data4[7])
         print '<%s type="GUID" value="%s"/>' % (self.name, value)
