@@ -6,14 +6,7 @@
 #
 
 import ole
-import ctypes
-import struct
 from docdirstream import DOCDirStream
-import docrecord
-import globals
-import sys
-import os
-import bisect
 from msometa import SummaryInformationStream
 from msometa import DocumentSummaryInformationStream
 
