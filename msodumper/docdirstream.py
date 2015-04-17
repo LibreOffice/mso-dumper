@@ -153,8 +153,7 @@ class DOCDirStream:
         return (self.quoteAttr(globals.encodeName(globals.getUTF8FromUTF16("".join(map(lambda x: chr(x), bytes))))), pos)
 
     def getString(self, limit=None):
-        ret, pos = self.__getString(limit)
-        return ret
+        return self.__getString(limit)[0]
 
     def readString(self, limit=None):
         ret, pos = self.__getString(limit)
