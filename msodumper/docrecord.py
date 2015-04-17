@@ -2778,6 +2778,8 @@ class FFID(DOCDirStream):
     def __init__(self, bytes, offset):
         DOCDirStream.__init__(self, bytes)
         self.pos = offset
+        self.unused1 = None
+        self.unused2 = None
 
     def dump(self):
         self.ffid = self.readuInt8()
