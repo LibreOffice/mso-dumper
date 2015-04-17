@@ -14,6 +14,8 @@ import globals
 import sys
 import os
 import bisect
+from msometa import SummaryInformationStream
+from msometa import DocumentSummaryInformationStream
 
 
 class DOCFile:
@@ -54,8 +56,12 @@ class DOCFile:
     def getStreamFromBytes(self, name, bytes):
         if name == "WordDocument":
             return WordDocumentStream(bytes, self.params, doc=self)
-        if name in ("0Table", "1Table"):
+        elif name in ("0Table", "1Table"):
             return TableStream(bytes, self.params, name, doc=self)
+        elif name == "\x05SummaryInformation":
+            return SummaryInformationStream(bytes, self.params, doc=self)
+        elif name == "\x05DocumentSummaryInformation":
+            return DocumentSummaryInformationStream(bytes, self.params, doc=self)
         else:
             return DOCDirStream(bytes, self.params, name, doc=self)
 

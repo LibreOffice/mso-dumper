@@ -157,6 +157,12 @@ class Test(unittest.TestCase):
         # Zoom is 42%
         self.assertEqual('0x2a', dopBase.findall('pctWwdSaved')[0].attrib['value'])
 
+        # Assert metadata: who is the author.
+        propertyIdentifier = self.root.findall('stream[@name="\\x05SummaryInformation"]/propertySetStream/propertySet/propertyIdentifierAndOffset3/PropertyIdentifier')[0]
+        self.assertEqual('PIDSI_AUTHOR', propertyIdentifier.attrib["name"])
+        typedPropertyValue = self.root.findall('stream[@name="\\x05SummaryInformation"]/propertySetStream/propertySet/typedPropertyValue3/Value/Characters')[0]
+        self.assertEqual('vmiklos', typedPropertyValue.attrib["value"])
+
     def test_nofibnew(self):
         self.dump('nofibnew')
 
