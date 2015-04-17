@@ -50,7 +50,7 @@ class Test(unittest.TestCase):
         """This test just makes sure that all files in the 'pass' directory are
         dumped without problems."""
 
-        for dirname, dirnames, filenames in os.walk('pass'):
+        for dirname, dummy, filenames in os.walk('pass'):
             for filename in filenames:
                 if filename.endswith(".doc"):
                     self.dump(os.path.join(dirname, filename).replace('.doc', ''))
@@ -116,7 +116,7 @@ class Test(unittest.TestCase):
         self.assertEqual('This is a comment.\\x0D', comments[0].findall('transformed')[0].attrib['value'])
         self.assertEqual('This is also commented.\\x0D', comments[1].findall('transformed')[0].attrib['value'])
 
-        commentStarts = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfAtnBkf/plcfBkf/aCP')
+        # commentStarts = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfAtnBkf/plcfBkf/aCP')
         commentEnds = self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfAtnBkl/plcfBkl/aCP')
 
         # The first comment covers Hello\x05, the second covers This\x05.
