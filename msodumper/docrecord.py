@@ -3859,7 +3859,7 @@ class LSTF(DOCDirStream):
         self.printAndSet("lsid", self.readInt32())
         self.printAndSet("tplc", self.readInt32())
         for i in range(9):
-            print '<rgistdPara value="%s"/>' % self.readInt16()
+            print '<rgistdPara index="%d" value="%s"/>' % (i, self.readInt16())
         buf = self.readuInt8()
         self.printAndSet("fSimpleList", self.getBit(buf, 0))
         self.printAndSet("unused1", self.getBit(buf, 1))
