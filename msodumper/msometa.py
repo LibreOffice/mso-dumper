@@ -155,7 +155,7 @@ class PropertyIdentifierAndOffset(DOCDirStream):
 
     def dump(self):
         print '<propertyIdentifierAndOffset%s type="PropertyIdentifierAndOffset" offset="%s">' % (self.index, self.pos)
-        self.printAndSet("PropertyIdentifier", self.readuInt32(), dict=self.parent.parent.propertyIds)
+        self.printAndSet("PropertyIdentifier", self.readuInt32(), dict=self.parent.parent.propertyIds, default="unknown")
         self.printAndSet("Offset", self.readuInt32())
         print '</propertyIdentifierAndOffset%s>' % self.index
         self.parent.pos = self.pos
