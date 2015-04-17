@@ -282,7 +282,7 @@ class CodePageString(DOCDirStream):
             # http://msdn.microsoft.com/en-us/library/windows/desktop/dd374130%28v=vs.85%29.aspx
             encoding = "utf-8"
         if len(encoding):
-            print '<Characters value="%s"/>' % "".join(map(lambda c: chr(c), bytes)).decode(encoding).encode('utf-8')
+            print '<Characters value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8')
         else:
             print '<todo what="CodePageString::dump: unhandled codepage %s"/>' % codepage
         print '</%s>' % self.name
