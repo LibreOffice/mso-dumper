@@ -129,6 +129,9 @@ class PropertySet(DOCDirStream):
                 return self.typedPropertyValues[index].Value
 
     def dump(self):
+        if self.pos > self.size:
+            return
+
         self.posOrig = self.pos
         print '<propertySet type="PropertySet" offset="%s">' % self.pos
         self.printAndSet("Size", self.readuInt32())
