@@ -275,12 +275,14 @@ class CodePageString(DOCDirStream):
                 break
             bytes.append(c)
         codepage = self.parent.parent.getCodePage()
-        if codepage < 0:
+        if (codepage is not None) and (codepage < 0):
             codepage += 2 ** 16  # signed -> unsigned
         encoding = ""
+        # http://msdn.microsoft.com/en-us/goglobal/bb964654
         if codepage == 1252:
-            # http://msdn.microsoft.com/en-us/goglobal/bb964654
             encoding = "latin1"
+        elif codepage == 1250:
+            encoding = "latin2"
         elif codepage == 65001:
             # http://msdn.microsoft.com/en-us/library/windows/desktop/dd374130%28v=vs.85%29.aspx
             encoding = "utf-8"
