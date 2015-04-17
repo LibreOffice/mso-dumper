@@ -8,7 +8,6 @@
 from docdirstream import DOCDirStream
 import wmfrecord
 import base64
-import textwrap
 
 
 # The FormatSignature enumeration defines valuesembedded data in EMF records.
