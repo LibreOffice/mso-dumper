@@ -5,15 +5,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-import ole
-import ctypes
-import struct
 from docdirstream import DOCDirStream
-import docrecord
 import globals
-import sys
-import os
-import bisect
 
 
 PIDDSI = {
