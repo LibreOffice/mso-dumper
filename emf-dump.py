@@ -25,8 +25,7 @@ class EMFDumper:
 
 
 def main(args):
-    exname, args = args[0], args[1:]
-    dumper = EMFDumper(args[0])
+    dumper = EMFDumper(args[1])
     dumper.dump()
 
 if __name__ == '__main__':
