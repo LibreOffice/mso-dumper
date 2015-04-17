@@ -147,7 +147,6 @@ class LogBrushEx(EMFRecord):
         self.name = name
 
     def dump(self):
-        posOrig = self.pos
         print '<%s>' % self.name
         self.printAndSet("BrushStyle", self.readuInt32(), dict=wmfrecord.BrushStyle)
         wmfrecord.ColorRef(self, "Color").dump()
@@ -382,7 +381,7 @@ class EmrPolygon16(EMFRecord):
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
         print '<aPoints>'
         for i in range(self.Count):
-            wmfrecord.PointS(self, "aPoint").dump()
+            wmfrecord.PointS(self, "aPoint%d" % i).dump()
         print '</aPoints>'
         assert self.pos - posOrig == self.Size
 
@@ -401,7 +400,7 @@ class EmrPolypolygon16(EMFRecord):
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
         print '<PolygonPointCounts>'
         for i in range(self.NumberOfPolygons):
-            self.printAndSet("PolygonPointCount", self.readuInt32(), hexdump=False)
+            self.printAndSet("PolygonPointCount%d" % i, self.readuInt32(), hexdump=False)
         print '</PolygonPointCounts>'
         print '<aPoints>'
         for i in range(self.Count):
@@ -423,7 +422,7 @@ class EmrPolylineto16(EMFRecord):
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
         print '<aPoints>'
         for i in range(self.Count):
-            wmfrecord.PointS(self, "aPoint").dump()
+            wmfrecord.PointS(self, "aPoint%d" % i).dump()
         print '</aPoints>'
         assert self.pos - posOrig == self.Size
 
@@ -441,7 +440,7 @@ class EmrPolybezierto16(EMFRecord):
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
         print '<aPoints>'
         for i in range(self.Count):
-            wmfrecord.PointS(self, "aPoint").dump()
+            wmfrecord.PointS(self, "aPoint%d" % i).dump()
         print '</aPoints>'
         assert self.pos - posOrig == self.Size
 
@@ -609,7 +608,6 @@ class EmrExtcreatepen(EMFRecord):
         EMFRecord.__init__(self, parent)
 
     def dump(self):
-        posOrig = self.pos
         self.printAndSet("Type", self.readuInt32())
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         self.printAndSet("ihPen", self.readuInt32(), hexdump=False)
@@ -691,7 +689,7 @@ class RegionData(EMFRecord):
         header = RegionDataHeader(self)
         header.dump()
         for i in range(header.CountRects):
-            wmfrecord.RectL(self, "Data").dump()
+            wmfrecord.RectL(self, "Data%d" % i).dump()
         print '</%s>' % self.name
         self.parent.pos = self.pos
 
