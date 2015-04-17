@@ -33,9 +33,8 @@ class DOCDumper:
 
 
 def main(args):
-    exname, args = args[0], args[1:]
     params = globals.Params()
-    dumper = DOCDumper(args[0], params)
+    dumper = DOCDumper(args[1], params)
     dumper.dump()
 
 if __name__ == '__main__':
