@@ -37,8 +37,8 @@ class DOCFile:
             sys.exit(0)
 
     def initWW8(self):
-            self.header = ole.Header(self.chars, self.params)
-            self.pos = self.header.parse()
+        self.header = ole.Header(self.chars, self.params)
+        self.pos = self.header.parse()
 
     def __getDirectoryObj(self):
         obj = self.header.getDirectory()
