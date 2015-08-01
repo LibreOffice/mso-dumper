@@ -311,6 +311,10 @@ class PtgUnion(PtgBase):
     def getText (self):
         return '(union)'
 
+class PtgUminus(PtgBase):
+    def getText (self):
+        return "(unary minux)"
+
 class _Area3d(PtgBase):
     def parseBytes (self):
         self.xti = self.strm.readUnsignedInt(2)
@@ -752,6 +756,7 @@ _tokenMap = {
     0x05: PtgMul,
     0x06: PtgDiv,
     0x10: PtgUnion,
+    0x13: PtgUminus,
     0x15: PtgParen,
     0x16: PtgMissArg,
     0x17: PtgStr,
