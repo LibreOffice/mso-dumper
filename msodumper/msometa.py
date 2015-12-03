@@ -247,6 +247,8 @@ class TypedPropertyValue(DOCDirStream):
             self.printAndSet("Value", self.readInt16())
         elif self.Type == 0x0003:  # VT_I4
             self.printAndSet("Value", self.readInt32())
+        elif self.Type == 0x000b:  # VARIANT_BOOL
+            self.printAndSet("Value", self.readuInt32())
         elif self.Type == 0x0040:  # VT_FILETIME
             FILETIME(self, "Value").dump()
         elif self.Type == 0x001E:  # VT_LPSTR
