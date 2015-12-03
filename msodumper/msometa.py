@@ -85,6 +85,7 @@ class SummaryInformationStream(DOCDirStream):
 
 
 class PropertySetStream(DOCDirStream):
+    """Specified by [MS-OLEPS] 2.21, the stream format for simple property sets."""
     def __init__(self, parent, PropertyIds):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
@@ -107,15 +108,18 @@ class PropertySetStream(DOCDirStream):
             GUID(self, "FMTID1").dump()
             self.printAndSet("Offset1", self.readuInt32())
             self.propertyIds = {}
-            PropertySet(self, self.Offset1).dump()
+            # The spec says: if NumPropertySets has the value 0x00000002,
+            # FMTID1 must be set to FMTID_UserDefinedProperties.
+            PropertySet(self, self.Offset1, userDefined=True).dump()
         print '</propertySetStream>'
 
 
 class PropertySet(DOCDirStream):
-    def __init__(self, parent, offset):
+    def __init__(self, parent, offset, userDefined=False):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = offset
+        self.userDefined = userDefined
 
     def getCodePage(self):
         for index, idAndOffset in enumerate(self.idsAndOffsets):
@@ -137,9 +141,15 @@ class PropertySet(DOCDirStream):
             self.idsAndOffsets.append(idAndOffset)
         self.typedPropertyValues = []
         for i in range(self.NumProperties):
-            typedPropertyValue = TypedPropertyValue(self, i)
-            typedPropertyValue.dump()
-            self.typedPropertyValues.append(typedPropertyValue)
+            if self.userDefined and self.idsAndOffsets[i].PropertyIdentifier == 0x00000000:
+                # [MS-OLEPS] 2.18.1 says the Dictionary property (id=0 in user-defined sets) has a different type.
+                dictionary = Dictionary(self, i)
+                dictionary.dump()
+                self.typedPropertyValues.append("Dictionary")
+            else:
+                typedPropertyValue = TypedPropertyValue(self, i)
+                typedPropertyValue.dump()
+                self.typedPropertyValues.append(typedPropertyValue)
         print '</propertySet>'
 
 
@@ -230,6 +240,23 @@ PropertyType = {
     0x2017: "VT_ARRAY | VT_UINT",
 
 }
+
+
+class Dictionary(DOCDirStream):
+    """Specified by [MS-OLEPS] 2.17, represents all mappings between property
+    identifiers and property names in a property set."""
+    def __init__(self, parent, index):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.index = index
+        self.pos = parent.posOrig + parent.idsAndOffsets[index].Offset
+
+    def dump(self):
+        print '<dictionary%s type="Dictionary" offset="%s">' % (self.index, self.pos)
+        self.printAndSet("NumEntries", self.readuInt32())
+        for i in range(self.NumEntries):
+            print '<todo what="Dictionary::dump: handle DictionaryEntry"/>'
+        print '</dictionary%s>' % self.index
 
 
 class TypedPropertyValue(DOCDirStream):
