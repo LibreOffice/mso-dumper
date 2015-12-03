@@ -692,6 +692,9 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbSttbListNames(self):
         docrecord.SttbListNames(self).dump()
 
+    def handleLcbFactoidData(self):
+        docrecord.SmartTagData(self).dump()
+
     def handleLcbSttbfBkmk(self):
         docrecord.SttbfBkmk(self).dump()
 
@@ -763,65 +766,78 @@ class WordDocumentStream(DOCDirStream):
     def __dumpFibRgFcLcb2002(self):
         self.__dumpFibRgFcLcb2000()
         fields = [
-            "fcUnused1",
-            "lcbUnused1",
-            "fcPlcfPgp",
-            "lcbPlcfPgp",
-            "fcPlcfuim",
-            "lcbPlcfuim",
-            "fcPlfguidUim",
-            "lcbPlfguidUim",
-            "fcAtrdExtra",
-            "lcbAtrdExtra",
-            "fcPlrsid",
-            "lcbPlrsid",
-            "fcSttbfBkmkFactoid",
-            "lcbSttbfBkmkFactoid",
-            "fcPlcfBkfFactoid",
-            "lcbPlcfBkfFactoid",
-            "fcPlcfcookie",
-            "lcbPlcfcookie",
-            "fcPlcfBklFactoid",
-            "lcbPlcfBklFactoid",
-            "fcFactoidData",
-            "lcbFactoidData",
-            "fcDocUndo",
-            "lcbDocUndo",
-            "fcSttbfBkmkFcc",
-            "lcbSttbfBkmkFcc",
-            "fcPlcfBkfFcc",
-            "lcbPlcfBkfFcc",
-            "fcPlcfBklFcc",
-            "lcbPlcfBklFcc",
-            "fcSttbfbkmkBPRepairs",
-            "lcbSttbfbkmkBPRepairs",
-            "fcPlcfbkfBPRepairs",
-            "lcbPlcfbkfBPRepairs",
-            "fcPlcfbklBPRepairs",
-            "lcbPlcfbklBPRepairs",
-            "fcPmsNew",
-            "lcbPmsNew",
-            "fcODSO",
-            "lcbODSO",
-            "fcPlcfpmiOldXP",
-            "lcbPlcfpmiOldXP",
-            "fcPlcfpmiNewXP",
-            "lcbPlcfpmiNewXP",
-            "fcPlcfpmiMixedXP",
-            "lcbPlcfpmiMixedXP",
-            "fcUnused2",
-            "lcbUnused2",
-            "fcPlcffactoid",
-            "lcbPlcffactoid",
-            "fcPlcflvcOldXP",
-            "lcbPlcflvcOldXP",
-            "fcPlcflvcNewXP",
-            "lcbPlcflvcNewXP",
-            "fcPlcflvcMixedXP",
-            "lcbPlcflvcMixedXP",
+            ["fcUnused1"],
+            ["lcbUnused1"],
+            ["fcPlcfPgp"],
+            ["lcbPlcfPgp"],
+            ["fcPlcfuim"],
+            ["lcbPlcfuim"],
+            ["fcPlfguidUim"],
+            ["lcbPlfguidUim"],
+            ["fcAtrdExtra"],
+            ["lcbAtrdExtra"],
+            ["fcPlrsid"],
+            ["lcbPlrsid"],
+            ["fcSttbfBkmkFactoid"],
+            ["lcbSttbfBkmkFactoid"],
+            ["fcPlcfBkfFactoid"],
+            ["lcbPlcfBkfFactoid"],
+            ["fcPlcfcookie"],
+            ["lcbPlcfcookie"],
+            ["fcPlcfBklFactoid"],
+            ["lcbPlcfBklFactoid"],
+            ["fcFactoidData"],
+            ["lcbFactoidData", self.handleLcbFactoidData],
+            ["fcDocUndo"],
+            ["lcbDocUndo"],
+            ["fcSttbfBkmkFcc"],
+            ["lcbSttbfBkmkFcc"],
+            ["fcPlcfBkfFcc"],
+            ["lcbPlcfBkfFcc"],
+            ["fcPlcfBklFcc"],
+            ["lcbPlcfBklFcc"],
+            ["fcSttbfbkmkBPRepairs"],
+            ["lcbSttbfbkmkBPRepairs"],
+            ["fcPlcfbkfBPRepairs"],
+            ["lcbPlcfbkfBPRepairs"],
+            ["fcPlcfbklBPRepairs"],
+            ["lcbPlcfbklBPRepairs"],
+            ["fcPmsNew"],
+            ["lcbPmsNew"],
+            ["fcODSO"],
+            ["lcbODSO"],
+            ["fcPlcfpmiOldXP"],
+            ["lcbPlcfpmiOldXP"],
+            ["fcPlcfpmiNewXP"],
+            ["lcbPlcfpmiNewXP"],
+            ["fcPlcfpmiMixedXP"],
+            ["lcbPlcfpmiMixedXP"],
+            ["fcUnused2"],
+            ["lcbUnused2"],
+            ["fcPlcffactoid"],
+            ["lcbPlcffactoid"],
+            ["fcPlcflvcOldXP"],
+            ["lcbPlcflvcOldXP"],
+            ["fcPlcflvcNewXP"],
+            ["lcbPlcflvcNewXP"],
+            ["fcPlcflvcMixedXP"],
+            ["lcbPlcflvcMixedXP"],
         ]
         for i in fields:
-            self.printAndSet(i, self.readuInt32())
+            value = self.readInt32()
+            hasHandler = len(i) > 1
+            # the spec says these must be ignored
+            needsIgnoring = []
+            # a member needs handling if it defines the size of a struct and it's non-zero
+            needsHandling = i[0].startswith("lcb") and value != 0 and (not i[0] in needsIgnoring)
+            self.printAndSet(i[0], value, end=((not hasHandler) and (not needsHandling)), offset=True)
+            if hasHandler or needsHandling:
+                if needsHandling:
+                    if hasHandler:
+                        i[1]()
+                    else:
+                        print '<todo what="value is non-zero and unhandled"/>'
+                print '</%s>' % i[0]
 
     def __dumpFibRgFcLcb2003(self):
         self.__dumpFibRgFcLcb2002()

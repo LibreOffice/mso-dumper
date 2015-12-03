@@ -4041,6 +4041,19 @@ class SttbListNames(DOCDirStream):
         print '</sttbListNames>'
 
 
+class SmartTagData(DOCDirStream):
+    """Specified by [MS-DOC] 2.9.251, stores information about all the smart
+    tags in the document."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        self.pos = mainStream.fcFactoidData
+        self.size = mainStream.lcbFactoidData
+
+    def dump(self):
+        print '<smartTagData type="SmartTagData" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print '</smartTagData>'
+
+
 class SttbSavedBy(DOCDirStream):
     """The SttbSavedBy structure is an STTB structure that specifies the save history of this document."""
     def __init__(self, mainStream):
