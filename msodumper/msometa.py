@@ -242,6 +242,33 @@ PropertyType = {
 }
 
 
+class DictionaryEntry(DOCDirStream):
+    """"Specified by [MS-OLEPS] 2.16, represents a mapping between a property
+    identifier and a property name."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<dictionaryEntry offset="%s">' % self.pos
+        self.printAndSet("PropertyIdentifier", self.readuInt32())
+        self.printAndSet("Length", self.readuInt32())
+
+        bytes = []
+        for dummy in range(self.Length):
+            c = self.readuInt8()
+            if c == 0:
+                break
+            bytes.append(c)
+        # TODO support non-latin1
+        encoding = "latin1"
+        print '<Name value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8')
+
+        print '</dictionaryEntry>'
+        self.parent.pos = self.pos
+
+
 class Dictionary(DOCDirStream):
     """Specified by [MS-OLEPS] 2.17, represents all mappings between property
     identifiers and property names in a property set."""
@@ -255,7 +282,8 @@ class Dictionary(DOCDirStream):
         print '<dictionary%s type="Dictionary" offset="%s">' % (self.index, self.pos)
         self.printAndSet("NumEntries", self.readuInt32())
         for i in range(self.NumEntries):
-            print '<todo what="Dictionary::dump: handle DictionaryEntry"/>'
+            dictionaryEntry = DictionaryEntry(self)
+            dictionaryEntry.dump()
         print '</dictionary%s>' % self.index
 
 
