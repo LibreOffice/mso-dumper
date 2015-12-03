@@ -17,7 +17,6 @@ sys.path.append(sys.path[0] + "/..")
 import msodumper.docdirstream
 import msodumper.globals
 import msodumper.msometa
-import time
 
 
 class OLEStream(msodumper.docdirstream.DOCDirStream):
@@ -50,21 +49,14 @@ class OLEStream(msodumper.docdirstream.DOCDirStream):
         msodumper.msometa.GUID(self, "CLSID").dump()
         StateBits = self.readuInt32()
         print '<StateBits value="0x%x"/>' % StateBits
-        FILETIME(self, "CreationTime").dump()
-        FILETIME(self, "ModifiedTime").dump()
+        msodumper.msometa.FILETIME(self, "CreationTime").dump()
+        msodumper.msometa.FILETIME(self, "ModifiedTime").dump()
         print '</stream>'
 
 
-class OLERecord(msodumper.docdirstream.DOCDirStream):
+class Header(msodumper.msometa.OLERecord):
     def __init__(self, parent):
-        msodumper.docdirstream.DOCDirStream.__init__(self, parent.bytes)
-        self.parent = parent
-        self.pos = parent.pos
-
-
-class Header(OLERecord):
-    def __init__(self, parent):
-        OLERecord.__init__(self, parent)
+        msodumper.msometa.OLERecord.__init__(self, parent)
 
     def dump(self):
         print '<CFHeader>'
@@ -98,24 +90,6 @@ class Header(OLERecord):
             self.DIFAT.append(n)
         print '</DIFAT>'
         print '</CFHeader>'
-
-
-class FILETIME(OLERecord):
-    def __init__(self, parent, name):
-        OLERecord.__init__(self, parent)
-        self.name = name
-
-    def dump(self):
-        # ft is number of 100ns since Jan 1 1601
-        ft = self.readuInt64()
-        if ft > 0:
-            epoch = 11644473600
-            sec = (ft / 10000000) - epoch
-        else:
-            sec = ft
-        pretty = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.localtime(sec))
-        print '<%s type="FILETIME" value="%d" pretty="%s"/>' % (self.name, sec, pretty)
-        self.parent.pos = self.pos
 
 
 class OLEDumper:

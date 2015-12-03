@@ -7,6 +7,7 @@
 
 from docdirstream import DOCDirStream
 import globals
+import time
 
 
 PIDDSI = {
@@ -246,6 +247,8 @@ class TypedPropertyValue(DOCDirStream):
             self.printAndSet("Value", self.readInt16())
         elif self.Type == 0x001E:  # VT_LPSTR
             CodePageString(self, "Value").dump()
+        elif self.Type == 0x0040:  # VT_FILETIME
+            FILETIME(self, "Value").dump()
         else:
             print '<todo what="TypedPropertyValue::dump: unhandled Type %s"/>' % hex(self.Type)
         print '</typedPropertyValue%s>' % self.index
@@ -303,5 +306,34 @@ class GUID(DOCDirStream):
         value = "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x" % (Data1, Data2, Data3, Data4[0], Data4[1], Data4[2], Data4[3], Data4[4], Data4[5], Data4[6], Data4[7])
         print '<%s type="GUID" value="%s"/>' % (self.name, value)
         self.parent.pos = self.pos
+
+
+class OLERecord(DOCDirStream):
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+
+class FILETIME(OLERecord):
+    def __init__(self, parent, name):
+        OLERecord.__init__(self, parent)
+        self.name = name
+
+    def dump(self):
+        # ft is number of 100ns since Jan 1 1601
+        ft = self.readuInt64()
+        if ft > 0:
+            epoch = 11644473600
+            sec = (ft / 10000000) - epoch
+        else:
+            sec = ft
+        try:
+            pretty = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.localtime(sec))
+        except ValueError:
+            pretty = "ValueError"
+        print '<%s type="FILETIME" value="%d" pretty="%s"/>' % (self.name, sec, pretty)
+        self.parent.pos = self.pos
+
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
