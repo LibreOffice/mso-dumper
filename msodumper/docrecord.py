@@ -4041,6 +4041,72 @@ class SttbListNames(DOCDirStream):
         print '</sttbListNames>'
 
 
+class PBString(DOCDirStream):
+    """Specified by [MS-OSHARED] 2.3.4.5, specifies a null-terminated string."""
+    def __init__(self, parent, name):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+        self.name = name
+
+    def dump(self):
+        print '<%s type="PBString">' % self.name
+        buf = self.readuInt16()
+        self.printAndSet("cch", buf & 0x7fff)  # bits 0..15
+        self.printAndSet("fAnsiString", self.getBit(buf, 15))
+
+        # TODO support fAnsiString == 0
+        bytes = []
+        for dummy in range(self.cch):
+            c = self.readuInt8()
+            if c == 0:
+                break
+            bytes.append(c)
+        encoding = "ascii"
+        print '<rgxch value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8')
+
+        print '</%s>' % self.name
+        self.parent.pos = self.pos
+
+
+class FactoidType(DOCDirStream):
+    """Specified by [MS-OSHARED] 2.3.4.2, specifies the type of smart tag."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<factoidType>'
+        self.printAndSet("cbFactoid", self.readuInt32())
+        self.printAndSet("id", self.readuInt32())
+        PBString(self, "rgbUri").dump()
+        # rgbTag
+        # rgbDownLoadURL
+        print '</factoidType>'
+
+
+class PropertyBagStore(DOCDirStream):
+    """Specified by [MS-OSHARED] 2.3.4.1, specifies the shared data for the
+    smart tags embedded in the document."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<propBagStore type="PropertyBagStore" offset="%s">' % self.pos
+        self.printAndSet("cFactoidType", self.readuInt32())
+        print '<factoidTypes>'
+        self.factoidTypes = []
+        for i in range(self.cFactoidType):
+            factoidType = FactoidType(self)
+            factoidType.dump()
+            self.factoidTypes.append(factoidType)
+        print '</factoidTypes>'
+        print '</propBagStore>'
+
+
 class SmartTagData(DOCDirStream):
     """Specified by [MS-DOC] 2.9.251, stores information about all the smart
     tags in the document."""
@@ -4051,6 +4117,8 @@ class SmartTagData(DOCDirStream):
 
     def dump(self):
         print '<smartTagData type="SmartTagData" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.propBagStore = PropertyBagStore(self)
+        self.propBagStore.dump()
         print '</smartTagData>'
 
 
