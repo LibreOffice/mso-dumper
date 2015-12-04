@@ -4318,11 +4318,11 @@ class SttbfBkmkFactoid(DOCDirStream):
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
         assert self.cbExtra == 0
-        self.printAndSet("cchData", self.readuInt16())
-        assert self.cchData == 0x6
         for i in range(self.cData):
+            self.printAndSet("cchData", self.readuInt16())
+            assert self.cchData == 0x6
             FACTOIDINFO(self).dump()
-        assert self.pos == self.mainStream.fcSttbfBkmk + self.size
+        assert self.pos == self.mainStream.fcSttbfBkmkFactoid + self.size
         print '</sttbfBkmkFactoid>'
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
