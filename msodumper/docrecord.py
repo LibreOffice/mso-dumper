@@ -4231,13 +4231,14 @@ class Property(DOCDirStream):
 
 class PropertyBag(DOCDirStream):
     """Specified by [MS-OSHARED] 2.3.4.3, specifies the smart tag data."""
-    def __init__(self, parent):
+    def __init__(self, parent, index):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
+        self.index = index
 
     def dump(self):
-        print '<propBag type="PropertyBag" offset="%s">' % self.pos
+        print '<propBag type="PropertyBag" offset="%s" index="%s">' % (self.pos, self.index)
         self.printAndSet("id", self.readuInt16())
         self.printAndSet("cProp", self.readuInt16())
         self.printAndSet("cbUnknown", self.readuInt16())
@@ -4256,12 +4257,15 @@ class SmartTagData(DOCDirStream):
         self.size = mainStream.lcbFactoidData
 
     def dump(self):
+        posOrig = self.pos
         print '<smartTagData type="SmartTagData" offset="%d" size="%d bytes">' % (self.pos, self.size)
         self.propBagStore = PropertyBagStore(self)
         self.propBagStore.dump()
-        # TODO this is an array in fact
-        self.propBag = PropertyBag(self)
-        self.propBag.dump()
+        i = 0
+        while self.pos < posOrig + self.size:
+            self.propBag = PropertyBag(self, i)
+            self.propBag.dump()
+            i += 1
         print '</smartTagData>'
 
 
