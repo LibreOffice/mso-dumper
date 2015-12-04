@@ -4272,4 +4272,47 @@ class SttbfBkmk(DOCDirStream):
         assert self.pos == self.mainStream.fcSttbfBkmk + self.size
         print '</sttbfBkmk>'
 
+
+class FACTOIDINFO(DOCDirStream):
+    """Specified by [MS-DOC] 2.9.66, contains information about a smart tag
+    bookmark in the document."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<factoidinfo>'
+        self.printAndSet("dwId", self.readuInt32())
+        buf = self.readuInt16()
+        self.printAndSet("fSubEntry", self.getBit(buf, 0))
+        self.printAndSet("fUnused", (buf & 0xfffe) >> 1)  # 2..16th bits
+        self.printAndSet("fto", self.readuInt16())  # TODO dump FTO
+        self.printAndSet("pfpb", self.readuInt32())
+        print '</factoidinfo>'
+        self.parent.pos = self.pos
+
+
+class SttbfBkmkFactoid(DOCDirStream):
+    """Specified by [MS-DOC] 2.9.281, an STTB whose strings are FACTOIDINFO structures."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        self.pos = mainStream.fcSttbfBkmkFactoid
+        self.size = mainStream.lcbSttbfBkmkFactoid
+        self.mainStream = mainStream
+
+    def dump(self):
+        print '<sttbfBkmkFactoid type="SttbfBkmkFactoid" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        self.printAndSet("fExtended", self.readuInt16())
+        assert self.fExtended == 0xffff
+        self.printAndSet("cData", self.readuInt16())
+        self.printAndSet("cbExtra", self.readuInt16())
+        assert self.cbExtra == 0
+        self.printAndSet("cchData", self.readuInt16())
+        assert self.cchData == 0x6
+        for i in range(self.cData):
+            FACTOIDINFO(self).dump()
+        assert self.pos == self.mainStream.fcSttbfBkmk + self.size
+        print '</sttbfBkmkFactoid>'
+
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
