@@ -136,6 +136,20 @@ class PlcfBkf(DOCDirStream, PLC):
         print '</plcfBkf>'
 
 
+class FBKFD(DOCDirStream):
+    """Specified by [MS-DOC] 2.9.71, contains information about a bookmark."""
+    def __init__(self, parent, offset):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<aFBKFD type="FBKFD" offset="%d">' % self.pos
+        FBKF(self, self.pos).dump()
+        self.pos += 4
+        self.printAndSet("cDepth", self.readInt16())
+        print '</aFBKFD>'
+
+
 class PlcfBkfd(DOCDirStream, PLC):
     """Specified by [MS-DOC] 2.8.11, a PLC whose data elements are FBKFD structures."""
     def __init__(self, mainStream):
@@ -157,10 +171,9 @@ class PlcfBkfd(DOCDirStream, PLC):
             pos += 4
 
             # aFBKFD
-            # aFBKF = FBKF(self, self.getOffset(self.pos, i))
-            # aFBKF.dump()
-            # self.aFBKF.append(aFBKF)
-            pos += 6
+            aFBKFD = FBKFD(self, self.getOffset(self.pos, i))
+            aFBKFD.dump()
+            self.aFBKFD.append(aFBKFD)
             print '</aCP>'
         print '</plcfBkfd>'
 
