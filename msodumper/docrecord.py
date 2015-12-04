@@ -4067,7 +4067,7 @@ class PBString(DOCDirStream):
                 break
             bytes.append(c)
         encoding = "ascii"
-        print '<rgxch value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8')
+        self.printAndSet("rgxch", globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8'), hexdump=False)
 
         print '</%s>' % self.name
         self.parent.pos = self.pos
@@ -4084,9 +4084,12 @@ class FactoidType(DOCDirStream):
         print '<factoidType>'
         self.printAndSet("cbFactoid", self.readuInt32())
         self.printAndSet("id", self.readuInt32())
-        PBString(self, "rgbUri").dump()
-        PBString(self, "rgbTag").dump()
-        PBString(self, "rgbDownLoadURL").dump()
+        self.rgbUri = PBString(self, "rgbUri")
+        self.rgbUri.dump()
+        self.rgbTag = PBString(self, "rgbTag")
+        self.rgbTag.dump()
+        self.rgbDownLoadURL = PBString(self, "rgbDownLoadURL")
+        self.rgbDownLoadURL.dump()
         print '</factoidType>'
         self.parent.pos = self.pos
 

@@ -693,7 +693,8 @@ class WordDocumentStream(DOCDirStream):
         docrecord.SttbListNames(self).dump()
 
     def handleLcbFactoidData(self):
-        docrecord.SmartTagData(self).dump()
+        self.factoidData = docrecord.SmartTagData(self)
+        self.factoidData.dump()
 
     def handleLcbSttbfBkmk(self):
         docrecord.SttbfBkmk(self).dump()
