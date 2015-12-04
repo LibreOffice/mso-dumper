@@ -178,6 +178,34 @@ class PlcfBkfd(DOCDirStream, PLC):
         print '</plcfBkfd>'
 
 
+class PlcfBkld(DOCDirStream, PLC):
+    """Specified by [MS-DOC] 2.8.13, a PLC whose data elements are FBKLD structures."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        PLC.__init__(self, mainStream.lcbPlcfBklFactoid, 4)  # 4 is defined by the spec
+        self.pos = mainStream.fcPlcfBklFactoid
+        self.size = mainStream.lcbPlcfBklFactoid
+        self.aCP = []
+        self.aFBKFD = []
+
+    def dump(self):
+        print '<plcfBkld type="PlcfBkld" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            start = self.getuInt32(pos=pos)
+            self.aCP.append(start)
+            print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
+            pos += 4
+
+            # aFBKFD
+            # aFBKFD = FBKFD(self, self.getOffset(self.pos, i))
+            # aFBKFD.dump()
+            # self.aFBKFD.append(aFBKFD)
+            print '</aCP>'
+        print '</plcfBkld>'
+
+
 class Fldch(DOCDirStream):
     """The fldch structure determines the type of the field character."""
     def __init__(self, parent):
