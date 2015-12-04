@@ -692,6 +692,10 @@ class WordDocumentStream(DOCDirStream):
     def handleLcbSttbListNames(self):
         docrecord.SttbListNames(self).dump()
 
+    def handleLcbPlcfBkfFactoid(self):
+        self.plcfBkfFactoid = docrecord.PlcfBkfd(self)
+        self.plcfBkfFactoid.dump()
+
     def handleLcbFactoidData(self):
         self.factoidData = docrecord.SmartTagData(self)
         self.factoidData.dump()
@@ -782,7 +786,7 @@ class WordDocumentStream(DOCDirStream):
             ["fcSttbfBkmkFactoid"],
             ["lcbSttbfBkmkFactoid"],
             ["fcPlcfBkfFactoid"],
-            ["lcbPlcfBkfFactoid"],
+            ["lcbPlcfBkfFactoid", self.handleLcbPlcfBkfFactoid],
             ["fcPlcfcookie"],
             ["lcbPlcfcookie"],
             ["fcPlcfBklFactoid"],
