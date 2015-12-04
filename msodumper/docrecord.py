@@ -4043,14 +4043,18 @@ class SttbListNames(DOCDirStream):
 
 class PBString(DOCDirStream):
     """Specified by [MS-OSHARED] 2.3.4.5, specifies a null-terminated string."""
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, index=None):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.name = name
+        self.index = index
 
     def dump(self):
-        print '<%s type="PBString">' % self.name
+        if self.index is None:
+            print '<%s type="PBString">' % self.name
+        else:
+            print '<%s type="PBString" index="%s">' % (self.name, self.index)
         buf = self.readuInt16()
         self.printAndSet("cch", buf & 0x7fff)  # bits 0..15
         self.printAndSet("fAnsiString", self.getBit(buf, 15))
@@ -4081,9 +4085,10 @@ class FactoidType(DOCDirStream):
         self.printAndSet("cbFactoid", self.readuInt32())
         self.printAndSet("id", self.readuInt32())
         PBString(self, "rgbUri").dump()
-        # rgbTag
-        # rgbDownLoadURL
+        PBString(self, "rgbTag").dump()
+        PBString(self, "rgbDownLoadURL").dump()
         print '</factoidType>'
+        self.parent.pos = self.pos
 
 
 class PropertyBagStore(DOCDirStream):
@@ -4104,6 +4109,19 @@ class PropertyBagStore(DOCDirStream):
             factoidType.dump()
             self.factoidTypes.append(factoidType)
         print '</factoidTypes>'
+        self.printAndSet("cbHdr", self.readuInt16())
+        assert self.cbHdr == 0xc
+        self.printAndSet("sVer", self.readuInt16())
+        assert self.sVer == 0x0100
+        self.printAndSet("cfactoid", self.readuInt32())
+        self.printAndSet("cste", self.readuInt32())
+        print '<stringTable>'
+        self.stringTable = []
+        for i in range(self.cste):
+            string = PBString(self, "stringTable", index=i)
+            string.dump()
+            self.stringTable.append(string)
+        print '</stringTable>'
         print '</propBagStore>'
 
 
