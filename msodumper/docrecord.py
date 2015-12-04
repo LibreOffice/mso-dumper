@@ -4273,6 +4273,16 @@ class SttbfBkmk(DOCDirStream):
         print '</sttbfBkmk>'
 
 
+# The FTO enumerated type identifies the feature that is responsible to create
+# a given smart tag in a document.
+FTO = {
+    0x0000: "ftoUnknown",
+    0x0001: "ftoGrammar",
+    0x0002: "ftoScanDll",
+    0x0003: "ftoVB"
+}
+
+
 class FACTOIDINFO(DOCDirStream):
     """Specified by [MS-DOC] 2.9.66, contains information about a smart tag
     bookmark in the document."""
@@ -4287,7 +4297,7 @@ class FACTOIDINFO(DOCDirStream):
         buf = self.readuInt16()
         self.printAndSet("fSubEntry", self.getBit(buf, 0))
         self.printAndSet("fUnused", (buf & 0xfffe) >> 1)  # 2..16th bits
-        self.printAndSet("fto", self.readuInt16())  # TODO dump FTO
+        self.printAndSet("fto", self.readuInt16(), dict=FTO)
         self.printAndSet("pfpb", self.readuInt32())
         print '</factoidinfo>'
         self.parent.pos = self.pos
