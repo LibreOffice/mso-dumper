@@ -4209,6 +4209,42 @@ class PropertyBagStore(DOCDirStream):
             self.stringTable.append(string)
         print '</stringTable>'
         print '</propBagStore>'
+        self.parent.pos = self.pos
+
+
+class Property(DOCDirStream):
+    """Specified by [MS-OSHARED] 2.3.4.4, specifies the indexes into the string
+    table entries of the stringTable field."""
+    def __init__(self, parent, index):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+        self.index = index
+
+    def dump(self):
+        print '<property type="Property" offset="%s" index="%s">' % (self.pos, self.index)
+        self.printAndSet("keyIndex", self.readuInt32(), hexdump=False)
+        self.printAndSet("valueIndex", self.readuInt32(), hexdump=False)
+        print '</property>'
+        self.parent.pos = self.pos
+
+
+class PropertyBag(DOCDirStream):
+    """Specified by [MS-OSHARED] 2.3.4.3, specifies the smart tag data."""
+    def __init__(self, parent):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.parent = parent
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<propBag type="PropertyBag" offset="%s">' % self.pos
+        self.printAndSet("id", self.readuInt16())
+        self.printAndSet("cProp", self.readuInt16())
+        self.printAndSet("cbUnknown", self.readuInt16())
+        for i in range(self.cProp):
+            Property(self, i).dump()
+        print '</propBag>'
+        self.parent.pos = self.pos
 
 
 class SmartTagData(DOCDirStream):
@@ -4223,6 +4259,9 @@ class SmartTagData(DOCDirStream):
         print '<smartTagData type="SmartTagData" offset="%d" size="%d bytes">' % (self.pos, self.size)
         self.propBagStore = PropertyBagStore(self)
         self.propBagStore.dump()
+        # TODO this is an array in fact
+        self.propBag = PropertyBag(self)
+        self.propBag.dump()
         print '</smartTagData>'
 
 
