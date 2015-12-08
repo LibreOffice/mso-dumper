@@ -4142,14 +4142,19 @@ class PBString(DOCDirStream):
         self.printAndSet("cch", buf & 0x7fff)  # bits 0..15
         self.printAndSet("fAnsiString", self.getBit(buf, 15))
 
-        # TODO support fAnsiString == 0
         bytes = []
-        for dummy in range(self.cch):
+        if self.fAnsiString:
+            cch = self.cch
+        else:
+            cch = self.cch * 2
+        for dummy in range(cch):
             c = self.readuInt8()
-            if c == 0:
-                break
             bytes.append(c)
-        encoding = "ascii"
+
+        if self.fAnsiString == 1:
+            encoding = "ascii"
+        else:
+            encoding = "utf-16"
         self.printAndSet("rgxch", globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8'), hexdump=False)
 
         print '</%s>' % self.name
