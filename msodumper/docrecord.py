@@ -4139,7 +4139,7 @@ class PBString(DOCDirStream):
         else:
             print '<%s type="PBString" index="%s">' % (self.name, self.index)
         buf = self.readuInt16()
-        self.printAndSet("cch", buf & 0x7fff)  # bits 0..15
+        self.printAndSet("cch", buf & 0x7fff)  # bits 1..15
         self.printAndSet("fAnsiString", self.getBit(buf, 15))
 
         bytes = []
