@@ -4334,13 +4334,14 @@ FTO = {
 class FACTOIDINFO(DOCDirStream):
     """Specified by [MS-DOC] 2.9.66, contains information about a smart tag
     bookmark in the document."""
-    def __init__(self, parent):
+    def __init__(self, parent, index):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
+        self.index = index
 
     def dump(self):
-        print '<factoidinfo>'
+        print '<factoidinfo index="%s">' % self.index
         self.printAndSet("dwId", self.readuInt32())
         buf = self.readuInt16()
         self.printAndSet("fSubEntry", self.getBit(buf, 0))
@@ -4369,7 +4370,7 @@ class SttbfBkmkFactoid(DOCDirStream):
         for i in range(self.cData):
             self.printAndSet("cchData", self.readuInt16())
             assert self.cchData == 0x6
-            FACTOIDINFO(self).dump()
+            FACTOIDINFO(self, i).dump()
         assert self.pos == self.mainStream.fcSttbfBkmkFactoid + self.size
         print '</sttbfBkmkFactoid>'
 
