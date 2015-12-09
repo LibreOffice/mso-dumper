@@ -245,13 +245,14 @@ PropertyType = {
 class DictionaryEntry(DOCDirStream):
     """"Specified by [MS-OLEPS] 2.16, represents a mapping between a property
     identifier and a property name."""
-    def __init__(self, parent):
+    def __init__(self, parent, index):
         DOCDirStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
+        self.index = index
 
     def dump(self):
-        print '<dictionaryEntry offset="%s">' % self.pos
+        print '<dictionaryEntry offset="%s" index="%s">' % (self.pos, self.index)
         self.printAndSet("PropertyIdentifier", self.readuInt32())
         self.printAndSet("Length", self.readuInt32())
 
@@ -282,7 +283,7 @@ class Dictionary(DOCDirStream):
         print '<dictionary%s type="Dictionary" offset="%s">' % (self.index, self.pos)
         self.printAndSet("NumEntries", self.readuInt32())
         for i in range(self.NumEntries):
-            dictionaryEntry = DictionaryEntry(self)
+            dictionaryEntry = DictionaryEntry(self, i)
             dictionaryEntry.dump()
         print '</dictionary%s>' % self.index
 
