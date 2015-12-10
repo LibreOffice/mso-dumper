@@ -188,7 +188,7 @@ class FBKLD(DOCDirStream):
         print '<aFBKLD type="FBKLD" offset="%d">' % self.pos
         self.printAndSet("ibkf", self.readuInt16())
         self.printAndSet("cDepth", self.readuInt16())
-        print '</aFBKFD>'
+        print '</aFBKLD>'
 
 
 class PlcfBkld(DOCDirStream, PLC):
@@ -199,7 +199,7 @@ class PlcfBkld(DOCDirStream, PLC):
         self.pos = mainStream.fcPlcfBklFactoid
         self.size = mainStream.lcbPlcfBklFactoid
         self.aCP = []
-        self.aFBKFD = []
+        self.aFBKLD = []
 
     def dump(self):
         print '<plcfBkld type="PlcfBkld" offset="%d" size="%d bytes">' % (self.pos, self.size)
@@ -211,10 +211,10 @@ class PlcfBkld(DOCDirStream, PLC):
             print '<aCP index="%d" bookmarkEnd="%d">' % (i, start)
             pos += 4
 
-            # aFBKFD
-            aFBKFD = FBKFD(self, self.getOffset(self.pos, i))
-            aFBKFD.dump()
-            self.aFBKFD.append(aFBKFD)
+            # aFBKLD
+            aFBKLD = FBKLD(self, self.getOffset(self.pos, i))
+            aFBKLD.dump()
+            self.aFBKLD.append(aFBKLD)
             print '</aCP>'
         print '</plcfBkld>'
 
