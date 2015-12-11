@@ -219,6 +219,47 @@ class PlcfBkld(DOCDirStream, PLC):
         print '</plcfBkld>'
 
 
+class FactoidSpls(DOCDirStream):
+    """Specified by [MS-DOC] 2.9.67, an SPLS structure that specifies the state
+    of the smart tag recognizer over a range of text."""
+    def __init__(self, parent, offset):
+        DOCDirStream.__init__(self, parent.bytes)
+        self.pos = offset
+
+    def dump(self):
+        print '<factoidSpls type="FactoidSpls" offset="%d">' % self.pos
+        SPLS("spls", self, self.pos).dump()
+        print '</factoidSpls>'
+
+
+class Plcffactoid(DOCDirStream, PLC):
+    """Specified by [MS-DOC] 2.8.18, a PLC whose data elements are FactoidSpls structures."""
+    def __init__(self, mainStream):
+        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        PLC.__init__(self, mainStream.lcbPlcffactoid, 2)  # 2 is defined by the spec
+        self.pos = mainStream.fcPlcffactoid
+        self.size = mainStream.lcbPlcffactoid
+        self.aCPs = []
+        self.aFactoidSpls = []
+
+    def dump(self):
+        print '<plcffactoid type="Plcffactoid" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        pos = self.pos
+        for i in range(self.getElements()):
+            # aCp
+            aCp = self.getuInt32(pos=pos)
+            self.aCPs.append(aCp)
+            print '<aCP index="%d" value="%d">' % (i, aCp)
+            pos += 4
+
+            # aFactoidSpls
+            aFactoidSpls = FactoidSpls(self, self.getOffset(self.pos, i))
+            aFactoidSpls.dump()
+            self.aFactoidSpls.append(aFactoidSpls)
+            print '</aCP>'
+        print '</plcffactoid>'
+
+
 class Fldch(DOCDirStream):
     """The fldch structure determines the type of the field character."""
     def __init__(self, parent):
@@ -3673,8 +3714,8 @@ class SPLS(DOCDirStream):
             0xB: "splfRepeatWord",
             0xC: "splfUnknownWord",
         }
-        print '<spls type="SPLS" offset="%d" size="%d bytes">' % (self.pos, SPLS.size)
         buf = self.readuInt16()
+        print '<spls type="SPLS" offset="%d" size="%d bytes" value="%s">' % (self.pos, SPLS.size, hex(buf))
         self.printAndSet("splf", buf & 0x000f, end=False)  # 1..4th bits
         if self.splf in splfMap:
             print '<transformed name="%s"/>' % splfMap[self.splf]
