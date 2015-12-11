@@ -245,17 +245,18 @@ class Plcffactoid(DOCDirStream, PLC):
     def dump(self):
         print '<plcffactoid type="Plcffactoid" offset="%d" size="%d bytes">' % (self.pos, self.size)
         pos = self.pos
-        for i in range(self.getElements()):
+        for i in range(self.getElements() + 1):
             # aCp
             aCp = self.getuInt32(pos=pos)
             self.aCPs.append(aCp)
             print '<aCP index="%d" value="%d">' % (i, aCp)
             pos += 4
 
-            # aFactoidSpls
-            aFactoidSpls = FactoidSpls(self, self.getOffset(self.pos, i))
-            aFactoidSpls.dump()
-            self.aFactoidSpls.append(aFactoidSpls)
+            if i < self.getElements():
+                # aFactoidSpls
+                aFactoidSpls = FactoidSpls(self, self.getOffset(self.pos, i))
+                aFactoidSpls.dump()
+                self.aFactoidSpls.append(aFactoidSpls)
             print '</aCP>'
         print '</plcffactoid>'
 
