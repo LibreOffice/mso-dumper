@@ -788,7 +788,7 @@ class TextStyles(BaseRecordHandler):
             self.appendLine("no shape text given, assuming length of 1")
             textLen = 1
         else:
-            textLen = len(self.streamProperties["ShapeText"])
+            textLen = len(self.streamProperties["ShapeText"].decode("UTF-8"))
 
         # 4 bytes: <count> characters of shape text this para run is meant for
         # <para attribs>
