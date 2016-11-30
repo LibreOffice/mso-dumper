@@ -10,8 +10,8 @@ import struct
 from xml.sax.saxutils import quoteattr
 
 
-class DOCDirStream:
-    """Represents one single word file subdirectory, like e.g. 'WordDocument'."""
+class BinaryStream:
+    """Represents a binary stream, e.g. 'WordDocument' in an [MS-DOC] file."""
 
     def __init__(self, bytes, params=None, name=None, mainStream=None, doc=None):
         self.bytes = bytes

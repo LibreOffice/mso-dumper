@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from docdirstream import DOCDirStream
+from binarystream import BinaryStream
 import wmfrecord
 import base64
 
@@ -55,9 +55,9 @@ PenStyle = {
 }
 
 
-class EMFStream(DOCDirStream):
+class EMFStream(BinaryStream):
     def __init__(self, bytes):
-        DOCDirStream.__init__(self, bytes)
+        BinaryStream.__init__(self, bytes)
 
     def dump(self):
         print '<stream type="EMF" size="%d">' % self.size
@@ -81,9 +81,9 @@ class EMFStream(DOCDirStream):
         print '</stream>'
 
 
-class EMFRecord(DOCDirStream):
+class EMFRecord(BinaryStream):
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 

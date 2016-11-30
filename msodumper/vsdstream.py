@@ -6,7 +6,7 @@
 #
 
 import ole
-from docdirstream import DOCDirStream
+from binarystream import BinaryStream
 from msometa import SummaryInformationStream
 from msometa import DocumentSummaryInformationStream
 
@@ -44,7 +44,7 @@ class VSDFile:
         elif name == "\x05DocumentSummaryInformation":
             return DocumentSummaryInformationStream(bytes, self.params, doc=self)
         else:
-            return DOCDirStream(bytes, self.params, name, doc=self)
+            return BinaryStream(bytes, self.params, name, doc=self)
 
     def getName(self):
         return "native"

@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from docdirstream import DOCDirStream
+from binarystream import BinaryStream
 import globals
 import time
 
@@ -41,9 +41,9 @@ PIDDSI = {
 }
 
 
-class DocumentSummaryInformationStream(DOCDirStream):
+class DocumentSummaryInformationStream(BinaryStream):
     def __init__(self, bytes, params, doc):
-        DOCDirStream.__init__(self, bytes, params, "\x05DocumentSummaryInformation", doc=doc)
+        BinaryStream.__init__(self, bytes, params, "\x05DocumentSummaryInformation", doc=doc)
 
     def dump(self):
         print '<stream name="\\x05DocumentSummaryInformation" size="%d">' % self.size
@@ -74,9 +74,9 @@ PIDSI = {
 }
 
 
-class SummaryInformationStream(DOCDirStream):
+class SummaryInformationStream(BinaryStream):
     def __init__(self, bytes, params, doc):
-        DOCDirStream.__init__(self, bytes, params, "\x05SummaryInformation", doc=doc)
+        BinaryStream.__init__(self, bytes, params, "\x05SummaryInformation", doc=doc)
 
     def dump(self):
         print '<stream name="\\x05SummaryInformation" size="%d">' % self.size
@@ -84,10 +84,10 @@ class SummaryInformationStream(DOCDirStream):
         print '</stream>'
 
 
-class PropertySetStream(DOCDirStream):
+class PropertySetStream(BinaryStream):
     """Specified by [MS-OLEPS] 2.21, the stream format for simple property sets."""
     def __init__(self, parent, PropertyIds):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.propertyIds = PropertyIds
 
@@ -114,9 +114,9 @@ class PropertySetStream(DOCDirStream):
         print '</propertySetStream>'
 
 
-class PropertySet(DOCDirStream):
+class PropertySet(BinaryStream):
     def __init__(self, parent, offset, userDefined=False):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = offset
         self.userDefined = userDefined
@@ -153,9 +153,9 @@ class PropertySet(DOCDirStream):
         print '</propertySet>'
 
 
-class PropertyIdentifierAndOffset(DOCDirStream):
+class PropertyIdentifierAndOffset(BinaryStream):
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.index = index
         self.pos = parent.pos
@@ -242,11 +242,11 @@ PropertyType = {
 }
 
 
-class DictionaryEntry(DOCDirStream):
+class DictionaryEntry(BinaryStream):
     """"Specified by [MS-OLEPS] 2.16, represents a mapping between a property
     identifier and a property name."""
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.index = index
@@ -270,11 +270,11 @@ class DictionaryEntry(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class Dictionary(DOCDirStream):
+class Dictionary(BinaryStream):
     """Specified by [MS-OLEPS] 2.17, represents all mappings between property
     identifiers and property names in a property set."""
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.index = index
         self.pos = parent.posOrig + parent.idsAndOffsets[index].Offset
@@ -288,9 +288,9 @@ class Dictionary(DOCDirStream):
         print '</dictionary%s>' % self.index
 
 
-class TypedPropertyValue(DOCDirStream):
+class TypedPropertyValue(BinaryStream):
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.index = index
         self.pos = parent.posOrig + parent.idsAndOffsets[index].Offset
@@ -314,9 +314,9 @@ class TypedPropertyValue(DOCDirStream):
         print '</typedPropertyValue%s>' % self.index
 
 
-class CodePageString(DOCDirStream):
+class CodePageString(BinaryStream):
     def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.name = name
@@ -349,9 +349,9 @@ class CodePageString(DOCDirStream):
         print '</%s>' % self.name
 
 
-class GUID(DOCDirStream):
+class GUID(BinaryStream):
     def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.name = name
@@ -368,9 +368,9 @@ class GUID(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class OLERecord(DOCDirStream):
+class OLERecord(BinaryStream):
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 

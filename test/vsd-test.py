@@ -9,14 +9,13 @@
 # but e.g. https://bugs.freedesktop.org/show_bug.cgi?id=86729 bugdocs have it
 # set.
 
+import msodumper.docdirstream
+import msodumper.globals
+import msodumper.msometa
 import sys
 sys = reload(sys)
 sys.setdefaultencoding("utf-8")
 sys.path.append(sys.path[0] + "/..")
-
-import msodumper.docdirstream
-import msodumper.globals
-import msodumper.msometa
 
 
 class OLEStream(msodumper.docdirstream.DOCDirStream):

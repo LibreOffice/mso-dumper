@@ -7,7 +7,7 @@
 
 import locale
 import globals
-from docdirstream import DOCDirStream
+from binarystream import BinaryStream
 import docsprm
 import msodraw
 
@@ -18,10 +18,10 @@ def getWordModel(mainStream):
     return model
 
 
-class FcCompressed(DOCDirStream):
+class FcCompressed(BinaryStream):
     """The FcCompressed structure specifies the location of text in the WordDocument Stream."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -38,10 +38,10 @@ class FcCompressed(DOCDirStream):
         print '</fcCompressed>'
 
 
-class Pcd(DOCDirStream):
+class Pcd(BinaryStream):
     """The Pcd structure specifies the location of text in the WordDocument Stream and additional properties for this text."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -80,7 +80,7 @@ class PLC:
         return pos + (4 * (elements + 1)) + (structSize * i)
 
 
-class BKC(DOCDirStream):
+class BKC(BinaryStream):
     """The BKC structure contains information about how a bookmark interacts with tables."""
     def __init__(self, bkc):
         self.bkc = bkc
@@ -95,10 +95,10 @@ class BKC(DOCDirStream):
         print '</bkc>'
 
 
-class FBKF(DOCDirStream):
+class FBKF(BinaryStream):
     """The FBKF structure contains information about a bookmark."""
     def __init__(self, plcfAtnBkf, offset):
-        DOCDirStream.__init__(self, plcfAtnBkf.bytes)
+        BinaryStream.__init__(self, plcfAtnBkf.bytes)
         self.pos = offset
 
     def dump(self):
@@ -108,10 +108,10 @@ class FBKF(DOCDirStream):
         print '</aFBKF>'
 
 
-class PlcfBkf(DOCDirStream, PLC):
+class PlcfBkf(BinaryStream, PLC):
     """A PLCFBKF is a PLC whose data elements are FBKF structures."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, 4)  # 4 is defined by 2.8.10
         self.pos = offset
         self.size = size
@@ -136,10 +136,10 @@ class PlcfBkf(DOCDirStream, PLC):
         print '</plcfBkf>'
 
 
-class FBKFD(DOCDirStream):
+class FBKFD(BinaryStream):
     """Specified by [MS-DOC] 2.9.71, contains information about a bookmark."""
     def __init__(self, parent, offset):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = offset
 
     def dump(self):
@@ -150,10 +150,10 @@ class FBKFD(DOCDirStream):
         print '</aFBKFD>'
 
 
-class PlcfBkfd(DOCDirStream, PLC):
+class PlcfBkfd(BinaryStream, PLC):
     """Specified by [MS-DOC] 2.8.11, a PLC whose data elements are FBKFD structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfBkfFactoid, 6)  # 6 is defined by 2.8.10
         self.pos = mainStream.fcPlcfBkfFactoid
         self.size = mainStream.lcbPlcfBkfFactoid
@@ -178,10 +178,10 @@ class PlcfBkfd(DOCDirStream, PLC):
         print '</plcfBkfd>'
 
 
-class FBKLD(DOCDirStream):
+class FBKLD(BinaryStream):
     """Specified by [MS-DOC] 2.9.72, contains information about a bookmark."""
     def __init__(self, parent, offset):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = offset
 
     def dump(self):
@@ -191,10 +191,10 @@ class FBKLD(DOCDirStream):
         print '</aFBKLD>'
 
 
-class PlcfBkld(DOCDirStream, PLC):
+class PlcfBkld(BinaryStream, PLC):
     """Specified by [MS-DOC] 2.8.13, a PLC whose data elements are FBKLD structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfBklFactoid, 4)  # 4 is defined by the spec
         self.pos = mainStream.fcPlcfBklFactoid
         self.size = mainStream.lcbPlcfBklFactoid
@@ -219,11 +219,11 @@ class PlcfBkld(DOCDirStream, PLC):
         print '</plcfBkld>'
 
 
-class FactoidSpls(DOCDirStream):
+class FactoidSpls(BinaryStream):
     """Specified by [MS-DOC] 2.9.67, an SPLS structure that specifies the state
     of the smart tag recognizer over a range of text."""
     def __init__(self, parent, offset):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = offset
 
     def dump(self):
@@ -232,10 +232,10 @@ class FactoidSpls(DOCDirStream):
         print '</factoidSpls>'
 
 
-class Plcffactoid(DOCDirStream, PLC):
+class Plcffactoid(BinaryStream, PLC):
     """Specified by [MS-DOC] 2.8.18, a PLC whose data elements are FactoidSpls structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcffactoid, 2)  # 2 is defined by the spec
         self.pos = mainStream.fcPlcffactoid
         self.size = mainStream.lcbPlcffactoid
@@ -261,10 +261,10 @@ class Plcffactoid(DOCDirStream, PLC):
         print '</plcffactoid>'
 
 
-class Fldch(DOCDirStream):
+class Fldch(BinaryStream):
     """The fldch structure determines the type of the field character."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -277,10 +277,10 @@ class Fldch(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class Fld(DOCDirStream):
+class Fld(BinaryStream):
     """The Fld structure specifies a field character."""
     def __init__(self, parent, offset):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = offset
 
     def dump(self):
@@ -291,10 +291,10 @@ class Fld(DOCDirStream):
         print '</fld>'
 
 
-class PlcFld(DOCDirStream, PLC):
+class PlcFld(BinaryStream, PLC):
     """The Plcfld structure specifies the location of fields in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfFldMom, 2)  # 2 is defined by 2.8.25
         self.pos = mainStream.fcPlcfFldMom
         self.size = mainStream.lcbPlcfFldMom
@@ -324,10 +324,10 @@ class PlcFld(DOCDirStream, PLC):
         print '</plcFld>'
 
 
-class PlcfBkl(DOCDirStream, PLC):
+class PlcfBkl(BinaryStream, PLC):
     """The Plcfbkl structure is a PLC that contains only CPs and no additional data."""
     def __init__(self, mainStream, offset, size, start):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, 0)  # 0 is defined by 2.8.12
         self.pos = offset
         self.size = size
@@ -347,10 +347,10 @@ class PlcfBkl(DOCDirStream, PLC):
         print '</plcfBkl>'
 
 
-class PlcPcd(DOCDirStream, PLC):
+class PlcPcd(BinaryStream, PLC):
     """The PlcPcd structure is a PLC whose data elements are Pcds (8 bytes each)."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         PLC.__init__(self, size, 8)  # 8 is defined by 2.8.35
         self.pos = offset
         self.size = size
@@ -382,10 +382,10 @@ class PlcPcd(DOCDirStream, PLC):
         print '</plcPcd>'
 
 
-class Sepx(DOCDirStream):
+class Sepx(BinaryStream):
     """The Sepx structure specifies an array of Prl structures and the size of the array."""
     def __init__(self, sed):
-        DOCDirStream.__init__(self, sed.plcfSed.mainStream.bytes)
+        BinaryStream.__init__(self, sed.plcfSed.mainStream.bytes)
         self.pos = sed.fcSepx
 
     def dump(self):
@@ -399,12 +399,12 @@ class Sepx(DOCDirStream):
         print '</sepx>'
 
 
-class Sed(DOCDirStream):
+class Sed(BinaryStream):
     """The Sed structure specifies the location of the section properties."""
     size = 12  # defined by 2.8.26
 
     def __init__(self, plcfSed, offset):
-        DOCDirStream.__init__(self, plcfSed.bytes)
+        BinaryStream.__init__(self, plcfSed.bytes)
         self.pos = offset
         self.plcfSed = plcfSed
 
@@ -419,10 +419,10 @@ class Sed(DOCDirStream):
         print '</aSed>'
 
 
-class PlcfSed(DOCDirStream, PLC):
+class PlcfSed(BinaryStream, PLC):
     """The PlcfSed structure is a PLC structure where the data elements are Sed structures."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, Sed.size)
         self.pos = offset
         self.size = size
@@ -446,10 +446,10 @@ class PlcfSed(DOCDirStream, PLC):
         print '</plcfSed>'
 
 
-class Tcg(DOCDirStream):
+class Tcg(BinaryStream):
     """The Tcg structure specifies command-related customizations."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = offset
         self.size = size
 
@@ -462,10 +462,10 @@ class Tcg(DOCDirStream):
         print '</tcg>'
 
 
-class Sty(DOCDirStream):
+class Sty(BinaryStream):
     """The Sty structure specifies the type of the selection that was made."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -488,11 +488,11 @@ class Sty(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class Selsf(DOCDirStream):
+class Selsf(BinaryStream):
     size = 36  # defined by 2.9.241
     """The Selsf structure specifies the last selection that was made to the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcWss
         self.size = mainStream.lcbWss
         self.mainStream = mainStream
@@ -537,10 +537,10 @@ class Selsf(DOCDirStream):
         print '</selsf>'
 
 
-class COLORREF(DOCDirStream):
+class COLORREF(BinaryStream):
     """The COLORREF structure specifies a color in terms of its red, green, and blue components."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.red = self.readuInt8()
         self.green = self.readuInt8()
@@ -557,10 +557,10 @@ class COLORREF(DOCDirStream):
         print '</%s>' % name
 
 
-class BRC(DOCDirStream):
+class BRC(BinaryStream):
     """The Brc structure specifies a border."""
     def __init__(self, parent, name="brc"):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.name = name
@@ -587,10 +587,10 @@ class BRC(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class PChgTabsDel(DOCDirStream):
+class PChgTabsDel(BinaryStream):
     """The PChgTabsDel structure specifies the locations at which custom tab stops are ignored."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -603,10 +603,10 @@ class PChgTabsDel(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class PChgTabsDelClose(DOCDirStream):
+class PChgTabsDelClose(BinaryStream):
     """The PChgTabsDelClose structure specifies the locations at which custom tab stops are ignored."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -619,10 +619,10 @@ class PChgTabsDelClose(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class PChgTabsAdd(DOCDirStream):
+class PChgTabsAdd(BinaryStream):
     """The PChgTabsAdd structure specifies the locations and properties of custom tab stops."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -635,10 +635,10 @@ class PChgTabsAdd(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class PChgTabsPapxOperand(DOCDirStream):
+class PChgTabsPapxOperand(BinaryStream):
     """The PChgTabsPapxOperand structure is used by sprmPChgTabsPapx to specify custom tab stops to be added or ignored."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -649,12 +649,12 @@ class PChgTabsPapxOperand(DOCDirStream):
         print '</pchgTabsPapxOperand>'
 
 
-class PChgTabsOperand(DOCDirStream):
+class PChgTabsOperand(BinaryStream):
     """The PChgTabsOperand structure is used by sprmPChgTabs to specify a list
     of custom tab stops to add and another list of custom tab stops to
     ignore."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -744,12 +744,12 @@ Ipat = {
 }
 
 
-class Shd80(DOCDirStream):
+class Shd80(BinaryStream):
     """The Shd80 structure specifies the colors and pattern that are used for background shading."""
     size = 2  # in bytes, see 2.9.245
 
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.index = index
@@ -764,11 +764,11 @@ class Shd80(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class DefTableShd80Operand(DOCDirStream):
+class DefTableShd80Operand(BinaryStream):
     """The DefTableSdh800Operand structure is an operand that is used by several Table Sprms to
     specify each style of background shading that is applied to each of the cells in a single row."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -779,12 +779,12 @@ class DefTableShd80Operand(DOCDirStream):
         print '</defTableShd80Operand>'
 
 
-class CMajorityOperand(DOCDirStream):
+class CMajorityOperand(BinaryStream):
     """The CMajorityOperand structure is used by sprmCMajority to specify which
     character properties of the text to reset to match that of the underlying
     paragraph style."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -821,11 +821,11 @@ PgbPageDepth = {
 }
 
 
-class SPgbPropOperand(DOCDirStream):
+class SPgbPropOperand(BinaryStream):
     """The SPgbPropOperand structure is the operand to sprmSPgbProp. It specifies the properties of a
     page border."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -838,10 +838,10 @@ class SPgbPropOperand(DOCDirStream):
         print '</sPgbPropOperand>'
 
 
-class MFPF(DOCDirStream):
+class MFPF(BinaryStream):
     """The MFPF structure specifies the type of picture data that is stored."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -859,11 +859,11 @@ class MFPF(DOCDirStream):
         print '</mfpf>'
 
 
-class PICF_Shape(DOCDirStream):
+class PICF_Shape(BinaryStream):
     """The PICF_Shape structure specifies additional header information for
     pictures of type MM_SHAPE or MM_SHAPEFILE."""
     def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.name = name
@@ -1072,10 +1072,10 @@ BrcType = {
 }
 
 
-class Brc80(DOCDirStream):
+class Brc80(BinaryStream):
     """The Brc80 structure describes a border."""
     def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.name = name
@@ -1094,11 +1094,11 @@ class Brc80(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class Brc80MayBeNil(DOCDirStream):
+class Brc80MayBeNil(BinaryStream):
     """The Brc80MayBeNil structure is a Brc80 structure. When all bits are set,
     this structure specifies that the region in question has no border."""
     def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.name = name
@@ -1115,10 +1115,10 @@ class Brc80MayBeNil(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class PICMID(DOCDirStream):
+class PICMID(BinaryStream):
     """The PICMID structure specifies the size and border information for a picture."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -1144,11 +1144,11 @@ class PICMID(DOCDirStream):
         print '</picmid>'
 
 
-class PICF(DOCDirStream):
+class PICF(BinaryStream):
     """The PICF structure specifies the type of a picture, as well as the size
     of the picture and information about its border."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -1187,11 +1187,11 @@ ITypeTxt = {
 }
 
 
-class FFDataBits(DOCDirStream):
+class FFDataBits(BinaryStream):
     """The FFDataBits structure specifies the type and properties for a form
     field that is specified by a FFData."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -1212,11 +1212,11 @@ class FFDataBits(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class FFData(DOCDirStream):
+class FFData(BinaryStream):
     """The FFData structure specifies form field data for a text box, check
     box, or drop-down list box. (Page 348 of [MS-DOC] spec.)"""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -1255,13 +1255,13 @@ class FFData(DOCDirStream):
         print '</FFData>'
 
 
-class NilPICFAndBinData(DOCDirStream):
+class NilPICFAndBinData(BinaryStream):
     """The NilPICFAndBinData structure that holds header information and binary
     data for a hyperlink, form field, or add-in field. The NilPICFAndBinData
     structure MUST be stored in the Data Stream."""
     def __init__(self, parent):
         dataStream = parent.mainStream.doc.getDirectoryStreamByName("Data")
-        DOCDirStream.__init__(self, dataStream.bytes)
+        BinaryStream.__init__(self, dataStream.bytes)
         self.pos = parent.operand
         self.parent = parent
 
@@ -1295,12 +1295,12 @@ class NilPICFAndBinData(DOCDirStream):
         print '</NilPICFAndBinData>'
 
 
-class PICFAndOfficeArtData(DOCDirStream):
+class PICFAndOfficeArtData(BinaryStream):
     """The PICFAndOfficeArtData structure specifies header information and
     binary data for a picture."""
     def __init__(self, parent):
         dataStream = parent.mainStream.doc.getDirectoryStreamByName("Data")
-        DOCDirStream.__init__(self, dataStream.bytes)
+        BinaryStream.__init__(self, dataStream.bytes)
         self.pos = parent.operand
         self.parent = parent
 
@@ -1363,10 +1363,10 @@ Fts = {
 }
 
 
-class SHD(DOCDirStream):
+class SHD(BinaryStream):
     """The Shd structure specifies the colors and pattern that are used for background shading."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -1378,10 +1378,10 @@ class SHD(DOCDirStream):
         print '</shd>'
 
 
-class TCGRF(DOCDirStream):
+class TCGRF(BinaryStream):
     """A TCGRF structure specifies the text layout and cell merge properties for a single cell in a table."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -1401,10 +1401,10 @@ class TCGRF(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class TC80(DOCDirStream):
+class TC80(BinaryStream):
     """The TC80 structure specifies the border and other formatting for a single cell in a table."""
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.index = index
@@ -1421,12 +1421,12 @@ class TC80(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class TDefTableOperand(DOCDirStream):
+class TDefTableOperand(BinaryStream):
     """The TDefTableOperand structure is the operand that is used by the
     sprmTDefTable value. It specifies the initial layout of the columns in the
     current table row."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -1443,10 +1443,10 @@ class TDefTableOperand(DOCDirStream):
         print '</tDefTableOperand>'
 
 
-class TableBordersOperand(DOCDirStream):
+class TableBordersOperand(BinaryStream):
     """The TableBordersOperand structure specifies a set of borders for a table row."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -1463,11 +1463,11 @@ class TableBordersOperand(DOCDirStream):
         print '</tableBordersOperand>'
 
 
-class TableBordersOperand80(DOCDirStream):
+class TableBordersOperand80(BinaryStream):
     """The TableBordersOperand80 structure is an operand that specifies the
     borders which are applied to a row of table cells."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -1484,11 +1484,11 @@ class TableBordersOperand80(DOCDirStream):
         print '</tableBordersOperand80>'
 
 
-class SHDOperand(DOCDirStream):
+class SHDOperand(BinaryStream):
     """The SDHOperand structure is an operand that is used by several Sprm
     structures to specify the background shading to be applied."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -1498,10 +1498,10 @@ class SHDOperand(DOCDirStream):
         print '</shdOperand>'
 
 
-class BrcOperand(DOCDirStream):
+class BrcOperand(BinaryStream):
     """The BrcOperand structure is the operand to several SPRMs that control borders."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.posOrig = self.pos
         self.cb = self.readuInt8()
@@ -1513,10 +1513,10 @@ class BrcOperand(DOCDirStream):
         print '</brcOperand>'
 
 
-class Sprm(DOCDirStream):
+class Sprm(BinaryStream):
     """The Sprm structure specifies a modification to a property of a character, paragraph, table, or section."""
     def __init__(self, parent, mainStream=None, transformed=None):
-        DOCDirStream.__init__(self, parent.bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, parent.bytes, mainStream=mainStream)
         self.parent = parent
         self.transformed = transformed
         self.pos = parent.pos
@@ -1651,10 +1651,10 @@ class Sprm(DOCDirStream):
         return self.operandSizeMap[self.spra]
 
 
-class Prl(DOCDirStream):
+class Prl(BinaryStream):
     """The Prl structure is a Sprm that is followed by an operand."""
     def __init__(self, parent, offset, mainStream=None, transformed=None, index=None):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = offset
         self.posOrig = self.pos
@@ -1674,10 +1674,10 @@ class Prl(DOCDirStream):
         return 2 + self.sprm.getOperandSize()
 
 
-class GrpPrlAndIstd(DOCDirStream):
+class GrpPrlAndIstd(BinaryStream):
     """The GrpPrlAndIstd structure specifies the style and properties that are applied to a paragraph, a table row, or a table cell."""
     def __init__(self, bytes, offset, size, mainStream=None):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -1693,10 +1693,10 @@ class GrpPrlAndIstd(DOCDirStream):
         print '</grpPrlAndIstd>'
 
 
-class Chpx(DOCDirStream):
+class Chpx(BinaryStream):
     """The Chpx structure specifies a set of properties for text."""
     def __init__(self, parent, mainStream, offset, transformed=None):
-        DOCDirStream.__init__(self, parent.bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, parent.bytes, mainStream=mainStream)
         self.parent = parent
         self.pos = offset
         self.transformed = transformed
@@ -1719,10 +1719,10 @@ class Chpx(DOCDirStream):
         print '</chpx>'
 
 
-class PapxInFkp(DOCDirStream):
+class PapxInFkp(BinaryStream):
     """The PapxInFkp structure specifies a set of text properties."""
     def __init__(self, bytes, mainStream, offset):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
 
     def dump(self):
@@ -1737,12 +1737,12 @@ class PapxInFkp(DOCDirStream):
         print '</papxInFkp>'
 
 
-class BxPap(DOCDirStream):
+class BxPap(BinaryStream):
     """The BxPap structure specifies the offset of a PapxInFkp in PapxFkp."""
     size = 13  # in bytes, see 2.9.23
 
     def __init__(self, bytes, mainStream, offset, parentoffset):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.parentpos = parentoffset
 
@@ -1754,10 +1754,10 @@ class BxPap(DOCDirStream):
         print '</bxPap>'
 
 
-class ChpxFkp(DOCDirStream):
+class ChpxFkp(BinaryStream):
     """The ChpxFkp structure maps text to its character properties."""
     def __init__(self, pnFkpChpx, offset, size):
-        DOCDirStream.__init__(self, pnFkpChpx.mainStream.bytes, mainStream=pnFkpChpx.mainStream)
+        BinaryStream.__init__(self, pnFkpChpx.mainStream.bytes, mainStream=pnFkpChpx.mainStream)
         self.pos = offset
         self.size = size
         self.pnFkpChpx = pnFkpChpx
@@ -1788,10 +1788,10 @@ class ChpxFkp(DOCDirStream):
         print '</chpxFkp>'
 
 
-class PapxFkp(DOCDirStream):
+class PapxFkp(BinaryStream):
     """The PapxFkp structure maps paragraphs, table rows, and table cells to their properties."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -1817,10 +1817,10 @@ class PapxFkp(DOCDirStream):
         print '</papxFkp>'
 
 
-class PnFkpChpx(DOCDirStream):
+class PnFkpChpx(BinaryStream):
     """The PnFkpChpx structure specifies the location in the WordDocument Stream of a ChpxFkp structure."""
     def __init__(self, plcBteChpx, offset, size, name):
-        DOCDirStream.__init__(self, plcBteChpx.bytes, mainStream=plcBteChpx.mainStream)
+        BinaryStream.__init__(self, plcBteChpx.bytes, mainStream=plcBteChpx.mainStream)
         self.pos = offset
         self.size = size
         self.name = name
@@ -1835,10 +1835,10 @@ class PnFkpChpx(DOCDirStream):
         print '</%s>' % self.name
 
 
-class LPXCharBuffer9(DOCDirStream):
+class LPXCharBuffer9(BinaryStream):
     """The LPXCharBuffer9 structure is a length-prefixed buffer for up to 9 Unicode characters."""
     def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.name = name
 
@@ -1849,10 +1849,10 @@ class LPXCharBuffer9(DOCDirStream):
         print '</%s>' % self.name
 
 
-class ATRDPre10(DOCDirStream):
+class ATRDPre10(BinaryStream):
     """The ATRDPre10 structure contains information about a comment in the document."""
     def __init__(self, aPlcfandRef, offset):
-        DOCDirStream.__init__(self, aPlcfandRef.bytes)
+        BinaryStream.__init__(self, aPlcfandRef.bytes)
         self.pos = offset
 
     def dump(self):
@@ -1867,10 +1867,10 @@ class ATRDPre10(DOCDirStream):
         print '</aATRDPre10>'
 
 
-class PnFkpPapx(DOCDirStream):
+class PnFkpPapx(BinaryStream):
     """The PnFkpPapx structure specifies the offset of a PapxFkp in the WordDocument Stream."""
     def __init__(self, bytes, mainStream, offset, size, name):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
         self.name = name
@@ -1884,10 +1884,10 @@ class PnFkpPapx(DOCDirStream):
         print '</%s>' % self.name
 
 
-class PlcBteChpx(DOCDirStream, PLC):
+class PlcBteChpx(BinaryStream, PLC):
     """The PlcBteChpx structure is a PLC that maps the offsets of text in the WordDocument stream to the character properties of that text."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfBteChpx, 4)
         self.pos = mainStream.fcPlcfBteChpx
         self.size = mainStream.lcbPlcfBteChpx
@@ -1909,11 +1909,11 @@ class PlcBteChpx(DOCDirStream, PLC):
         print '</plcBteChpx>'
 
 
-class PlcfHdd(DOCDirStream, PLC):
+class PlcfHdd(BinaryStream, PLC):
     """The Plcfhdd structure is a PLC that contains only CPs and no additional data. It specifies where
     header document stories begin and end."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfHdd, 0)
         self.pos = mainStream.fcPlcfHdd
         self.size = mainStream.lcbPlcfHdd
@@ -1956,10 +1956,10 @@ class PlcfHdd(DOCDirStream, PLC):
         print '</plcfHdd>'
 
 
-class PlcfandTxt(DOCDirStream, PLC):
+class PlcfandTxt(BinaryStream, PLC):
     """The PlcfandTxt structure is a PLC that contains only CPs and no additional data."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, 0)
         self.pos = offset
         self.size = size
@@ -1978,10 +1978,10 @@ class PlcfandTxt(DOCDirStream, PLC):
         print '</plcfandTxt>'
 
 
-class PlcfandRef(DOCDirStream, PLC):
+class PlcfandRef(BinaryStream, PLC):
     """The PlcfandRef structure is a PLC whose data elements are ATRDPre10 structures."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, 30)
         self.pos = offset
         self.size = size
@@ -2002,10 +2002,10 @@ class PlcfandRef(DOCDirStream, PLC):
         print '</plcfandRef>'
 
 
-class PlcBtePapx(DOCDirStream, PLC):
+class PlcBtePapx(BinaryStream, PLC):
     """The PlcBtePapx structure is a PLC that specifies paragraph, table row, or table cell properties."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         PLC.__init__(self, size, 4)
         self.pos = offset
         self.size = size
@@ -2027,10 +2027,10 @@ class PlcBtePapx(DOCDirStream, PLC):
         print '</plcBtePapx>'
 
 
-class Pcdt(DOCDirStream):
+class Pcdt(BinaryStream):
     """The Pcdt structure contains a PlcPcd structure and specifies its size."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -2046,11 +2046,11 @@ class Pcdt(DOCDirStream):
         print '</pcdt>'
 
 
-class PrcData(DOCDirStream):
+class PrcData(BinaryStream):
     """The PrcData structure specifies an array of Prl elements and the size of
     the array."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
         self.cbGrpprl = self.readInt16()
@@ -2073,11 +2073,11 @@ class PrcData(DOCDirStream):
         print '</prcData>'
 
 
-class Prc(DOCDirStream):
+class Prc(BinaryStream):
     """The Prc structure specifies a set of properties for document content
     that is referenced by a Pcd structure."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
         self.clxt = self.readuInt8()
@@ -2090,9 +2090,9 @@ class Prc(DOCDirStream):
         print '</prc>'
 
 
-class Clx(DOCDirStream):
+class Clx(BinaryStream):
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -2113,10 +2113,10 @@ class Clx(DOCDirStream):
         print '</clx>'
 
 
-class Copts60(DOCDirStream):
+class Copts60(BinaryStream):
     """The Copts60 structure specifies compatibility options."""
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
 
     def dump(self):
@@ -2145,10 +2145,10 @@ class Copts60(DOCDirStream):
         print '</copts60>'
 
 
-class DTTM(DOCDirStream):
+class DTTM(BinaryStream):
     """The DTTM structure specifies date and time."""
     def __init__(self, parent, name):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.name = name
@@ -2167,10 +2167,10 @@ class DTTM(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class GRFSTD(DOCDirStream):
+class GRFSTD(BinaryStream):
     """The GRFSTD structure specifies the general properties of a style."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -2197,12 +2197,12 @@ class GRFSTD(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class DopBase(DOCDirStream):
+class DopBase(BinaryStream):
     """The DopBase structure contains document and compatibility settings."""
     size = 84
 
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
 
@@ -2315,10 +2315,10 @@ class DopBase(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class Copts80(DOCDirStream):
+class Copts80(BinaryStream):
     """The Copts80 structure specifies compatibility options."""
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
 
     def dump(self):
@@ -2348,12 +2348,12 @@ class Copts80(DOCDirStream):
         print '</copts80>'
 
 
-class Copts(DOCDirStream):
+class Copts(BinaryStream):
     """A structure that specifies compatibility options."""
     size = 32
 
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
 
@@ -2415,12 +2415,12 @@ class Copts(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class Dop95(DOCDirStream):
+class Dop95(BinaryStream):
     """The Dop95 structure contains document and compatibility settings."""
     size = 88
 
     def __init__(self, dop, dopSize):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
         self.dopSize = dopSize
@@ -2441,12 +2441,12 @@ class Dop95(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class DopTypography(DOCDirStream):
+class DopTypography(BinaryStream):
     """The DopTypography structure contains East Asian language typography settings."""
     size = 310
 
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
 
@@ -2476,12 +2476,12 @@ class DopTypography(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class Dogrid(DOCDirStream):
+class Dogrid(BinaryStream):
     """The Dogrid structure specifies parameters for the drawn object properties of the document."""
     size = 10
 
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
 
@@ -2504,10 +2504,10 @@ class Dogrid(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class Asumyi(DOCDirStream):
+class Asumyi(BinaryStream):
     """The Asumyi structure specifies AutoSummary state information"""
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
 
     def dump(self):
@@ -2525,12 +2525,12 @@ class Asumyi(DOCDirStream):
         print '</asumyi>'
 
 
-class Dop97(DOCDirStream):
+class Dop97(BinaryStream):
     """The Dop97 structure contains document and compatibility settings."""
     size = 500
 
     def __init__(self, dop, dopSize):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
         self.dopSize = dopSize
@@ -2604,12 +2604,12 @@ class Dop97(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class Dop2000(DOCDirStream):
+class Dop2000(BinaryStream):
     """The Dop2000 structure contains document and compatibility settings."""
     size = 544
 
     def __init__(self, dop, dopSize):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
         self.dopSize = dopSize
@@ -2680,12 +2680,12 @@ class Dop2000(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class Dop2002(DOCDirStream):
+class Dop2002(BinaryStream):
     """The Dop2002 structure contains document and compatibility settings."""
     size = 594
 
     def __init__(self, dop, dopSize):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
         self.dopSize = dopSize
@@ -2733,12 +2733,12 @@ class Dop2002(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class Dop2003(DOCDirStream):
+class Dop2003(BinaryStream):
     """The Dop2003 structure contains document and compatibility settings."""
     size = 616
 
     def __init__(self, dop, dopSize):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
         self.dopSize = dopSize
@@ -2787,10 +2787,10 @@ class Dop2003(DOCDirStream):
         self.dop.pos = self.pos
 
 
-class DopMth(DOCDirStream):
+class DopMth(BinaryStream):
     """The DopMth structure specifies document-wide math settings."""
     def __init__(self, dop):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
 
     def dump(self):
@@ -2818,10 +2818,10 @@ class DopMth(DOCDirStream):
         print '</dopMth>'
 
 
-class Dop2007(DOCDirStream):
+class Dop2007(BinaryStream):
     """The Dop2007 structure contains document and compatibility settings."""
     def __init__(self, dop, dopSize):
-        DOCDirStream.__init__(self, dop.bytes)
+        BinaryStream.__init__(self, dop.bytes)
         self.pos = dop.pos
         self.dop = dop
         self.dopSize = dopSize
@@ -2854,10 +2854,10 @@ class Dop2007(DOCDirStream):
         print '</dop2007>'
 
 
-class RC4EncryptionHeader(DOCDirStream):
+class RC4EncryptionHeader(BinaryStream):
     """The encryption header structure used for RC4 encryption."""
     def __init__(self, fib, pos, size):
-        DOCDirStream.__init__(self, fib.getTableStream().bytes)
+        BinaryStream.__init__(self, fib.getTableStream().bytes)
         self.fib = fib
         self.pos = pos
         self.size = size
@@ -2874,10 +2874,10 @@ class RC4EncryptionHeader(DOCDirStream):
         assert self.pos == self.size
 
 
-class Dop(DOCDirStream):
+class Dop(BinaryStream):
     """The Dop structure contains the document and compatibility settings for the document."""
     def __init__(self, fib):
-        DOCDirStream.__init__(self, fib.getTableStream().bytes)
+        BinaryStream.__init__(self, fib.getTableStream().bytes)
         self.pos = fib.fcDop
         self.size = fib.lcbDop
         self.fib = fib
@@ -2897,10 +2897,10 @@ class Dop(DOCDirStream):
         print '</dop>'
 
 
-class FFID(DOCDirStream):
+class FFID(BinaryStream):
     """The FFID structure specifies the font family and character pitch for a font."""
     def __init__(self, bytes, offset):
-        DOCDirStream.__init__(self, bytes)
+        BinaryStream.__init__(self, bytes)
         self.pos = offset
         self.unused1 = None
         self.unused2 = None
@@ -2917,10 +2917,10 @@ class FFID(DOCDirStream):
         print '<ffid value="%s" prq="%s" fTrueType="%s" ff="%s"/>' % (hex(self.ffid), hex(self.prq), self.fTrueType, hex(self.ff))
 
 
-class PANOSE(DOCDirStream):
+class PANOSE(BinaryStream):
     """The PANOSE structure defines the PANOSE font classification values for a TrueType font."""
     def __init__(self, bytes, offset):
-        DOCDirStream.__init__(self, bytes)
+        BinaryStream.__init__(self, bytes)
         self.pos = offset
 
     def dump(self):
@@ -2930,10 +2930,10 @@ class PANOSE(DOCDirStream):
         print '</panose>'
 
 
-class FontSignature(DOCDirStream):
+class FontSignature(BinaryStream):
     """Contains information identifying the code pages and Unicode subranges for which a given font provides glyphs."""
     def __init__(self, bytes, offset):
-        DOCDirStream.__init__(self, bytes)
+        BinaryStream.__init__(self, bytes)
         self.pos = offset
 
     def dump(self):
@@ -2948,10 +2948,10 @@ class FontSignature(DOCDirStream):
         )
 
 
-class FFN(DOCDirStream):
+class FFN(BinaryStream):
     """The FFN structure specifies information about a font that is used in the document."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -2970,10 +2970,10 @@ class FFN(DOCDirStream):
         print '</ffn>'
 
 
-class SttbfFfn(DOCDirStream):
+class SttbfFfn(BinaryStream):
     """The SttbfFfn structure is an STTB whose strings are FFN records that specify details of system fonts."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -2990,10 +2990,10 @@ class SttbfFfn(DOCDirStream):
         print '</sttbfFfn>'
 
 
-class GrpXstAtnOwners(DOCDirStream):
+class GrpXstAtnOwners(BinaryStream):
     """This array contains the names of authors of comments in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcGrpXstAtnOwners
         self.size = mainStream.lcbGrpXstAtnOwners
         self.mainStream = mainStream
@@ -3008,10 +3008,10 @@ class GrpXstAtnOwners(DOCDirStream):
         print '</grpXstAtnOwners>'
 
 
-class SttbfAssoc(DOCDirStream):
+class SttbfAssoc(BinaryStream):
     """The SttbfAssoc structure is an STTB that contains strings which are associated with this document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcSttbfAssoc
         self.size = mainStream.lcbSttbfAssoc
         self.mainStream = mainStream
@@ -3061,10 +3061,10 @@ class SttbfAssoc(DOCDirStream):
         print '</sttbfAssoc>'
 
 
-class SttbfRMark(DOCDirStream):
+class SttbfRMark(BinaryStream):
     """The SttbfRMark structure is an STTB structure where the strings specify the names of the authors of the revision marks, comments, and e-mail messages in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcSttbfRMark
         self.size = mainStream.lcbSttbfRMark
         self.mainStream = mainStream
@@ -3085,10 +3085,10 @@ class SttbfRMark(DOCDirStream):
         print '</sttbfRMark>'
 
 
-class OfficeArtWordDrawing(DOCDirStream):
+class OfficeArtWordDrawing(BinaryStream):
     """The OfficeArtWordDrawing structure specifies information about the drawings in the document."""
     def __init__(self, officeArtContent):
-        DOCDirStream.__init__(self, officeArtContent.bytes)
+        BinaryStream.__init__(self, officeArtContent.bytes)
         self.pos = officeArtContent.pos
         self.officeArtContent = officeArtContent
 
@@ -3100,10 +3100,10 @@ class OfficeArtWordDrawing(DOCDirStream):
         self.officeArtContent.pos = self.pos
 
 
-class OfficeArtContent(DOCDirStream):
+class OfficeArtContent(BinaryStream):
     """The OfficeArtContent structure specifies information about a drawing in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcDggInfo
         self.size = mainStream.lcbDggInfo
         self.mainStream = mainStream
@@ -3122,12 +3122,12 @@ class OfficeArtContent(DOCDirStream):
         print '</officeArtContent>'
 
 
-class ATNBE(DOCDirStream):
+class ATNBE(BinaryStream):
     """The ATNBE structure contains information about an annotation bookmark in the document."""
     size = 10  # in bytes, see 2.9.4
 
     def __init__(self, sttbfAtnBkmk):
-        DOCDirStream.__init__(self, sttbfAtnBkmk.bytes)
+        BinaryStream.__init__(self, sttbfAtnBkmk.bytes)
         self.pos = sttbfAtnBkmk.pos
 
     def dump(self):
@@ -3138,10 +3138,10 @@ class ATNBE(DOCDirStream):
         print '</atnbe>'
 
 
-class SttbfAtnBkmk(DOCDirStream):
+class SttbfAtnBkmk(BinaryStream):
     """The SttbfAtnBkmk structure is an STTB whose strings are all of zero length."""
     def __init__(self, mainStream, offset, size):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = offset
         self.size = size
 
@@ -3161,10 +3161,10 @@ class SttbfAtnBkmk(DOCDirStream):
         print '</sttbfAtnBkmk>'
 
 
-class Stshif(DOCDirStream):
+class Stshif(BinaryStream):
     """The Stshif structure specifies general stylesheet information."""
     def __init__(self, bytes, mainStream, offset):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = 18
 
@@ -3184,10 +3184,10 @@ class Stshif(DOCDirStream):
         print '</stshif>'
 
 
-class LSD(DOCDirStream):
+class LSD(BinaryStream):
     """The LSD structure specifies the properties to be used for latent application-defined styles (see StshiLsd) when they are created."""
     def __init__(self, bytes, offset):
-        DOCDirStream.__init__(self, bytes)
+        BinaryStream.__init__(self, bytes)
         self.pos = offset
 
     def dump(self):
@@ -3200,10 +3200,10 @@ class LSD(DOCDirStream):
         self.printAndSet("fReserved", self.readuInt16())
 
 
-class StshiLsd(DOCDirStream):
+class StshiLsd(BinaryStream):
     """The StshiLsd structure specifies latent style data for application-defined styles."""
     def __init__(self, bytes, stshi, offset):
-        DOCDirStream.__init__(self, bytes)
+        BinaryStream.__init__(self, bytes)
         self.stshi = stshi
         self.pos = offset
 
@@ -3218,10 +3218,10 @@ class StshiLsd(DOCDirStream):
         print '</stshiLsd>'
 
 
-class STSHI(DOCDirStream):
+class STSHI(BinaryStream):
     """The STSHI structure specifies general stylesheet and related information."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -3239,10 +3239,10 @@ class STSHI(DOCDirStream):
         print '</stshi>'
 
 
-class LPStshi(DOCDirStream):
+class LPStshi(BinaryStream):
     """The LPStshi structure specifies general stylesheet information."""
     def __init__(self, bytes, mainStream, offset):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
 
     def dump(self):
@@ -3254,10 +3254,10 @@ class LPStshi(DOCDirStream):
         print '</lpstshi>'
 
 
-class StdfBase(DOCDirStream):
+class StdfBase(BinaryStream):
     """The Stdf structure specifies general information about the style."""
     def __init__(self, bytes, mainStream, offset):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = 10
 
@@ -3287,10 +3287,10 @@ class StdfBase(DOCDirStream):
         print '</stdfBase>'
 
 
-class StdfPost2000(DOCDirStream):
+class StdfPost2000(BinaryStream):
     """The StdfPost2000 structure specifies general information about a style."""
     def __init__(self, stdf):
-        DOCDirStream.__init__(self, stdf.bytes, mainStream=stdf.mainStream)
+        BinaryStream.__init__(self, stdf.bytes, mainStream=stdf.mainStream)
         self.pos = stdf.pos
         self.size = 8
 
@@ -3308,10 +3308,10 @@ class StdfPost2000(DOCDirStream):
         print '</stdfPost2000>'
 
 
-class Stdf(DOCDirStream):
+class Stdf(BinaryStream):
     """The Stdf structure specifies general information about the style."""
     def __init__(self, std):
-        DOCDirStream.__init__(self, std.bytes, mainStream=std.mainStream)
+        BinaryStream.__init__(self, std.bytes, mainStream=std.mainStream)
         self.std = std
         self.pos = std.pos
 
@@ -3332,10 +3332,10 @@ class Stdf(DOCDirStream):
         print '</stdf>'
 
 
-class Xst(DOCDirStream):
+class Xst(BinaryStream):
     """The Xst structure is a string. The string is prepended by its length and is not null-terminated."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
 
     def dump(self):
@@ -3347,10 +3347,10 @@ class Xst(DOCDirStream):
         print '</xst>'
 
 
-class Xstz(DOCDirStream):
+class Xstz(BinaryStream):
     """The Xstz structure is a string. The string is prepended by its length and is null-terminated."""
     def __init__(self, parent, name="xstz"):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.name = name
 
@@ -3363,10 +3363,10 @@ class Xstz(DOCDirStream):
         print '</%s>' % self.name
 
 
-class UpxPapx(DOCDirStream):
+class UpxPapx(BinaryStream):
     """The UpxPapx structure specifies the paragraph formatting properties that differ from the parent"""
     def __init__(self, lPUpxPapx):
-        DOCDirStream.__init__(self, lPUpxPapx.bytes)
+        BinaryStream.__init__(self, lPUpxPapx.bytes)
         self.lPUpxPapx = lPUpxPapx
         self.pos = lPUpxPapx.pos
 
@@ -3384,10 +3384,10 @@ class UpxPapx(DOCDirStream):
         print '</upxPapx>'
 
 
-class UpxChpx(DOCDirStream):
+class UpxChpx(BinaryStream):
     """The UpxChpx structure specifies the character formatting properties that differ from the parent"""
     def __init__(self, lPUpxChpx):
-        DOCDirStream.__init__(self, lPUpxChpx.bytes)
+        BinaryStream.__init__(self, lPUpxChpx.bytes)
         self.lPUpxChpx = lPUpxChpx
         self.pos = lPUpxChpx.pos
 
@@ -3404,10 +3404,10 @@ class UpxChpx(DOCDirStream):
         print '</upxChpx>'
 
 
-class UpxTapx(DOCDirStream):
+class UpxTapx(BinaryStream):
     """The UpxTapx structure specifies the table formatting properties that differ from the parent"""
     def __init__(self, lPUpxTapx):
-        DOCDirStream.__init__(self, lPUpxTapx.bytes)
+        BinaryStream.__init__(self, lPUpxTapx.bytes)
         self.lPUpxTapx = lPUpxTapx
         self.pos = lPUpxTapx.pos
 
@@ -3435,10 +3435,10 @@ class UPXPadding:
             self.pos += 1
 
 
-class LPUpxPapx(DOCDirStream):
+class LPUpxPapx(BinaryStream):
     """The LPUpxPapx structure specifies paragraph formatting properties."""
     def __init__(self, stkParaGRLPUPX):
-        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
+        BinaryStream.__init__(self, stkParaGRLPUPX.bytes)
         self.pos = stkParaGRLPUPX.pos
 
     def dump(self):
@@ -3453,10 +3453,10 @@ class LPUpxPapx(DOCDirStream):
         print '</lPUpxPapx>'
 
 
-class LPUpxChpx(DOCDirStream):
+class LPUpxChpx(BinaryStream):
     """The LPUpxChpx structure specifies character formatting properties."""
     def __init__(self, stkParaGRLPUPX):
-        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
+        BinaryStream.__init__(self, stkParaGRLPUPX.bytes)
         self.pos = stkParaGRLPUPX.pos
 
     def dump(self):
@@ -3471,10 +3471,10 @@ class LPUpxChpx(DOCDirStream):
         print '</lPUpxChpx>'
 
 
-class LPUpxTapx(DOCDirStream):
+class LPUpxTapx(BinaryStream):
     """The LPUpxTapx structure specifies table formatting properties."""
     def __init__(self, stkParaGRLPUPX):
-        DOCDirStream.__init__(self, stkParaGRLPUPX.bytes)
+        BinaryStream.__init__(self, stkParaGRLPUPX.bytes)
         self.pos = stkParaGRLPUPX.pos
 
     def dump(self):
@@ -3489,10 +3489,10 @@ class LPUpxTapx(DOCDirStream):
         print '</lPUpxTapx>'
 
 
-class StkListGRLPUPX(DOCDirStream):
+class StkListGRLPUPX(BinaryStream):
     """The StkListGRLPUPX structure that specifies the formatting properties for a list style."""
     def __init__(self, grLPUpxSw):
-        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        BinaryStream.__init__(self, grLPUpxSw.bytes)
         self.grLPUpxSw = grLPUpxSw
         self.pos = grLPUpxSw.pos
 
@@ -3504,10 +3504,10 @@ class StkListGRLPUPX(DOCDirStream):
         print '</stkListGRLPUPX>'
 
 
-class StkTableGRLPUPX(DOCDirStream):
+class StkTableGRLPUPX(BinaryStream):
     """The StkTableGRLPUPX structure that specifies the formatting properties for a table style."""
     def __init__(self, grLPUpxSw):
-        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        BinaryStream.__init__(self, grLPUpxSw.bytes)
         self.grLPUpxSw = grLPUpxSw
         self.pos = grLPUpxSw.pos
 
@@ -3525,10 +3525,10 @@ class StkTableGRLPUPX(DOCDirStream):
         print '</stkTableGRLPUPX>'
 
 
-class StkCharGRLPUPX(DOCDirStream):
+class StkCharGRLPUPX(BinaryStream):
     """The StkCharGRLPUPX structure that specifies the formatting properties for a character style."""
     def __init__(self, grLPUpxSw):
-        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        BinaryStream.__init__(self, grLPUpxSw.bytes)
         self.grLPUpxSw = grLPUpxSw
         self.pos = grLPUpxSw.pos
         self.grLPUpxSw = grLPUpxSw
@@ -3544,10 +3544,10 @@ class StkCharGRLPUPX(DOCDirStream):
         print '</stkCharGRLPUPX>'
 
 
-class StkParaGRLPUPX(DOCDirStream):
+class StkParaGRLPUPX(BinaryStream):
     """The StkParaGRLPUPX structure that specifies the formatting properties for a paragraph style."""
     def __init__(self, grLPUpxSw):
-        DOCDirStream.__init__(self, grLPUpxSw.bytes)
+        BinaryStream.__init__(self, grLPUpxSw.bytes)
         self.grLPUpxSw = grLPUpxSw
         self.pos = grLPUpxSw.pos
         self.grLPUpxSw = grLPUpxSw
@@ -3566,10 +3566,10 @@ class StkParaGRLPUPX(DOCDirStream):
         print '</stkParaGRLPUPX>'
 
 
-class GrLPUpxSw(DOCDirStream):
+class GrLPUpxSw(BinaryStream):
     """The GrLPUpxSw structure is an array of variable-size structures that specify the formatting of the style."""
     def __init__(self, std):
-        DOCDirStream.__init__(self, std.bytes)
+        BinaryStream.__init__(self, std.bytes)
         self.std = std
         self.pos = std.pos
 
@@ -3585,10 +3585,10 @@ class GrLPUpxSw(DOCDirStream):
         self.pos = child.pos
 
 
-class STD(DOCDirStream):
+class STD(BinaryStream):
     """The STD structure specifies a style definition."""
     def __init__(self, lpstd):
-        DOCDirStream.__init__(self, lpstd.bytes, mainStream=lpstd.mainStream)
+        BinaryStream.__init__(self, lpstd.bytes, mainStream=lpstd.mainStream)
         self.lpstd = lpstd
         self.pos = lpstd.pos
         self.posOrig = self.pos
@@ -3609,10 +3609,10 @@ class STD(DOCDirStream):
         print '</std>'
 
 
-class LPStd(DOCDirStream):
+class LPStd(BinaryStream):
     """The LPStd structure specifies a length-prefixed style definition."""
     def __init__(self, stsh):
-        DOCDirStream.__init__(self, stsh.bytes, mainStream=stsh.mainStream)
+        BinaryStream.__init__(self, stsh.bytes, mainStream=stsh.mainStream)
         self.stsh = stsh
         self.pos = stsh.pos
 
@@ -3626,10 +3626,10 @@ class LPStd(DOCDirStream):
         self.pos = posOrig + self.cbStd
 
 
-class STSH(DOCDirStream):
+class STSH(BinaryStream):
     """The STSH structure specifies the stylesheet for a document."""
     def __init__(self, bytes, mainStream, offset, size):
-        DOCDirStream.__init__(self, bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, bytes, mainStream=mainStream)
         self.pos = offset
         self.size = size
 
@@ -3647,10 +3647,10 @@ class STSH(DOCDirStream):
         print '</stsh>'
 
 
-class Rca(DOCDirStream):
+class Rca(BinaryStream):
     """The Rca structure is used to define the coordinates of a rectangular area in the document."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -3664,12 +3664,12 @@ class Rca(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class SPA(DOCDirStream):
+class SPA(BinaryStream):
     """The Spa structure specifies information about the shapes and drawings that the document contains."""
     size = 26  # defined by 2.8.37
 
     def __init__(self, parent, offset):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = offset
 
@@ -3692,12 +3692,12 @@ class SPA(DOCDirStream):
         assert pos + SPA.size == self.pos
 
 
-class SPLS(DOCDirStream):
+class SPLS(BinaryStream):
     """The SPLS structure specifies the current state of a range of text with regard to one of the language checking features."""
     size = 2  # defined by 2.9.253
 
     def __init__(self, name, plcfSpl, offset):
-        DOCDirStream.__init__(self, plcfSpl.bytes)
+        BinaryStream.__init__(self, plcfSpl.bytes)
         self.name = name
         self.plcfSpl = plcfSpl
         self.pos = offset
@@ -3728,10 +3728,10 @@ class SPLS(DOCDirStream):
         print '</spls>'
 
 
-class PlcfSpl(DOCDirStream, PLC):
+class PlcfSpl(BinaryStream, PLC):
     """The Plcfspl structure is a Plc structure whose data elements are SpellingSpls structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfSpl, 2)  # 2 is defined by 2.8.28
         self.pos = mainStream.fcPlcfSpl
         self.size = mainStream.lcbPlcfSpl
@@ -3755,12 +3755,12 @@ class PlcfSpl(DOCDirStream, PLC):
         print '</plcfSpl>'
 
 
-class FTXBXNonReusable(DOCDirStream):
+class FTXBXNonReusable(BinaryStream):
     """The FTXBXNonReusable structure is used within the FTXBXS structure when that structure
     describes a real textbox. A real textbox is any shape object into which text is added, and that is the
     first or only shape in a linked chain."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -3772,11 +3772,11 @@ class FTXBXNonReusable(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class FTXBXSReusable(DOCDirStream):
+class FTXBXSReusable(BinaryStream):
     """The FTXBXSReusable structure is used within the FTXBXS structure when it describes a spare
     structure that can be reused by the application and converted into an actual textbox."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -3788,13 +3788,13 @@ class FTXBXSReusable(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class FTXBXS(DOCDirStream):
+class FTXBXS(BinaryStream):
     """Associates ranges of text from the Textboxes Document and the Header
     Textboxes Document, with shape objects."""
     size = 22  # 2.8.32
 
     def __init__(self, parent, offset):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = self.posOrig = offset
 
@@ -3814,10 +3814,10 @@ class FTXBXS(DOCDirStream):
             assert self.posOrig + FTXBXS.size == self.pos
 
 
-class PlcftxbxTxt(DOCDirStream, PLC):
+class PlcftxbxTxt(BinaryStream, PLC):
     """Specifies which ranges of text are contained in which textboxes."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcftxbxTxt, FTXBXS.size)
         self.pos = mainStream.fcPlcftxbxTxt
         self.size = mainStream.lcbPlcftxbxTxt
@@ -3842,13 +3842,13 @@ class PlcftxbxTxt(DOCDirStream, PLC):
         print '</plcftxbxTxt>'
 
 
-class Tbkd(DOCDirStream):
+class Tbkd(BinaryStream):
     """The Tbkd structure is used by the PlcftxbxBkd and PlcfTxbxHdrBkd structures to associate ranges of
     text from the Textboxes Document and the Header Textboxes Document with FTXBXS objects."""
     size = 6  # 2.9.309
 
     def __init__(self, parent, offset):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = self.posOrig = offset
 
@@ -3866,10 +3866,10 @@ class Tbkd(DOCDirStream):
         assert self.posOrig + Tbkd.size == self.pos
 
 
-class PlcftxbxBkd(DOCDirStream, PLC):
+class PlcftxbxBkd(BinaryStream, PLC):
     """Specifies which ranges of text go inside which textboxes."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfTxbxBkd, 6)
         self.pos = mainStream.fcPlcfTxbxBkd
         self.size = mainStream.lcbPlcfTxbxBkd
@@ -3892,11 +3892,11 @@ class PlcftxbxBkd(DOCDirStream, PLC):
         print '</plcftxbxBkd>'
 
 
-class PlcfSpa(DOCDirStream, PLC):
+class PlcfSpa(BinaryStream, PLC):
     """The PlcfSpa structure is a PLC structure in which the data elements are
     SPA structures."""
     def __init__(self, mainStream, pos, size):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, size, 26)  # 2.8.37
         self.pos = pos
         self.size = size
@@ -3920,10 +3920,10 @@ class PlcfSpa(DOCDirStream, PLC):
         print '</plcfSpa>'
 
 
-class PlcfGram(DOCDirStream, PLC):
+class PlcfGram(BinaryStream, PLC):
     """The PlcfGram structure is a Plc structure whose data elements are GrammarSpls structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         PLC.__init__(self, mainStream.lcbPlcfGram, 2)  # 2 is defined by 2.8.21
         self.pos = mainStream.fcPlcfGram
         self.size = mainStream.lcbPlcfGram
@@ -3947,11 +3947,11 @@ class PlcfGram(DOCDirStream, PLC):
         print '</plcfGram>'
 
 
-class Grfhic(DOCDirStream):
+class Grfhic(BinaryStream):
     """The grfhic structure is a set of HTML incompatibility flags that specify
     the HTML incompatibilities of a list structure."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
 
@@ -3970,10 +3970,10 @@ class Grfhic(DOCDirStream):
         print '</grfhic>'
 
 
-class LSTF(DOCDirStream):
+class LSTF(BinaryStream):
     """The LSTF structure contains formatting properties that apply to an entire list."""
     def __init__(self, plfLst, index):
-        DOCDirStream.__init__(self, plfLst.bytes)
+        BinaryStream.__init__(self, plfLst.bytes)
         self.pos = plfLst.pos
         self.size = 28
         self.index = index
@@ -3995,10 +3995,10 @@ class LSTF(DOCDirStream):
         print '</lstf>'
 
 
-class LVLF(DOCDirStream):
+class LVLF(BinaryStream):
     """The LVLF structure contains formatting properties for an individual level in a list."""
     def __init__(self, lvl):
-        DOCDirStream.__init__(self, lvl.bytes)
+        BinaryStream.__init__(self, lvl.bytes)
         self.pos = lvl.pos
 
     def dump(self):
@@ -4025,10 +4025,10 @@ class LVLF(DOCDirStream):
         print '</lvlf>'
 
 
-class LVL(DOCDirStream):
+class LVL(BinaryStream):
     """The LVL structure contains formatting information about a specific level in a list."""
     def __init__(self, plfLst, index):
-        DOCDirStream.__init__(self, plfLst.bytes)
+        BinaryStream.__init__(self, plfLst.bytes)
         self.pos = plfLst.pos
         self.index = index
 
@@ -4061,10 +4061,10 @@ class LVL(DOCDirStream):
         print '</lvl>'
 
 
-class PlfLst(DOCDirStream):
+class PlfLst(BinaryStream):
     """The PlfLst structure contains the list formatting information for the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         self.pos = mainStream.fcPlfLst
         self.size = mainStream.lcbPlfLst
 
@@ -4087,10 +4087,10 @@ class PlfLst(DOCDirStream):
         print '</plfLst>'
 
 
-class LFO(DOCDirStream):
+class LFO(BinaryStream):
     """The LFO structure specifies the LSTF element that corresponds to a list that contains a paragraph."""
     def __init__(self, plfLfo, name, index):
-        DOCDirStream.__init__(self, plfLfo.bytes)
+        BinaryStream.__init__(self, plfLfo.bytes)
         self.pos = plfLfo.pos
         self.name = name
         self.index = index
@@ -4107,10 +4107,10 @@ class LFO(DOCDirStream):
         print '</%s>' % self.name
 
 
-class LFOData(DOCDirStream):
+class LFOData(BinaryStream):
     """The LFOData structure contains the Main Document CP of the corresponding LFO."""
     def __init__(self, plfLfo, lfo):
-        DOCDirStream.__init__(self, plfLfo.bytes)
+        BinaryStream.__init__(self, plfLfo.bytes)
         self.pos = plfLfo.pos
         self.lfo = lfo
 
@@ -4122,10 +4122,10 @@ class LFOData(DOCDirStream):
         print '</lfoData>'
 
 
-class PlfLfo(DOCDirStream):
+class PlfLfo(BinaryStream):
     """The PlfLfo structure contains the list format override data for the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         self.pos = mainStream.fcPlfLfo
         self.size = mainStream.lcbPlfLfo
 
@@ -4145,10 +4145,10 @@ class PlfLfo(DOCDirStream):
         print '</plfLfo>'
 
 
-class SttbListNames(DOCDirStream):
+class SttbListNames(BinaryStream):
     """The SttbListNames structure is an STTB structure whose strings are the names used by the LISTNUM field."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         self.pos = mainStream.fcSttbListNames
         self.size = mainStream.lcbSttbListNames
 
@@ -4166,10 +4166,10 @@ class SttbListNames(DOCDirStream):
         print '</sttbListNames>'
 
 
-class PBString(DOCDirStream):
+class PBString(BinaryStream):
     """Specified by [MS-OSHARED] 2.3.4.5, specifies a null-terminated string."""
     def __init__(self, parent, name, index=None):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.name = name
@@ -4203,10 +4203,10 @@ class PBString(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class FactoidType(DOCDirStream):
+class FactoidType(BinaryStream):
     """Specified by [MS-OSHARED] 2.3.4.2, specifies the type of smart tag."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -4224,11 +4224,11 @@ class FactoidType(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class PropertyBagStore(DOCDirStream):
+class PropertyBagStore(BinaryStream):
     """Specified by [MS-OSHARED] 2.3.4.1, specifies the shared data for the
     smart tags embedded in the document."""
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 
@@ -4259,11 +4259,11 @@ class PropertyBagStore(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class Property(DOCDirStream):
+class Property(BinaryStream):
     """Specified by [MS-OSHARED] 2.3.4.4, specifies the indexes into the string
     table entries of the stringTable field."""
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.index = index
@@ -4276,10 +4276,10 @@ class Property(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class PropertyBag(DOCDirStream):
+class PropertyBag(BinaryStream):
     """Specified by [MS-OSHARED] 2.3.4.3, specifies the smart tag data."""
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.index = index
@@ -4295,11 +4295,11 @@ class PropertyBag(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class SmartTagData(DOCDirStream):
+class SmartTagData(BinaryStream):
     """Specified by [MS-DOC] 2.9.251, stores information about all the smart
     tags in the document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         self.pos = mainStream.fcFactoidData
         self.size = mainStream.lcbFactoidData
 
@@ -4316,10 +4316,10 @@ class SmartTagData(DOCDirStream):
         print '</smartTagData>'
 
 
-class SttbSavedBy(DOCDirStream):
+class SttbSavedBy(BinaryStream):
     """The SttbSavedBy structure is an STTB structure that specifies the save history of this document."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes, mainStream=mainStream)
         self.pos = mainStream.fcSttbSavedBy
         self.size = mainStream.lcbSttbSavedBy
 
@@ -4340,10 +4340,10 @@ class SttbSavedBy(DOCDirStream):
         print '</sttbSavedBy>'
 
 
-class SttbfBkmk(DOCDirStream):
+class SttbfBkmk(BinaryStream):
     """The SttbfBkmk structure is an STTB structure whose strings specify the names of bookmarks."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcSttbfBkmk
         self.size = mainStream.lcbSttbfBkmk
         self.mainStream = mainStream
@@ -4373,11 +4373,11 @@ FTO = {
 }
 
 
-class FACTOIDINFO(DOCDirStream):
+class FACTOIDINFO(BinaryStream):
     """Specified by [MS-DOC] 2.9.66, contains information about a smart tag
     bookmark in the document."""
     def __init__(self, parent, index):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
         self.index = index
@@ -4394,10 +4394,10 @@ class FACTOIDINFO(DOCDirStream):
         self.parent.pos = self.pos
 
 
-class SttbfBkmkFactoid(DOCDirStream):
+class SttbfBkmkFactoid(BinaryStream):
     """Specified by [MS-DOC] 2.9.281, an STTB whose strings are FACTOIDINFO structures."""
     def __init__(self, mainStream):
-        DOCDirStream.__init__(self, mainStream.getTableStream().bytes)
+        BinaryStream.__init__(self, mainStream.getTableStream().bytes)
         self.pos = mainStream.fcSttbfBkmkFactoid
         self.size = mainStream.lcbSttbfBkmkFactoid
         self.mainStream = mainStream

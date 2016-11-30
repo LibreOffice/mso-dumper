@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from docdirstream import DOCDirStream
+from binarystream import BinaryStream
 
 
 # The BrushStyle Enumeration specifies the different possible brush types that can be used in graphics operations.
@@ -296,9 +296,9 @@ RasterPolishMap = {
 }
 
 
-class WMFRecord(DOCDirStream):
+class WMFRecord(BinaryStream):
     def __init__(self, parent):
-        DOCDirStream.__init__(self, parent.bytes)
+        BinaryStream.__init__(self, parent.bytes)
         self.parent = parent
         self.pos = parent.pos
 

@@ -5,11 +5,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
+from msodumper import emfrecord
 import sys
 sys = reload(sys)
 sys.setdefaultencoding("utf-8")
-
-from msodumper import emfrecord
 
 
 class EMFDumper:

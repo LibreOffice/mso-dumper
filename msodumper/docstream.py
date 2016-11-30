@@ -7,7 +7,7 @@
 
 import ole
 import ctypes
-from docdirstream import DOCDirStream
+from binarystream import BinaryStream
 import docrecord
 import globals
 import sys
@@ -62,7 +62,7 @@ class DOCFile:
         elif name == "\x05DocumentSummaryInformation":
             return DocumentSummaryInformationStream(bytes, self.params, doc=self)
         else:
-            return DOCDirStream(bytes, self.params, name, doc=self)
+            return BinaryStream(bytes, self.params, name, doc=self)
 
     def getName(self):
         return "native"
@@ -132,17 +132,17 @@ def createDOCFile(chars, params):
         return DOCFile(chars, params)
 
 
-class TableStream(DOCDirStream):
+class TableStream(BinaryStream):
     def __init__(self, bytes, params, name, doc):
-        DOCDirStream.__init__(self, bytes, params, name, doc=doc)
+        BinaryStream.__init__(self, bytes, params, name, doc=doc)
 
     def dump(self):
         print '<stream name="%s" size="%s"/>' % (self.name, self.size)
 
 
-class WordDocumentStream(DOCDirStream):
+class WordDocumentStream(BinaryStream):
     def __init__(self, bytes, params, doc):
-        DOCDirStream.__init__(self, bytes, params, "WordDocument", doc=doc)
+        BinaryStream.__init__(self, bytes, params, "WordDocument", doc=doc)
 
     def dump(self):
         print '<stream name="WordDocument" size="%d">' % self.size
@@ -162,6 +162,7 @@ class WordDocumentStream(DOCDirStream):
 
         self.blobOffset = self.pos
         cswNew = self.getuInt16(pos=self.__getCswNewOffset())
+        print '<debug what="cswNew is %s"/>' % cswNew
 
         if cswNew != 0:
             self.nFibNew = self.getuInt16(pos=self.__getCswNewOffset() + 2)
@@ -178,6 +179,7 @@ class WordDocumentStream(DOCDirStream):
         print '</fib>'
 
     def __getCswNewOffset(self):
+        print '<debug what="cswnew offset is %s as self.cbRgFcLcb is %s, blob offset is %s"/>' % (self.blobOffset + (8 * self.cbRgFcLcb), self.cbRgFcLcb, self.blobOffset)
         return self.blobOffset + (8 * self.cbRgFcLcb)
 
     def dumpFibRgCswNew(self, name):
@@ -322,6 +324,7 @@ class WordDocumentStream(DOCDirStream):
         ]
         for i in fields:
             self.printAndSet(i, self.readuInt32())
+            print '<debug what="offset is now %s"/>' % self.pos
 
         print '</%s>' % name
 

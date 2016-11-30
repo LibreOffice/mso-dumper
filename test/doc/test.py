@@ -6,12 +6,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-import sys
-sys.path.append(sys.path[0] + "/../..")
-doc_dumper = __import__('doc-dump')
 from xml.etree import ElementTree
 import unittest
 import os
+import sys
+sys.path.append(sys.path[0] + "/../..")
+doc_dumper = __import__('doc-dump')
 
 
 class Test(unittest.TestCase):
