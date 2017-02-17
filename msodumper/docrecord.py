@@ -1199,13 +1199,13 @@ class FFDataBits(BinaryStream):
         print '<FFDataBits>'
         buf = self.readuInt8()
         self.printAndSet("iType", buf & 0x0003, dict=IType)  # 1..2nd bits
-        self.printAndSet("iRes", buf & 0x007c)  # 3..7th bits
+        self.printAndSet("iRes", (buf & 0x007c) >> 2)  # 3..7th bits
         self.printAndSet("fOwnHelp", self.getBit(buf, 8))
         buf = self.readuInt8()
         self.printAndSet("fOwnStat", self.getBit(buf, 1))
         self.printAndSet("fProt", self.getBit(buf, 2))
         self.printAndSet("iSize", self.getBit(buf, 3))
-        self.printAndSet("iTypeTxt", buf & 0x0038, dict=ITypeTxt)  # 4..6th bits
+        self.printAndSet("iTypeTxt", (buf & 0x0038) >> 3, dict=ITypeTxt)  # 4..6th bits
         self.printAndSet("fRecalc", self.getBit(buf, 7))
         self.printAndSet("fHasListBox", self.getBit(buf, 8))
         print '</FFDataBits>'
