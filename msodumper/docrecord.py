@@ -1287,7 +1287,10 @@ class NilPICFAndBinData(BinaryStream):
         self.printAndSet("ignored13", self.readInt32())
         self.printAndSet("ignored14", self.readInt32())
         self.printAndSet("ignored15", self.readInt16())
-        fieldType = chpxFkp.transformeds[-2]
+        if len(chpxFkp.transformeds) > 1:
+            fieldType = chpxFkp.transformeds[-2]
+        else:
+            fieldType = ")-MISSING-("
         if fieldType == " FORMTEXT ":
             FFData(self).dump()
         else:
