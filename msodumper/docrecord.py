@@ -1735,7 +1735,7 @@ class PapxInFkp(BinaryStream):
             self.printAndSet("cb_", self.readuInt8())
             grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb_, mainStream=self.mainStream)
         else:
-            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, self.cb, mainStream=self.mainStream)
+            grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb - 1, mainStream=self.mainStream)
         grpPrlAndIstd.dump()
         print '</papxInFkp>'
 
