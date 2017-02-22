@@ -157,7 +157,13 @@ def encodeName (name, lowOnly = False, lowLimit = 0x20):
 
     newname = ''
     for i in xrange(0, n):
-        if ord(name[i]) < lowLimit or ((not lowOnly) and ord(name[i]) >= 127):
+        if name[i] == '&':
+            newname += "&amp;"
+        elif name[i] == '<':
+            newname += "&lt;"
+        elif name[i] == '>':
+            newname += "&gt;"
+        elif ord(name[i]) < lowLimit or ((not lowOnly) and ord(name[i]) >= 127):
             newname += "\\x%2.2X"%ord(name[i])
         else:
             newname += name[i]
