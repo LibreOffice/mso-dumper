@@ -769,18 +769,17 @@ _tokenMap = {
     0x25: PtgArea,
     0x29: PtgMemFunc,
     0x2D: PtgAreaN,
+    0x3A: PtgRef3d,
     0x3B: _Area3d,
     0x40: PtgArray,
+    0x42: PtgFuncVar,
     0x43: PtgName,
     0x44: PtgRef,
+    0x4C: PtgRefN,
     0x59: PtgNameX,
     0x5A: PtgRef3d,
     0x5B: _Area3d,
     0x7B: _Area3d,
-
-    0x3A: PtgRef3d,
-    0x42: PtgFuncVar,
-    0x4C: PtgRefN
 }
 
 class FormulaParser(object):
