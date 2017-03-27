@@ -1326,8 +1326,8 @@ class Array(BaseRecordHandler):
 class Label(BaseRecordHandler):
 
     def __parseBytes (self):
-        self.col = self.readUnsignedInt(2)
         self.row = self.readUnsignedInt(2)
+        self.col = self.readUnsignedInt(2)
         self.xfIdx = self.readUnsignedInt(2)
         textLen = self.readUnsignedInt(2)
         self.text, textLen = globals.getRichText(self.readRemainingBytes(), textLen)
