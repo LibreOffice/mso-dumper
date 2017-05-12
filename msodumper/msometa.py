@@ -308,18 +308,39 @@ class TypedPropertyValue(BinaryStream):
         elif self.Type == 0x0040:  # VT_FILETIME
             FILETIME(self, "Value").dump()
         elif self.Type == 0x001E:  # VT_LPSTR
-            CodePageString(self, "Value").dump()
+            CodePageString(self, "Value", self.parent.getCodePage()).dump()
+        elif self.Type == 0x101E:  # VT_VECTOR | VT_LPSTR
+            VectorHeader(self, "Value", self.parent.getCodePage()).dump()
         else:
             print '<todo what="TypedPropertyValue::dump: unhandled Type %s"/>' % hex(self.Type)
         print '</typedPropertyValue%s>' % self.index
 
 
-class CodePageString(BinaryStream):
-    def __init__(self, parent, name):
+class VectorHeader(BinaryStream):
+    """Defined by [MS-OLEPS] 2.14.2, represents the number of scalar values in
+    a vector property type."""
+    def __init__(self, parent, name, codepage):
         BinaryStream.__init__(self, parent.bytes)
         self.pos = parent.pos
         self.parent = parent
         self.name = name
+        self.codepage = codepage
+
+    def dump(self):
+        print '<%s type="VectorHeader">' % self.name
+        self.printAndSet("Length", self.readuInt32())
+        for dummy in range(self.Length):
+            CodePageString(self, "String", self.codepage).dump()
+        print '</%s>' % self.name
+
+
+class CodePageString(BinaryStream):
+    def __init__(self, parent, name, codepage):
+        BinaryStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+        self.parent = parent
+        self.name = name
+        self.codepage = codepage
 
     def dump(self):
         print '<%s type="CodePageString">' % self.name
@@ -330,7 +351,7 @@ class CodePageString(BinaryStream):
             if c == 0:
                 break
             bytes.append(c)
-        codepage = self.parent.parent.getCodePage()
+        codepage = self.codepage
         if (codepage is not None) and (codepage < 0):
             codepage += 2 ** 16  # signed -> unsigned
         encoding = ""
