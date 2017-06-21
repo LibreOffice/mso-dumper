@@ -597,8 +597,8 @@ class PChgTabsDel(BinaryStream):
     def dump(self):
         print '<pchgTabsDel type="PChgTabsDel" offset="%d">' % self.pos
         self.printAndSet("cTabs", self.readuInt8())
-        if self.cTabs != 0:
-            print '<todo what="PChgTabsDel::dump() cTabs is non-zero"/>'
+        for i in range(self.cTabs):
+            print '<rgdxaDel index="%d" value="%d"/>' % (i, self.readInt16())
         print '</pchgTabsDel>'
         self.parent.pos = self.pos
 
@@ -613,8 +613,10 @@ class PChgTabsDelClose(BinaryStream):
     def dump(self):
         print '<pchgTabsDelClose type="PChgTabsDelClose" offset="%d">' % self.pos
         self.printAndSet("cTabs", self.readuInt8())
-        if self.cTabs != 0:
-            print '<todo what="PChgTabsDelClose::dump() cTabs is non-zero"/>'
+        for i in range(self.cTabs):
+            print '<rgdxaDel index="%d" value="%d"/>' % (i, self.readInt16())
+        for i in range(self.cTabs):
+            print '<rgdxaClose index="%d" value="%d"/>' % (i, self.readInt16())
         print '</pchgTabsDelClose>'
         self.parent.pos = self.pos
 
@@ -630,7 +632,9 @@ class PChgTabsAdd(BinaryStream):
         print '<pchgTabsAdd type="PChgTabsAdd" offset="%d">' % self.pos
         self.printAndSet("cTabs", self.readuInt8())
         for i in range(self.cTabs):
-            print '<rgdxaDel index="%d" value="%d"/>' % (i, self.readuInt16())
+            print '<rgdxaAdd index="%d" value="%d"/>' % (i, self.readInt16())
+        for i in range(self.cTabs):
+            print '<rgtbdAdd index="%d" value="%d"/>' % (i, self.readuInt8())
         print '</pchgTabsAdd>'
         self.parent.pos = self.pos
 
