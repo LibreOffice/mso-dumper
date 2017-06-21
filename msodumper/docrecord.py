@@ -635,6 +635,19 @@ class PChgTabsAdd(BinaryStream):
         self.parent.pos = self.pos
 
 
+class LSPD(BinaryStream):
+    """Specifies the spacing between lines in a paragraph."""
+    def __init__(self, parent):
+        BinaryStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print '<lspd type="LSPD" offset="%d">' % self.pos
+        self.printAndSet("dyaLine", self.readuInt16())
+        self.printAndSet("fMultLinespace", self.readuInt16())
+        print '</lspd>'
+
+
 class PChgTabsPapxOperand(BinaryStream):
     """The PChgTabsPapxOperand structure is used by sprmPChgTabsPapx to specify custom tab stops to be added or ignored."""
     def __init__(self, parent):
@@ -1559,6 +1572,8 @@ class Sprm(BinaryStream):
                 dataStream = mainStream.doc.getDirectoryStreamByName("Data")
                 dataStream.pos = self.operand
                 self.ct = PrcData(dataStream)
+            elif self.sprm == 0x6412:
+                self.ct = LSPD(self)
         elif self.getOperandSize() == 7:
             self.operand = self.getuInt64() & 0x0fffffff
         elif self.getOperandSize() == 9:
