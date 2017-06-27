@@ -10,7 +10,11 @@ import sys
 import textwrap
 import zlib
 import base64
+import ctypes
 from pptrecord import shapeTypes
+
+def toUint32(value):
+    return ctypes.c_uint32(value).value
 
 def indent (level):
     return '  '*level
@@ -216,12 +220,12 @@ class IDCL:
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("IDCL content:")
         recHdl.appendLine("  drawing ID: %d"%self.dgid)
-        recHdl.appendLine("  cspidCur: 0x%8.8X"%self.cspidCur)
+        recHdl.appendLine("  cspidCur: 0x%8.8X" % toUint32(self.cspidCur))
 
     def dumpXml(self, recHdl, rh):
         recHdl.appendLine('<idcl type="OfficeArtIDCL">')
         recHdl.appendLine('<dgid value="%d"/>' % self.dgid)
-        recHdl.appendLine('<cspidCur value="0x%8.8X"/>' % self.cspidCur)
+        recHdl.appendLine('<cspidCur value="0x%8.8X"/>' % toUint32(self.cspidCur))
         recHdl.appendLine('</idcl>')
 
 class FDGG:
@@ -438,11 +442,11 @@ class FOPT:
 
         def appendLines (self, recHdl, prop, level):
             styleName = globals.getValueOrUnknown(FOPT.CXStyle.style, prop.value)
-            recHdl.appendLine(indent(level) + "connector style: %s (0x%8.8X)"%(styleName, prop.value))
+            recHdl.appendLine(indent(level) + "connector style: %s (0x%8.8X)"%(styleName, toUint32(prop.value)))
 
         def dumpXml(self, recHdl, prop):
             styleName = globals.getValueOrUnknown(FOPT.CXStyle.style, prop.value)
-            recHdl.appendLine('<cxstyle name="%s" value="0x%8.8X"/>' % (styleName, prop.value))
+            recHdl.appendLine('<cxstyle name="%s" value="0x%8.8X"/>' % (styleName, toUint32(prop.value)))
 
     class FillColor:
 
@@ -650,7 +654,7 @@ class FOPT:
         def appendLines (self, recHdl, prop, level):
             flag = prop.value
             flagCount = len(FOPT.GroupShape.flagNames)
-            recHdl.appendLine(indent(level)+"flag: 0x%8.8X"%flag)
+            recHdl.appendLine(indent(level)+"flag: 0x%8.8X" % toUint32(flag))
             for i in xrange(0, flagCount):
                 bval = (flag & 0x00000001)
                 recHdl.appendLine(indent(level)+"%s: %s"%(FOPT.GroupShape.flagNames[i], recHdl.getTrueFalse(bval)))
@@ -867,7 +871,7 @@ class FOPT:
                     # regular property value
                     if FOPT.propTable.has_key(prop.ID):
                         recHdl.appendLine("    property name: %s"%FOPT.propTable[prop.ID][0])
-                    recHdl.appendLine("    property value: 0x%8.8X"%prop.value)
+                    recHdl.appendLine("    property value: 0x%8.8X" % toUint32(prop.value))
 
     def dumpXml(self, recHdl, model, rh):
         self.__parseBytes(rh)
@@ -892,9 +896,9 @@ class FOPT:
                     recHdl.appendLine('</op>')
                 else:
                     if FOPT.propTable.has_key(prop.ID):
-                        recHdl.appendLine('<op name="%s" value="0x%8.8X"/>' % (FOPT.propTable[prop.ID][0], prop.value))
+                        recHdl.appendLine('<op name="%s" value="0x%8.8X"/>' % (FOPT.propTable[prop.ID][0], toUint32(prop.value)))
                     else:
-                        recHdl.appendLine('<op name="todo" value="0x%8.8X"/>' % prop.value)
+                        recHdl.appendLine('<op name="todo" value="0x%8.8X"/>' % toUint32(prop.value))
                     if prop.flagComplex:
                         recHdl.appendLine('<todo what="FOPT: fComplex != 0 unhandled"/>')
             recHdl.appendLine('</rgfopte>')
@@ -1036,11 +1040,11 @@ class FClientData:
 
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("FClientData content")
-        recHdl.appendLine("  data: 0x%8.8X"%self.data)
+        recHdl.appendLine("  data: 0x%8.8X" % toUint32(self.data))
 
     def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<clientData type="OfficeArtClientData">')
-        recHdl.appendLine('<data value="0x%8.8X"/>' % self.data)
+        recHdl.appendLine('<data value="0x%8.8X"/>' % toUint32(self.data))
         recHdl.appendLine('</clientData>')
 
 class FClientTextbox:
@@ -1049,11 +1053,11 @@ class FClientTextbox:
 
     def appendLines (self, recHdl, rh):
         recHdl.appendLine("FClientTextbox content")
-        recHdl.appendLine("  data: 0x%8.8X"%self.data)
+        recHdl.appendLine("  data: 0x%8.8X" % toUint32(self.data))
 
     def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<clientTextbox type="OfficeArtClientTextbox">')
-        recHdl.appendLine('<data value="0x%8.8X"/>' % self.data)
+        recHdl.appendLine('<data value="0x%8.8X"/>' % toUint32(self.data))
         recHdl.appendLine('</clientTextbox>')
 
 class BStoreContainerFileBlock:
