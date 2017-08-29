@@ -4126,7 +4126,10 @@ class PivotQueryTableEx(BaseRecordHandler):
         'Excel 2000',
         'Excel XP',
         'Excel 2003',
-        'Excel 2007'
+        'Excel 2007',
+        'Excel 2010',
+        'Excel 2013',
+        'Excel 2016'
     ]
 
     class TableType:
