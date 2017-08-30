@@ -3114,10 +3114,12 @@ class XLUnicodeStringSegmentedSXAddl(object):
     def __init__ (self, strm):
         self.cchTotal = strm.readUnsignedInt(4)
         strm.readBytes(2) # ignored
+        self.viewName = strm.readXLUnicodeString()
 
     def appendLines (self, hdl):
         if self.cchTotal <= 65535:
             hdl.appendLineInt("cchTotal", self.cchTotal)
+            hdl.appendLineString("Referenced pivot table view", self.viewName)
 
 
 class DConName(BaseRecordHandler):
@@ -3232,6 +3234,7 @@ class SXAddlInfo(BaseRecordHandler):
     }
 
     def __parseBytes (self):
+        self.rt = self.readUnsignedInt(2) # ignored
         self.flags = FrtFlags(self) # ignored
         self.sxc = self.readUnsignedInt(1)
         self.sxd = self.readUnsignedInt(1)
@@ -3244,9 +3247,31 @@ class SXAddlInfo(BaseRecordHandler):
         if self.sxd == 0x00:
             # sxdId
             self.__parseSxcViewSxdId()
+        elif self.sxd == 0x19:
+            # sxdVer12Info
+            self.__parseSxcViewsxdVer12Info()
 
     def __parseSxcViewSxdId (self):
         self.stName = XLUnicodeStringSegmentedSXAddl(self)
+
+    def __parseSxcViewsxdVer12Info (self):
+        versionflags = self.readUnsignedInt(4)
+        self.fDefaultCompact = (versionflags & 0x00000001) != 0
+        self.fDefaultOutline = (versionflags & 0x00000002) != 0
+        self.fOutlineData = (versionflags & 0x00000004) != 0
+        self.fCompactData = (versionflags & 0x00000008) != 0
+        self.fNewDropZones = (versionflags & 0x00000010) != 0
+        self.fPublished = (versionflags & 0x00000020) != 0
+        self.fTurnOffImmersive = (versionflags & 0x00000040) != 0
+        self.fSingleFilterPerField = (versionflags & 0x00000080) != 0
+        self.fNonDefaultSortInFlist = (versionflags & 0x00000100) != 0
+        self.fDontUseCustomLists = (versionflags & 0x00000400) != 0
+        self.fHideDrillIndicators = (versionflags & 0x00100000) != 0
+        self.fPrintDrillIndicators = (versionflags & 0x00200000) != 0
+        self.fMemPropsInTips = (versionflags & 0x00400000) != 0
+        self.fNoPivotTips = (versionflags & 0x00800000) != 0
+        self.fNoHeaders = (versionflags & 0x80000000) != 0
+        self.readUnsignedInt(2) # ignored
 
     def parseBytes (self):
         self.__parseBytes()
@@ -3257,6 +3282,23 @@ class SXAddlInfo(BaseRecordHandler):
             if self.sxd == 0x00:
                 # sxdId
                 self.stName.appendLines(self)
+            elif self.sxd == 0x19:
+                # sxdVer12Info
+                self.appendLineBoolean("fDefaultCompact", self.fDefaultCompact)
+                self.appendLineBoolean("fDefaultOutline", self.fDefaultOutline)
+                self.appendLineBoolean("fOutlineData", self.fOutlineData)
+                self.appendLineBoolean("fCompactData", self.fCompactData)
+                self.appendLineBoolean("fNewDropZones", self.fNewDropZones)
+                self.appendLineBoolean("fPublished", self.fPublished)
+                self.appendLineBoolean("fTurnOffImmersive", self.fTurnOffImmersive)
+                self.appendLineBoolean("fSingleFilterPerField", self.fSingleFilterPerField)
+                self.appendLineBoolean("fNonDefaultSortInFlist", self.fNonDefaultSortInFlist)
+                self.appendLineBoolean("fDontUseCustomLists", self.fDontUseCustomLists)
+                self.appendLineBoolean("fHideDrillIndicators", self.fHideDrillIndicators)
+                self.appendLineBoolean("fPrintDrillIndicators", self.fPrintDrillIndicators)
+                self.appendLineBoolean("fMemPropsInTips", self.fMemPropsInTips)
+                self.appendLineBoolean("fNoPivotTips", self.fNoPivotTips)
+                self.appendLineBoolean("fNoHeaders", self.fNoHeaders)
 
 
 class SXDb(BaseRecordHandler):
