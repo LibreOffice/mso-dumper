@@ -841,25 +841,13 @@ class TextStyles(BaseRecordHandler):
             self.appendParaProp("bullet size %d"%bulletSize)
 
         if styleMask & 0x0020:
-            bulletColorAtom = ColorPropertyHandler(self.readUnsignedInt(2), self.readUnsignedInt(4), False, False, [], self.appendParaProp)
+            bulletColorAtom = ColorPropertyHandler(0, self.readUnsignedInt(4), False, False, [], self.appendParaProp)
             bulletColorAtom.output()
             self.appendParaProp("bullet color atom")
 
         if styleMask & 0x0800:
             paraAlignment = self.readSignedInt(2)
             self.appendParaProp("para alignment %4.4Xh"%paraAlignment)
-
-        if styleMask & 0x0400:
-            paraIndent = self.readSignedInt(2)
-            self.appendParaProp("para indent %d"%paraIndent)
-
-        if styleMask & 0x0200:
-            unused = self.readSignedInt(2)
-            self.appendParaProp("unused para property %4.4Xh"%unused)
-
-        if styleMask & 0x0100:
-            paraLeftMargin = self.readSignedInt(2)
-            self.appendParaProp("para left margin %d"%paraLeftMargin)
 
         if styleMask & 0x1000:
             paraLineSpacing = self.readSignedInt(2)
@@ -872,6 +860,18 @@ class TextStyles(BaseRecordHandler):
         if styleMask & 0x4000:
             paraSpaceAfter = self.readSignedInt(2)
             self.appendParaProp("para space after %d"%paraSpaceAfter)
+
+        if styleMask & 0x0100:
+            paraLeftMargin = self.readSignedInt(2)
+            self.appendParaProp("para left margin %d"%paraLeftMargin)
+
+        if styleMask & 0x0400:
+            paraIndent = self.readSignedInt(2)
+            self.appendParaProp("para indent %d"%paraIndent)
+
+        if styleMask & 0x0200:
+            unused = self.readSignedInt(2)
+            self.appendParaProp("unused para property %4.4Xh"%unused)
 
         if styleMask & 0x8000:
             paraDefaultTabSize = self.readSignedInt(2)
@@ -926,7 +926,7 @@ class TextStyles(BaseRecordHandler):
             self.appendCharProp("char font size %d"%fontSize)
 
         if styleMask & 0x40000:
-            charColorAtom = ColorPropertyHandler(self.readUnsignedInt(2), self.readUnsignedInt(4), False, False, [], self.appendCharProp)
+            charColorAtom = ColorPropertyHandler(0, self.readUnsignedInt(4), False, False, [], self.appendCharProp)
             charColorAtom.output()
             self.appendCharProp("char color atom")
 
