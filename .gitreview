@@ -1,0 +1,7 @@
+[gerrit]
+host=logerrit
+port=29418
+project=mso-dumper
+defaultremote=logerrit
+defaultbranch=master
+
