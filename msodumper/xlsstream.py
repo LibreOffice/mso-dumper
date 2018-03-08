@@ -4,10 +4,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
+from builtins import range
 import sys
-import ole, globals, xlsrecord
-from globals import output
+from . import ole, globals, xlsrecord
+from .globals import output
 
 class EndOfStream(Exception): pass
 
@@ -337,7 +337,7 @@ class StreamData(object):
         self.pivotCacheIDs[strId] = True
 
     def isPivotCacheStream (self, name):
-        return self.pivotCacheIDs.has_key(name)
+        return name in self.pivotCacheIDs
 
 
 class XLStream(object):
@@ -356,14 +356,14 @@ class XLStream(object):
         self.strmData = strmData
 
     def __printSep (self, c, w, prefix=''):
-        print(prefix + c*w)
+        globals.outputln(prefix + c*w)
 
     def printStreamInfo (self):
         self.__printSep('=', globals.OutputWidth)
-        print("Excel File Format Dumper by Kohei Yoshida")
-        print("  total stream size: %d bytes"%self.size)
+        globals.outputln("Excel File Format Dumper by Kohei Yoshida")
+        globals.outputln("  total stream size: %d bytes"%self.size)
         self.__printSep('=', globals.OutputWidth)
-        print('')
+        globals.outputln('')
 
     def printHeader (self):
         self.__parseHeader()
@@ -438,8 +438,8 @@ class XLDirStream(object):
     def readRaw (self, size=1):
         # assume little endian
         bytes = 0
-        for i in xrange(0, size):
-            b = ord(self.bytes[self.pos])
+        for i in range(0, size):
+            b = globals.indexbytes(self.bytes, self.pos)
             if i == 0:
                 bytes = b
             else:
@@ -456,7 +456,7 @@ class XLDirStream(object):
         return self.bytes[curpos:self.pos]
 
     def __printSep (self, c, w, prefix=''):
-        print(prefix + c*w)
+        globals.outputln(prefix + c*w)
 
     def __readRecordBytes (self):
         if self.size - self.pos < 4:
@@ -505,7 +505,7 @@ class XLDirStream(object):
         # record handler that parses the raw bytes and displays more
         # meaningful information.
         handler = None
-        if recData.has_key(header) and len(recData[header]) >= 3:
+        if header in recData and len(recData[header]) >= 3:
             handler = recData[header][2](header, size, bytes, self.strmData, roflist)
 
         if handler != None and self.strmData.encrypted:
@@ -516,7 +516,7 @@ class XLDirStream(object):
         return handler
 
     def __postReadRecord (self, header):
-        if recData.has_key(header) and recData[header][0] == "FILEPASS":
+        if header in recData and recData[header][0] == "FILEPASS":
             # presence of FILEPASS record indicates that the stream is
             # encrypted.
             self.strmData.encrypted = True
@@ -545,31 +545,31 @@ class XLDirStream(object):
         # meaningful information.
         handler = None
 
-        print("")
+        globals.outputln("")
         headerStr = "%4.4Xh: "%header
         self.__printSep('=', globals.OutputWidth-len(headerStr), headerStr)
-        if recData.has_key(header):
-            print("%4.4Xh: %s - %s (%4.4Xh)"%
+        if header in recData:
+            globals.outputln("%4.4Xh: %s - %s (%4.4Xh)"%
                   (header, recData[header][0], recData[header][1], header))
             if len(recData[header]) >= 3:
                 handler = recData[header][2](header, size, bytes, self.strmData, roflist)
-        elif self.type == DirType.RevisionLog and recDataRev.has_key(header):
-            print("%4.4Xh: %s - %s (%4.4Xh)"%
+        elif self.type == DirType.RevisionLog and header in recDataRev:
+            globals.outputln("%4.4Xh: %s - %s (%4.4Xh)"%
                   (header, recDataRev[header][0], recDataRev[header][1], header))
             if len(recDataRev[header]) >= 3:
                 handler = recDataRev[header][2](header, size, bytes, self.strmData, roflist)
         else:
-            print("%4.4Xh: [unknown record name] (%4.4Xh)"%(header, header))
+            globals.outputln("%4.4Xh: [unknown record name] (%4.4Xh)"%(header, header))
 
         if self.params.showStreamPos:
-            print("%4.4Xh:   size = %d; pos = %d"%(header, size, pos))
+            globals.outputln("%4.4Xh:   size = %d; pos = %d"%(header, size, pos))
         else:
-            print("%4.4Xh:   size = %d"%(header, size))
+            globals.outputln("%4.4Xh:   size = %d"%(header, size))
 
         # print the raw bytes, with 16 bytes per line.
         self.__printSep('-', globals.OutputWidth-len(headerStr), headerStr)
         lines = []
-        for i in xrange(0, size):
+        for i in range(0, size):
             if i % 16 == 0:
                 lines.append([])
             lines[-1].append(bytes[i])
@@ -578,15 +578,15 @@ class XLDirStream(object):
             output("%4.4Xh: "%header)
             n = len(line)
             for byte in line:
-                output("%2.2X "%ord(byte))
-            for i in xrange(n, 16):
+                output("%2.2X "%globals.indexedbytetoint(byte))
+            for i in range(n, 16):
                 output("   ")
             output('  ')
 
             for byte in line:
                 output(globals.toCharOrDot(byte))
 
-            print("")
+            globals.outputln("")
 
         if handler != None and not self.strmData.encrypted:
             # record handler exists.  Parse the record and display more info

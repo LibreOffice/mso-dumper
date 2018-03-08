@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
+from builtins import range
 import sys, os.path, optparse, math
 
 from msodumper import ole, globals, node, olestream, vbahelper
@@ -106,7 +106,7 @@ class CodePageReader(StdReader):
 
         #default codepage to something reasonable
         self.reader.codepageName = "cp1252"
-        if codePageMap.has_key( self.reader.codepage ):
+        if self.reader.codepage in codePageMap:
             self.reader.codepageName = codePageMap[  self.reader.codepage ]
         print("  codepage: %i"%self.reader.codepage)
 
@@ -340,7 +340,7 @@ class ReferenceControlReaderPart2(StdReader):
         self.reader.readBytes( 6 )
         origTypeLib = self.reader.readBytes( 16 )
         sys.stdout.write("  GUID: " )
-        for i in xrange( 0, 16 ):
+        for i in range( 0, 16 ):
             if i:
                 sys.stdout.write(" ")
             sys.stdout.write("0x%x"%origTypeLib[ i ])
@@ -417,15 +417,15 @@ class DirStreamReader( globals.ByteStream ):
             pos = self.getCurrentPos()
             recordID = self.readUnsignedInt( 2 )
             name = "Unknown"
-            if dirRecordData.has_key( recordID ):
+            if recordID in dirRecordData:
                 name = dirRecordData[ recordID ][0]
             # if we have a handler let it deal with the record
             labelWidth = int(math.ceil(math.log(len(self.bytes), 10)))
             fmt = "0x%%%d.%dx: "%(labelWidth, labelWidth)
             sys.stdout.write(fmt%pos)
 #            print ("%s [0x%x] "%(name,recordID))
-            print '[0x{0:0>4x}] {1}'.format(recordID,name)
-            if ( dirRecordData.has_key( recordID ) and len( dirRecordData[ recordID ] ) > 2 ):
+            print('[0x{0:0>4x}] {1}'.format(recordID,name))
+            if ( recordID in dirRecordData and len( dirRecordData[ recordID ] ) > 2 ):
                 reader = dirRecordData[ recordID ][2]( self )
                 reader.parse()
             else:

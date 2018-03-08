@@ -4,11 +4,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
+from builtins import range
 import struct, sys
-import globals, formula, xlsmodel, msodraw
+from . import globals, formula, xlsmodel, msodraw
 
-from globals import debug
+from .globals import debug
 
 class RecordError(Exception): pass
 
@@ -371,7 +371,7 @@ class XLStream(globals.ByteStream):
             cbExtRst = self.readSignedInt(4) # byte count of ExtRst
 
         if fHighByte:
-            rgb = unicode(self.readBytes(2*cch), 'UTF-16LE', errors='replace')
+            rgb = self.readBytes(2*cch).decode('UTF-16LE', errors='replace')
         elif globals.params.utf8:
             # Compressed Unicode-> latin1
             rgb = self.readBytes(cch).decode('cp1252')
@@ -438,21 +438,23 @@ Like parseBytes(), the derived classes must overwrite this method."""
 
     def output (self):
         headerStr = self.__getHeaderStr()
-        print (headerStr + "-"*(globals.OutputWidth-len(headerStr)))
+        globals.outputln(headerStr + "-"*(globals.OutputWidth-len(headerStr)))
         try:
             self.parseBytes()
             for line in self.lines:
+                if type(line) == type(u''):
+                    line = line.encode('utf-8')
                 try:
-                    print (headerStr + line)
+                    globals.outputln(headerStr.encode('ascii') + line)
                 except:
                     if not globals.params.catchExceptions:
                         raise
-                    print (headerStr + "(xlsrecord:unprintable)")
+                    globals.outputln(headerStr + "(xlsrecord:unprintable)")
         except globals.ByteStreamError:
-            print(headerStr + "Error interpreting the record!")
+            globals.outputln(headerStr + "Error interpreting the record!")
 
     def debug (self, msg):
-        print ("%4.4Xh: %s"%(self.header, msg))
+        globals.outputln("%4.4Xh: %s"%(self.header, msg))
 
     def appendLine (self, line):
         self.lines.append(line)
@@ -670,7 +672,7 @@ class Autofilter(BaseRecordHandler):
         self.top10   = (flag & 0x0010) # top 10 autofilter
         self.top     = (flag & 0x0020) # 1 = top 10 filter shows the top item, 0 = shows the bottom item
         self.percent = (flag & 0x0040) # 1 = top 10 shows percentage, 0 = shows items
-        self.itemCount = (flag & 0xFF80) / (2*7)
+        self.itemCount = (flag & 0xFF80) // (2*7)
         self.doper1 = self.__readDoper()
         self.doper2 = self.__readDoper()
 
@@ -742,7 +744,7 @@ class BOF(BaseRecordHandler):
     }
 
     def getBuildIdName (self, value):
-        if BOF.buildId.has_key(value):
+        if value in BOF.buildId:
             return BOF.buildId[value]
         else:
             return '(unknown)'
@@ -845,14 +847,14 @@ class BoundSheet(BaseRecordHandler):
 
     @staticmethod
     def getHiddenState (flag):
-        if BoundSheet.hiddenStates.has_key(flag):
+        if flag in BoundSheet.hiddenStates:
             return BoundSheet.hiddenStates[flag]
         else:
             return 'unknown'
 
     @staticmethod
     def getSheetType (flag):
-        if BoundSheet.sheetTypes.has_key(flag):
+        if flag in BoundSheet.sheetTypes:
             return BoundSheet.sheetTypes[flag]
         else:
             return 'unknown'
@@ -943,12 +945,12 @@ class CondFmt(BaseRecordHandler):
         self.cfCount = self.readUnsignedInt(2)
         tmp = self.readUnsignedInt(2)
         self.toughRecalc = (tmp & 0x01) != 0
-        self.recordID = (tmp & 0xFE) / 2
+        self.recordID = (tmp & 0xFE) // 2
         self.refBound = Ref8U(self)
 
         hitRangeCount = self.readUnsignedInt(2)
         self.hitRanges = []
-        for i in xrange(0, hitRangeCount):
+        for i in range(0, hitRangeCount):
             self.hitRanges.append(Ref8U(self))
 
     def parseBytes (self):
@@ -1050,14 +1052,14 @@ class Dv(BaseRecordHandler):
     def __parseBytes (self):
         bits = self.readUnsignedInt(4)
         self.valType      = (bits & 0x0000000F)
-        self.errStyle     = (bits & 0x00000070) / (2**4)
+        self.errStyle     = (bits & 0x00000070) // (2**4)
         self.strLookup    = (bits & 0x00000080) != 0
         self.allowBlank   = (bits & 0x00000100) != 0
         self.noDropDown   = (bits & 0x00000200) != 0
-        self.imeMode      = (bits & 0x0003FC00) / (2**10)    # take 8 bits and shift by 10 bits
+        self.imeMode      = (bits & 0x0003FC00) // (2**10)    # take 8 bits and shift by 10 bits
         self.showInputMsg = (bits & 0x00040000) != 0
         self.showErrorMsg = (bits & 0x00080000) != 0
-        self.operator     = (bits & 0x00F00000) / (2**20)
+        self.operator     = (bits & 0x00F00000) // (2**20)
 
         self.promptTitle = self.readUnicodeString()
         self.errorTitle = self.readUnicodeString()
@@ -1084,7 +1086,7 @@ class Dv(BaseRecordHandler):
 
         rangeCount = self.readUnsignedInt(2)
         self.ranges = []
-        for i in xrange(0, rangeCount):
+        for i in range(0, rangeCount):
             obj = formula.CellRange()
             obj.firstRow = self.readUnsignedInt(2)
             obj.lastRow = self.readUnsignedInt(2)
@@ -1230,7 +1232,7 @@ class Format(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         self.appendLine("index: %d"%self.numfmtID)
-        self.appendLine("code: %s"%globals.encodeName(self.code))
+        self.appendLine("code: %s"%self.code)
 
 
 class Formula(BaseRecordHandler):
@@ -1287,7 +1289,7 @@ class HorBreaks(BaseRecordHandler):
     def __parseBytes (self):
         self.count = self.readUnsignedInt(2)
         self.breaks = []
-        for i in xrange(0, self.count):
+        for i in range(0, self.count):
             row = self.readUnsignedInt(2)
             col1 = self.readUnsignedInt(2)
             col2 = self.readUnsignedInt(2)
@@ -1296,7 +1298,7 @@ class HorBreaks(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         self.appendLine("count: %d"%self.count)
-        for i in xrange(0, self.count):
+        for i in range(0, self.count):
             self.appendLine("break: (row: %d; colums: %d-%d)"%self.breaks[i])
 
 
@@ -1377,8 +1379,8 @@ class MulRK(BaseRecordHandler):
         self.row = self.readUnsignedInt(2)
         self.col1 = self.readUnsignedInt(2)
         self.rkrecs = []
-        rkCount = (self.getSize() - self.getCurrentPos() - 2) / 6
-        for i in xrange(0, rkCount):
+        rkCount = (self.getSize() - self.getCurrentPos() - 2) // 6
+        for i in range(0, rkCount):
             rec = MulRK.RKRec()
             rec.xfIdx = self.readUnsignedInt(2)
             rec.number = self.readUnsignedInt(4)
@@ -1398,7 +1400,7 @@ class MulRK(BaseRecordHandler):
         self.__parseBytes()
         sheet = model.getCurrentSheet()
         n = len(self.rkrecs)
-        for i in xrange(0, n):
+        for i in range(0, n):
             rkrec = self.rkrecs[i]
             col = self.col1 + i
             cell = xlsmodel.NumberCell(decodeRK(rkrec.number))
@@ -1664,7 +1666,7 @@ class Scl(BaseRecordHandler):
         self.__parseBytes()
         val = 0.0 # force the value to be treated as double precision.
         val += self.numerator
-        val /= self.denominator
+        val //= self.denominator
         self.appendLine("zoom level: %g"%val)
 
     def dumpData(self):
@@ -1742,7 +1744,7 @@ class SST(BaseRecordHandler):
         self.refCount = self.readSignedInt(4) # total number of references in workbook
         self.strCount = self.readSignedInt(4) # total number of unique strings.
         self.sharedStrings = []
-        for i in xrange(0, self.strCount):
+        for i in range(0, self.strCount):
             extText, bytesRead = globals.getUnicodeRichExtText(self.bytes, self.getCurrentPos(), self.roflist)
             self.readBytes(bytesRead) # advance current position.
             self.sharedStrings.append(extText)
@@ -1753,7 +1755,7 @@ class SST(BaseRecordHandler):
         self.appendLine("total number of unique strings: %d"%self.strCount)
         i = 0
         for s in self.sharedStrings:
-            self.appendLine("s%d: %s"%(i, globals.encodeName(s.baseText)))
+            self.appendLine("s%d: %s"%(i, s.baseText))
             i += 1
 
     def fillModel (self, model):
@@ -1974,7 +1976,7 @@ class Name(BaseRecordHandler):
         self.isMacroName     = (flag & 0x0008) != 0
         self.isComplFormula  = (flag & 0x0010) != 0
         self.isBuiltinName   = (flag & 0x0020) != 0
-        self.funcGrp         = (flag & 0x0FC0) / 64
+        self.funcGrp         = (flag & 0x0FC0) // 64
         reserved             = (flag & 0x1000) != 0
         self.isPublished     = (flag & 0x2000) != 0
         self.isWorkbookParam = (flag & 0x4000) != 0
@@ -2004,7 +2006,7 @@ class Name(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
 
-        self.appendLine("name: %s"%globals.encodeName(self.name))
+        self.appendLine("name: %s"%self.name)
 
         # is this name global or sheet-local?
         s = "global or local: "
@@ -2117,7 +2119,7 @@ class ExternSheet(BaseRecordHandler):
     def __parseBytes (self):
         self.sheets = []
         num = self.readUnsignedInt(2)
-        for i in xrange(0, num):
+        for i in range(0, num):
             book = self.readUnsignedInt(2)
             sheet1 = self.readUnsignedInt(2)
             sheet2 = self.readUnsignedInt(2)
@@ -2156,7 +2158,7 @@ class ExternName(BaseRecordHandler):
             self.lastRow = self.strm.readUnsignedInt(2)
             self.values = []
             n = (self.lastCol+1)*(self.lastRow+1)
-            for i in xrange(0, n):
+            for i in range(0, n):
                 # parse each value
                 oc = self.strm.readUnsignedInt(1)
                 if oc == 0x01:
@@ -2194,7 +2196,7 @@ class ExternName(BaseRecordHandler):
                     hdl.appendLine("value: %d (boolean)"%value)
                 elif type(value) == type(1):
                     # error code stored as an integer.
-                    if ExternName.MOper.Errors.has_key(value):
+                    if value in ExternName.MOper.Errors:
                         hdl.appendLine("value: %s"%ExternName.MOper.Errors[value])
                     else:
                         hdl.appendLine("value: 0x%2.2X (unknown error)"%value)
@@ -2211,7 +2213,7 @@ class ExternName(BaseRecordHandler):
         self.isOLELink     = (flag & 0x0010) != 0
 
         # 5 - 14 bits stores last successful clip format
-        self.clipFormat    = (flag & 0x7FE0) / 2**5
+        self.clipFormat    = (flag & 0x7FE0) // 2**5
 
         self.displayAsIcon = (flag & 0x8000) != 0
 
@@ -2298,7 +2300,7 @@ class Crn(BaseRecordHandler):
         self.firstCol = self.readUnsignedInt(1)
         self.rowIndex = self.readUnsignedInt(2)
         self.cells = []
-        for i in xrange(0, self.lastCol-self.firstCol+1):
+        for i in range(0, self.lastCol-self.firstCol+1):
             typeId = self.readUnsignedInt(1)
             if typeId == 0x00:
                 # empty value
@@ -2313,7 +2315,6 @@ class Crn(BaseRecordHandler):
                 pos = self.getCurrentPos()
                 ret, length = globals.getUnicodeRichExtText(self.bytes, pos)
                 text = ret.baseText
-                text = globals.encodeName(text)
                 self.moveForward(length)
                 self.cells.append((typeId, text))
             elif typeId == 0x04:
@@ -2364,7 +2365,7 @@ class Crn(BaseRecordHandler):
         if sb.type != xlsmodel.Supbook.Type.External:
             return
         cache = sb.getCurrentSheetCache()
-        for col in xrange(self.firstCol, self.lastCol+1):
+        for col in range(self.firstCol, self.lastCol+1):
             cell = self.cells[col-self.firstCol]
             typeId, val = cell[0], cell[1]
             cache.setValue(self.rowIndex, col, typeId, val)
@@ -2430,7 +2431,7 @@ class PhoneticInfo(BaseRecordHandler):
         #       | unused| B | A |
 
         phType    = (flags)   & 0x03
-        alignType = (flags/4) & 0x03
+        alignType = (flags//4) & 0x03
 
         self.appendLine("phonetic type: %s"%PhoneticInfo.getPhoneticType(phType))
         self.appendLine("alignment: %s"%PhoneticInfo.getAlignType(alignType))
@@ -2633,21 +2634,21 @@ class XF(BaseRecordHandler):
             byte = strm.readUnsignedInt(1)
             self.horAlign = (byte & 0x07)
             self.wrapText = (byte & 0x08) != 0
-            self.verAlign = (byte & 0x70) / (2**4)
+            self.verAlign = (byte & 0x70) // (2**4)
             self.distributed = (byte & 0x80) != 0
             self.textRotation = strm.readUnsignedInt(1)
             byte = strm.readUnsignedInt(1)
             self.indentLevel = (byte & 0x0F)
             self.shrinkToFit = (byte & 0x10) != 0
-            self.readOrder   = (byte & 0xC0) / (2**6)
+            self.readOrder   = (byte & 0xC0) // (2**6)
 
         def parseBorderStyles (self, strm):
             byte = strm.readUnsignedInt(1)
             self.leftBdrStyle   = (byte & 0x0F)
-            self.rightBdrStyle  = (byte & 0xF0) / (2**4)
+            self.rightBdrStyle  = (byte & 0xF0) // (2**4)
             byte = strm.readUnsignedInt(1)
             self.topBdrStyle    = (byte & 0x0F)
-            self.bottomBdrStyle = (byte & 0xF0) / (2**4)
+            self.bottomBdrStyle = (byte & 0xF0) // (2**4)
 
     class CellXF(XFBase):
         def __init__ (self):
@@ -2674,8 +2675,8 @@ class XF(BaseRecordHandler):
             self.parseBorderStyles(strm)
             byte = strm.readUnsignedInt(2)
             self.leftColor  = (byte & 0x007F)           # 7-bits
-            self.rightColor = (byte & 0x0780) / (2**7)  # 7-bits
-            self.diagBorder = (byte & 0xC000) / (2**14) # 2-bits
+            self.rightColor = (byte & 0x0780) // (2**7)  # 7-bits
+            self.diagBorder = (byte & 0xC000) // (2**14) # 2-bits
 
 
     def __parseBytes (self):
@@ -2689,7 +2690,7 @@ class XF(BaseRecordHandler):
 
         # ID of cell style XF record which it inherits styles from.  Should be
         # 0xFFF it the style flag is on.
-        self.cellStyleXFIndex = (flags & 0xFFF0) / (2**4)
+        self.cellStyleXFIndex = (flags & 0xFFF0) // (2**4)
 
         if self.style:
             self.data = XF.CellStyleXF()
@@ -2702,7 +2703,11 @@ class XF(BaseRecordHandler):
     def parseBytes (self):
         self.__parseBytes()
         if self.style:
-            self.appendLine("parent style ID: 0x%2.2X (should be 0xFFF for cell style XF)"%self.cellStyleXFIndex)
+            # self.cellStyleXFIndex is actually something like 4095.0 Python3
+            # refuses an implicit conversion to int through the format spec,
+            # have to do it explicitely
+            sxfi = int(self.cellStyleXFIndex)
+            self.appendLine("parent style ID: 0x%2.2X (should be 0xFFF for cell style XF)"%sxfi)
         else:
             self.appendLine("parent style ID: %d"%self.cellStyleXFIndex)
         self.appendLine("font ID: %d"%self.fontId)
@@ -2984,7 +2989,7 @@ class FeatureData(BaseRecordHandler):
         self.readBytes(2) # reserved3, must be 0
 
         refs = []
-        for i in xrange(0, cref):
+        for i in range(0, cref):
             refs.append(Ref8U(self))
 
         self.appendLine("record type: 0x%4.4X (must match the header)"%recordType)
@@ -3029,7 +3034,7 @@ class Feature11(BaseRecordHandler):
         self.cbFeatData = self.readUnsignedInt(4) # size of rgbFeat
         self.readBytes(2) # ignored
         self.refs2 = []
-        for i in xrange(0, self.cref2):
+        for i in range(0, self.cref2):
             ref = Ref8U(self)
             self.refs2.append(ref)
 
@@ -3157,8 +3162,8 @@ class SxIvd(BaseRecordHandler):
 
     def __parseBytes (self):
         self.ids = []
-        n = self.getSize() / 2
-        for i in xrange(0, n):
+        n = self.getSize() // 2
+        for i in range(0, n):
             self.ids.append(self.readSignedInt(2))
 
     def parseBytes (self):
@@ -3393,7 +3398,7 @@ class SXEx(BaseRecordHandler):
         self.fAcrossPageLay = (flag & 0x0001)
 
         # Rows in each page field column
-        self.cWrapPage = (flag & 0x01FE) / 2
+        self.cWrapPage = (flag & 0x01FE) // 2
 
         flag = self.readUnsignedInt(2)
         self.fEnableWizard            = (flag & 0x0001) != 0 # D
@@ -3628,7 +3633,7 @@ class SXLI(BaseRecordHandler):
             self.isxviMac = strm.readSignedInt(2)
             flag = strm.readUnsignedInt(2)
             self.fMultiDataName   = (flag & 0x0001) != 0
-            self.iData            = (flag & 0x01FE) / 2
+            self.iData            = (flag & 0x01FE) // 2
             self.fSbt             = (flag & 0x0200) != 0
             self.fBlock           = (flag & 0x0400) != 0
             self.fGrand           = (flag & 0x0800) != 0
@@ -3638,7 +3643,7 @@ class SXLI(BaseRecordHandler):
             I                     = (flag & 0x8000) != 0 # reserved
             self.rgisxvi = []
             if self.isxviMac > 0:
-                for i in xrange(0, self.isxviMac):
+                for i in range(0, self.isxviMac):
                     id = strm.readSignedInt(2)
                     self.rgisxvi.append(id)
 
@@ -3711,9 +3716,9 @@ class SxRule(BaseRecordHandler):
         self.sxaxisCol  = (flag & 0x0002) != 0
         self.sxaxisPage = (flag & 0x0004) != 0
         self.sxaxisData = (flag & 0x0008) != 0
-        self.sxrType    = (flag & 0x00F0) / (2**4)
+        self.sxrType    = (flag & 0x00F0) // (2**4)
 
-        flag /= 2**8 # shift 8 bits
+        flag //= 2**8 # shift 8 bits
 
         self.fPart        = (flag & 0x01) != 0
         self.fDataOnly    = (flag & 0x02) != 0
@@ -3862,7 +3867,7 @@ class MergeCells(BaseRecordHandler):
     def __parseBytes (self):
         self.cmcs = self.readUnsignedInt(2)
         self.rgref = []
-        for i in xrange(0, self.cmcs):
+        for i in range(0, self.cmcs):
             self.rgref.append(Ref8(self))
 
     def parseBytes (self):
@@ -4056,11 +4061,11 @@ class SXDataItem(BaseRecordHandler):
 
         self.appendLine("field that this data item is based on: %d"%isxvdData)
         funcName = '(unknown)'
-        if SXDataItem.functionType.has_key(funcIndex):
+        if funcIndex in SXDataItem.functionType:
             funcName = SXDataItem.functionType[funcIndex]
         self.appendLine("aggregate function: %s"%funcName)
         dfName = '(unknown)'
-        if SXDataItem.displayFormat.has_key(df):
+        if df in SXDataItem.displayFormat:
             dfName = SXDataItem.displayFormat[df]
         self.appendLine("data display format: %s"%dfName)
         self.appendLine("SXVD record index: %d"%sxvdIndex)
@@ -4306,7 +4311,7 @@ class SXRng(BaseRecordHandler):
         flag = self.readUnsignedInt(2)
         self.fAutoStart = (flag & 0x0001) != 0 # A
         self.fAutoEnd   = (flag & 0x0002) != 0 # B
-        self.iByType    = (flag & 0x001C) / 4  # C
+        self.iByType    = (flag & 0x001C) // 4  # C
 
     def parseBytes (self):
         self.__parseBytes()
@@ -4403,9 +4408,9 @@ class RRDChgCell(BaseRecordHandler):
         self.rrd = RRD(self)
         flags = self.readUnsignedInt(2)
         self.vt    = (flags & 0x0007)
-        flags /= 2**3 # shift 3 bits
+        flags //= 2**3 # shift 3 bits
         self.vtOld = (flags & 0x0007)
-        flags /= 2**3 # shift 3 bits
+        flags //= 2**3 # shift 3 bits
         self.f123Prefix  = (flags & 0x0001)
         unused           = (flags & 0x0002)
         self.fOldFmt     = (flags & 0x0004)
@@ -4827,7 +4832,7 @@ class ChartFrtInfo(BaseRecordHandler):
         self.verWriter = self.readUnsignedInt(1)
         self.cCFRTID = self.readUnsignedInt(2)
         self.cfrtids = []
-        for x in xrange(self.cCFRTID):
+        for x in range(self.cCFRTID):
             self.cfrtids.append(self.readCFRTID())
 
     def parseBytes (self):
@@ -5242,7 +5247,7 @@ class SeriesList(BaseRecordHandler):
     def __parseBytes(self):
         self.cser = self.readUnsignedInt(2)
         self.series = []
-        for x in xrange(self.cser):
+        for x in range(self.cser):
             self.series.append(self.readUnsignedInt(2))
 
     def parseBytes (self):
@@ -5329,7 +5334,7 @@ class Text(BaseRecordHandler):
 
         flag = self.readUnsignedInt(2)
         self.dlp = (flag & 0x000F)
-        self.readingOrder = (flag & 0xC000) / (2**14)
+        self.readingOrder = (flag & 0xC000) // (2**14)
         self.trot = self.readUnsignedInt(2)
 
     def parseBytes (self):
@@ -5512,7 +5517,7 @@ class Legend(BaseRecordHandler):
     spacingMap = ['close', 'medium', 'open']
 
     def getDockModeText (self, val):
-        if Legend.dockModeMap.has_key(val):
+        if val in Legend.dockModeMap:
             return Legend.dockModeMap[val]
         else:
             return '(unknown)'

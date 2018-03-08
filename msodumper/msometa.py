@@ -5,8 +5,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from binarystream import BinaryStream
-import globals
+from .binarystream import BinaryStream
+from . import globals
 import time
 
 
@@ -46,9 +46,9 @@ class DocumentSummaryInformationStream(BinaryStream):
         BinaryStream.__init__(self, bytes, params, "\x05DocumentSummaryInformation", doc=doc)
 
     def dump(self):
-        print '<stream name="\\x05DocumentSummaryInformation" size="%d">' % self.size
+        print('<stream name="\\x05DocumentSummaryInformation" size="%d">' % self.size)
         PropertySetStream(self, PIDDSI).dump()
-        print '</stream>'
+        print('</stream>')
 
 
 PIDSI = {
@@ -79,9 +79,9 @@ class SummaryInformationStream(BinaryStream):
         BinaryStream.__init__(self, bytes, params, "\x05SummaryInformation", doc=doc)
 
     def dump(self):
-        print '<stream name="\\x05SummaryInformation" size="%d">' % self.size
+        print('<stream name="\\x05SummaryInformation" size="%d">' % self.size)
         PropertySetStream(self, PIDSI).dump()
-        print '</stream>'
+        print('</stream>')
 
 
 class PropertySetStream(BinaryStream):
@@ -92,7 +92,7 @@ class PropertySetStream(BinaryStream):
         self.propertyIds = PropertyIds
 
     def dump(self):
-        print '<propertySetStream type="PropertySetStream" offset="%s">' % self.pos
+        print('<propertySetStream type="PropertySetStream" offset="%s">' % self.pos)
         self.printAndSet("ByteOrder", self.readuInt16())
         self.printAndSet("Version", self.readuInt16())
         self.printAndSet("SystemIdentifier", self.readuInt32())
@@ -111,7 +111,7 @@ class PropertySetStream(BinaryStream):
             # The spec says: if NumPropertySets has the value 0x00000002,
             # FMTID1 must be set to FMTID_UserDefinedProperties.
             PropertySet(self, self.Offset1, userDefined=True).dump()
-        print '</propertySetStream>'
+        print('</propertySetStream>')
 
 
 class PropertySet(BinaryStream):
@@ -131,7 +131,7 @@ class PropertySet(BinaryStream):
             return
 
         self.posOrig = self.pos
-        print '<propertySet type="PropertySet" offset="%s">' % self.pos
+        print('<propertySet type="PropertySet" offset="%s">' % self.pos)
         self.printAndSet("Size", self.readuInt32())
         self.printAndSet("NumProperties", self.readuInt32())
         self.idsAndOffsets = []
@@ -150,7 +150,7 @@ class PropertySet(BinaryStream):
                 typedPropertyValue = TypedPropertyValue(self, i)
                 typedPropertyValue.dump()
                 self.typedPropertyValues.append(typedPropertyValue)
-        print '</propertySet>'
+        print('</propertySet>')
 
 
 class PropertyIdentifierAndOffset(BinaryStream):
@@ -161,11 +161,12 @@ class PropertyIdentifierAndOffset(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<propertyIdentifierAndOffset%s type="PropertyIdentifierAndOffset" offset="%s">' % (self.index, self.pos)
+        print('<propertyIdentifierAndOffset%s type="PropertyIdentifierAndOffset" offset="%s">' % (self.index, self.pos))
         self.printAndSet("PropertyIdentifier", self.readuInt32(), dict=self.parent.parent.propertyIds, default="unknown")
         self.printAndSet("Offset", self.readuInt32())
-        print '</propertyIdentifierAndOffset%s>' % self.index
+        print('</propertyIdentifierAndOffset%s>' % self.index)
         self.parent.pos = self.pos
+
 
 PropertyType = {
     0x0000: "VT_EMPTY",
@@ -252,7 +253,7 @@ class DictionaryEntry(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<dictionaryEntry offset="%s" index="%s">' % (self.pos, self.index)
+        print('<dictionaryEntry offset="%s" index="%s">' % (self.pos, self.index))
         self.printAndSet("PropertyIdentifier", self.readuInt32())
         self.printAndSet("Length", self.readuInt32())
 
@@ -264,9 +265,12 @@ class DictionaryEntry(BinaryStream):
             bytes.append(c)
         # TODO support non-latin1
         encoding = "latin1"
-        print '<Name value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8')
+        if globals.PY3:
+            print('<Name value="%s"/>' % globals.encodeName(b"".join(map(lambda c: globals.indexedbytetobyte(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8'))
+        else:
+            print('<Name value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8'))
 
-        print '</dictionaryEntry>'
+        print('</dictionaryEntry>')
         self.parent.pos = self.pos
 
 
@@ -280,12 +284,12 @@ class Dictionary(BinaryStream):
         self.pos = parent.posOrig + parent.idsAndOffsets[index].Offset
 
     def dump(self):
-        print '<dictionary%s type="Dictionary" offset="%s">' % (self.index, self.pos)
+        print('<dictionary%s type="Dictionary" offset="%s">' % (self.index, self.pos))
         self.printAndSet("NumEntries", self.readuInt32())
         for i in range(self.NumEntries):
             dictionaryEntry = DictionaryEntry(self, i)
             dictionaryEntry.dump()
-        print '</dictionary%s>' % self.index
+        print('</dictionary%s>' % self.index)
 
 
 class TypedPropertyValue(BinaryStream):
@@ -296,7 +300,7 @@ class TypedPropertyValue(BinaryStream):
         self.pos = parent.posOrig + parent.idsAndOffsets[index].Offset
 
     def dump(self):
-        print '<typedPropertyValue%s type="TypedPropertyValue" offset="%s">' % (self.index, self.pos)
+        print('<typedPropertyValue%s type="TypedPropertyValue" offset="%s">' % (self.index, self.pos))
         self.printAndSet("Type", self.readuInt16(), dict=PropertyType)
         self.printAndSet("Padding", self.readuInt16())
         if self.Type == 0x0002:  # VT_I2
@@ -312,8 +316,8 @@ class TypedPropertyValue(BinaryStream):
         elif self.Type == 0x101E:  # VT_VECTOR | VT_LPSTR
             VectorHeader(self, "Value", self.parent.getCodePage()).dump()
         else:
-            print '<todo what="TypedPropertyValue::dump: unhandled Type %s"/>' % hex(self.Type)
-        print '</typedPropertyValue%s>' % self.index
+            print('<todo what="TypedPropertyValue::dump: unhandled Type %s"/>' % hex(self.Type))
+        print('</typedPropertyValue%s>' % self.index)
 
 
 class VectorHeader(BinaryStream):
@@ -327,11 +331,11 @@ class VectorHeader(BinaryStream):
         self.codepage = codepage
 
     def dump(self):
-        print '<%s type="VectorHeader">' % self.name
+        print('<%s type="VectorHeader">' % self.name)
         self.printAndSet("Length", self.readuInt32())
         for dummy in range(self.Length):
             CodePageString(self, "String", self.codepage).dump()
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
 
 
 class CodePageString(BinaryStream):
@@ -343,7 +347,7 @@ class CodePageString(BinaryStream):
         self.codepage = codepage
 
     def dump(self):
-        print '<%s type="CodePageString">' % self.name
+        print('<%s type="CodePageString">' % self.name)
         self.printAndSet("Size", self.readuInt32())
         bytes = []
         for dummy in range(self.Size):
@@ -364,10 +368,14 @@ class CodePageString(BinaryStream):
             # http://msdn.microsoft.com/en-us/library/windows/desktop/dd374130%28v=vs.85%29.aspx
             encoding = "utf-8"
         if len(encoding):
-            print '<Characters value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8')
+            if globals.PY3:
+                print('<Characters value="%s"/>' % globals.encodeName(b"".join(map(lambda c: globals.indexedbytetobyte(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8'))
+            else:
+                # Argh cant use indexedbytetobyte because we actually have ints
+                print('<Characters value="%s"/>' % globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8'))
         else:
-            print '<todo what="CodePageString::dump: unhandled codepage %s"/>' % codepage
-        print '</%s>' % self.name
+            print('<todo what="CodePageString::dump: unhandled codepage %s"/>' % codepage)
+        print('</%s>' % self.name)
 
 
 class GUID(BinaryStream):
@@ -385,7 +393,7 @@ class GUID(BinaryStream):
         for dummy in range(8):
             Data4.append(self.readuInt8())
         value = "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x" % (Data1, Data2, Data3, Data4[0], Data4[1], Data4[2], Data4[3], Data4[4], Data4[5], Data4[6], Data4[7])
-        print '<%s type="GUID" value="%s"/>' % (self.name, value)
+        print('<%s type="GUID" value="%s"/>' % (self.name, value))
         self.parent.pos = self.pos
 
 
@@ -413,7 +421,7 @@ class FILETIME(OLERecord):
             pretty = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.localtime(sec))
         except ValueError:
             pretty = "ValueError"
-        print '<%s type="FILETIME" value="%d" pretty="%s"/>' % (self.name, sec, pretty)
+        print('<%s type="FILETIME" value="%d" pretty="%s"/>' % (self.name, sec, pretty))
         self.parent.pos = self.pos
 
 

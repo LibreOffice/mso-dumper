@@ -242,6 +242,7 @@ class Test(unittest.TestCase):
         actual = self.root.findall(xpath)[0].attrib['value']
         self.assertEqual(expected, actual)
 
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -4,12 +4,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
+from builtins import range
 import locale
-import globals
-from binarystream import BinaryStream
-import docsprm
-import msodraw
+from . import globals
+from .binarystream import BinaryStream
+from . import docsprm
+from . import msodraw
 
 
 def getWordModel(mainStream):
@@ -31,11 +31,11 @@ class FcCompressed(BinaryStream):
         self.r1 = self.getBit(buf, 31)
 
     def dump(self):
-        print '<fcCompressed type="FcCompressed" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<fcCompressed type="FcCompressed" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fc", self.fc)
         self.printAndSet("fCompressed", self.fCompressed)
         self.printAndSet("r1", self.r1)
-        print '</fcCompressed>'
+        print('</fcCompressed>')
 
 
 class Pcd(BinaryStream):
@@ -54,13 +54,13 @@ class Pcd(BinaryStream):
         self.pos += 4
 
     def dump(self):
-        print '<pcd type="Pcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<pcd type="Pcd" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fNoParaLast", self.fNoParaLast)
         self.printAndSet("fR1", self.fR1)
         self.printAndSet("fDirty", self.fDirty)
         self.printAndSet("fR2", self.fR2)
         self.fc.dump()
-        print '</pcd>'
+        print('</pcd>')
 
 
 class PLC:
@@ -70,7 +70,7 @@ class PLC:
         self.structSize = structSize
 
     def getElements(self):
-        return (self.totalSize - 4) / (4 + self.structSize)  # defined by 2.2.2
+        return (self.totalSize - 4) // (4 + self.structSize)  # defined by 2.2.2
 
     def getOffset(self, pos, i):
         return self.getPLCOffset(pos, self.getElements(), self.structSize, i)
@@ -86,13 +86,13 @@ class BKC(BinaryStream):
         self.bkc = bkc
 
     def dump(self):
-        print '<bkc type="BKC">'
+        print('<bkc type="BKC">')
         self.printAndSet("itcFirst", self.bkc & 0x007f)  # 1..7th bits
         self.printAndSet("fPub", self.getBit(self.bkc, 8))
         self.printAndSet("itcLim", (self.bkc & 0x3f00) >> 8)  # 9..14th bits
         self.printAndSet("fNative", self.getBit(self.bkc, 15))
         self.printAndSet("fCol", self.getBit(self.bkc, 16))
-        print '</bkc>'
+        print('</bkc>')
 
 
 class FBKF(BinaryStream):
@@ -102,10 +102,10 @@ class FBKF(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<aFBKF type="FBKF" offset="%d">' % self.pos
+        print('<aFBKF type="FBKF" offset="%d">' % self.pos)
         self.printAndSet("ibkl", self.readuInt16())
         BKC(self.readuInt16()).dump()
-        print '</aFBKF>'
+        print('</aFBKF>')
 
 
 class PlcfBkf(BinaryStream, PLC):
@@ -119,21 +119,21 @@ class PlcfBkf(BinaryStream, PLC):
         self.aFBKF = []
 
     def dump(self):
-        print '<plcfBkf type="PlcfBkf" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfBkf type="PlcfBkf" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             self.aCP.append(start)
-            print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
+            print('<aCP index="%d" bookmarkStart="%d">' % (i, start))
             pos += 4
 
             # aFBKF
             aFBKF = FBKF(self, self.getOffset(self.pos, i))
             aFBKF.dump()
             self.aFBKF.append(aFBKF)
-            print '</aCP>'
-        print '</plcfBkf>'
+            print('</aCP>')
+        print('</plcfBkf>')
 
 
 class FBKFD(BinaryStream):
@@ -143,11 +143,11 @@ class FBKFD(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<aFBKFD type="FBKFD" offset="%d">' % self.pos
+        print('<aFBKFD type="FBKFD" offset="%d">' % self.pos)
         FBKF(self, self.pos).dump()
         self.pos += 4
         self.printAndSet("cDepth", self.readInt16())
-        print '</aFBKFD>'
+        print('</aFBKFD>')
 
 
 class PlcfBkfd(BinaryStream, PLC):
@@ -161,21 +161,21 @@ class PlcfBkfd(BinaryStream, PLC):
         self.aFBKFD = []
 
     def dump(self):
-        print '<plcfBkfd type="PlcfBkfd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfBkfd type="PlcfBkfd" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             self.aCP.append(start)
-            print '<aCP index="%d" bookmarkStart="%d">' % (i, start)
+            print('<aCP index="%d" bookmarkStart="%d">' % (i, start))
             pos += 4
 
             # aFBKFD
             aFBKFD = FBKFD(self, self.getOffset(self.pos, i))
             aFBKFD.dump()
             self.aFBKFD.append(aFBKFD)
-            print '</aCP>'
-        print '</plcfBkfd>'
+            print('</aCP>')
+        print('</plcfBkfd>')
 
 
 class FBKLD(BinaryStream):
@@ -185,10 +185,10 @@ class FBKLD(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<aFBKLD type="FBKLD" offset="%d">' % self.pos
+        print('<aFBKLD type="FBKLD" offset="%d">' % self.pos)
         self.printAndSet("ibkf", self.readuInt16())
         self.printAndSet("cDepth", self.readuInt16())
-        print '</aFBKLD>'
+        print('</aFBKLD>')
 
 
 class PlcfBkld(BinaryStream, PLC):
@@ -202,21 +202,21 @@ class PlcfBkld(BinaryStream, PLC):
         self.aFBKLD = []
 
     def dump(self):
-        print '<plcfBkld type="PlcfBkld" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfBkld type="PlcfBkld" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             self.aCP.append(start)
-            print '<aCP index="%d" bookmarkEnd="%d">' % (i, start)
+            print('<aCP index="%d" bookmarkEnd="%d">' % (i, start))
             pos += 4
 
             # aFBKLD
             aFBKLD = FBKLD(self, self.getOffset(self.pos, i))
             aFBKLD.dump()
             self.aFBKLD.append(aFBKLD)
-            print '</aCP>'
-        print '</plcfBkld>'
+            print('</aCP>')
+        print('</plcfBkld>')
 
 
 class FactoidSpls(BinaryStream):
@@ -227,9 +227,9 @@ class FactoidSpls(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<factoidSpls type="FactoidSpls" offset="%d">' % self.pos
+        print('<factoidSpls type="FactoidSpls" offset="%d">' % self.pos)
         SPLS("spls", self, self.pos).dump()
-        print '</factoidSpls>'
+        print('</factoidSpls>')
 
 
 class Plcffactoid(BinaryStream, PLC):
@@ -243,13 +243,13 @@ class Plcffactoid(BinaryStream, PLC):
         self.aFactoidSpls = []
 
     def dump(self):
-        print '<plcffactoid type="Plcffactoid" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcffactoid type="Plcffactoid" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements() + 1):
             # aCp
             aCp = self.getuInt32(pos=pos)
             self.aCPs.append(aCp)
-            print '<aCP index="%d" value="%d">' % (i, aCp)
+            print('<aCP index="%d" value="%d">' % (i, aCp))
             pos += 4
 
             if i < self.getElements():
@@ -257,8 +257,8 @@ class Plcffactoid(BinaryStream, PLC):
                 aFactoidSpls = FactoidSpls(self, self.getOffset(self.pos, i))
                 aFactoidSpls.dump()
                 self.aFactoidSpls.append(aFactoidSpls)
-            print '</aCP>'
-        print '</plcffactoid>'
+            print('</aCP>')
+        print('</plcffactoid>')
 
 
 class Fldch(BinaryStream):
@@ -269,11 +269,11 @@ class Fldch(BinaryStream):
         self.parent = parent
 
     def dump(self):
-        print '<fldch type="fldch" offset="%d" size="1 byte">' % self.pos
+        print('<fldch type="fldch" offset="%d" size="1 byte">' % self.pos)
         buf = self.readuInt8()
         self.printAndSet("ch", buf & 0x1f)  # 1..5th bits
         self.printAndSet("reserved", (buf & 0xe0) >> 5)  # 6..8th bits
-        print '</fldch>'
+        print('</fldch>')
         self.parent.pos = self.pos
 
 
@@ -284,11 +284,11 @@ class Fld(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<fld type="FLD" offset="%d" size="2 bytes">' % self.pos
+        print('<fld type="FLD" offset="%d" size="2 bytes">' % self.pos)
         self.fldch = Fldch(self)
         self.fldch.dump()
         self.printAndSet("grffld", self.readuInt8())  # TODO parse flt and grffldEnd
-        print '</fld>'
+        print('</fld>')
 
 
 class PlcFld(BinaryStream, PLC):
@@ -300,13 +300,13 @@ class PlcFld(BinaryStream, PLC):
         self.size = mainStream.lcbPlcfFldMom
 
     def dump(self):
-        print '<plcFld type="PlcFld" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcFld type="PlcFld" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         aFlds = []
         for i in range(self.getElements()):
             # aCp
             value = self.getuInt32(pos=pos)
-            print '<aCP index="%d" value="%d">' % (i, value)
+            print('<aCP index="%d" value="%d">' % (i, value))
             pos += 4
 
             # aFld
@@ -315,13 +315,13 @@ class PlcFld(BinaryStream, PLC):
 
             # This is a separator and the previous was a start: display the field instructions.
             if aFld.fldch.ch == 0x14 and aFlds[-1][1].fldch.ch == 0x13:
-                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(aFlds[-1][0] + 1, value))
+                print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(aFlds[-1][0] + 1, value)))
             # This is an end and the previous was a separator: display the field result.
             elif aFld.fldch.ch == 0x15 and aFlds[-1][1].fldch.ch == 0x14:
-                print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(aFlds[-1][0] + 1, value))
+                print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(aFlds[-1][0] + 1, value)))
             aFlds.append((value, aFld))
-            print '</aCP>'
-        print '</plcFld>'
+            print('</aCP>')
+        print('</plcFld>')
 
 
 class PlcfBkl(BinaryStream, PLC):
@@ -334,17 +334,17 @@ class PlcfBkl(BinaryStream, PLC):
         self.start = start
 
     def dump(self):
-        print '<plcfBkl type="PlcfBkl" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfBkl type="PlcfBkl" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             end = self.getuInt32(pos=pos)
-            print '<aCP index="%d" bookmarkEnd="%d">' % (i, end)
+            print('<aCP index="%d" bookmarkEnd="%d">' % (i, end))
             start = self.start.aCP[self.start.aFBKF[i].ibkl]
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end)))
             pos += 4
-            print '</aCP>'
-        print '</plcfBkl>'
+            print('</aCP>')
+        print('</plcfBkl>')
 
 
 class PlcPcd(BinaryStream, PLC):
@@ -372,14 +372,14 @@ class PlcPcd(BinaryStream, PLC):
             self.aPcd.append(aPcd)
 
     def dump(self):
-        print '<plcPcd type="PlcPcd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcPcd type="PlcPcd" offset="%d" size="%d bytes">' % (self.pos, self.size))
         for i in range(self.getElements()):
             start, end = self.ranges[i]
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
             self.aPcd[i].dump()
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
-            print '</aCP>'
-        print '</plcPcd>'
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end)))
+            print('</aCP>')
+        print('</plcPcd>')
 
 
 class Sepx(BinaryStream):
@@ -389,14 +389,14 @@ class Sepx(BinaryStream):
         self.pos = sed.fcSepx
 
     def dump(self):
-        print '<sepx type="Sepx" offset="%d">' % self.pos
+        print('<sepx type="Sepx" offset="%d">' % self.pos)
         self.printAndSet("cb", self.readInt16())
         pos = self.pos
         while (self.cb - (pos - self.pos)) > 0:
             prl = Prl(self, pos)
             prl.dump()
             pos += prl.getSize()
-        print '</sepx>'
+        print('</sepx>')
 
 
 class Sed(BinaryStream):
@@ -409,14 +409,14 @@ class Sed(BinaryStream):
         self.plcfSed = plcfSed
 
     def dump(self):
-        print '<aSed type="Sed" offset="%d" size="%d bytes">' % (self.pos, Sed.size)
+        print('<aSed type="Sed" offset="%d" size="%d bytes">' % (self.pos, Sed.size))
         self.printAndSet("fn", self.readuInt16())
         self.printAndSet("fcSepx", self.readuInt32())
         if self.fcSepx != 0xffffffff:
             Sepx(self).dump()
         self.printAndSet("fnMpr", self.readuInt16())
         self.printAndSet("fcMpr", self.readuInt32())
-        print '</aSed>'
+        print('</aSed>')
 
 
 class PlcfSed(BinaryStream, PLC):
@@ -428,22 +428,22 @@ class PlcfSed(BinaryStream, PLC):
         self.size = size
 
     def dump(self):
-        print '<plcfSed type="PlcfSed" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfSed type="PlcfSed" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aSed
             aSed = Sed(self, self.getOffset(self.pos, i))
             aSed.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
-            print '</aCP>'
-        print '</plcfSed>'
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end)))
+            print('</aCP>')
+        print('</plcfSed>')
 
 
 class Tcg(BinaryStream):
@@ -454,12 +454,12 @@ class Tcg(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<tcg type="Tcg" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<tcg type="Tcg" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("nTcgVer", self.readuInt8())
         self.printAndSet("chTerminator", self.readuInt8())
         if self.chTerminator != 0x40:
-            print '<todo what="Tcg: chTerminator != 0x40"/>'
-        print '</tcg>'
+            print('<todo what="Tcg: chTerminator != 0x40"/>')
+        print('</tcg>')
 
 
 class Sty(BinaryStream):
@@ -484,7 +484,7 @@ class Sty(BinaryStream):
             0x000F: "styWholeTable",
             0x001B: "styPrefix",
         }
-        print '<sty name="%s" value="%s"/>' % (styMap[value], hex(value))
+        print('<sty name="%s" value="%s"/>' % (styMap[value], hex(value)))
         self.parent.pos = self.pos
 
 
@@ -498,7 +498,7 @@ class Selsf(BinaryStream):
         self.mainStream = mainStream
 
     def dump(self):
-        print '<selsf type="Selsf" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<selsf type="Selsf" offset="%d" size="%d bytes">' % (self.pos, self.size))
 
         buf = self.readuInt16()
         self.printAndSet("fRightward", self.getBit(buf, 0))
@@ -534,7 +534,7 @@ class Selsf(BinaryStream):
         self.printAndSet("xaTableLeft", self.readInt16())
         self.printAndSet("xaTableRight", self.readInt16())
         assert self.pos == self.mainStream.fcWss + Selsf.size
-        print '</selsf>'
+        print('</selsf>')
 
 
 class COLORREF(BinaryStream):
@@ -549,12 +549,12 @@ class COLORREF(BinaryStream):
         parent.pos = self.pos
 
     def dump(self, name):
-        print '<%s type="COLORREF">' % name
+        print('<%s type="COLORREF">' % name)
         self.printAndSet("red", self.red)
         self.printAndSet("green", self.green)
         self.printAndSet("blue", self.blue)
         self.printAndSet("fAuto", self.fAuto)
-        print '</%s>' % name
+        print('</%s>' % name)
 
 
 class BRC(BinaryStream):
@@ -575,7 +575,7 @@ class BRC(BinaryStream):
         self.fReserved = (buf & 0xff80) >> 7  # 8..16th bits
 
     def dump(self):
-        print '<%s type="BRC" offset="%d">' % (self.name, self.posOrig)
+        print('<%s type="BRC" offset="%d">' % (self.name, self.posOrig))
         self.cv.dump("cv")
         self.printAndSet("dptLineWidth", self.dptLineWidth)
         self.printAndSet("brcType", self.brcType, dict=BrcType)
@@ -583,7 +583,7 @@ class BRC(BinaryStream):
         self.printAndSet("fShadow", self.fShadow)
         self.printAndSet("fFrame", self.fFrame)
         self.printAndSet("fReserved", self.fReserved)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -595,11 +595,11 @@ class PChgTabsDel(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<pchgTabsDel type="PChgTabsDel" offset="%d">' % self.pos
+        print('<pchgTabsDel type="PChgTabsDel" offset="%d">' % self.pos)
         self.printAndSet("cTabs", self.readuInt8())
         for i in range(self.cTabs):
-            print '<rgdxaDel index="%d" value="%d"/>' % (i, self.readInt16())
-        print '</pchgTabsDel>'
+            print('<rgdxaDel index="%d" value="%d"/>' % (i, self.readInt16()))
+        print('</pchgTabsDel>')
         self.parent.pos = self.pos
 
 
@@ -611,13 +611,13 @@ class PChgTabsDelClose(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<pchgTabsDelClose type="PChgTabsDelClose" offset="%d">' % self.pos
+        print('<pchgTabsDelClose type="PChgTabsDelClose" offset="%d">' % self.pos)
         self.printAndSet("cTabs", self.readuInt8())
         for i in range(self.cTabs):
-            print '<rgdxaDel index="%d" value="%d"/>' % (i, self.readInt16())
+            print('<rgdxaDel index="%d" value="%d"/>' % (i, self.readInt16()))
         for i in range(self.cTabs):
-            print '<rgdxaClose index="%d" value="%d"/>' % (i, self.readInt16())
-        print '</pchgTabsDelClose>'
+            print('<rgdxaClose index="%d" value="%d"/>' % (i, self.readInt16()))
+        print('</pchgTabsDelClose>')
         self.parent.pos = self.pos
 
 
@@ -629,13 +629,13 @@ class PChgTabsAdd(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<pchgTabsAdd type="PChgTabsAdd" offset="%d">' % self.pos
+        print('<pchgTabsAdd type="PChgTabsAdd" offset="%d">' % self.pos)
         self.printAndSet("cTabs", self.readuInt8())
         for i in range(self.cTabs):
-            print '<rgdxaAdd index="%d" value="%d"/>' % (i, self.readInt16())
+            print('<rgdxaAdd index="%d" value="%d"/>' % (i, self.readInt16()))
         for i in range(self.cTabs):
-            print '<rgtbdAdd index="%d" value="%d"/>' % (i, self.readuInt8())
-        print '</pchgTabsAdd>'
+            print('<rgtbdAdd index="%d" value="%d"/>' % (i, self.readuInt8()))
+        print('</pchgTabsAdd>')
         self.parent.pos = self.pos
 
 
@@ -646,10 +646,10 @@ class LSPD(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<lspd type="LSPD" offset="%d">' % self.pos
+        print('<lspd type="LSPD" offset="%d">' % self.pos)
         self.printAndSet("dyaLine", self.readuInt16())
         self.printAndSet("fMultLinespace", self.readuInt16())
-        print '</lspd>'
+        print('</lspd>')
 
 
 class PChgTabsPapxOperand(BinaryStream):
@@ -659,11 +659,11 @@ class PChgTabsPapxOperand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<pchgTabsPapxOperand type="PChgTabsPapxOperand" offset="%d">' % self.pos
+        print('<pchgTabsPapxOperand type="PChgTabsPapxOperand" offset="%d">' % self.pos)
         self.printAndSet("cb", self.readuInt8())
         PChgTabsDel(self).dump()
         PChgTabsAdd(self).dump()
-        print '</pchgTabsPapxOperand>'
+        print('</pchgTabsPapxOperand>')
 
 
 class PChgTabsOperand(BinaryStream):
@@ -675,11 +675,12 @@ class PChgTabsOperand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<pchgTabsOperand type="PChgTabsOperand" offset="%d">' % self.pos
+        print('<pchgTabsOperand type="PChgTabsOperand" offset="%d">' % self.pos)
         self.printAndSet("cb", self.readuInt8())
         PChgTabsDelClose(self).dump()
         PChgTabsAdd(self).dump()
-        print '</pchgTabsOperand>'
+        print('</pchgTabsOperand>')
+
 
 # The Ico structure specifies an entry in the color palette that is listed in the following table.
 Ico = {
@@ -772,12 +773,12 @@ class Shd80(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<shd80 type="Shd80" offset="%d" index="%d">' % (self.pos, self.index)
+        print('<shd80 type="Shd80" offset="%d" index="%d">' % (self.pos, self.index))
         buf = self.readuInt16()
         self.printAndSet("icoFore", buf & 0x001f, dict=Ico)  # 1..5th bits
         self.printAndSet("icoBack", (buf & 0x03e0) >> 5, dict=Ico)  # 6..10th bits
         self.printAndSet("ipat", (buf & 0xfc00) >> 10, dict=Ipat)  # 11.16th bits
-        print '</shd80>'
+        print('</shd80>')
         self.parent.pos = self.pos
 
 
@@ -789,11 +790,11 @@ class DefTableShd80Operand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<defTableShd80Operand type="DefTableShd80Operand" offset="%d">' % self.pos
+        print('<defTableShd80Operand type="DefTableShd80Operand" offset="%d">' % self.pos)
         self.printAndSet("cb", self.readuInt8())
-        for i in xrange(self.cb / Shd80.size):
+        for i in range(self.cb / Shd80.size):
             Shd80(self, i).dump()
-        print '</defTableShd80Operand>'
+        print('</defTableShd80Operand>')
 
 
 class CMajorityOperand(BinaryStream):
@@ -805,16 +806,17 @@ class CMajorityOperand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<cMajorityOperand type="CMajorityOperand" offset="%d">' % self.pos
+        print('<cMajorityOperand type="CMajorityOperand" offset="%d">' % self.pos)
         self.printAndSet("cb", self.readuInt8())
         pos = 0
-        print '<grpprl offset="%d" size="%d bytes">' % (self.pos, self.cb)
+        print('<grpprl offset="%d" size="%d bytes">' % (self.pos, self.cb))
         while self.cb - pos > 0:
             prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
-        print '</grpprl>'
-        print '</cMajorityOperand>'
+        print('</grpprl>')
+        print('</cMajorityOperand>')
+
 
 # The PgbApplyTo enumeration is used to specify the pages to which a page border applies.
 PgbApplyTo = {
@@ -846,13 +848,13 @@ class SPgbPropOperand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<sPgbPropOperand type="SPgbPropOperand" offset="%d">' % self.pos
+        print('<sPgbPropOperand type="SPgbPropOperand" offset="%d">' % self.pos)
         buf = self.readuInt8()
         self.printAndSet("pgbApplyTo", buf & 0x7, dict=PgbApplyTo)  # 1..3rd bits
         self.printAndSet("pgbPageDepth", (buf & 0x18) >> 3, dict=PgbPageDepth)  # 4..5th bits
         self.printAndSet("pgbOffsetFrom", (buf & 0xe0) >> 5, dict=PgbOffsetFrom)  # 6..8th bits
         self.printAndSet("reserved", self.readuInt8())
-        print '</sPgbPropOperand>'
+        print('</sPgbPropOperand>')
 
 
 class MFPF(BinaryStream):
@@ -867,13 +869,13 @@ class MFPF(BinaryStream):
             0x0064: "MM_SHAPE",
             0x0066: "MM_SHAPEFILE",
         }
-        print '<mfpf type="MFPF" offset="%d">' % self.pos
+        print('<mfpf type="MFPF" offset="%d">' % self.pos)
         self.printAndSet("mm", self.readInt16(), dict=mmDict, default="todo")
         self.printAndSet("xExt", self.readuInt16())
         self.printAndSet("yExt", self.readuInt16())
         self.printAndSet("swHMF", self.readuInt16())
         self.parent.pos = self.pos
-        print '</mfpf>'
+        print('</mfpf>')
 
 
 class PICF_Shape(BinaryStream):
@@ -886,13 +888,14 @@ class PICF_Shape(BinaryStream):
         self.name = name
 
     def dump(self):
-        print '<%s type="PICF_Shape" offset="%d">' % (self.name, self.pos)
+        print('<%s type="PICF_Shape" offset="%d">' % (self.name, self.pos))
         self.printAndSet("grf", self.readuInt32())
         self.printAndSet("padding1", self.readuInt32())
         self.printAndSet("mmpm", self.readuInt16())
         self.printAndSet("padding2", self.readuInt32())
         self.parent.pos = self.pos
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
+
 
 # BrcType is an unsigned integer that specifies the type of border.
 BrcType = {
@@ -1099,7 +1102,7 @@ class Brc80(BinaryStream):
 
     def dump(self):
         buf = self.readuInt32()
-        print '<%s type="Brc80" offset="%d">' % (self.name, self.pos)
+        print('<%s type="Brc80" offset="%d">' % (self.name, self.pos))
         self.printAndSet("dptLineWidth", buf & 0x000000ff)  # 1..8th bits
         self.printAndSet("brcType", (buf & 0x0000ff00) >> 8, dict=BrcType)  # 9..16th bits
         self.printAndSet("ico", (buf & 0x00ff0000) >> 16, dict=Ico)  # 17..24th bits
@@ -1107,7 +1110,7 @@ class Brc80(BinaryStream):
         self.printAndSet("fShadow", self.getBit(buf, 29))
         self.printAndSet("fFrame", self.getBit(buf, 30))
         self.printAndSet("reserved", self.getBit(buf, 31))
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -1123,12 +1126,12 @@ class Brc80MayBeNil(BinaryStream):
     def dump(self):
         buf = self.getuInt32()
         if buf == 0xFFFFFFFF:
-            print '<%s type="Brc80MayBeNil" offset="%d" value="%s"/>' % (self.name, self.pos, hex(buf))
+            print('<%s type="Brc80MayBeNil" offset="%d" value="%s"/>' % (self.name, self.pos, hex(buf)))
             self.pos += 4
         else:
-            print '<%s type="Brc80MayBeNil" offset="%d">' % (self.name, self.pos)
+            print('<%s type="Brc80MayBeNil" offset="%d">' % (self.name, self.pos))
             Brc80(self, self.name).dump()
-            print '</%s>' % self.name
+            print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -1140,7 +1143,7 @@ class PICMID(BinaryStream):
         self.parent = parent
 
     def dump(self):
-        print '<picmid type="PICMID" offset="%d">' % self.pos
+        print('<picmid type="PICMID" offset="%d">' % self.pos)
         self.printAndSet("dxaGoal", self.readuInt16())
         self.printAndSet("dyaGoal", self.readuInt16())
         self.printAndSet("mx", self.readuInt16())
@@ -1158,7 +1161,7 @@ class PICMID(BinaryStream):
         self.printAndSet("dxaReserved3", self.readuInt16())
         self.printAndSet("dyaReserved3", self.readuInt16())
         self.parent.pos = self.pos
-        print '</picmid>'
+        print('</picmid>')
 
 
 class PICF(BinaryStream):
@@ -1170,7 +1173,7 @@ class PICF(BinaryStream):
         self.parent = parent
 
     def dump(self):
-        print '<picf type="PICF" offset="%d">' % self.pos
+        print('<picf type="PICF" offset="%d">' % self.pos)
         posOrig = self.pos
         self.printAndSet("lcb", self.readInt32())
         self.printAndSet("cbHeader", self.readInt16())
@@ -1184,7 +1187,7 @@ class PICF(BinaryStream):
         else:
             self.pos = posOrig + self.cbHeader
         self.parent.pos = self.pos
-        print '</picf>'
+        print('</picf>')
 
 
 IType = {
@@ -1213,7 +1216,7 @@ class FFDataBits(BinaryStream):
         self.parent = parent
 
     def dump(self):
-        print '<FFDataBits>'
+        print('<FFDataBits>')
         buf = self.readuInt8()
         self.printAndSet("iType", buf & 0x0003, dict=IType)  # 1..2nd bits
         self.printAndSet("iRes", (buf & 0x007c) >> 2)  # 3..7th bits
@@ -1225,7 +1228,7 @@ class FFDataBits(BinaryStream):
         self.printAndSet("iTypeTxt", (buf & 0x0038) >> 3, dict=ITypeTxt)  # 4..6th bits
         self.printAndSet("fRecalc", self.getBit(buf, 7))
         self.printAndSet("fHasListBox", self.getBit(buf, 8))
-        print '</FFDataBits>'
+        print('</FFDataBits>')
         self.parent.pos = self.pos
 
 
@@ -1238,7 +1241,7 @@ class FFData(BinaryStream):
         self.parent = parent
 
     def dump(self):
-        print '<FFData>'
+        print('<FFData>')
         self.printAndSet("version", self.readuInt32())
         self.bits = FFDataBits(self)
         self.bits.dump()
@@ -1268,8 +1271,8 @@ class FFData(BinaryStream):
         xstzExitMcr.dump()
         self.pos = xstzExitMcr.pos
         if self.bits.iType == 2:  # iTypeDrop
-            print '<todo what="FFData::dump(): handle hsttbDropList for iTypeDrop"/>'
-        print '</FFData>'
+            print('<todo what="FFData::dump(): handle hsttbDropList for iTypeDrop"/>')
+        print('</FFData>')
 
 
 class NilPICFAndBinData(BinaryStream):
@@ -1277,13 +1280,13 @@ class NilPICFAndBinData(BinaryStream):
     data for a hyperlink, form field, or add-in field. The NilPICFAndBinData
     structure MUST be stored in the Data Stream."""
     def __init__(self, parent):
-        dataStream = parent.mainStream.doc.getDirectoryStreamByName("Data")
+        dataStream = parent.mainStream.doc.getDirectoryStreamByName(b"Data")
         BinaryStream.__init__(self, dataStream.bytes)
         self.pos = parent.operand
         self.parent = parent
 
     def dump(self):
-        print '<NilPICFAndBinData>'
+        print('<NilPICFAndBinData>')
         # self -> sprm -> prl -> chpx -> chpxFkp
         chpxFkp = self.parent.parent.parent.parent
         self.printAndSet("lcb", self.readInt32())
@@ -1311,21 +1314,21 @@ class NilPICFAndBinData(BinaryStream):
         if fieldType == " FORMTEXT ":
             FFData(self).dump()
         else:
-            print '<todo what="NilPICFAndBinData::dump(): handle %s"/>' % fieldType
-        print '</NilPICFAndBinData>'
+            print('<todo what="NilPICFAndBinData::dump(): handle %s"/>' % fieldType)
+        print('</NilPICFAndBinData>')
 
 
 class PICFAndOfficeArtData(BinaryStream):
     """The PICFAndOfficeArtData structure specifies header information and
     binary data for a picture."""
     def __init__(self, parent):
-        dataStream = parent.mainStream.doc.getDirectoryStreamByName("Data")
+        dataStream = parent.mainStream.doc.getDirectoryStreamByName(b"Data")
         BinaryStream.__init__(self, dataStream.bytes)
         self.pos = parent.operand
         self.parent = parent
 
     def dump(self):
-        print '<PICFAndOfficeArtData>'
+        print('<PICFAndOfficeArtData>')
         found = False
         for prl in self.parent.parent.parent.prls:
             if prl.sprm.sprm in (0x0806, 0x080a):  # sprmCFData, sprmCFOle2
@@ -1337,15 +1340,16 @@ class PICFAndOfficeArtData(BinaryStream):
             picf.dump()
             assert self.pos == pos + 68
             if picf.mfpf.mm == 0x0066:  # MM_SHAPEFILE
-                print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm == MM_SHAPEFILE is unhandled"/>'
+                print('<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm == MM_SHAPEFILE is unhandled"/>')
             elif picf.mfpf.mm == 0x0064:  # MM_SHAPE
                 remaining = picf.lcb - (self.pos - pos)
                 msodraw.InlineSpContainer(self, remaining).dumpXml(self, getWordModel(self.parent.mainStream))
             else:
-                print '<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm is unhandled (not MM_SHAPE or MM_SHAPEFILE): %d"/>' % picf.mfpf.mm
+                print('<todo what="PICFAndOfficeArtData::dump(): picf.mfpf.mm is unhandled (not MM_SHAPE or MM_SHAPEFILE): %d"/>' % picf.mfpf.mm)
         else:
-            print '<todo what="PICFAndOfficeArtData::dump(): handle sprmCFData or sprmCFOle2"/>'
-        print '</PICFAndOfficeArtData>'
+            print('<todo what="PICFAndOfficeArtData::dump(): handle sprmCFData or sprmCFOle2"/>')
+        print('</PICFAndOfficeArtData>')
+
 
 # The TextFlow enumeration specifies the rotation settings for a block of text and for the individual
 # East Asian characters in each line of the block.
@@ -1391,11 +1395,11 @@ class SHD(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<shd type="SHD" offset="%d">' % self.pos
+        print('<shd type="SHD" offset="%d">' % self.pos)
         COLORREF(self).dump("cvFore")
         COLORREF(self).dump("cvBack")
         self.printAndSet("ipat", self.readuInt16(), dict=Ipat)
-        print '</shd>'
+        print('</shd>')
 
 
 class TCGRF(BinaryStream):
@@ -1406,7 +1410,7 @@ class TCGRF(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<tcgrf type="TCGRF" offset="%d">' % self.pos
+        print('<tcgrf type="TCGRF" offset="%d">' % self.pos)
         buf = self.readuInt16()
         self.printAndSet("horzMerge", buf & 0x0003)  # 1..2nd bits
         self.printAndSet("textFlow", (buf & 0x001c) >> 2, dict=TextFlow, default="todo")  # 3..6th bits
@@ -1417,7 +1421,7 @@ class TCGRF(BinaryStream):
         self.printAndSet("fNoWrap", self.getBit(buf, 13))
         self.printAndSet("fHideMark", self.getBit(buf, 14))
         self.printAndSet("fUnused", self.getBit(buf, 15))
-        print '</tcgrf>'
+        print('</tcgrf>')
         self.parent.pos = self.pos
 
 
@@ -1430,14 +1434,14 @@ class TC80(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<tc80 index="%d">' % self.index
+        print('<tc80 index="%d">' % self.index)
         TCGRF(self).dump()
         self.printAndSet("wWidth", self.readuInt16(), hexdump=False)
         Brc80MayBeNil(self, "brcTop").dump()
         Brc80MayBeNil(self, "brcLeft").dump()
         Brc80MayBeNil(self, "brcBottom").dump()
         Brc80MayBeNil(self, "brcRight").dump()
-        print '</tc80>'
+        print('</tc80>')
         self.parent.pos = self.pos
 
 
@@ -1450,17 +1454,17 @@ class TDefTableOperand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<tDefTableOperand>'
+        print('<tDefTableOperand>')
         self.printAndSet("cb", self.readuInt16())
         size = self.pos + self.cb - 1
         self.printAndSet("NumberOfColumns", self.readuInt8())
         for i in range(self.NumberOfColumns + 1):
-            print '<rgdxaCenter index="%d" value="%d"/>' % (i, self.readInt16())
+            print('<rgdxaCenter index="%d" value="%d"/>' % (i, self.readInt16()))
         i = 0
         while self.pos < size:
             TC80(self, i).dump()
             i += 1
-        print '</tDefTableOperand>'
+        print('</tDefTableOperand>')
 
 
 class TableBordersOperand(BinaryStream):
@@ -1470,7 +1474,7 @@ class TableBordersOperand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<tableBordersOperand>'
+        print('<tableBordersOperand>')
         self.printAndSet("cb", self.readuInt8())
         posOrig = self.pos
         BRC(self, "brcTop").dump()
@@ -1480,7 +1484,7 @@ class TableBordersOperand(BinaryStream):
         BRC(self, "brcHorizontalInside").dump()
         BRC(self, "brcVerticalInside").dump()
         assert self.pos == posOrig + 0x30
-        print '</tableBordersOperand>'
+        print('</tableBordersOperand>')
 
 
 class TableBordersOperand80(BinaryStream):
@@ -1491,7 +1495,7 @@ class TableBordersOperand80(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<tableBordersOperand80>'
+        print('<tableBordersOperand80>')
         self.printAndSet("cb", self.readuInt8())
         posOrig = self.pos
         Brc80MayBeNil(self, "brcTop").dump()
@@ -1501,7 +1505,7 @@ class TableBordersOperand80(BinaryStream):
         Brc80MayBeNil(self, "brcHorizontalInside").dump()
         Brc80MayBeNil(self, "brcVerticalInside").dump()
         assert self.pos == posOrig + 0x18
-        print '</tableBordersOperand80>'
+        print('</tableBordersOperand80>')
 
 
 class SHDOperand(BinaryStream):
@@ -1512,10 +1516,10 @@ class SHDOperand(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<shdOperand>'
+        print('<shdOperand>')
         self.printAndSet("cb", self.readuInt8())
         SHD(self).dump()
-        print '</shdOperand>'
+        print('</shdOperand>')
 
 
 class BrcOperand(BinaryStream):
@@ -1528,9 +1532,9 @@ class BrcOperand(BinaryStream):
         self.brc = BRC(self)
 
     def dump(self):
-        print '<brcOperand type="BrcOperand" offset="%d">' % self.posOrig
+        print('<brcOperand type="BrcOperand" offset="%d">' % self.posOrig)
         self.brc.dump()
-        print '</brcOperand>'
+        print('</brcOperand>')
 
 
 class Sprm(BinaryStream):
@@ -1573,7 +1577,7 @@ class Sprm(BinaryStream):
                 # Can't decide right now, depends on if there will be an sprmCFData later or not.
                 self.ct = True
             elif self.sprm == 0x6646:  # sprmPHugePapx
-                dataStream = mainStream.doc.getDirectoryStreamByName("Data")
+                dataStream = mainStream.doc.getDirectoryStreamByName(b"Data")
                 dataStream.pos = self.operand
                 self.ct = PrcData(dataStream)
             elif self.sprm == 0x6412:
@@ -1593,7 +1597,7 @@ class Sprm(BinaryStream):
             elif self.sprm == 0xca47:
                 self.ct = CMajorityOperand(self)
             else:
-                print '<todo what="Sprm::__init__() unhandled sprm of size 9: %s"/>' % hex(self.sprm)
+                print('<todo what="Sprm::__init__() unhandled sprm of size 9: %s"/>' % hex(self.sprm))
         else:
             if self.sprm == 0xd608:
                 self.ct = TDefTableOperand(self)
@@ -1606,7 +1610,7 @@ class Sprm(BinaryStream):
             elif self.sprm == 0xc60d:
                 self.ct = PChgTabsPapxOperand(self)
             else:
-                print '<todo what="Sprm::__init__() unhandled sprm of size %s: %s"/>' % (self.getOperandSize(), hex(self.sprm))
+                print('<todo what="Sprm::__init__() unhandled sprm of size %s: %s"/>' % (self.getOperandSize(), hex(self.sprm)))
 
     def dump(self):
         sgcmap = {
@@ -1640,7 +1644,7 @@ class Sprm(BinaryStream):
                 attrs.append('operand=""')
             else:
                 attrs.append('operand="%s"' % hex(self.operand))
-        print '<sprm %s%s>' % (" ".join(attrs), {True: "/", False: ""}[close])
+        print('<sprm %s%s>' % (" ".join(attrs), {True: "/", False: ""}[close]))
         if self.ct:
             if type(self.ct) == bool:
                 if self.sprm == 0x6a03 and self.transformed == r"\x01":
@@ -1654,7 +1658,7 @@ class Sprm(BinaryStream):
                     else:
                         self.ct = PICFAndOfficeArtData(self)
             self.ct.dump()
-            print '</sprm>'
+            print('</sprm>')
 
     def getOperandSize(self):
         if self.spra == 6:  # variable
@@ -1688,9 +1692,9 @@ class Prl(BinaryStream):
         indexstr = ""
         if self.index is not None:
             indexstr = ' index="%d"' % self.index
-        print '<prl type="Prl" offset="%d"%s>' % (self.posOrig, indexstr)
+        print('<prl type="Prl" offset="%d"%s>' % (self.posOrig, indexstr))
         self.sprm.dump()
-        print '</prl>'
+        print('</prl>')
 
     def getSize(self):
         return 2 + self.sprm.getOperandSize()
@@ -1704,7 +1708,7 @@ class GrpPrlAndIstd(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<grpPrlAndIstd type="GrpPrlAndIstd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<grpPrlAndIstd type="GrpPrlAndIstd" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         self.printAndSet("istd", self.getuInt16())
         pos += 2
@@ -1712,7 +1716,7 @@ class GrpPrlAndIstd(BinaryStream):
             prl = Prl(self, pos, mainStream=self.mainStream)
             prl.dump()
             pos += prl.getSize()
-        print '</grpPrlAndIstd>'
+        print('</grpPrlAndIstd>')
 
 
 class Chpx(BinaryStream):
@@ -1734,11 +1738,11 @@ class Chpx(BinaryStream):
             index += 1
 
     def dump(self):
-        print '<chpx type="Chpx" offset="%d">' % self.pos
+        print('<chpx type="Chpx" offset="%d">' % self.pos)
         self.printAndSet("cb", self.cb)
         for prl in self.prls:
             prl.dump()
-        print '</chpx>'
+        print('</chpx>')
 
 
 class PapxInFkp(BinaryStream):
@@ -1748,7 +1752,7 @@ class PapxInFkp(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<papxInFkp type="PapxInFkp" offset="%d">' % self.pos
+        print('<papxInFkp type="PapxInFkp" offset="%d">' % self.pos)
         self.printAndSet("cb", self.readuInt8())
         if self.cb == 0:
             self.printAndSet("cb_", self.readuInt8())
@@ -1756,7 +1760,7 @@ class PapxInFkp(BinaryStream):
         else:
             grpPrlAndIstd = GrpPrlAndIstd(self.bytes, self.pos, 2 * self.cb - 1, mainStream=self.mainStream)
         grpPrlAndIstd.dump()
-        print '</papxInFkp>'
+        print('</papxInFkp>')
 
 
 class BxPap(BinaryStream):
@@ -1769,11 +1773,11 @@ class BxPap(BinaryStream):
         self.parentpos = parentoffset
 
     def dump(self):
-        print '<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<bxPap type="BxPap" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("bOffset", self.readuInt8())
         papxInFkp = PapxInFkp(self.bytes, self.mainStream, self.parentpos + self.bOffset * 2)
         papxInFkp.dump()
-        print '</bxPap>'
+        print('</bxPap>')
 
 
 class ChpxFkp(BinaryStream):
@@ -1785,7 +1789,7 @@ class ChpxFkp(BinaryStream):
         self.pnFkpChpx = pnFkpChpx
 
     def dump(self):
-        print '<chpxFkp type="ChpxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<chpxFkp type="ChpxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.crun = self.getuInt8(pos=self.pos + self.size - 1)
         pos = self.pos
         self.transformeds = []
@@ -1793,9 +1797,9 @@ class ChpxFkp(BinaryStream):
             # rgfc
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<rgfc index="%d" start="%d" end="%d">' % (i, start, end))
             self.transformed = self.quoteAttr(self.pnFkpChpx.mainStream.retrieveOffset(start, end))
-            print '<transformed value="%s"/>' % self.transformed
+            print('<transformed value="%s"/>' % self.transformed)
             self.transformeds.append(self.transformed)
             pos += 4
 
@@ -1804,10 +1808,10 @@ class ChpxFkp(BinaryStream):
             chpxOffset = self.getuInt8(pos=offset) * 2
             chpx = Chpx(self, self.mainStream, self.pos + chpxOffset, self.transformed)
             chpx.dump()
-            print '</rgfc>'
+            print('</rgfc>')
 
         self.printAndSet("crun", self.crun)
-        print '</chpxFkp>'
+        print('</chpxFkp>')
 
 
 class PapxFkp(BinaryStream):
@@ -1818,25 +1822,25 @@ class PapxFkp(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<papxFkp type="PapxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<papxFkp type="PapxFkp" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.cpara = self.getuInt8(pos=self.pos + self.size - 1)
         pos = self.pos
         for i in range(self.cpara):
             # rgfc
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<rgfc index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveOffset(start, end))
+            print('<rgfc index="%d" start="%d" end="%d">' % (i, start, end))
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveOffset(start, end)))
             pos += 4
 
             # rgbx
             offset = PLC.getPLCOffset(self.pos, self.cpara, BxPap.size, i)
             bxPap = BxPap(self.bytes, self.mainStream, offset, self.pos)
             bxPap.dump()
-            print '</rgfc>'
+            print('</rgfc>')
 
         self.printAndSet("cpara", self.cpara)
-        print '</papxFkp>'
+        print('</papxFkp>')
 
 
 class PnFkpChpx(BinaryStream):
@@ -1849,12 +1853,12 @@ class PnFkpChpx(BinaryStream):
         self.plcBteChpx = plcBteChpx
 
     def dump(self):
-        print '<%s type="PnFkpChpx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
+        print('<%s type="PnFkpChpx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size))
         buf = self.readuInt32()
         self.printAndSet("pn", buf & (2 ** 22 - 1))
         chpxFkp = ChpxFkp(self, self.pn * 512, 512)
         chpxFkp.dump()
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
 
 
 class LPXCharBuffer9(BinaryStream):
@@ -1865,10 +1869,10 @@ class LPXCharBuffer9(BinaryStream):
         self.name = name
 
     def dump(self):
-        print '<%s type="LPXCharBuffer9" offset="%d" size="20 bytes">' % (self.name, self.pos)
+        print('<%s type="LPXCharBuffer9" offset="%d" size="20 bytes">' % (self.name, self.pos))
         self.printAndSet("cch", self.readuInt16())
         self.printAndSet("xcharArray", self.bytes[self.pos:self.pos + (self.cch * 2)].decode('utf-16'), hexdump=False)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
 
 
 class ATRDPre10(BinaryStream):
@@ -1878,7 +1882,7 @@ class ATRDPre10(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<aATRDPre10 type="ATRDPre10" offset="%d" size="30 bytes">' % self.pos
+        print('<aATRDPre10 type="ATRDPre10" offset="%d" size="30 bytes">' % self.pos)
         xstUsrInitl = LPXCharBuffer9(self, "xstUsrInitl")
         xstUsrInitl.dump()
         self.pos += 20
@@ -1886,7 +1890,7 @@ class ATRDPre10(BinaryStream):
         self.printAndSet("bitsNotUsed", self.readuInt16())
         self.printAndSet("grfNotUsed", self.readuInt16())
         self.printAndSet("ITagBkmk", self.readInt32())
-        print '</aATRDPre10>'
+        print('</aATRDPre10>')
 
 
 class PnFkpPapx(BinaryStream):
@@ -1898,12 +1902,12 @@ class PnFkpPapx(BinaryStream):
         self.name = name
 
     def dump(self):
-        print '<%s type="PnFkpPapx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size)
+        print('<%s type="PnFkpPapx" offset="%d" size="%d bytes">' % (self.name, self.pos, self.size))
         buf = self.readuInt32()
         self.printAndSet("pn", buf & (2 ** 22 - 1))
         papxFkp = PapxFkp(self.bytes, self.mainStream, self.pn * 512, 512)
         papxFkp.dump()
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
 
 
 class PlcBteChpx(BinaryStream, PLC):
@@ -1915,20 +1919,20 @@ class PlcBteChpx(BinaryStream, PLC):
         self.size = mainStream.lcbPlcfBteChpx
 
     def dump(self):
-        print '<plcBteChpx type="PlcBteChpx" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcBteChpx type="PlcBteChpx" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aFC
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aFC index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aFC index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aPnBteChpx
             aPnBteChpx = PnFkpChpx(self, self.getOffset(self.pos, i), 4, "aPnBteChpx")
             aPnBteChpx.dump()
-            print '</aFC>'
-        print '</plcBteChpx>'
+            print('</aFC>')
+        print('</plcBteChpx>')
 
 
 class PlcfHdd(BinaryStream, PLC):
@@ -1965,17 +1969,17 @@ class PlcfHdd(BinaryStream, PLC):
             return "%s (section #%s)" % (contentsMap[contentsIndex], sectionIndex)
 
     def dump(self):
-        print '<plcfHdd type="PlcfHdd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfHdd type="PlcfHdd" offset="%d" size="%d bytes">' % (self.pos, self.size))
         offset = self.mainStream.getHeaderOffset()
         pos = self.pos
         for i in range(self.getElements() - 1):
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" contents="%s" start="%d" end="%d">' % (i, self.getContents(i), start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
+            print('<aCP index="%d" contents="%s" start="%d" end="%d">' % (i, self.getContents(i), start, end))
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end)))
             pos += 4
-            print '</aCP>'
-        print '</plcfHdd>'
+            print('</aCP>')
+        print('</plcfHdd>')
 
 
 class PlcfandTxt(BinaryStream, PLC):
@@ -1987,17 +1991,17 @@ class PlcfandTxt(BinaryStream, PLC):
         self.size = size
 
     def dump(self):
-        print '<plcfandTxt type="PlcfandTxt" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfandTxt type="PlcfandTxt" offset="%d" size="%d bytes">' % (self.pos, self.size))
         offset = self.mainStream.getCommentOffset()
         pos = self.pos
         for i in range(self.getElements() - 1):
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end)))
             pos += 4
-            print '</aCP>'
-        print '</plcfandTxt>'
+            print('</aCP>')
+        print('</plcfandTxt>')
 
 
 class PlcfandRef(BinaryStream, PLC):
@@ -2009,19 +2013,19 @@ class PlcfandRef(BinaryStream, PLC):
         self.size = size
 
     def dump(self):
-        print '<plcfandRef type="PlcfandRef" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfandRef type="PlcfandRef" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             start = self.getuInt32(pos=pos)
-            print '<aCP index="%d" commentEnd="%d">' % (i, start)
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCP(start))
+            print('<aCP index="%d" commentEnd="%d">' % (i, start))
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCP(start)))
             pos += 4
 
             # aATRDPre10
             aATRDPre10 = ATRDPre10(self, self.getOffset(self.pos, i))
             aATRDPre10.dump()
-            print '</aCP>'
-        print '</plcfandRef>'
+            print('</aCP>')
+        print('</plcfandRef>')
 
 
 class PlcBtePapx(BinaryStream, PLC):
@@ -2033,20 +2037,20 @@ class PlcBtePapx(BinaryStream, PLC):
         self.size = size
 
     def dump(self):
-        print '<plcBtePapx type="PlcBtePapx" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcBtePapx type="PlcBtePapx" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aFC
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aFC index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aFC index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aPnBtePapx
             aPnBtePapx = PnFkpPapx(self.bytes, self.mainStream, self.getOffset(self.pos, i), 4, "aPnBtePapx")
             aPnBtePapx.dump()
-            print '</aFC>'
-        print '</plcBtePapx>'
+            print('</aFC>')
+        print('</plcBtePapx>')
 
 
 class Pcdt(BinaryStream):
@@ -2061,11 +2065,11 @@ class Pcdt(BinaryStream):
         self.plcPcd = PlcPcd(self.bytes, self.mainStream, self.pos, self.lcb)
 
     def dump(self):
-        print '<pcdt type="Pcdt" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<pcdt type="Pcdt" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("clxt", self.clxt)
         self.printAndSet("lcb", self.lcb)
         self.plcPcd.dump()
-        print '</pcdt>'
+        print('</pcdt>')
 
 
 class PrcData(BinaryStream):
@@ -2086,13 +2090,13 @@ class PrcData(BinaryStream):
         parent.pos = self.pos
 
     def dump(self):
-        print '<prcData>'
+        print('<prcData>')
         self.printAndSet("cbGrpprl", self.cbGrpprl)
-        print '<grpPrl>'
+        print('<grpPrl>')
         for i in self.prls:
             i.dump()
-        print '</grpPrl>'
-        print '</prcData>'
+        print('</grpPrl>')
+        print('</prcData>')
 
 
 class Prc(BinaryStream):
@@ -2107,9 +2111,9 @@ class Prc(BinaryStream):
         parent.pos = self.pos
 
     def dump(self, index):
-        print '<prc index="%d">' % index
+        print('<prc index="%d">' % index)
         self.prcData.dump()
-        print '</prc>'
+        print('</prc>')
 
 
 class Clx(BinaryStream):
@@ -2128,11 +2132,11 @@ class Clx(BinaryStream):
         self.pcdt = Pcdt(self.bytes, self.mainStream, self.pos, self.size)
 
     def dump(self):
-        print '<clx type="Clx" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<clx type="Clx" offset="%d" size="%d bytes">' % (self.pos, self.size))
         for index, elem in enumerate(self.prcs):
             elem.dump(index)
         self.pcdt.dump()
-        print '</clx>'
+        print('</clx>')
 
 
 class Copts60(BinaryStream):
@@ -2142,7 +2146,7 @@ class Copts60(BinaryStream):
         self.pos = dop.pos
 
     def dump(self):
-        print '<copts60 type="Copts60" offset="%s" size="2 bytes">' % self.pos
+        print('<copts60 type="Copts60" offset="%s" size="2 bytes">' % self.pos)
         # Copts60 first byte
         buf = self.readuInt8()
         self.printAndSet("fNoTabForInd", self.getBit(buf, 0))
@@ -2164,7 +2168,7 @@ class Copts60(BinaryStream):
         self.printAndSet("fExpShRtn", self.getBit(buf, 5))
         self.printAndSet("fDntULTrlSpc", self.getBit(buf, 6))
         self.printAndSet("fDntBlnSbDbWid", self.getBit(buf, 7))
-        print '</copts60>'
+        print('</copts60>')
 
 
 class DTTM(BinaryStream):
@@ -2177,15 +2181,15 @@ class DTTM(BinaryStream):
 
     def dump(self):
         buf = self.readuInt32()
-        print '<%s type="DTTM" offset="%d" size="4 bytes">' % (self.name, self.pos)
+        print('<%s type="DTTM" offset="%d" size="4 bytes">' % (self.name, self.pos))
         self.printAndSet("mint", buf & 0x0000003f)  # 1..6th bits
         self.printAndSet("hr", (buf & 0x000007c0) >> 6)  # 7..11th bits
         self.printAndSet("dom", (buf & 0x0000f800) >> 11)  # 12..16th bits
         self.printAndSet("mon", (buf & 0x000f0000) >> 16)  # 17..20th bits
         self.printAndSet("yr", (buf & 0x1ff00000) >> 20)  # 21..29th bits
         self.printAndSet("wdy", (buf & 0xe0000000) >> 29)  # 30..32th bits
-        print '<transformed value="%s-%s-%s %s:%s"/>' % (1900 + self.yr, self.mon, self.dom, self.hr, self.mint)
-        print '</%s>' % self.name
+        print('<transformed value="%s-%s-%s %s:%s"/>' % (1900 + self.yr, self.mon, self.dom, self.hr, self.mint))
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -2197,7 +2201,7 @@ class GRFSTD(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<grfstd type="GRFSTD" offset="%d" size="2 bytes">' % self.pos
+        print('<grfstd type="GRFSTD" offset="%d" size="2 bytes">' % self.pos)
         buf = self.readuInt8()
         self.printAndSet("fAutoRedef", self.getBit(buf, 0))
         self.printAndSet("fHidden", self.getBit(buf, 1))
@@ -2215,7 +2219,7 @@ class GRFSTD(BinaryStream):
         self.printAndSet("fUnhideWhenUsed", self.getBit(buf, 3))
         self.printAndSet("fQFormat", self.getBit(buf, 4))
         self.printAndSet("fReserved", (buf & 0xe0) >> 5)  # 6..8th bits
-        print '</grfstd>'
+        print('</grfstd>')
         self.parent.pos = self.pos
 
 
@@ -2229,7 +2233,7 @@ class DopBase(BinaryStream):
         self.dop = dop
 
     def dump(self):
-        print '<dopBase offset="%d" size="%d bytes">' % (self.pos, 84)
+        print('<dopBase offset="%d" size="%d bytes">' % (self.pos, 84))
         buf = self.readuInt8()
         self.printAndSet("fFacingPages", self.getBit(buf, 0))
         self.printAndSet("unused1", self.getBit(buf, 1))
@@ -2332,7 +2336,7 @@ class DopBase(BinaryStream):
         self.printAndSet("zkSaved", (buf & 0x3000) >> 12)  # 13..14th bits
         self.printAndSet("unused16", self.getBit(buf, 14))
         self.printAndSet("iGutterPos", self.getBit(buf, 15))
-        print '</dopBase>'
+        print('</dopBase>')
         assert self.pos == self.dop.pos + DopBase.size
         self.dop.pos = self.pos
 
@@ -2344,7 +2348,7 @@ class Copts80(BinaryStream):
         self.pos = dop.pos
 
     def dump(self):
-        print '<copts80 type="Copts80" offset="%d" size="4 bytes">' % self.pos
+        print('<copts80 type="Copts80" offset="%d" size="4 bytes">' % self.pos)
         Copts60(self).dump()
         self.pos += 2
 
@@ -2367,7 +2371,7 @@ class Copts80(BinaryStream):
         self.printAndSet("fWPSpace", self.getBit(buf, 5))
         self.printAndSet("fWPJust", self.getBit(buf, 6))
         self.printAndSet("fPrintMet", self.getBit(buf, 7))
-        print '</copts80>'
+        print('</copts80>')
 
 
 class Copts(BinaryStream):
@@ -2380,7 +2384,7 @@ class Copts(BinaryStream):
         self.dop = dop
 
     def dump(self):
-        print '<copts type="Copts" offset="%d" size="%d bytes">' % (self.pos, Copts.size)
+        print('<copts type="Copts" offset="%d" size="%d bytes">' % (self.pos, Copts.size))
         Copts80(self).dump()
         self.pos += 4
 
@@ -2432,7 +2436,7 @@ class Copts(BinaryStream):
         self.printAndSet("empty4", self.readuInt32())
         self.printAndSet("empty5", self.readuInt32())
         self.printAndSet("empty6", self.readuInt32())
-        print '</copts>'
+        print('</copts>')
         assert self.pos == self.dop.pos + Copts.size
         self.dop.pos = self.pos
 
@@ -2448,17 +2452,17 @@ class Dop95(BinaryStream):
         self.dopSize = dopSize
 
     def dump(self):
-        print '<dop95 type="Dop95" offset="%d" size="88 bytes">' % self.pos
+        print('<dop95 type="Dop95" offset="%d" size="88 bytes">' % self.pos)
         pos = self.pos
         dopBase = DopBase(self)
         dopBase.dump()
         if self.pos >= pos + self.dopSize:
-            print '</dop95>'
+            print('</dop95>')
             self.dop.pos = self.pos
             return
         Copts80(self).dump()
         self.pos += 4
-        print '</dop95>'
+        print('</dop95>')
         assert self.pos == self.dop.pos + Dop95.size
         self.dop.pos = self.pos
 
@@ -2473,7 +2477,7 @@ class DopTypography(BinaryStream):
         self.dop = dop
 
     def dump(self):
-        print '<dopTypography type="DopTypography" offset="%d" size="310 bytes">' % self.pos
+        print('<dopTypography type="DopTypography" offset="%d" size="310 bytes">' % self.pos)
         buf = self.readuInt16()
         self.printAndSet("fKerningPunct", self.getBit(buf, 0))
         self.printAndSet("iJustification", (buf & 0x0006) >> 1)  # 2..3rd bits
@@ -2493,7 +2497,7 @@ class DopTypography(BinaryStream):
         self.printAndSet("rgxchLPunct", self.getString(self.cchLeadingPunct), hexdump=False)
         self.pos += 102
 
-        print '</dopTypography>'
+        print('</dopTypography>')
         assert self.pos == self.dop.pos + DopTypography.size
         self.dop.pos = self.pos
 
@@ -2508,7 +2512,7 @@ class Dogrid(BinaryStream):
         self.dop = dop
 
     def dump(self):
-        print '<dogrid type="Dogrid" offset="%d" size="%d bytes">' % (self.pos, Dogrid.size)
+        print('<dogrid type="Dogrid" offset="%d" size="%d bytes">' % (self.pos, Dogrid.size))
         self.printAndSet("xaGrid", self.readuInt16())
         self.printAndSet("yaGrid", self.readuInt16())
         self.printAndSet("dxaGrid", self.readuInt16())
@@ -2521,7 +2525,7 @@ class Dogrid(BinaryStream):
         buf = self.readuInt8()
         self.printAndSet("dxGridDisplay", (buf & 0x7f))  # 1..7th bits
         self.printAndSet("fFollowMargins", self.getBit(buf, 7))
-        print '</dogrid>'
+        print('</dogrid>')
         assert self.pos == self.dop.pos + Dogrid.size
         self.dop.pos = self.pos
 
@@ -2533,7 +2537,7 @@ class Asumyi(BinaryStream):
         self.pos = dop.pos
 
     def dump(self):
-        print '<asumyi type="Asumyi" offset="%d" size="12 bytes">' % self.pos
+        print('<asumyi type="Asumyi" offset="%d" size="12 bytes">' % self.pos)
         buf = self.readuInt16()
         self.printAndSet("fValid", self.getBit(buf, 0))
         self.printAndSet("fView", self.getBit(buf, 1))
@@ -2544,7 +2548,7 @@ class Asumyi(BinaryStream):
         self.printAndSet("wDlgLevel", self.readuInt16())
         self.printAndSet("lHighestLevel", self.readuInt32())
         self.printAndSet("lCurrentLevel", self.readuInt32())
-        print '</asumyi>'
+        print('</asumyi>')
 
 
 class Dop97(BinaryStream):
@@ -2558,12 +2562,12 @@ class Dop97(BinaryStream):
         self.dopSize = dopSize
 
     def dump(self):
-        print '<dop97 type="Dop97" offset="%d" size="%d bytes">' % (self.pos, Dop97.size)
+        print('<dop97 type="Dop97" offset="%d" size="%d bytes">' % (self.pos, Dop97.size))
         pos = self.pos
         dop95 = Dop95(self, self.dopSize)
         dop95.dump()
         if self.pos >= pos + self.dopSize:
-            print '</dop97>'
+            print('</dop97>')
             self.dop.pos = self.pos
             return
 
@@ -2621,7 +2625,7 @@ class Dop97(BinaryStream):
         self.printAndSet("nfcEdnRef", self.readuInt16())
         self.printAndSet("hpsZoomFontPag", self.readuInt16())
         self.printAndSet("dywDispPag", self.readuInt16())
-        print '</dop97>'
+        print('</dop97>')
         assert self.pos == self.dop.pos + Dop97.size
         self.dop.pos = self.pos
 
@@ -2637,13 +2641,13 @@ class Dop2000(BinaryStream):
         self.dopSize = dopSize
 
     def dump(self):
-        print '<dop2000 type="Dop2000" offset="%d" size="544 bytes">' % self.pos
+        print('<dop2000 type="Dop2000" offset="%d" size="544 bytes">' % self.pos)
         dop97 = Dop97(self, self.dopSize)
         dop97.dump()
 
         if self.pos == self.size:
-            print '<info what="Dop2000 size is smaller than expected."/>'
-            print '</dop2000>'
+            print('<info what="Dop2000 size is smaller than expected."/>')
+            print('</dop2000>')
             self.dop.pos = self.pos
             return
 
@@ -2697,7 +2701,7 @@ class Dop2000(BinaryStream):
         self.printAndSet("fSaveInvalidXML", self.getBit(buf, 5))
         self.printAndSet("fShowXMLErrors", self.getBit(buf, 6))
         self.printAndSet("fAlwaysMergeEmptyNamespace", self.getBit(buf, 7))
-        print '</dop2000>'
+        print('</dop2000>')
         assert self.pos == self.dop.pos + Dop2000.size
         self.dop.pos = self.pos
 
@@ -2713,7 +2717,7 @@ class Dop2002(BinaryStream):
         self.dopSize = dopSize
 
     def dump(self):
-        print '<dop2002 type="Dop2002" offset="%d" size="%d bytes">' % (self.pos, Dop2002.size)
+        print('<dop2002 type="Dop2002" offset="%d" size="%d bytes">' % (self.pos, Dop2002.size))
         dop2000 = Dop2000(self, self.dopSize)
         dop2000.dump()
 
@@ -2750,7 +2754,7 @@ class Dop2002(BinaryStream):
         self.printAndSet("cpMinRmTxbx", self.readuInt32())
         self.printAndSet("cpMinRmHdrTxbx", self.readuInt32())
         self.printAndSet("rsidRoot", self.readuInt32())
-        print '</dop2002>'
+        print('</dop2002>')
         assert self.pos == self.dop.pos + Dop2002.size
         self.dop.pos = self.pos
 
@@ -2766,7 +2770,7 @@ class Dop2003(BinaryStream):
         self.dopSize = dopSize
 
     def dump(self):
-        print '<dop2003 type="Dop2003" offset="%d" size="616 bytes">' % self.pos
+        print('<dop2003 type="Dop2003" offset="%d" size="616 bytes">' % self.pos)
         dop2002 = Dop2002(self, self.dopSize)
         dop2002.dump()
 
@@ -2804,7 +2808,7 @@ class Dop2003(BinaryStream):
         self.printAndSet("grfitbid", self.readuInt8())
         self.printAndSet("empty3", self.readuInt8())
         self.printAndSet("ilfoMacAtCleanup", self.readuInt16())
-        print '</dop2003>'
+        print('</dop2003>')
         assert self.pos == self.dop.pos + Dop2003.size
         self.dop.pos = self.pos
 
@@ -2816,7 +2820,7 @@ class DopMth(BinaryStream):
         self.pos = dop.pos
 
     def dump(self):
-        print '<dopMth type="DopMth" offset="%d" size="34 bytes">' % self.pos
+        print('<dopMth type="DopMth" offset="%d" size="34 bytes">' % self.pos)
         buf = self.readuInt32()
         self.printAndSet("mthbrk", (buf & 0x03))  # 1..2nd bits
         self.printAndSet("mthbrkSub", (buf & 0xc) >> 2)  # 3..4th bits
@@ -2837,7 +2841,7 @@ class DopMth(BinaryStream):
         self.printAndSet("empty3", self.readuInt32())
         self.printAndSet("empty4", self.readuInt32())
         self.printAndSet("dxaIndentWrapped", self.readuInt32())
-        print '</dopMth>'
+        print('</dopMth>')
 
 
 class Dop2007(BinaryStream):
@@ -2849,7 +2853,7 @@ class Dop2007(BinaryStream):
         self.dopSize = dopSize
 
     def dump(self):
-        print '<dop2007 type="Dop2007" offset="%d">' % self.pos
+        print('<dop2007 type="Dop2007" offset="%d">' % self.pos)
         dop2003 = Dop2003(self, self.dopSize)
         dop2003.dump()
 
@@ -2873,7 +2877,7 @@ class Dop2007(BinaryStream):
         self.printAndSet("empty6", self.readuInt32())
         DopMth(self).dump()
         self.pos += 34
-        print '</dop2007>'
+        print('</dop2007>')
 
 
 class RC4EncryptionHeader(BinaryStream):
@@ -2885,14 +2889,14 @@ class RC4EncryptionHeader(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<RC4EncryptionHeader>'
+        print('<RC4EncryptionHeader>')
         self.Salt = self.readBytes(16)
-        print '<Salt value="%s"/>' % globals.encodeName(self.Salt)
+        print('<Salt value="%s"/>' % globals.encodeName(self.Salt))
         self.EncryptedVerifier = self.readBytes(16)
-        print '<EncryptedVerifier value="%s"/>' % globals.encodeName(self.EncryptedVerifier)
+        print('<EncryptedVerifier value="%s"/>' % globals.encodeName(self.EncryptedVerifier))
         self.EncryptedVerifierHash = self.readBytes(16)
-        print '<EncryptedVerifierHash value="%s"/>' % globals.encodeName(self.EncryptedVerifierHash)
-        print '</RC4EncryptionHeader>'
+        print('<EncryptedVerifierHash value="%s"/>' % globals.encodeName(self.EncryptedVerifierHash))
+        print('</RC4EncryptionHeader>')
         assert self.pos == self.size
 
 
@@ -2905,7 +2909,7 @@ class Dop(BinaryStream):
         self.fib = fib
 
     def dump(self):
-        print '<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size)
+        print('<dop type="Dop" offset="%s" size="%d bytes">' % (self.pos, self.size))
         if self.fib.nFibNew == 0:
             Dop97(self, self.size).dump()
         elif self.fib.nFibNew == 0x00d9:
@@ -2915,8 +2919,8 @@ class Dop(BinaryStream):
         elif self.fib.nFibNew == 0x0112:
             Dop2007(self, self.size).dump()
         else:
-            print """<todo what="Dop.dump() doesn't know how to handle nFibNew = %s"/>""" % hex(self.fib.nFibNew)
-        print '</dop>'
+            print("""<todo what="Dop.dump() doesn't know how to handle nFibNew = %s"/>""" % hex(self.fib.nFibNew))
+        print('</dop>')
 
 
 class FFID(BinaryStream):
@@ -2936,7 +2940,7 @@ class FFID(BinaryStream):
         self.ff = (self.ffid & 0x70) >> 4  # 5-7th bits
         self.unused2 = (self.ffid & 0x80) >> 7  # 8th bit
 
-        print '<ffid value="%s" prq="%s" fTrueType="%s" ff="%s"/>' % (hex(self.ffid), hex(self.prq), self.fTrueType, hex(self.ff))
+        print('<ffid value="%s" prq="%s" fTrueType="%s" ff="%s"/>' % (hex(self.ffid), hex(self.prq), self.fTrueType, hex(self.ff)))
 
 
 class PANOSE(BinaryStream):
@@ -2946,10 +2950,10 @@ class PANOSE(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<panose type="PANOSE" offset="%s" size="10 bytes">' % self.pos
+        print('<panose type="PANOSE" offset="%s" size="10 bytes">' % self.pos)
         for i in ["bFamilyType", "bSerifStyle", "bWeight", "bProportion", "bContrast", "bStrokeVariation", "bArmStyle", "bLetterform", "bMidline", "bHeight"]:
             self.printAndSet(i, self.readuInt8())
-        print '</panose>'
+        print('</panose>')
 
 
 class FontSignature(BinaryStream):
@@ -2965,9 +2969,9 @@ class FontSignature(BinaryStream):
         fsUsb4 = self.readuInt32()
         fsCsb1 = self.readuInt32()
         fsCsb2 = self.readInt32()
-        print '<fontSignature fsUsb1="%s" fsUsb2="%s" fsUsb3="%s" fsUsb4="%s" fsCsb1="%s" fsCsb2="%s"/>' % (
-            hex(fsUsb1), hex(fsUsb2), hex(fsUsb3), hex(fsUsb4), hex(fsCsb1), hex(fsCsb2)
-        )
+        print('<fontSignature fsUsb1="%s" fsUsb2="%s" fsUsb3="%s" fsUsb4="%s" fsCsb1="%s" fsCsb2="%s"/>' %
+              (hex(fsUsb1), hex(fsUsb2), hex(fsUsb3), hex(fsUsb4), hex(fsCsb1), hex(fsCsb2))
+              )
 
 
 class FFN(BinaryStream):
@@ -2978,7 +2982,7 @@ class FFN(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<ffn type="FFN" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<ffn type="FFN" offset="%d" size="%d bytes">' % (self.pos, self.size))
         FFID(self.bytes, self.pos).dump()
         self.pos += 1
         self.printAndSet("wWeight", self.readInt16(), hexdump=False)
@@ -2988,8 +2992,8 @@ class FFN(BinaryStream):
         self.pos += 10
         FontSignature(self.bytes, self.pos).dump()
         self.pos += 24
-        print '<xszFfn value="%s"/>' % self.readString()
-        print '</ffn>'
+        print('<xszFfn value="%s"/>' % self.readString())
+        print('</ffn>')
 
 
 class SttbfFfn(BinaryStream):
@@ -3000,16 +3004,16 @@ class SttbfFfn(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<sttbfFfn type="SttbfFfn" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<sttbfFfn type="SttbfFfn" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
             cchData = self.readuInt8()
-            print '<cchData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
+            print('<cchData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, cchData))
             FFN(self.bytes, self.mainStream, self.pos, cchData).dump()
             self.pos += cchData
-            print '</cchData>'
-        print '</sttbfFfn>'
+            print('</cchData>')
+        print('</sttbfFfn>')
 
 
 class GrpXstAtnOwners(BinaryStream):
@@ -3022,12 +3026,12 @@ class GrpXstAtnOwners(BinaryStream):
 
     def dump(self):
         posOrig = self.pos
-        print '<grpXstAtnOwners type="GrpXstAtnOwners" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<grpXstAtnOwners type="GrpXstAtnOwners" offset="%d" size="%d bytes">' % (self.pos, self.size))
         while self.pos < posOrig + self.size:
             xst = Xst(self)
             xst.dump()
             self.pos = xst.pos
-        print '</grpXstAtnOwners>'
+        print('</grpXstAtnOwners>')
 
 
 class SttbfAssoc(BinaryStream):
@@ -3059,7 +3063,7 @@ class SttbfAssoc(BinaryStream):
             0x10: "Unused. This index MUST be ignored.",
             0x11: "The write-reservation password of the document.",
         }
-        print '<sttbfAssoc type="SttbfAssoc" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<sttbfAssoc type="SttbfAssoc" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fExtend", self.readuInt16())
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
@@ -3071,16 +3075,16 @@ class SttbfAssoc(BinaryStream):
                 meaning = "unknown"
             if self.pos + 2 * cchData > self.size:
                 self.cData = 0
-                print '<info what="SttbfAssoc::dump() wanted to read beyond the end of the stream"/>'
+                print('<info what="SttbfAssoc::dump() wanted to read beyond the end of the stream"/>')
                 break
-            print '<cchData index="%s" meaning="%s" offset="%d" size="%d bytes">' % (hex(i), meaning, self.pos, cchData)
-            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True)
+            print('<cchData index="%s" meaning="%s" offset="%d" size="%d bytes">' % (hex(i), meaning, self.pos, cchData))
+            print('<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True))
             self.pos += 2 * cchData
-            print '</cchData>'
+            print('</cchData>')
         # Probably this was cleared manually.
         if self.cData != 0:
             assert self.pos == self.mainStream.fcSttbfAssoc + self.size
-        print '</sttbfAssoc>'
+        print('</sttbfAssoc>')
 
 
 class SttbfRMark(BinaryStream):
@@ -3092,19 +3096,19 @@ class SttbfRMark(BinaryStream):
         self.mainStream = mainStream
 
     def dump(self):
-        print '<sttbfRMark type="SttbfRMark" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<sttbfRMark type="SttbfRMark" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fExtend", self.readuInt16())
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
             cchData = self.readuInt16()
-            print '<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
-            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True)
+            print('<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData))
+            print('<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True))
             self.pos += 2 * cchData
-            print '</cchData>'
+            print('</cchData>')
         if self.cData != 0:
             assert self.pos == self.mainStream.fcSttbfRMark + self.size
-        print '</sttbfRMark>'
+        print('</sttbfRMark>')
 
 
 class OfficeArtWordDrawing(BinaryStream):
@@ -3115,10 +3119,10 @@ class OfficeArtWordDrawing(BinaryStream):
         self.officeArtContent = officeArtContent
 
     def dump(self):
-        print '<officeArtWordDrawing type="OfficeArtWordDrawing" pos="%d">' % self.pos
+        print('<officeArtWordDrawing type="OfficeArtWordDrawing" pos="%d">' % self.pos)
         self.printAndSet("dgglbl", self.readuInt8())
         msodraw.DgContainer(self, "container").dumpXml(self, getWordModel(self.officeArtContent.mainStream))
-        print '</officeArtWordDrawing>'
+        print('</officeArtWordDrawing>')
         self.officeArtContent.pos = self.pos
 
 
@@ -3131,17 +3135,17 @@ class OfficeArtContent(BinaryStream):
         self.mainStream = mainStream
 
     def dump(self):
-        print '<officeArtContent type="OfficeArtContent" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<officeArtContent type="OfficeArtContent" offset="%d" size="%d bytes">' % (self.pos, self.size))
         msodraw.DggContainer(self, "DrawingGroupData").dumpXml(self, getWordModel(self.mainStream))
-        print '<Drawings type="main" offset="%d">' % self.pos
+        print('<Drawings type="main" offset="%d">' % self.pos)
         OfficeArtWordDrawing(self).dump()
-        print '</Drawings>'
+        print('</Drawings>')
         if self.pos < self.mainStream.fcDggInfo + self.size:
-            print '<Drawings type="header" offset="%d">' % self.pos
+            print('<Drawings type="header" offset="%d">' % self.pos)
             OfficeArtWordDrawing(self).dump()
-            print '</Drawings>'
+            print('</Drawings>')
         assert self.pos == self.mainStream.fcDggInfo + self.size
-        print '</officeArtContent>'
+        print('</officeArtContent>')
 
 
 class ATNBE(BinaryStream):
@@ -3153,11 +3157,11 @@ class ATNBE(BinaryStream):
         self.pos = sttbfAtnBkmk.pos
 
     def dump(self):
-        print '<atnbe type="ATNBE">'
+        print('<atnbe type="ATNBE">')
         self.printAndSet("bmc", self.readuInt16())
         self.printAndSet("ITag", self.readuInt32())
         self.printAndSet("ITagOld", self.readuInt32())
-        print '</atnbe>'
+        print('</atnbe>')
 
 
 class SttbfAtnBkmk(BinaryStream):
@@ -3168,19 +3172,19 @@ class SttbfAtnBkmk(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<sttbfAtnBkmk type="SttbfAtnBkmk" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<sttbfAtnBkmk type="SttbfAtnBkmk" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fExtended", self.readuInt16())
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
             cchData = self.readuInt16()
-            print '<cchData index="%d" offset="%d" size="%d bytes"/>' % (i, self.pos, cchData)
-            print '<extraData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, ATNBE.size)
+            print('<cchData index="%d" offset="%d" size="%d bytes"/>' % (i, self.pos, cchData))
+            print('<extraData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, ATNBE.size))
             atnbe = ATNBE(self)
             atnbe.dump()
             self.pos += ATNBE.size
-            print '</extraData>'
-        print '</sttbfAtnBkmk>'
+            print('</extraData>')
+        print('</sttbfAtnBkmk>')
 
 
 class Stshif(BinaryStream):
@@ -3191,7 +3195,7 @@ class Stshif(BinaryStream):
         self.size = 18
 
     def dump(self):
-        print '<stshif type="Stshif" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<stshif type="Stshif" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("cstd", self.readuInt16())
         self.printAndSet("cbSTDBaseInFile", self.readuInt16())
         buf = self.readuInt16()
@@ -3203,7 +3207,7 @@ class Stshif(BinaryStream):
         self.printAndSet("ftcAsci", self.readuInt16())
         self.printAndSet("ftcFE", self.readuInt16())
         self.printAndSet("ftcOther", self.readuInt16())
-        print '</stshif>'
+        print('</stshif>')
 
 
 class LSD(BinaryStream):
@@ -3230,14 +3234,14 @@ class StshiLsd(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<stshiLsd type="StshiLsd" offset="%d">' % (self.pos)
+        print('<stshiLsd type="StshiLsd" offset="%d">' % (self.pos))
         self.printAndSet("cbLSD", self.readuInt16())
         for i in range(self.stshi.stshif.stiMaxWhenSaved):
-            print '<mpstiilsd index="%d" type="LSD">' % i
+            print('<mpstiilsd index="%d" type="LSD">' % i)
             LSD(self.bytes, self.pos).dump()
-            print '</mpstiilsd>'
+            print('</mpstiilsd>')
             self.pos += self.cbLSD
-        print '</stshiLsd>'
+        print('</stshiLsd>')
 
 
 class STSHI(BinaryStream):
@@ -3248,7 +3252,7 @@ class STSHI(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<stshi type="STSHI" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<stshi type="STSHI" offset="%d" size="%d bytes">' % (self.pos, self.size))
         posOrig = self.pos
         self.stshif = Stshif(self.bytes, self.mainStream, self.pos)
         self.stshif.dump()
@@ -3258,7 +3262,7 @@ class STSHI(BinaryStream):
             if self.pos - posOrig < self.size:
                 stshiLsd = StshiLsd(self.bytes, self, self.pos)
                 stshiLsd.dump()
-        print '</stshi>'
+        print('</stshi>')
 
 
 class LPStshi(BinaryStream):
@@ -3268,12 +3272,12 @@ class LPStshi(BinaryStream):
         self.pos = offset
 
     def dump(self):
-        print '<lpstshi type="LPStshi" offset="%d">' % self.pos
+        print('<lpstshi type="LPStshi" offset="%d">' % self.pos)
         self.printAndSet("cbStshi", self.readuInt16(), hexdump=False)
         self.stshi = STSHI(self.bytes, self.mainStream, self.pos, self.cbStshi)
         self.stshi.dump()
         self.pos += self.cbStshi
-        print '</lpstshi>'
+        print('</lpstshi>')
 
 
 class StdfBase(BinaryStream):
@@ -3284,7 +3288,7 @@ class StdfBase(BinaryStream):
         self.size = 10
 
     def dump(self):
-        print '<stdfBase type="StdfBase" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<stdfBase type="StdfBase" offset="%d" size="%d bytes">' % (self.pos, self.size))
         buf = self.readuInt16()
         self.printAndSet("sti", buf & 0x0fff)  # 1..12th bits
         self.printAndSet("fScratch", self.getBit(buf, 13))
@@ -3299,14 +3303,14 @@ class StdfBase(BinaryStream):
             3: "table",
             4: "numbering"
         }
-        print '<stk value="%d" name="%s"/>' % (self.stk, stkmap[self.stk])
+        print('<stk value="%d" name="%s"/>' % (self.stk, stkmap[self.stk]))
         self.printAndSet("istdBase", (buf & 0xfff0) >> 4)  # 5..16th bits
         buf = self.readuInt16()
         self.printAndSet("cupx", buf & 0x000f)  # 1..4th bits
         self.printAndSet("istdNext", (buf & 0xfff0) >> 4)  # 5..16th bits
         self.printAndSet("bchUpe", self.readuInt16(), hexdump=False)
         GRFSTD(self).dump()
-        print '</stdfBase>'
+        print('</stdfBase>')
 
 
 class StdfPost2000(BinaryStream):
@@ -3317,7 +3321,7 @@ class StdfPost2000(BinaryStream):
         self.size = 8
 
     def dump(self):
-        print '<stdfPost2000 type="StdfPost2000" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<stdfPost2000 type="StdfPost2000" offset="%d" size="%d bytes">' % (self.pos, self.size))
         buf = self.readuInt16()
         self.printAndSet("istdLink", buf & 0xfff)  # 1..12th bits
         self.printAndSet("fHasOriginalStyle", self.getBit(buf, 13))  # 13th bit
@@ -3327,7 +3331,7 @@ class StdfPost2000(BinaryStream):
         self.printAndSet("iftcHtml", buf & 0x7)  # 1..3rd bits
         self.printAndSet("unused", self.getBit(buf, 4))
         self.printAndSet("iPriority", (buf & 0xfff0) >> 4)  # 5..16th bits
-        print '</stdfPost2000>'
+        print('</stdfPost2000>')
 
 
 class Stdf(BinaryStream):
@@ -3338,20 +3342,20 @@ class Stdf(BinaryStream):
         self.pos = std.pos
 
     def dump(self):
-        print '<stdf type="Stdf" offset="%d">' % self.pos
+        print('<stdf type="Stdf" offset="%d">' % self.pos)
         self.stdfBase = StdfBase(self.bytes, self.mainStream, self.pos)
         self.stdfBase.dump()
         self.pos += self.stdfBase.size
         if self.pos - self.std.pos < self.std.size:
             stsh = self.std.lpstd.stsh  # root of the stylesheet table
             cbSTDBaseInFile = stsh.lpstshi.stshi.stshif.cbSTDBaseInFile
-            print '<stdfPost2000OrNone cbSTDBaseInFile="%s">' % hex(cbSTDBaseInFile)
+            print('<stdfPost2000OrNone cbSTDBaseInFile="%s">' % hex(cbSTDBaseInFile))
             if cbSTDBaseInFile == 0x0012:
                 stdfPost2000 = StdfPost2000(self)
                 stdfPost2000.dump()
                 self.pos = stdfPost2000.pos
-            print '</stdfPost2000OrNone>'
-        print '</stdf>'
+            print('</stdfPost2000OrNone>')
+        print('</stdf>')
 
 
 class Xst(BinaryStream):
@@ -3361,12 +3365,12 @@ class Xst(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<xst type="Xst" offset="%d">' % self.pos
+        print('<xst type="Xst" offset="%d">' % self.pos)
         self.printAndSet("cch", self.readuInt16())
         lowOnly = locale.getdefaultlocale()[1] == "UTF-8"
-        print '<rgtchar value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * self.cch].decode('utf-16'), lowOnly=lowOnly)
+        print('<rgtchar value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * self.cch].decode('utf-16'), lowOnly=lowOnly))
         self.pos += 2 * self.cch
-        print '</xst>'
+        print('</xst>')
 
 
 class Xstz(BinaryStream):
@@ -3377,12 +3381,12 @@ class Xstz(BinaryStream):
         self.name = name
 
     def dump(self):
-        print '<%s type="Xstz" offset="%d">' % (self.name, self.pos)
+        print('<%s type="Xstz" offset="%d">' % (self.name, self.pos))
         xst = Xst(self)
         xst.dump()
         self.pos = xst.pos
         self.printAndSet("chTerm", self.readuInt16())
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
 
 
 class UpxPapx(BinaryStream):
@@ -3393,17 +3397,17 @@ class UpxPapx(BinaryStream):
         self.pos = lPUpxPapx.pos
 
     def dump(self):
-        print '<upxPapx type="UpxPapx" offset="%d">' % self.pos
+        print('<upxPapx type="UpxPapx" offset="%d">' % self.pos)
         self.printAndSet("istd", self.readuInt16())
         size = self.lPUpxPapx.cbUpx - 2
         pos = 0
-        print '<grpprlPapx offset="%d" size="%d bytes">' % (self.pos, size)
+        print('<grpprlPapx offset="%d" size="%d bytes">' % (self.pos, size))
         while size - pos > 0:
             prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
-        print '</grpprlPapx>'
-        print '</upxPapx>'
+        print('</grpprlPapx>')
+        print('</upxPapx>')
 
 
 class UpxChpx(BinaryStream):
@@ -3414,16 +3418,16 @@ class UpxChpx(BinaryStream):
         self.pos = lPUpxChpx.pos
 
     def dump(self):
-        print '<upxChpx type="UpxChpx" offset="%d">' % self.pos
+        print('<upxChpx type="UpxChpx" offset="%d">' % self.pos)
         size = self.lPUpxChpx.cbUpx
         pos = 0
-        print '<grpprlChpx offset="%d" size="%d bytes">' % (self.pos, size)
+        print('<grpprlChpx offset="%d" size="%d bytes">' % (self.pos, size))
         while size - pos > 0:
             prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
-        print '</grpprlChpx>'
-        print '</upxChpx>'
+        print('</grpprlChpx>')
+        print('</upxChpx>')
 
 
 class UpxTapx(BinaryStream):
@@ -3434,16 +3438,16 @@ class UpxTapx(BinaryStream):
         self.pos = lPUpxTapx.pos
 
     def dump(self):
-        print '<upxTapx type="UpxTapx" offset="%d">' % self.pos
+        print('<upxTapx type="UpxTapx" offset="%d">' % self.pos)
         size = self.lPUpxTapx.cbUpx
         pos = 0
-        print '<grpprlTapx offset="%d" size="%d bytes">' % (self.pos, size)
+        print('<grpprlTapx offset="%d" size="%d bytes">' % (self.pos, size))
         while size - pos > 0:
             prl = Prl(self, self.pos + pos)
             prl.dump()
             pos += prl.getSize()
-        print '</grpprlTapx>'
-        print '</upxTapx>'
+        print('</grpprlTapx>')
+        print('</upxTapx>')
 
 
 class UPXPadding:
@@ -3464,7 +3468,7 @@ class LPUpxPapx(BinaryStream):
         self.pos = stkParaGRLPUPX.pos
 
     def dump(self):
-        print '<lPUpxPapx type="LPUpxPapx" offset="%d">' % self.pos
+        print('<lPUpxPapx type="LPUpxPapx" offset="%d">' % self.pos)
         self.printAndSet("cbUpx", self.readuInt16())
         upxPapx = UpxPapx(self)
         upxPapx.dump()
@@ -3472,7 +3476,7 @@ class LPUpxPapx(BinaryStream):
         uPXPadding = UPXPadding(self)
         uPXPadding.pad()
         self.pos = uPXPadding.pos
-        print '</lPUpxPapx>'
+        print('</lPUpxPapx>')
 
 
 class LPUpxChpx(BinaryStream):
@@ -3482,7 +3486,7 @@ class LPUpxChpx(BinaryStream):
         self.pos = stkParaGRLPUPX.pos
 
     def dump(self):
-        print '<lPUpxChpx type="LPUpxChpx" offset="%d">' % self.pos
+        print('<lPUpxChpx type="LPUpxChpx" offset="%d">' % self.pos)
         self.printAndSet("cbUpx", self.readuInt16())
         upxChpx = UpxChpx(self)
         upxChpx.dump()
@@ -3490,7 +3494,7 @@ class LPUpxChpx(BinaryStream):
         uPXPadding = UPXPadding(self)
         uPXPadding.pad()
         self.pos = uPXPadding.pos
-        print '</lPUpxChpx>'
+        print('</lPUpxChpx>')
 
 
 class LPUpxTapx(BinaryStream):
@@ -3500,7 +3504,7 @@ class LPUpxTapx(BinaryStream):
         self.pos = stkParaGRLPUPX.pos
 
     def dump(self):
-        print '<lPUpxTapx type="LPUpxTapx" offset="%d">' % self.pos
+        print('<lPUpxTapx type="LPUpxTapx" offset="%d">' % self.pos)
         self.printAndSet("cbUpx", self.readuInt16())
         upxTapx = UpxTapx(self)
         upxTapx.dump()
@@ -3508,7 +3512,7 @@ class LPUpxTapx(BinaryStream):
         uPXPadding = UPXPadding(self)
         uPXPadding.pad()
         self.pos = uPXPadding.pos
-        print '</lPUpxTapx>'
+        print('</lPUpxTapx>')
 
 
 class StkListGRLPUPX(BinaryStream):
@@ -3519,11 +3523,11 @@ class StkListGRLPUPX(BinaryStream):
         self.pos = grLPUpxSw.pos
 
     def dump(self):
-        print '<stkListGRLPUPX type="StkListGRLPUPX" offset="%d">' % self.pos
+        print('<stkListGRLPUPX type="StkListGRLPUPX" offset="%d">' % self.pos)
         lpUpxPapx = LPUpxPapx(self)
         lpUpxPapx.dump()
         self.pos = lpUpxPapx.pos
-        print '</stkListGRLPUPX>'
+        print('</stkListGRLPUPX>')
 
 
 class StkTableGRLPUPX(BinaryStream):
@@ -3534,7 +3538,7 @@ class StkTableGRLPUPX(BinaryStream):
         self.pos = grLPUpxSw.pos
 
     def dump(self):
-        print '<stkTableGRLPUPX type="StkTableGRLPUPX" offset="%d">' % self.pos
+        print('<stkTableGRLPUPX type="StkTableGRLPUPX" offset="%d">' % self.pos)
         lpUpxTapx = LPUpxTapx(self)
         lpUpxTapx.dump()
         self.pos = lpUpxTapx.pos
@@ -3544,7 +3548,7 @@ class StkTableGRLPUPX(BinaryStream):
         lpUpxChpx = LPUpxChpx(self)
         lpUpxChpx.dump()
         self.pos = lpUpxChpx.pos
-        print '</stkTableGRLPUPX>'
+        print('</stkTableGRLPUPX>')
 
 
 class StkCharGRLPUPX(BinaryStream):
@@ -3556,14 +3560,14 @@ class StkCharGRLPUPX(BinaryStream):
         self.grLPUpxSw = grLPUpxSw
 
     def dump(self):
-        print '<stkCharGRLPUPX type="StkCharGRLPUPX" offset="%d">' % self.pos
+        print('<stkCharGRLPUPX type="StkCharGRLPUPX" offset="%d">' % self.pos)
         if self.grLPUpxSw.std.stdf.stdfBase.cupx == 1:
             lpUpxChpx = LPUpxChpx(self)
             lpUpxChpx.dump()
             self.pos = lpUpxChpx.pos
         else:
-            print '<todo what="StkCharGRLPUPX: cupx != 1"/>'
-        print '</stkCharGRLPUPX>'
+            print('<todo what="StkCharGRLPUPX: cupx != 1"/>')
+        print('</stkCharGRLPUPX>')
 
 
 class StkParaGRLPUPX(BinaryStream):
@@ -3575,7 +3579,7 @@ class StkParaGRLPUPX(BinaryStream):
         self.grLPUpxSw = grLPUpxSw
 
     def dump(self):
-        print '<stkParaGRLPUPX type="StkParaGRLPUPX" offset="%d">' % self.pos
+        print('<stkParaGRLPUPX type="StkParaGRLPUPX" offset="%d">' % self.pos)
         if self.grLPUpxSw.std.stdf.stdfBase.cupx == 2:
             lPUpxPapx = LPUpxPapx(self)
             lPUpxPapx.dump()
@@ -3584,8 +3588,8 @@ class StkParaGRLPUPX(BinaryStream):
             lpUpxChpx.dump()
             self.pos = lpUpxChpx.pos
         else:
-            print '<todo what="StkParaGRLPUPX: cupx != 2"/>'
-        print '</stkParaGRLPUPX>'
+            print('<todo what="StkParaGRLPUPX: cupx != 2"/>')
+        print('</stkParaGRLPUPX>')
 
 
 class GrLPUpxSw(BinaryStream):
@@ -3617,7 +3621,7 @@ class STD(BinaryStream):
         self.size = lpstd.cbStd
 
     def dump(self):
-        print '<std type="STD" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<std type="STD" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.stdf = Stdf(self)
         self.stdf.dump()
         self.pos = self.stdf.pos
@@ -3628,7 +3632,7 @@ class STD(BinaryStream):
             grLPUpxSw = GrLPUpxSw(self)
             grLPUpxSw.dump()
             self.pos = grLPUpxSw.pos
-        print '</std>'
+        print('</std>')
 
 
 class LPStd(BinaryStream):
@@ -3656,17 +3660,17 @@ class STSH(BinaryStream):
         self.size = size
 
     def dump(self):
-        print '<stsh type="STSH" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<stsh type="STSH" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.lpstshi = LPStshi(self.bytes, self.mainStream, self.pos)
         self.lpstshi.dump()
         self.pos = self.lpstshi.pos
         for i in range(self.lpstshi.stshi.stshif.cstd):
-            print '<rglpstd index="%d" type="LPStd" offset="%d">' % (i, self.pos)
+            print('<rglpstd index="%d" type="LPStd" offset="%d">' % (i, self.pos))
             lpstd = LPStd(self)
             lpstd.dump()
             self.pos = lpstd.pos
-            print '</rglpstd>'
-        print '</stsh>'
+            print('</rglpstd>')
+        print('</stsh>')
 
 
 class Rca(BinaryStream):
@@ -3677,12 +3681,12 @@ class Rca(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<rca type="Rca" offset="%s">' % self.pos
+        print('<rca type="Rca" offset="%s">' % self.pos)
         self.printAndSet("left", self.readuInt32())
         self.printAndSet("top", self.readuInt32())
         self.printAndSet("right", self.readuInt32())
         self.printAndSet("bottom", self.readuInt32())
-        print '</rca>'
+        print('</rca>')
         self.parent.pos = self.pos
 
 
@@ -3697,7 +3701,7 @@ class SPA(BinaryStream):
 
     def dump(self):
         pos = self.pos
-        print '<spa type="SPA" offset="%s" size="%d bytes">' % (self.pos, SPA.size)
+        print('<spa type="SPA" offset="%s" size="%d bytes">' % (self.pos, SPA.size))
         self.printAndSet("lid", self.readuInt32())
         Rca(self).dump()
         buf = self.readuInt16()
@@ -3710,7 +3714,7 @@ class SPA(BinaryStream):
         self.printAndSet("fBelowText", self.getBit(buf, 14))  # 15th bit
         self.printAndSet("fAnchorLock", self.getBit(buf, 15))  # 16th bit
         self.printAndSet("cTxbx", self.readuInt32())
-        print '</spa>'
+        print('</spa>')
         assert pos + SPA.size == self.pos
 
 
@@ -3738,16 +3742,16 @@ class SPLS(BinaryStream):
             0xC: "splfUnknownWord",
         }
         buf = self.readuInt16()
-        print '<spls type="SPLS" offset="%d" size="%d bytes" value="%s">' % (self.pos, SPLS.size, hex(buf))
+        print('<spls type="SPLS" offset="%d" size="%d bytes" value="%s">' % (self.pos, SPLS.size, hex(buf)))
         self.printAndSet("splf", buf & 0x000f, end=False)  # 1..4th bits
         if self.splf in splfMap:
-            print '<transformed name="%s"/>' % splfMap[self.splf]
-        print '</splf>'
+            print('<transformed name="%s"/>' % splfMap[self.splf])
+        print('</splf>')
         self.printAndSet("fError", self.getBit(buf, 4))
         self.printAndSet("fExtend", self.getBit(buf, 5))
         self.printAndSet("fTypo", self.getBit(buf, 6))
         self.printAndSet("unused", (buf & 0xff80) >> 7)  # 8..16th bits
-        print '</spls>'
+        print('</spls>')
 
 
 class PlcfSpl(BinaryStream, PLC):
@@ -3759,22 +3763,22 @@ class PlcfSpl(BinaryStream, PLC):
         self.size = mainStream.lcbPlcfSpl
 
     def dump(self):
-        print '<plcfSpl type="PlcfSpl" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfSpl type="PlcfSpl" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aSpellingSpls
             aSpellingSpls = SPLS("SpellingSpls", self, self.getOffset(self.pos, i))
             aSpellingSpls.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
-            print '</aCP>'
-        print '</plcfSpl>'
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end)))
+            print('</aCP>')
+        print('</plcfSpl>')
 
 
 class FTXBXNonReusable(BinaryStream):
@@ -3787,10 +3791,10 @@ class FTXBXNonReusable(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<ftxbxsunion type="FTXBXNonReusable" offset="%d" size="8 bytes">' % (self.pos)
+        print('<ftxbxsunion type="FTXBXNonReusable" offset="%d" size="8 bytes">' % (self.pos))
         self.printAndSet("cTxbx", self.readuInt32())
         self.printAndSet("cTxbxEdit", self.readuInt32())
-        print '</ftxbxsunion>'
+        print('</ftxbxsunion>')
         self.parent.pos = self.pos
 
 
@@ -3803,10 +3807,10 @@ class FTXBXSReusable(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<ftxbxsunion type="FTXBXReusable" offset="%d" size="8 bytes">' % (self.pos)
+        print('<ftxbxsunion type="FTXBXReusable" offset="%d" size="8 bytes">' % (self.pos))
         self.printAndSet("iNextReuse", self.readuInt32())
         self.printAndSet("cReusable", self.readuInt32())
-        print '</ftxbxsunion>'
+        print('</ftxbxsunion>')
         self.parent.pos = self.pos
 
 
@@ -3821,7 +3825,7 @@ class FTXBXS(BinaryStream):
         self.pos = self.posOrig = offset
 
     def dump(self):
-        print '<aFTXBXS type="FTXBXS" offset="%d" size="%d bytes">' % (self.pos, FTXBXS.size)
+        print('<aFTXBXS type="FTXBXS" offset="%d" size="%d bytes">' % (self.pos, FTXBXS.size))
         self.fReusable = self.getuInt16(pos=self.pos + 8)
         if self.fReusable:
             FTXBXSReusable(self).dump()
@@ -3831,7 +3835,7 @@ class FTXBXS(BinaryStream):
         self.printAndSet("itxbxsDest", self.readuInt32())
         self.printAndSet("lid", self.readuInt32())
         self.printAndSet("txidUndo", self.readuInt32())
-        print '</aFTXBXS>'
+        print('</aFTXBXS>')
         if not self.fReusable:
             assert self.posOrig + FTXBXS.size == self.pos
 
@@ -3845,23 +3849,23 @@ class PlcftxbxTxt(BinaryStream, PLC):
         self.size = mainStream.lcbPlcftxbxTxt
 
     def dump(self):
-        print '<plcftxbxTxt type="PlcftxbxTxt" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcftxbxTxt type="PlcftxbxTxt" offset="%d" size="%d bytes">' % (self.pos, self.size))
         offset = self.mainStream.getHeaderOffset()
         pos = self.pos
         for i in range(self.getElements() - 1):
             # aCp
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aFTXBXS
             aFTXBXS = FTXBXS(self, self.getOffset(self.pos, i))
             aFTXBXS.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
-            print '</aCP>'
-        print '</plcftxbxTxt>'
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end)))
+            print('</aCP>')
+        print('</plcftxbxTxt>')
 
 
 class Tbkd(BinaryStream):
@@ -3875,7 +3879,7 @@ class Tbkd(BinaryStream):
         self.pos = self.posOrig = offset
 
     def dump(self):
-        print '<aTbkd type="Tbkd" offset="%d" size="%d bytes">' % (self.pos, Tbkd.size)
+        print('<aTbkd type="Tbkd" offset="%d" size="%d bytes">' % (self.pos, Tbkd.size))
         self.printAndSet("itxbxs", self.readuInt16())
         self.printAndSet("dcpDepend", self.readuInt16())
         buf = self.readuInt16()
@@ -3884,7 +3888,7 @@ class Tbkd(BinaryStream):
         self.printAndSet("fUnk", self.getBit(buf, 11))
         self.printAndSet("fTextOverflow", self.getBit(buf, 12))
         self.printAndSet("reserved2", (buf & 0xe000) >> 13)  # 14..16th bits
-        print '</aTbkd>'
+        print('</aTbkd>')
         assert self.posOrig + Tbkd.size == self.pos
 
 
@@ -3897,21 +3901,21 @@ class PlcftxbxBkd(BinaryStream, PLC):
         self.size = mainStream.lcbPlcfTxbxBkd
 
     def dump(self):
-        print '<plcftxbxBkd type="PlcftxbxBkd" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcftxbxBkd type="PlcftxbxBkd" offset="%d" size="%d bytes">' % (self.pos, self.size))
         offset = self.mainStream.getHeaderOffset()
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aTbkd
             Tbkd(self, self.getOffset(self.pos, i)).dump()
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end))
-            print '</aCP>'
-        print '</plcftxbxBkd>'
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(offset + start, offset + end)))
+            print('</aCP>')
+        print('</plcftxbxBkd>')
 
 
 class PlcfSpa(BinaryStream, PLC):
@@ -3924,22 +3928,22 @@ class PlcfSpa(BinaryStream, PLC):
         self.size = size
 
     def dump(self):
-        print '<plcfSpa type="PlcfSpa" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfSpa type="PlcfSpa" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aSpa
             aSpa = SPA(self, self.getOffset(self.pos, i))
             aSpa.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
-            print '</aCP>'
-        print '</plcfSpa>'
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end)))
+            print('</aCP>')
+        print('</plcfSpa>')
 
 
 class PlcfGram(BinaryStream, PLC):
@@ -3951,22 +3955,22 @@ class PlcfGram(BinaryStream, PLC):
         self.size = mainStream.lcbPlcfGram
 
     def dump(self):
-        print '<plcfGram type="PlcfGram" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plcfGram type="PlcfGram" offset="%d" size="%d bytes">' % (self.pos, self.size))
         pos = self.pos
         for i in range(self.getElements()):
             # aCp
             start = self.getuInt32(pos=pos)
             end = self.getuInt32(pos=pos + 4)
-            print '<aCP index="%d" start="%d" end="%d">' % (i, start, end)
+            print('<aCP index="%d" start="%d" end="%d">' % (i, start, end))
             pos += 4
 
             # aGrammarSpls
             aGrammarSpls = SPLS("GrammarSpls", self, self.getOffset(self.pos, i))
             aGrammarSpls.dump()
 
-            print '<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end))
-            print '</aCP>'
-        print '</plcfGram>'
+            print('<transformed value="%s"/>' % self.quoteAttr(self.mainStream.retrieveCPs(start, end)))
+            print('</aCP>')
+        print('</plcfGram>')
 
 
 class Grfhic(BinaryStream):
@@ -3978,7 +3982,7 @@ class Grfhic(BinaryStream):
         self.parent = parent
 
     def dump(self):
-        print '<grfhic type="grfhic">'
+        print('<grfhic type="grfhic">')
         buf = self.readuInt8()
         self.printAndSet("fhicChecked", self.getBit(buf, 0))
         self.printAndSet("fhicFormat", self.getBit(buf, 1))
@@ -3989,7 +3993,7 @@ class Grfhic(BinaryStream):
         self.printAndSet("unused", self.getBit(buf, 6))
         self.printAndSet("fhicBullet", self.getBit(buf, 7))
         self.parent.pos = self.pos
-        print '</grfhic>'
+        print('</grfhic>')
 
 
 class LSTF(BinaryStream):
@@ -4001,11 +4005,11 @@ class LSTF(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<lstf type="LSTF" index="%d" offset="%d" size="%d bytes">' % (self.index, self.pos, self.size)
+        print('<lstf type="LSTF" index="%d" offset="%d" size="%d bytes">' % (self.index, self.pos, self.size))
         self.printAndSet("lsid", self.readInt32())
         self.printAndSet("tplc", self.readInt32())
         for i in range(9):
-            print '<rgistdPara index="%d" value="%s"/>' % (i, self.readInt16())
+            print('<rgistdPara index="%d" value="%s"/>' % (i, self.readInt16()))
         buf = self.readuInt8()
         self.printAndSet("fSimpleList", self.getBit(buf, 0))
         self.printAndSet("unused1", self.getBit(buf, 1))
@@ -4014,7 +4018,7 @@ class LSTF(BinaryStream):
         self.printAndSet("fHybrid", self.getBit(buf, 4))
         self.printAndSet("reserved1", (buf & 0xe0) >> 5)  # 6..8th bits
         Grfhic(self).dump()
-        print '</lstf>'
+        print('</lstf>')
 
 
 class LVLF(BinaryStream):
@@ -4024,7 +4028,7 @@ class LVLF(BinaryStream):
         self.pos = lvl.pos
 
     def dump(self):
-        print '<lvlf type="LVLF" offset="%d">' % self.pos
+        print('<lvlf type="LVLF" offset="%d">' % self.pos)
         self.printAndSet("iStartAt", self.readInt32())
         self.printAndSet("nfc", self.readuInt8())
         buf = self.readuInt8()
@@ -4036,7 +4040,7 @@ class LVLF(BinaryStream):
         self.printAndSet("unused1", self.getBit(buf, 6))
         self.printAndSet("fTentative", self.getBit(buf, 7))
         for i in range(9):
-            print '<rgrgbxchNums index="%d" value="%s"/>' % (i, self.readuInt8())
+            print('<rgrgbxchNums index="%d" value="%s"/>' % (i, self.readuInt8()))
         self.printAndSet("ixchFollow", self.readuInt8())
         self.printAndSet("dxaIndentSav", self.readInt32())
         self.printAndSet("unused2", self.readuInt32())
@@ -4044,7 +4048,7 @@ class LVLF(BinaryStream):
         self.printAndSet("cbGrpprlPapx", self.readuInt8())
         self.printAndSet("ilvlRestartLim", self.readuInt8())
         Grfhic(self).dump()
-        print '</lvlf>'
+        print('</lvlf>')
 
 
 class LVL(BinaryStream):
@@ -4055,32 +4059,32 @@ class LVL(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<lvl type="LVL" index="%d" offset="%d">' % (self.index, self.pos)
+        print('<lvl type="LVL" index="%d" offset="%d">' % (self.index, self.pos))
         lvlf = LVLF(self)
         lvlf.dump()
         self.pos = lvlf.pos
 
-        print '<grpprlPapx offset="%d">' % self.pos
+        print('<grpprlPapx offset="%d">' % self.pos)
         pos = self.pos
         while (lvlf.cbGrpprlPapx - (pos - self.pos)) > 0:
             prl = Prl(self, pos)
             prl.dump()
             pos += prl.getSize()
         self.pos = pos
-        print '</grpprlPapx>'
+        print('</grpprlPapx>')
 
-        print '<grpprlChpx offset="%d">' % self.pos
+        print('<grpprlChpx offset="%d">' % self.pos)
         pos = self.pos
         while (lvlf.cbGrpprlChpx - (pos - self.pos)) > 0:
             prl = Prl(self, pos)
             prl.dump()
             pos += prl.getSize()
         self.pos = pos
-        print '</grpprlChpx>'
+        print('</grpprlChpx>')
         xst = Xst(self)
         xst.dump()
         self.pos = xst.pos
-        print '</lvl>'
+        print('</lvl>')
 
 
 class PlfLst(BinaryStream):
@@ -4091,7 +4095,7 @@ class PlfLst(BinaryStream):
         self.size = mainStream.lcbPlfLst
 
     def dump(self):
-        print '<plfLst type="PlfLst" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plfLst type="PlfLst" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("cLst", self.readInt16())
         cLvl = 0
         for i in range(self.cLst):
@@ -4106,7 +4110,7 @@ class PlfLst(BinaryStream):
             lvl = LVL(self, i)
             lvl.dump()
             self.pos = lvl.pos
-        print '</plfLst>'
+        print('</plfLst>')
 
 
 class LFO(BinaryStream):
@@ -4118,7 +4122,7 @@ class LFO(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<%s type="LFO" index="%s" offset="%d">' % (self.name, self.index, self.pos)
+        print('<%s type="LFO" index="%s" offset="%d">' % (self.name, self.index, self.pos))
         self.printAndSet("lsid", self.readInt32())
         self.printAndSet("unused1", self.readuInt32())
         self.printAndSet("unused2", self.readuInt32())
@@ -4126,7 +4130,7 @@ class LFO(BinaryStream):
         self.printAndSet("ibstFltAutoNum", self.readuInt8())
         Grfhic(self).dump()
         self.printAndSet("unused3", self.readuInt8())
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
 
 
 class LFOData(BinaryStream):
@@ -4137,11 +4141,11 @@ class LFOData(BinaryStream):
         self.lfo = lfo
 
     def dump(self):
-        print '<lfoData type="LFOData" offset="%d">' % self.pos
+        print('<lfoData type="LFOData" offset="%d">' % self.pos)
         self.printAndSet("cp", self.readuInt32())
         if self.lfo.clfolvl > 0:
-            print '<todo what="LFOData: clfolvl != 0"/>'
-        print '</lfoData>'
+            print('<todo what="LFOData: clfolvl != 0"/>')
+        print('</lfoData>')
 
 
 class PlfLfo(BinaryStream):
@@ -4152,7 +4156,7 @@ class PlfLfo(BinaryStream):
         self.size = mainStream.lcbPlfLfo
 
     def dump(self):
-        print '<plfLfo type="PlfLfo" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<plfLfo type="PlfLfo" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("lfoMac", self.readInt32())
         lfos = []
         for i in range(self.lfoMac):
@@ -4164,7 +4168,7 @@ class PlfLfo(BinaryStream):
             lfoData = LFOData(self, lfos[i])
             lfoData.dump()
             self.pos = lfoData.pos
-        print '</plfLfo>'
+        print('</plfLfo>')
 
 
 class SttbListNames(BinaryStream):
@@ -4175,17 +4179,17 @@ class SttbListNames(BinaryStream):
         self.size = mainStream.lcbSttbListNames
 
     def dump(self):
-        print '<sttbListNames type="SttbListNames" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<sttbListNames type="SttbListNames" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fExtend", self.readuInt16())
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
             cchData = self.readuInt16()
-            print '<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
-            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True)
+            print('<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData))
+            print('<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True))
             self.pos += 2 * cchData
-            print '</cchData>'
-        print '</sttbListNames>'
+            print('</cchData>')
+        print('</sttbListNames>')
 
 
 class PBString(BinaryStream):
@@ -4199,9 +4203,9 @@ class PBString(BinaryStream):
 
     def dump(self):
         if self.index is None:
-            print '<%s type="PBString">' % self.name
+            print('<%s type="PBString">' % self.name)
         else:
-            print '<%s type="PBString" index="%s">' % (self.name, self.index)
+            print('<%s type="PBString" index="%s">' % (self.name, self.index))
         buf = self.readuInt16()
         self.printAndSet("cch", buf & 0x7fff)  # bits 1..15
         self.printAndSet("fAnsiString", self.getBit(buf, 15))
@@ -4221,7 +4225,7 @@ class PBString(BinaryStream):
             encoding = "utf-16"
         self.printAndSet("rgxch", globals.encodeName("".join(map(lambda c: chr(c), bytes)).decode(encoding), lowOnly=True).encode('utf-8'), hexdump=False)
 
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -4233,7 +4237,7 @@ class FactoidType(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<factoidType>'
+        print('<factoidType>')
         self.printAndSet("cbFactoid", self.readuInt32())
         self.printAndSet("id", self.readuInt32())
         self.rgbUri = PBString(self, "rgbUri")
@@ -4242,7 +4246,7 @@ class FactoidType(BinaryStream):
         self.rgbTag.dump()
         self.rgbDownLoadURL = PBString(self, "rgbDownLoadURL")
         self.rgbDownLoadURL.dump()
-        print '</factoidType>'
+        print('</factoidType>')
         self.parent.pos = self.pos
 
 
@@ -4255,29 +4259,29 @@ class PropertyBagStore(BinaryStream):
         self.pos = parent.pos
 
     def dump(self):
-        print '<propBagStore type="PropertyBagStore" offset="%s">' % self.pos
+        print('<propBagStore type="PropertyBagStore" offset="%s">' % self.pos)
         self.printAndSet("cFactoidType", self.readuInt32())
-        print '<factoidTypes>'
+        print('<factoidTypes>')
         self.factoidTypes = []
         for i in range(self.cFactoidType):
             factoidType = FactoidType(self)
             factoidType.dump()
             self.factoidTypes.append(factoidType)
-        print '</factoidTypes>'
+        print('</factoidTypes>')
         self.printAndSet("cbHdr", self.readuInt16())
         assert self.cbHdr == 0xc
         self.printAndSet("sVer", self.readuInt16())
         assert self.sVer == 0x0100
         self.printAndSet("cfactoid", self.readuInt32())
         self.printAndSet("cste", self.readuInt32())
-        print '<stringTable>'
+        print('<stringTable>')
         self.stringTable = []
         for i in range(self.cste):
             string = PBString(self, "stringTable", index=i)
             string.dump()
             self.stringTable.append(string)
-        print '</stringTable>'
-        print '</propBagStore>'
+        print('</stringTable>')
+        print('</propBagStore>')
         self.parent.pos = self.pos
 
 
@@ -4291,10 +4295,10 @@ class Property(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<property type="Property" offset="%s" index="%s">' % (self.pos, self.index)
+        print('<property type="Property" offset="%s" index="%s">' % (self.pos, self.index))
         self.printAndSet("keyIndex", self.readuInt32(), hexdump=False)
         self.printAndSet("valueIndex", self.readuInt32(), hexdump=False)
-        print '</property>'
+        print('</property>')
         self.parent.pos = self.pos
 
 
@@ -4307,13 +4311,13 @@ class PropertyBag(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<propBag type="PropertyBag" offset="%s" index="%s">' % (self.pos, self.index)
+        print('<propBag type="PropertyBag" offset="%s" index="%s">' % (self.pos, self.index))
         self.printAndSet("id", self.readuInt16())
         self.printAndSet("cProp", self.readuInt16())
         self.printAndSet("cbUnknown", self.readuInt16())
         for i in range(self.cProp):
             Property(self, i).dump()
-        print '</propBag>'
+        print('</propBag>')
         self.parent.pos = self.pos
 
 
@@ -4327,7 +4331,7 @@ class SmartTagData(BinaryStream):
 
     def dump(self):
         posOrig = self.pos
-        print '<smartTagData type="SmartTagData" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<smartTagData type="SmartTagData" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.propBagStore = PropertyBagStore(self)
         self.propBagStore.dump()
         i = 0
@@ -4335,7 +4339,7 @@ class SmartTagData(BinaryStream):
             self.propBag = PropertyBag(self, i)
             self.propBag.dump()
             i += 1
-        print '</smartTagData>'
+        print('</smartTagData>')
 
 
 class SttbSavedBy(BinaryStream):
@@ -4346,20 +4350,20 @@ class SttbSavedBy(BinaryStream):
         self.size = mainStream.lcbSttbSavedBy
 
     def dump(self):
-        print '<sttbSavedBy type="SttbSavedBy" offset="%d" size="%d">' % (self.pos, self.size)
+        print('<sttbSavedBy type="SttbSavedBy" offset="%d" size="%d">' % (self.pos, self.size))
         self.printAndSet("fExtend", self.readuInt16())
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
             cchData = self.readuInt16()
-            print '<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
-            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True)
+            print('<cchData index="%s" offset="%d" size="%d bytes">' % (i, self.pos, cchData))
+            print('<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True))
             self.pos += 2 * cchData
-            print '</cchData>'
+            print('</cchData>')
         # Probably this was cleared manually.
         if self.cData != 0:
             assert self.pos == self.mainStream.fcSttbSavedBy + self.size
-        print '</sttbSavedBy>'
+        print('</sttbSavedBy>')
 
 
 class SttbfBkmk(BinaryStream):
@@ -4371,18 +4375,18 @@ class SttbfBkmk(BinaryStream):
         self.mainStream = mainStream
 
     def dump(self):
-        print '<sttbfBkmk type="SttbfBkmk" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<sttbfBkmk type="SttbfBkmk" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fExtended", self.readuInt16())
         self.printAndSet("cData", self.readuInt16())
         self.printAndSet("cbExtra", self.readuInt16())
         for i in range(self.cData):
             cchData = self.readuInt16()
-            print '<cchData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, cchData)
-            print '<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True)
+            print('<cchData index="%d" offset="%d" size="%d bytes">' % (i, self.pos, cchData))
+            print('<string value="%s"/>' % globals.encodeName(self.bytes[self.pos:self.pos + 2 * cchData].decode('utf-16'), lowOnly=True))
             self.pos += 2 * cchData
-            print '</cchData>'
+            print('</cchData>')
         assert self.pos == self.mainStream.fcSttbfBkmk + self.size
-        print '</sttbfBkmk>'
+        print('</sttbfBkmk>')
 
 
 # The FTO enumerated type identifies the feature that is responsible to create
@@ -4405,14 +4409,14 @@ class FACTOIDINFO(BinaryStream):
         self.index = index
 
     def dump(self):
-        print '<factoidinfo index="%s">' % self.index
+        print('<factoidinfo index="%s">' % self.index)
         self.printAndSet("dwId", self.readuInt32())
         buf = self.readuInt16()
         self.printAndSet("fSubEntry", self.getBit(buf, 0))
         self.printAndSet("fUnused", (buf & 0xfffe) >> 1)  # 2..16th bits
         self.printAndSet("fto", self.readuInt16(), dict=FTO)
         self.printAndSet("pfpb", self.readuInt32())
-        print '</factoidinfo>'
+        print('</factoidinfo>')
         self.parent.pos = self.pos
 
 
@@ -4425,7 +4429,7 @@ class SttbfBkmkFactoid(BinaryStream):
         self.mainStream = mainStream
 
     def dump(self):
-        print '<sttbfBkmkFactoid type="SttbfBkmkFactoid" offset="%d" size="%d bytes">' % (self.pos, self.size)
+        print('<sttbfBkmkFactoid type="SttbfBkmkFactoid" offset="%d" size="%d bytes">' % (self.pos, self.size))
         self.printAndSet("fExtended", self.readuInt16())
         assert self.fExtended == 0xffff
         self.printAndSet("cData", self.readuInt16())
@@ -4436,6 +4440,6 @@ class SttbfBkmkFactoid(BinaryStream):
             assert self.cchData == 0x6
             FACTOIDINFO(self, i).dump()
         assert self.pos == self.mainStream.fcSttbfBkmkFactoid + self.size
-        print '</sttbfBkmkFactoid>'
+        print('</sttbfBkmkFactoid>')
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

@@ -7,8 +7,10 @@
 
 from msodumper import globals, docstream
 import sys
-sys = reload(sys)
-sys.setdefaultencoding("utf-8")
+
+if not globals.PY3:
+    sys = reload(sys)
+    sys.setdefaultencoding("utf-8")
 
 
 class DOCDumper:
@@ -21,20 +23,21 @@ class DOCDumper:
         strm = docstream.createDOCFile(file.read(), self.params)
         file.close()
         dirnames = strm.getDirectoryNames()
-        print '<?xml version="1.0"?>\n<streams ole-type="%s">' % strm.getName()
+        print('<?xml version="1.0"?>\n<streams ole-type="%s">' % strm.getName())
         if strm.error:
-            print '<error what="%s"/>' % strm.error
+            print('<error what="%s"/>' % strm.error)
         for dirname in dirnames:
-            if len(dirname) == 0 or dirname in ['Root Entry']:
+            if len(dirname) == 0 or dirname in [b'Root Entry']:
                 continue
             strm.getDirectoryStreamByName(dirname).dump()
-        print '</streams>'
+        print('</streams>')
 
 
 def main(args):
     params = globals.Params()
     dumper = DOCDumper(args[1], params)
     dumper.dump()
+
 
 if __name__ == '__main__':
     main(sys.argv)

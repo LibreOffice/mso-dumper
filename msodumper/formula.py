@@ -6,7 +6,7 @@
 #
 
 import struct, sys
-import globals
+from . import globals
 
 class InvalidCellAddress(Exception): pass
 class FormulaParserError(Exception): pass
@@ -27,7 +27,7 @@ def toColName (colID):
     name = struct.pack('b', n1 + ord('A'))
     if n2 > 0:
         name += struct.pack('b', n2 + ord('A'))
-    return name
+    return name.decode('cp1252')
 
 def toAbsName (name, isRelative):
     if not isRelative:
@@ -725,7 +725,7 @@ class PtgFuncVar(PtgBase):
             # I'll support this later.
             raise FormulaParserError("special built-in function not supported yet")
 
-        if not PtgFuncVar.funcTab.has_key(self.funcType):
+        if not self.funcType in PtgFuncVar.funcTab:
             # unknown function name
             return '#NAME!'
 
@@ -804,7 +804,7 @@ associated token classes will be without the leading underscore (_)."""
     def parse (self, parseType=ParsedFormulaType.Cell):
         while not self.strm.isEndOfRecord():
             b = self.strm.readUnsignedInt(1)
-            if not _tokenMap.has_key(b):
+            if not b  in _tokenMap:
                 # Unknown token.  Stop parsing.
                 raise FormulaParserError("unknown token 0x%2.2X"%b)
 

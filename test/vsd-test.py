@@ -23,7 +23,7 @@ class OLEStream(msodumper.docdirstream.DOCDirStream):
         msodumper.docdirstream.DOCDirStream.__init__(self, bytes)
 
     def dump(self):
-        print '<stream type="OLE" size="%d">' % self.size
+        print('<stream type="OLE" size="%d">' % self.size)
         header = Header(self)
         header.dump()
 
@@ -32,25 +32,25 @@ class OLEStream(msodumper.docdirstream.DOCDirStream):
         self.pos = (header.FirstDirSectorLocation + 1) * sectorSize
 
         DirectoryEntryName = msodumper.globals.getUTF8FromUTF16(self.readBytes(64))
-        print '<DirectoryEntryName value="%s"/>' % DirectoryEntryName
+        print('<DirectoryEntryName value="%s"/>' % DirectoryEntryName)
         DirectoryEntryNameLength = self.readuInt16()
-        print '<DirectoryEntryNameLength value="%s"/>' % DirectoryEntryNameLength
+        print('<DirectoryEntryNameLength value="%s"/>' % DirectoryEntryNameLength)
         ObjectType = self.readuInt8()
-        print '<ObjectType value="%s"/>' % ObjectType
+        print('<ObjectType value="%s"/>' % ObjectType)
         ColorFlag = self.readuInt8()
-        print '<ColorFlag value="%s"/>' % ColorFlag
+        print('<ColorFlag value="%s"/>' % ColorFlag)
         LeftSiblingID = self.readuInt32()
-        print '<LeftSiblingID value="0x%x"/>' % LeftSiblingID
+        print('<LeftSiblingID value="0x%x"/>' % LeftSiblingID)
         RightSiblingID = self.readuInt32()
-        print '<RightSiblingID value="0x%x"/>' % RightSiblingID
+        print('<RightSiblingID value="0x%x"/>' % RightSiblingID)
         ChildID = self.readuInt32()
-        print '<ChildID value="0x%x"/>' % ChildID
+        print('<ChildID value="0x%x"/>' % ChildID)
         msodumper.msometa.GUID(self, "CLSID").dump()
         StateBits = self.readuInt32()
-        print '<StateBits value="0x%x"/>' % StateBits
+        print('<StateBits value="0x%x"/>' % StateBits)
         msodumper.msometa.FILETIME(self, "CreationTime").dump()
         msodumper.msometa.FILETIME(self, "ModifiedTime").dump()
-        print '</stream>'
+        print('</stream>')
 
 
 class Header(msodumper.msometa.OLERecord):
@@ -58,7 +58,7 @@ class Header(msodumper.msometa.OLERecord):
         msodumper.msometa.OLERecord.__init__(self, parent)
 
     def dump(self):
-        print '<CFHeader>'
+        print('<CFHeader>')
         self.printAndSet("HeaderSignature", self.readuInt64())
         self.printAndSet("HeaderCLSID0", self.readuInt64())
         self.printAndSet("HeaderCLSID1", self.readuInt64())
@@ -79,16 +79,16 @@ class Header(msodumper.msometa.OLERecord):
         self.printAndSet("NumMiniFATSectors", self.readuInt32())
         self.printAndSet("FirstDIFATSectorLocation", self.readuInt32())
         self.printAndSet("NumDIFATSectors", self.readuInt32())
-        print '<DIFAT>'
+        print('<DIFAT>')
         self.DIFAT = []
         for i in range(109):
             n = self.readuInt32()
             if n == 0xffffffff:
                 break
-            print '<DIFAT index="%d" value="%x"/>' % (i, n)
+            print('<DIFAT index="%d" value="%x"/>' % (i, n))
             self.DIFAT.append(n)
-        print '</DIFAT>'
-        print '</CFHeader>'
+        print('</DIFAT>')
+        print('</CFHeader>')
 
 
 class OLEDumper:
@@ -99,13 +99,14 @@ class OLEDumper:
         file = open(self.filepath, 'rb')
         strm = OLEStream(file.read())
         file.close()
-        print '<?xml version="1.0"?>'
+        print('<?xml version="1.0"?>')
         strm.dump()
 
 
 def main(args):
     dumper = OLEDumper(args[1])
     dumper.dump()
+
 
 if __name__ == '__main__':
     main(sys.argv)
