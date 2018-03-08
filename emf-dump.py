@@ -19,7 +19,7 @@ class EMFDumper:
         file = open(self.filepath, 'rb')
         strm = emfrecord.EMFStream(file.read())
         file.close()
-        print '<?xml version="1.0"?>'
+        print('<?xml version="1.0"?>')
         strm.dump()
 
 

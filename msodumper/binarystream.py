@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-import globals
+from . import globals
 import struct
 from xml.sax.saxutils import quoteattr
 
@@ -37,12 +37,17 @@ class BinaryStream:
         if offset:
             attrs += ' offset="%s"' % hex(self.pos)
         if end:
-            print '<%s value="%s"%s/>' % (key, value, attrs)
+            print('<%s value="%s"%s/>' % (key, value, attrs))
         else:
-            print '<%s value="%s"%s>' % (key, value, attrs)
+            print('<%s value="%s"%s>' % (key, value, attrs))
 
     def quoteAttr(self, value):
         """Wrapper around xml.sax.saxutils.quoteattr, assumes the caller will put " around the result."""
+
+        if globals.PY3:
+            if type(value) == type(b""):
+                # can't have bytes here, crashes later in saxutils
+                value = value.decode('cp1252')
         ret = quoteattr("'" + value + "'")
         return ret[2:len(ret) - 2]
 
@@ -83,7 +88,7 @@ class BinaryStream:
         return ret
 
     def getuInt24(self):
-        return struct.unpack("<I", self.bytes[self.pos:self.pos + 3] + "\x00")[0]
+        return struct.unpack("<I", self.bytes[self.pos:self.pos + 3] + b"\x00")[0]
 
     def getuInt32(self, bytes=None, pos=None):
         if not bytes:
@@ -164,7 +169,7 @@ class BinaryStream:
         return (byte & (1 << bitNumber)) >> bitNumber
 
     def dump(self):
-        print '<stream name="%s" size="%s"/>' % (self.quoteAttr(globals.encodeName(self.name)), self.size)
+        print('<stream name="%s" size="%s"/>' % (self.quoteAttr(globals.encodeName(self.name)), self.size))
 
     # compat methods to make msodraw happy
     def readUnsignedInt(self, size):
@@ -190,6 +195,6 @@ class BinaryStream:
         self.pos += byteCount
 
     def appendLine(self, line):
-        print line
+        print("%s"%line)
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

@@ -4,8 +4,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
-import globals
+from builtins import range
+from . import globals
 
 # -------------------------------------------------------------------
 # record handler classes
@@ -51,7 +51,7 @@ append a line to be displayed.
         # can't keep the text local and let output() behave according
         # to params. Have to use a global if we want to keep a minimal
         # modification
-        globals.textdump += text + "\n"
+        globals.textdump += text + b"\n"
 
     def appendLine (self, line):
         self.lines.append(line)
@@ -123,7 +123,7 @@ class String(BaseRecordHandler):
         # chars, with the high byte ignored. Only latin1 could stand
         # this transformation.
         name = name.decode('cp1252').encode('UTF-8')
-        self.appendLine("text: '%s'"%name)
+        self.appendLine("text: '%s'"%name.decode('UTF-8'))
         self.appendText(name)
 
 def ShapeString (*args):
@@ -136,7 +136,7 @@ class UniString(BaseRecordHandler):
     def parseBytes (self):
         name = globals.getUTF8FromUTF16(globals.getTextBytes(self.readRemainingBytes()))
         self.appendProperty(name)
-        self.appendLine("text: '%s'"%name)
+        self.appendLine("text: '%s'"%name.decode('UTF-8'))
         self.appendText(name)
 
 def ShapeUniString (*args):
@@ -163,7 +163,7 @@ class FontEntity(BaseRecordHandler):
         flags          = self.readUnsignedInt(1)
         fontType       = self.readUnsignedInt(1)
         pitchAndFamily = self.readUnsignedInt(1)
-        self.appendLine("Font: name=\"%s\" charset=%d flags=0x%x type=%d family=%d"%(faceName, charSet, flags, fontType, pitchAndFamily))
+        self.appendLine("Font: name=\"%s\" charset=%d flags=0x%x type=%d family=%d"%(globals.nulltrunc(faceName).decode('cp1252'), charSet, flags, fontType, pitchAndFamily))
 
 # -------------------------------------------------------------------
 # special record handler: properties
@@ -177,7 +177,7 @@ class Property(BaseRecordHandler):
         allComplexBytes = self.bytes[self.pos+self.recordInstance*6:]
 
         # recordInstance gives number of properties
-        for i in xrange(0, self.recordInstance):
+        for i in range(0, self.recordInstance):
             propType = self.readUnsignedInt(2)
             propValue = self.readUnsignedInt(4)
 
@@ -521,7 +521,7 @@ class AnimationInfo(BaseRecordHandler):
         try:
             # can fail with index out of range
             self.appendLine("build type: %s"%buildDesc[buildType])
-        except Exception, err:
+        except Exception as err:
             error("AnimationInfo::parsebytes: %s: %s" % (str(buildType),str(err)))
 
         flyDesc = ["none","random","blinds","checker","cover","dissolve",
@@ -596,7 +596,7 @@ class AnimAttributeValue(BaseRecordHandler):
 
     def handleString (self):
         value = globals.getUTF8FromUTF16(globals.getTextBytes(self.readRemainingBytes()))
-        self.appendLine("text value: '%s'"%value)
+        self.appendLine("text value: '%s'"%value.decode('UTF-8'))
 
     valueHandlers=[handleByte,handleLong,handleFloat,handleString]
 
@@ -728,7 +728,7 @@ class TextRulerAtom(BaseRecordHandler):
 
         if rulerMask & 0x0004:
             numTabStops = self.readUnsignedInt(2)
-            for i in xrange(0, numTabStops):
+            for i in range(0, numTabStops):
                 tabDistance = self.readUnsignedInt(2)
                 tabAlignment = self.readUnsignedInt(2)
                 self.appendParaProp("para tab stop %d: distance %d, align %4.4Xh"%(i, tabDistance, tabAlignment))
@@ -879,7 +879,7 @@ class TextStyles(BaseRecordHandler):
 
         if styleMask & 0x100000:
             numTabStops = self.readUnsignedInt(2)
-            for i in xrange(0, numTabStops):
+            for i in range(0, numTabStops):
                 tabDistance = self.readUnsignedInt(2)
                 tabAlignment = self.readUnsignedInt(2)
                 self.appendParaProp("para tab stop %d: distance %d, align %4.4Xh"%(i, tabDistance, tabAlignment))
@@ -947,7 +947,7 @@ class MasterTextStyles(TextStyles):
         # entry misses the indent specifier it has for StyleTextAtom.
         numLevels = self.readUnsignedInt(2)
 
-        for i in xrange(0, numLevels):
+        for i in range(0, numLevels):
             self.appendLine("para props for indent level: %d"%i)
             self.parseParaStyle()
             self.appendLine("-"*61)
@@ -989,7 +989,7 @@ class BoolPropertyHandler(BasePropertyHandler):
 
     def output (self):
         bitMask = 1
-        for i in xrange(self.propType, self.propType-32, -1):
+        for i in range(self.propType, self.propType-32, -1):
             if i in propData:
                 propEntry = propData[i]
                 if propEntry[1] == BoolPropertyHandler:
@@ -1024,7 +1024,7 @@ class MsoArrayPropertyHandler(BasePropertyHandler):
             dummy = self.readUnsignedInt(2)
             elementSize = self.readUnsignedInt(2)
             self.printer("%4.4Xh: %s: [\"%s\"]"%(self.propType, self.propEntry[0], self.propEntry[2]))
-            for i in xrange(0, numElements):
+            for i in range(0, numElements):
                 if elementSize in [0,1,2,4]:
                     currElem = self.readUnsignedInt(elementSize)
                     self.printer("%4.4Xh: %d = %Xh"%(self.propType,i,currElem))
@@ -1038,7 +1038,7 @@ class UniCharPropertyHandler(BasePropertyHandler):
     def output (self):
         if self.isComplex:
             name = globals.getUTF8FromUTF16(globals.getTextBytes(self.bytes))
-            self.printer("%4.4Xh: %s = %s: [\"%s\"]"%(self.propType, self.propEntry[0], name, self.propEntry[2]))
+            self.printer("%4.4Xh: %s = %s: [\"%s\"]"%(self.propType, self.propEntry[0], name.decode('UTF-8'), self.propEntry[2]))
 
 class FixedPointHandler(BasePropertyHandler):
     """FixedPoint property."""
