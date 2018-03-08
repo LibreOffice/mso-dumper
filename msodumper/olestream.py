@@ -6,7 +6,7 @@
 #
 
 import sys
-import globals
+from . import globals
 
 class CompObjStreamError(Exception): pass
 
@@ -76,11 +76,11 @@ class CompObjStream(object):
         # LengthPrefixedAnsiString
         length = self.strm.readUnsignedInt(4)
         displayName = self.strm.readBytes(length)
-        if ord(displayName[-1]) != 0x00:
+        if globals.indexbytes(displayName, -1) != 0x00:
             # must be null-terminated.
             raise CompObjStreamError()
 
-        globals.outputln("display name: " + displayName[:-1])
+        globals.outputln("display name: " + globals.encodeName(displayName[:-1]))
 
         # ClipboardFormatOrAnsiString
         marker = self.strm.readUnsignedInt(4)
@@ -92,7 +92,7 @@ class CompObjStream(object):
             globals.outputln("clipboard format ID: %d"%clipFormatID)
         else:
             clipName = self.strm.readBytes(marker)
-            if ord(clipName[-1]) != 0x00:
+            if globals.indexbytes(clipName, -1) != 0x00:
                 # must be null-terminated.
                 raise CompObjStreamError()
             globals.outputln("clipboard format name: %s"%clipName[:-1])
@@ -104,7 +104,7 @@ class CompObjStream(object):
             raise CompObjStreamError()
 
         reserved = self.strm.readBytes(length)
-        if ord(reserved[-1]) != 0x00:
+        if globals.indexbytes(reserved, -1) != 0x00:
             # must be null-terminated.
             raise CompObjStreamError()
 
@@ -129,7 +129,7 @@ class CompObjStream(object):
             globals.outputln("clipboard format ID: %d"%clipFormatID)
         else:
             clipName = globals.getUTF8FromUTF16(self.strm.readBytes(marker*2))
-            if ord(clipName[-1]) != 0x00:
+            if globals.indexbytes(clipName, -1) != 0x00:
                 # must be null-terminated.
                 raise CompObjStreamError()
             globals.outputln("clipboard format name: %s"%clipName[:-1])

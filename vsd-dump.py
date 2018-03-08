@@ -21,18 +21,19 @@ class VSDDumper:
         strm = vsdstream.createVSDFile(file.read(), self.params)
         file.close()
         dirnames = strm.getDirectoryNames()
-        print '<?xml version="1.0"?>\n<streams ole-type="%s">' % strm.getName()
+        print('<?xml version="1.0"?>\n<streams ole-type="%s">' % strm.getName())
         if strm.error:
-            print '<error what="%s"/>' % strm.error
+            print('<error what="%s"/>' % strm.error)
         for dirname in dirnames:
             strm.getDirectoryStreamByName(dirname).dump()
-        print '</streams>'
+        print('</streams>')
 
 
 def main(args):
     params = globals.Params()
     dumper = VSDDumper(args[1], params)
     dumper.dump()
+
 
 if __name__ == '__main__':
     main(sys.argv)

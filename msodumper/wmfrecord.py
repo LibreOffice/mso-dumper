@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from binarystream import BinaryStream
+from .binarystream import BinaryStream
 
 
 # The BrushStyle Enumeration specifies the different possible brush types that can be used in graphics operations.
@@ -313,12 +313,12 @@ class RectL(WMFRecord):
             self.name = "rectL"
 
     def dump(self):
-        print '<%s type="RectL">' % self.name
+        print('<%s type="RectL">' % self.name)
         self.printAndSet("Left", self.readInt32(), hexdump=False)
         self.printAndSet("Top", self.readInt32(), hexdump=False)
         self.printAndSet("Right", self.readInt32(), hexdump=False)
         self.printAndSet("Bottom", self.readInt32(), hexdump=False)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -332,10 +332,10 @@ class SizeL(WMFRecord):
             self.name = "sizeL"
 
     def dump(self):
-        print '<%s type="SizeL">' % self.name
+        print('<%s type="SizeL">' % self.name)
         self.printAndSet("cx", self.readuInt32(), hexdump=False)
         self.printAndSet("cy", self.readuInt32(), hexdump=False)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -349,10 +349,10 @@ class PointL(WMFRecord):
             self.name = "pointL"
 
     def dump(self):
-        print '<%s type="PointL">' % self.name
+        print('<%s type="PointL">' % self.name)
         self.printAndSet("x", self.readInt32(), hexdump=False)
         self.printAndSet("y", self.readInt32(), hexdump=False)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -363,10 +363,10 @@ class PointS(WMFRecord):
         self.name = name
 
     def dump(self):
-        print '<%s type="PointS">' % self.name
+        print('<%s type="PointS">' % self.name)
         self.printAndSet("x", self.readInt16(), hexdump=False)
         self.printAndSet("y", self.readInt16(), hexdump=False)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -377,12 +377,12 @@ class ColorRef(WMFRecord):
         self.name = name
 
     def dump(self):
-        print '<%s type="ColorRef">' % self.name
+        print('<%s type="ColorRef">' % self.name)
         self.printAndSet("Red", self.readuInt8(), hexdump=False)
         self.printAndSet("Green", self.readuInt8(), hexdump=False)
         self.printAndSet("Blue", self.readuInt8(), hexdump=False)
         self.printAndSet("Reserved", self.readuInt8(), hexdump=False)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:

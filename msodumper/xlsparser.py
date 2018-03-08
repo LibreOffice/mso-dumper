@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-import xlsrecord
+from . import xlsrecord
 
 
 ############## Common parsers ##########################################
@@ -47,7 +47,7 @@ class BaseParser(object):
             return Seq(self, other)
 
 def safeParse(parser, stream):
-    #print "TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex]))
+    #print("TRACE:[%s,%s]" % (str(parser), str(stream.tokens[stream.currentIndex])))
 
     parsed = None
     try:
@@ -710,7 +710,7 @@ class XlsParser(BaseParser):
                     parsed = parser.parse(stream) # skipping the unknown stream
                     parsedList.append(parsed)
             except ParseException:
-                print ("Parse failed, previous token is [%s], next tokens are [%s]" % (stream.tokens[stream.currentIndex-1],
+                print("Parse failed, previous token is [%s], next tokens are [%s]" % (stream.tokens[stream.currentIndex-1],
                                                                                        ','.join(map(str,stream.tokens[stream.currentIndex:stream.currentIndex+5]))))
                 raise
         return parsedList

@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
+from builtins import range
 import  sys, struct
 
 class VBAStreamBase:
@@ -44,13 +44,13 @@ class UnCompressedVBAStream(VBAStreamBase):
         if self.DecompressedBufferEnd < lastByte:
            lastByte =  self.DecompressedBufferEnd
 
-        for index in xrange( self.DecompressedChunkStart,  lastByte ):
+        for index in range( self.DecompressedChunkStart,  lastByte ):
             self.CompressedContainer[ self.CompressedCurrent ] = self.chars[ index ]
             self.CompressedCurrent = self.CompressedCurrent + 1
             self.DecompressedCurrent = self.DecompressedCurrent + 1
             padCount = padCount - 1
 
-        for index in xrange( 0, padCount ):
+        for index in range( 0, padCount ):
             self.CompressedContainer[ self.CompressedCurrent ] = 0x0;
             self.CompressedCurrent = self.CompressedCurrent + 1
 
@@ -109,7 +109,7 @@ class UnCompressedVBAStream(VBAStreamBase):
         flagByteIndex = self.CompressedCurrent
         tokenFlags = 0
         self.CompressedCurrent = self.CompressedCurrent + 1
-        for index in xrange(0,8):
+        for index in range(0,8):
             if ( ( self.DecompressedCurrent < decompressedEnd )
                 and (self.CompressedCurrent < compressedEnd) ):
 
@@ -170,7 +170,7 @@ class UnCompressedVBAStream(VBAStreamBase):
 
 class CompressedVBAStream(VBAStreamBase):
     def __decompressRawChunk (self):
-        for i in xrange(0,self.CHUNKSIZE):
+        for i in range(0,self.CHUNKSIZE):
             self.DecompressedChunk[ self.DecompressedCurrent + i ] =  self.chars[self.CompressedCurrent + i ]
         self.CompressedCurrent += self.CHUNKSIZE
         self.DecompressedCurrent += self.CHUNKSIZE
@@ -187,7 +187,7 @@ class CompressedVBAStream(VBAStreamBase):
         destSize = len( self.DecompressedChunk )
         srcCurrent = srcOffSet
         dstCurrent = dstOffSet
-        for i in xrange( 0, length ):
+        for i in range( 0, length ):
             self.DecompressedChunk[ dstCurrent ] = self.DecompressedChunk[ srcCurrent ]
             srcCurrent +=1
             dstCurrent +=1
@@ -210,7 +210,7 @@ class CompressedVBAStream(VBAStreamBase):
         flagByte = struct.unpack("b", self.chars[self.CompressedCurrent ])[0]
         self.CompressedCurrent += 1
         if  self.CompressedCurrent < self.CompressedEnd:
-            for i in xrange(0,8):
+            for i in range(0,8):
                 if  self.CompressedCurrent < self.CompressedEnd:
                     self.__decompressToken(i,flagByte)
 

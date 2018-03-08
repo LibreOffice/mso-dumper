@@ -5,10 +5,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-import ole
-from binarystream import BinaryStream
-from msometa import SummaryInformationStream
-from msometa import DocumentSummaryInformationStream
+from . import ole
+from .binarystream import BinaryStream
+from .msometa import SummaryInformationStream
+from .msometa import DocumentSummaryInformationStream
 
 
 class VSDFile:

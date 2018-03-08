@@ -38,6 +38,13 @@ def _usage(this_file):
     return """SYNOPSIS: pretty print an XML document
 USAGE: python %s <filename> \n""" % this_file
 
+# Note about encodings: for python3, the default output (sys.stdout)
+# expects str (decoded) data, and this is also the case for the output
+# used with ppt-dump (appendline(), which is called with str data): so
+# we decode the raw data. As the existing code does not deal with a
+# possible encoding specification (<?xml encoding="xxx"), we make the
+# reasonable assumption that it is utf-8.
+
 def _pprint_line(indent_level, line, width=100, output=_sys.stdout):
     if line.strip():
         start = ""
@@ -112,7 +119,7 @@ def pprint(xml, output=_sys.stdout, indent=4, width=80):
     """Pretty print xml.
     Use output to select output stream. Default is sys.stdout
     Use indent to select indentation level. Default is 4   """
-    data = xml
+    data = xml.decode('utf-8')
     indent_level = 0
     start_pos, end_pos, is_stop, no_indent  = _get_next_elem(data)
     while ((start_pos > -1 and end_pos > -1)):
