@@ -4,16 +4,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
+from builtins import range
 import sys
-import globals
-from globals import getSignedInt
+from . import globals
+from .globals import getSignedInt, output
 # ----------------------------------------------------------------------------
 # Reference: The Microsoft Compound Document File Format by Daniel Rentz
 # http://sc.openoffice.org/compdocfileformat.pdf
 # ----------------------------------------------------------------------------
-
-from globals import output
 
 
 class NoRootStorage(Exception): pass
@@ -37,7 +35,7 @@ class Header(object):
 
     @staticmethod
     def byteOrder (chars):
-        b1, b2 = ord(chars[0]), ord(chars[1])
+        b1, b2 = globals.indexbytes(chars,0), globals.indexbytes(chars, 1)
         if b1 == 0xFE and b2 == 0xFF:
             return ByteOrder.LittleEndian
         elif b1 == 0xFF and b2 == 0xFE:
@@ -90,10 +88,16 @@ class Header(object):
 
     def output (self):
 
-        def printRawBytes (bytes):
-            for b in bytes:
-                output("%2.2X "%ord(b))
-            output("\n")
+        if globals.PY3:
+            def printRawBytes (bytes):
+                for b in bytes:
+                    output("%2.2X "%b)
+                output("\n")
+        else:
+            def printRawBytes (bytes):
+                for b in bytes:
+                    output("%2.2X "%ord(b))
+                output("\n")
 
         def printSep (c, w, prefix=''):
             globals.outputln(prefix + c*w)
@@ -191,7 +195,7 @@ class Header(object):
 
         # First part of MSAT consisting of an array of up to 109 sector IDs.
         # Each sector ID is 4 bytes in length.
-        for i in xrange(0, 109):
+        for i in range(0, 109):
             pos = 76 + i*4
             id = getSignedInt(self.bytes[pos:pos+4])
             if id == -1:
@@ -210,7 +214,7 @@ class Header(object):
                 pos = 512 + secID*size
                 bytes = self.bytes[pos:pos+size]
                 n = int(size/4)
-                for i in xrange(0, n):
+                for i in range(0, n):
                     pos = i*4
                     id = getSignedInt(bytes[pos:pos+4])
                     if id < 0:
@@ -342,14 +346,14 @@ class SAT(object):
         self.array = []
         for secID in self.sectorIDs:
             pos = 512 + secID*self.sectorSize
-            for i in xrange(0, numItems):
+            for i in range(0, numItems):
                 beginPos = pos + i*4
                 id = getSignedInt(self.bytes[beginPos:beginPos+4])
                 self.array.append(id)
 
 
     def outputRawBytes (self):
-        bytes = ""
+        bytes = b""
         for secID in self.sectorIDs:
             pos = 512 + secID*self.sectorSize
             bytes += self.bytes[pos:pos+self.sectorSize]
@@ -365,7 +369,7 @@ class SAT(object):
         sectorM4 = 0       # -4
         sectorMElse = 0    # < -4
         sectorLiveTotal = 0
-        for i in xrange(0, len(self.array)):
+        for i in range(0, len(self.array)):
             item = self.array[i]
             if item >= 0:
                 sectorP += 1
@@ -399,7 +403,7 @@ class SAT(object):
         if self.params.debug:
             self.outputRawBytes()
             globals.outputln("-"*globals.OutputWidth)
-            for i in xrange(0, len(self.array)):
+            for i in range(0, len(self.array)):
                 globals.outputln("%5d: %5d"%(i, self.array[i]))
             globals.outputln("-"*globals.OutputWidth)
 
@@ -440,7 +444,7 @@ sectors are contained in the SAT as a sector ID chain.
         if self.params.debug:
             self.outputRawBytes()
             globals.outputln("-"*globals.OutputWidth)
-            for i in xrange(0, len(self.array)):
+            for i in range(0, len(self.array)):
                 item = self.array[i]
                 output("%3d : %3d\n"%(i, item))
 
@@ -498,7 +502,7 @@ entire file stream.
         self.SSAT = header.getSSAT()
         self.header = header
         self.RootStorage = None
-        self.RootStorageBytes = ""
+        self.RootStorageBytes = b""
         self.params = params
 
 
@@ -526,7 +530,7 @@ entire file stream.
             if self.RootStorage == None:
                 raise NoRootStorage
 
-            bytes = ""
+            bytes = b""
             self.__buildRootStorageBytes()
             size = self.header.getShortSectorSize()
             for id in chain:
@@ -536,7 +540,7 @@ entire file stream.
 
         offset = 512
         size = self.header.getSectorSize()
-        bytes = ""
+        bytes = b""
         for id in chain:
             pos = offset + id*size
             bytes += self.header.bytes[pos:pos+size]
@@ -548,7 +552,7 @@ entire file stream.
         return bytes
 
     def getRawStreamByName (self, name):
-        bytes = []
+        bytes = b''
         for entry in self.entries:
             if entry.Name == name:
                 bytes = self.__getRawStream(entry)
@@ -584,11 +588,13 @@ entire file stream.
 
     def __outputEntry (self, entry, debug):
         globals.outputln("-"*globals.OutputWidth)
-        if len(entry.Name) > 0:
+        if len(entry.Name) > 0 and globals.indexbytes(entry.Name, 0) != 0:
             name = entry.Name
-            if ord(name[0]) <= 5:
-                name = "<%2.2Xh>%s"%(ord(name[0]), name[1:])
-            globals.outputln("name: %s   (name buffer size: %d bytes)"%(name, entry.CharBufferSize))
+            # entry.Name : utf-8 bytes
+            if globals.indexbytes(name, 0) <= 5:
+                name = b"<%2.2Xh>%s"%(globals.indexbytes(name, 0), name[1:])
+            sname = globals.nulltrunc(name).decode('utf-8')
+            globals.outputln("name: %s   (name buffer size: %d bytes)"%(sname, entry.CharBufferSize))
         else:
             globals.outputln("name: [empty]   (name buffer size: %d bytes)"%entry.CharBufferSize)
 
@@ -680,8 +686,13 @@ entire file stream.
             return
 
         output("%s: "%name)
-        for byte in bytes:
-            output("%2.2X "%ord(byte))
+        if globals.PY3:
+            for byte in bytes:
+                output("%2.2X "%byte)
+        else:
+            for byte in bytes:
+                output("%2.2X "%ord(byte))
+
         globals.outputln("")
 
     def getDirectoryEntries (self):
@@ -700,7 +711,7 @@ entire file stream.
             return
 
         # combine all sectors first.
-        bytes = ""
+        bytes = b""
         for secID in self.sectorIDs:
             pos = globals.getSectorPos(secID, self.sectorSize)
             bytes += self.bytes[pos:pos+self.sectorSize]
@@ -711,7 +722,7 @@ entire file stream.
         numEntries = int(len(bytes)/128)
         if numEntries == 0:
             return
-        for i in xrange(0, numEntries):
+        for i in range(0, numEntries):
             pos = i*128
             self.entries.append(self.parseDirEntry(bytes[pos:pos+128]))
 

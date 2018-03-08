@@ -8,7 +8,7 @@
 import sys, os.path, optparse
 sys.path.append(sys.path[0]+"/src")
 
-import ole, globals
+from . import ole, globals
 
 
 def main ():

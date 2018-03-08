@@ -4,8 +4,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
-import globals, node, formula
+from builtins import range
+from . import globals, node, formula
 
 
 class ModelType:
@@ -48,7 +48,7 @@ class Workbook(ModelBase):
         return self.__sheets[-1]
 
     def getWorkbookGlobal (self):
-        return filter(lambda x: isinstance(x, WorkbookGlobal), self.__sheets)[0]
+        return list(filter(lambda x: isinstance(x, WorkbookGlobal), self.__sheets))[0]
 
     def getCurrentSheet (self):
         return self.__sheets[-1]
@@ -56,7 +56,7 @@ class Workbook(ModelBase):
     def createDOM (self):
         nd = node.Element('workbook')
         nd.setAttr('encrypted', self.encrypted)
-        sheets = filter(lambda x: isinstance(x, Worksheet), self.__sheets)
+        sheets = list(filter(lambda x: isinstance(x, Worksheet), self.__sheets))
         n = len(sheets)
         if n == 0:
             return nd
@@ -132,14 +132,13 @@ To store external reference cache from XCT/CRN records."""
         self.__rows = {}
 
     def setValue (self, row, col, celltype, val):
-        if not self.__rows.has_key(row):
+        if not row in self.__rows:
             self.__rows[row] = {}
         self.__rows[row][col] = (celltype, val)
 
     def createDOM (self, wb):
         nd = node.Element("sheet")
-        rows = self.__rows.keys()
-        rows.sort()
+        rows = sorted(self.__rows.keys())
         for row in rows:
             rowElem = nd.appendElement("row")
             rowElem.setAttr("id", row)
@@ -257,7 +256,7 @@ class WorkbookGlobal(SheetBase):
         self.__dbRanges[sheetID] = tokens
 
     def getFilterRange (self, sheetID):
-        if not self.__dbRanges.has_key(sheetID):
+        if not sheetID in self.__dbRanges:
             return None
 
         return self.__dbRanges[sheetID]
@@ -325,7 +324,7 @@ class Worksheet(SheetBase):
 
     def setAutoFilterArrowSize (self, arrowSize):
         arrows = []
-        for i in xrange(0, arrowSize):
+        for i in range(0, arrowSize):
             arrows.append(None)
 
         # Swap with the new and empty list.
@@ -335,7 +334,7 @@ class Worksheet(SheetBase):
         self.__autoFilterArrows[filterID] = obj
 
     def setCell (self, col, row, cell):
-        if not self.__rows.has_key(row):
+        if not row in self.__rows:
             self.__rows[row] = {}
 
         self.__rows[row][col] = cell
@@ -364,8 +363,7 @@ class Worksheet(SheetBase):
         nd.setAttr('version', self.version)
 
         # cells
-        rows = self.__rows.keys()
-        rows.sort()
+        rows = sorted(self.__rows.keys())
         for row in rows:
             rowNode = nd.appendElement('row')
             rowNode.setAttr('id', row)
@@ -437,7 +435,7 @@ class Worksheet(SheetBase):
         elem = baseNode.appendElement('autofilter')
         elem.setAttr('range', cellRange.getName())
 
-        for i in xrange(0, len(self.__autoFilterArrows)):
+        for i in range(0, len(self.__autoFilterArrows)):
             arrowObj = self.__autoFilterArrows[i]
             if arrowObj == None:
                 arrow = elem.appendElement('arrow')

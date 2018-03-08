@@ -4,13 +4,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
-import globals, xlsmodel
+from builtins import range
+from . import globals, xlsmodel
 import sys
 import textwrap
 import zlib
 import base64
-from pptrecord import shapeTypes
+from .pptrecord import shapeTypes
 
 def indent (level):
     return '  '*level
@@ -20,12 +20,12 @@ def headerLine ():
 
 def mm100_to_twip(value):
     if value >= 0:
-        return (((value)*72+63)/127)
+        return (((value)*72+63)//127)
     else:
-        return (((value)*72-63)/127)
+        return (((value)*72-63)//127)
 
 def emu_to_mm100(value):
-    return value / 360
+    return value // 360
 
 def emu_to_twip(value):
     return mm100_to_twip(emu_to_mm100(value))
@@ -33,7 +33,7 @@ def emu_to_twip(value):
 def hexdump(value):
     ret = []
     for i in value:
-        ret.append("%02x" % ord(i))
+        ret.append("%02x" % globals.indexedbytetoint(i))
     return "".join(ret)
 
 def inflate(bytes):
@@ -90,7 +90,7 @@ class RecordHeader:
 
     @staticmethod
     def getRecTypeName (recType):
-        if RecordHeader.containerTypeNames.has_key(recType):
+        if recType in RecordHeader.containerTypeNames:
             return RecordHeader.containerTypeNames[recType]
         return 'unknown'
 
@@ -105,7 +105,7 @@ class RecordHeader:
     def __init__ (self, strm):
         mixed = strm.readUnsignedInt(2)
         self.recVer = (mixed & 0x000F)
-        self.recInstance = (mixed & 0xFFF0) / 16
+        self.recInstance = (mixed & 0xFFF0) // 16
         self.recType = strm.readUnsignedInt(2)
         self.recLen  = strm.readUnsignedInt(4)
 
@@ -131,9 +131,9 @@ class RecordHeader:
 class ColorRef:
     def __init__ (self, byte):
         self.red   = (byte & 0x000000FF)
-        self.green = (byte & 0x0000FF00) / 256
-        self.blue  = (byte & 0x00FF0000) / 65536
-        self.flag  = (byte & 0xFF000000) / 16777216
+        self.green = (byte & 0x0000FF00) // 256
+        self.blue  = (byte & 0x00FF0000) // 65536
+        self.flag  = (byte & 0xFF000000) // 16777216
 
         self.paletteIndex = (self.flag & 0x01) != 0
         self.paletteRGB   = (self.flag & 0x02) != 0
@@ -253,7 +253,7 @@ class FDGGBlock:
         # NOTE: The spec says head.cidcl stores the number of IDCL's, but each
         # FDGGBlock only contains bytes enough to store (head.cidcl - 1) of
         # IDCL's.
-        for i in xrange(0, self.head.cidcl-1):
+        for i in range(0, self.head.cidcl-1):
             idcl = IDCL(strm)
             self.idcls.append(idcl)
 
@@ -285,8 +285,8 @@ class FDGSL:
         self.dgslk = strm.readUnsignedInt(4) # selection mode
         self.shapeFocus = strm.readUnsignedInt(4) # shape ID in focus
         self.shapesSelected = []
-        shapeCount = (strm.getSize() - 20)/4
-        for i in xrange(0, shapeCount):
+        shapeCount = (strm.getSize() - 20)//4
+        for i in range(0, shapeCount):
             spid = strm.readUnsignedInt(4)
             self.shapesSelected.append(spid)
 
@@ -544,7 +544,7 @@ class FOPT:
             # A null-terminated Unicode string.
             try:
                 self.string = prop.extra[0:-2].decode('utf-16')
-            except UnicodeDecodeError, reason:
+            except UnicodeDecodeError as reason:
                 self.todo = reason
                 self.string = prop.extra[0:-2].decode('utf-16', errors="replace")
 
@@ -555,7 +555,7 @@ class FOPT:
         def dumpXml(self, recHdl, prop):
             self.__parseBytes(prop)
             if self.todo:
-                print '<todo what="UnicodeComplex::dumpXml(): %s"/>' % self.todo
+                print('<todo what="UnicodeComplex::dumpXml(): %s"/>' % self.todo)
             recHdl.appendLine('<%s value="%s"/>' % (self.name, globals.encodeName(self.string)))
 
     class GtextUNICODE(UnicodeComplex):
@@ -651,18 +651,18 @@ class FOPT:
             flag = prop.value
             flagCount = len(FOPT.GroupShape.flagNames)
             recHdl.appendLine(indent(level)+"flag: 0x%8.8X"%flag)
-            for i in xrange(0, flagCount):
+            for i in range(0, flagCount):
                 bval = (flag & 0x00000001)
                 recHdl.appendLine(indent(level)+"%s: %s"%(FOPT.GroupShape.flagNames[i], recHdl.getTrueFalse(bval)))
-                flag /= 2
+                flag //= 2
 
         def dumpXml(self, recHdl, prop):
             flag = prop.value
             flagCount = len(FOPT.GroupShape.flagNames)
-            for i in xrange(0, flagCount):
+            for i in range(0, flagCount):
                 bval = (flag & 0x00000001)
                 recHdl.appendLine('<%s value="%s"/>' % (FOPT.GroupShape.flagNames[i], bval))
-                flag /= 2
+                flag //= 2
 
     class ShapeBooleanProperties:
 
@@ -829,7 +829,7 @@ class FOPT:
     def __parseBytes(self, rh):
         complexPos = self.strm.pos + (rh.recInstance * 6)
         strm = globals.ByteStream(self.strm.readBytes(rh.recLen))
-        for i in xrange(0, rh.recInstance):
+        for i in range(0, rh.recInstance):
             entry = FOPT.E()
             val = strm.readUnsignedInt(2)
             entry.ID          = (val & 0x3FFF)
@@ -848,10 +848,10 @@ class FOPT:
 
         recHdl.appendLine("FOPT content (property table):")
         recHdl.appendLine("  property count: %d"%rh.recInstance)
-        for i in xrange(0, rh.recInstance):
+        for i in range(0, rh.recInstance):
             recHdl.appendLine("    "+"-"*57)
             prop = self.properties[i]
-            if FOPT.propTable.has_key(prop.ID) and len(FOPT.propTable[prop.ID]) > 1:
+            if prop.ID in FOPT.propTable and len(FOPT.propTable[prop.ID]) > 1:
                 # We have a handler for this property.
                 # propData is expected to have two elements: name (0) and handler (1).
                 propHdl = FOPT.propTable[prop.ID]
@@ -865,7 +865,7 @@ class FOPT:
                     recHdl.appendLine("    blip ID: %d"%prop.value)
                 else:
                     # regular property value
-                    if FOPT.propTable.has_key(prop.ID):
+                    if prop.ID in FOPT.propTable:
                         recHdl.appendLine("    property name: %s"%FOPT.propTable[prop.ID][0])
                     recHdl.appendLine("    property value: 0x%8.8X"%prop.value)
 
@@ -874,7 +874,7 @@ class FOPT:
 
         recHdl.appendLine('<%s type="%s">' % (self.name, self.type))
         recHdl.appendLine('<fopt type="OfficeArtRGFOPTE">')
-        for i in xrange(0, rh.recInstance):
+        for i in range(0, rh.recInstance):
             recHdl.appendLine('<rgfopte index="%d">' % i)
             if i < len(self.properties):
                 prop = self.properties[i]
@@ -883,7 +883,7 @@ class FOPT:
                 recHdl.appendLine('<opid fBid="%d"/>' % prop.flagBid)
                 recHdl.appendLine('<opid fComplex="%d"/>' % prop.flagComplex)
                 recHdl.appendLine('</opid>')
-                if FOPT.propTable.has_key(prop.ID) and len(FOPT.propTable[prop.ID]) > 1:
+                if prop.ID in FOPT.propTable and len(FOPT.propTable[prop.ID]) > 1:
                     # We have a handler for this property.
                     # propData is expected to have two elements: name (0) and handler (1).
                     propHdl = FOPT.propTable[prop.ID]
@@ -891,7 +891,7 @@ class FOPT:
                     propHdl[1]().dumpXml(recHdl, prop)
                     recHdl.appendLine('</op>')
                 else:
-                    if FOPT.propTable.has_key(prop.ID):
+                    if prop.ID in FOPT.propTable:
                         recHdl.appendLine('<op name="%s" value="0x%8.8X"/>' % (FOPT.propTable[prop.ID][0], prop.value))
                     else:
                         recHdl.appendLine('<op name="todo" value="0x%8.8X"/>' % prop.value)
@@ -1080,7 +1080,7 @@ class BStoreContainer:
 
     def dumpXml(self, recHdl, model, rh):
         recHdl.appendLine('<bStoreContainer type="OfficeArtBStoreContainer">')
-        for i in xrange(rh.recInstance):
+        for i in range(rh.recInstance):
             bStoreContainerFileBlock = BStoreContainerFileBlock(self)
             bStoreContainerFileBlock.dumpXml(recHdl, model)
         recHdl.appendLine('</bStoreContainer>')
@@ -1089,7 +1089,7 @@ class SplitMenuColorContainer:
     def __init__ (self, strm):
         self.smca = []
         # this container contains 4 MSOCR records.
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             msocr = MSOCR(strm)
             self.smca.append(msocr)
 
@@ -1251,7 +1251,7 @@ class MSODrawHandler(globals.ByteStream):
                 continue
 
             self.parent.appendLine(headerLine())
-            if recData.has_key(rh.recType):
+            if rh.recType in recData:
                 obj = recData[rh.recType](self)
                 obj.appendLines(self.parent, rh)
             else:

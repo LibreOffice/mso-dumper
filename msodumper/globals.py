@@ -4,8 +4,37 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
+from builtins import range
+import sys, struct, math, zipfile, io
+from . import xmlpp
 
-import sys, struct, math, zipfile, xmlpp, StringIO
+PY3 = sys.version > '3'
+
+# Python3 bytes[i] is an integer, Python2  str[i] is an str of length 1
+# These functions explicitely return a given type for both 2 and 3
+# - indexbytes(): return bytes element at given index, as integer (uses
+#   ord() for python2)
+# - indexedbytetobyte: convert a value obtained by indexing into a bytes list
+#   (or from 'for x in somebytes') to a bytes list of len 1
+# - indexedbytetoint() return the same as an int (uses ord() for python2)
+#   
+if PY3:
+
+    def indexbytes(data, i):
+        return data[i]
+    def indexedbytetobyte(i):
+        return i.to_bytes(1, byteorder='big')        
+    def indexedbytetoint(i):
+        return i
+    nullchar = 0
+else:
+    def indexbytes(data, i):
+        return ord(data[i])
+    def indexedbytetobyte(i):
+        return i
+    def indexedbytetoint(i):
+        return ord(i)
+    nullchar = chr(0)
 
 OutputWidth = 76
 
@@ -124,64 +153,121 @@ def getValueOrUnknown (list, idx, errmsg='(unknown)'):
             return list[idx]
     elif listType == type({}):
         # dictionary
-        if list.has_key(idx):
+        if idx in list:
             return list[idx]
 
     return errmsg
 
 textdump = b""
 
+def dumptext():
+    data = textdump.replace(b"\r", b"\n")
+    if sys.platform == "win32":
+        import msvcrt
+        msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+    if PY3:
+        sys.stdout.buffer.write(data)
+    else:
+        sys.stdout.write(data)
+
+# Write msg to stdout, as bytes (encode it if needed)
 def output (msg, recordType = -1):
+    if type(msg) == type(u''):
+        msg = msg.encode('utf-8')
     if params.noStructOutput:
         return
     if recordType == -1 or not params.dumpedIds or \
            recordType in params.dumpedIds:
-        sys.stdout.write(msg)
+        if PY3:
+            sys.stdout.buffer.write(msg)
+        else:
+            sys.stdout.write(msg)
 
 def outputln(msg, recordType = -1):
-    output(msg + "\n", recordType)
+    if type(msg) == type(u''):
+        output(msg + "\n", recordType)
+    else:
+        output(msg + b"\n", recordType)
+
+# Replace sys.stdout as arg to prettyPrint and call our output method
+class utfwriter:
+    def write(self, s):
+        output(s)
 
 def error (msg):
-    sys.stderr.write("Error: " + msg)
+    sys.stderr.write("Error: %s\n"%msg)
 
 def debug (msg):
     sys.stderr.write("DEBUG: %s\n"%msg)
 
+def nulltrunc(bytes):
+    '''Return input truncated to first 0 byte, allowing, e.g., comparison
+    with a simple literal bytes string'''
+    try:
+        firstnull = bytes.index(nullchar)
+        bytes = bytes[:firstnull]
+    except:
+        pass
+    return bytes
 
+
+# This is syntaxically identical for python2 and python3 if the input is str 
 def encodeName (name, lowOnly = False, lowLimit = 0x20):
     """Encode name that contains unprintable characters."""
 
     n = len(name)
     if n == 0:
         return name
+    
+    if PY3 and (type(name) == type(b'')):
+        return _encodeNameBytes(name, n, lowOnly, lowLimit)
 
     newname = ''
-    for i in xrange(0, n):
-        if name[i] == '&':
+    for i in range(0, n):
+        if name[i] == '&'[0]:
             newname += "&amp;"
-        elif name[i] == '<':
+        elif name[i] == '<'[0]:
             newname += "&lt;"
-        elif name[i] == '>':
+        elif name[i] == '>'[0]:
             newname += "&gt;"
         elif ord(name[i]) < lowLimit or ((not lowOnly) and ord(name[i]) >= 127):
             newname += "\\x%2.2X"%ord(name[i])
         else:
             newname += name[i]
-
+    
     return newname
 
+# Python3 only. Same as above but accept bytes as input.
+def _encodeNameBytes (name, n, lowOnly = False, lowLimit = 0x20):
+    """Encode name that contains unprintable characters."""
+
+    newname = ''
+    for i in range(0, n):
+        if name[i] == b'&'[0]:
+            newname += "&amp;"
+        elif name[i] == '<'[0]:
+            newname += b"&lt;"
+        elif name[i] == '>'[0]:
+            newname += b"&gt;"
+        elif name[i] < lowLimit or ((not lowOnly) and name[i] >= 127):
+            newname += "\\x%2.2X"%name[i]
+        else:
+            newname += chr(name[i])
+
+    return newname
+    
 # Uncompress "compressed" UTF-16. This compression strips high bytes
 # from a string when they are all 0. Just restore them.
 def uncompCompUnicode(bytes):
-    out = ""
+    out = b""
     for b in bytes:
-        out += b
-        out += '\0'
+        out += indexedbytetobyte(b)
+        out += b'\0'
     return out
 
 class UnicodeRichExtText(object):
     def __init__ (self):
-        self.baseText = unicode()
+        self.baseText = u''
         self.phoneticBytes = []
 
 # Search sorted list for first element strictly bigger than input
@@ -252,7 +338,7 @@ def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
             if bytesPerChar == 1:
                 newdata = uncompCompUnicode(newdata)
 
-            ret.baseText +=  unicode(newdata, 'UTF-16LE', errors='replace')
+            ret.baseText +=  newdata.decode('UTF-16LE', errors='replace')
 
             textLen -= bytesToRead // bytesPerChar
             
@@ -266,7 +352,7 @@ def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
                     bytesPerChar = 1
                 
         if isRichStr:
-            for i in xrange(0, numElem):
+            for i in range(0, numElem):
                 posChar = strm.readUnsignedInt(2)
                 fontIdx = strm.readUnsignedInt(2)
 
@@ -282,6 +368,7 @@ def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
 
 def getRichText (bytes, textLen=None):
     """parse a string of the rich-text format that Excel uses.
+Return python2/3 unicode()/str()
 
 Note the following:
 
@@ -316,22 +403,29 @@ Note the following:
     totalByteLen = strm.getCurrentPos() + textLen + extraBytes
     if is16Bit:
         totalByteLen += textLen # double the text length since each char is 2 bytes.
-        text = unicode(strm.readBytes(2*textLen), 'UTF-16LE', errors='replace')
+        text = strm.readBytes(2*textLen).decode('UTF-16LE', errors='replace')
     else:
         if params.utf8:
             # Compressed Unicode-> latin1
             text = strm.readBytes(textLen).decode('cp1252')
         else:
             # Old behaviour with hex dump
-            text = strm.readBytes(textLen)
+            text = strm.readBytes(textLen).decode('cp1252')
 
     return (text, totalByteLen)
 
-def toCharOrDot (char):
-    if 32 < ord(char) and ord(char) < 127:
-        return char
-    else:
-        return '.'
+if PY3:
+    def toCharOrDot(char):
+        if 32 < char and char < 127:
+            return chr(char)
+        else:
+            return '.'
+else:
+    def toCharOrDot(char):
+        if 32 < ord(char) and ord(char) < 127:
+            return char
+        else:
+            return '.'
 
 def dumpBytes (chars, subDivide=None):
     if params.noStructOutput or params.noRawDump:
@@ -349,13 +443,13 @@ def dumpBytes (chars, subDivide=None):
     labelWidth = int(math.ceil(math.log(charLen, 10)))
     lineBuf = '' # bytes interpreted as chars at the end of each line
     i = 0
-    for i in xrange(0, charLen):
+    for i in range(0, charLen):
         if (i+1)%16 == 1:
             # print line header with seek position
             fmt = "%%%d.%dd: "%(labelWidth, labelWidth)
             output(fmt%i)
 
-        byte = ord(chars[i])
+        byte = indexbytes(chars, i)
         lineBuf += toCharOrDot(chars[i])
         output("%2.2X "%byte)
 
@@ -483,20 +577,20 @@ def getDouble (bytes):
 
 def getUTF8FromUTF16 (bytes):
     # little endian utf-16 strings
-    byteCount = len(bytes)
-    loopCount = int(byteCount/2)
+    loopCount = len(bytes) // 2
 
     # Truncate input to first null doublet
-    for i in xrange(0, loopCount):
-        if bytes[i*2] == '\x00':
-            if bytes[i*2+1] == '\x00':
+    for i in range(0, loopCount):
+        if indexbytes(bytes, i*2) == 0:
+            if indexbytes(bytes, i*2+1) == 0:
                 bytes = bytes[0:i*2]
                 break
 
     # Convert from utf-16 and return utf-8, using markers for
     # conversion errors
-    text = unicode(bytes, 'UTF-16LE', errors='replace')
-    return text.encode('UTF-8')
+    if type(bytes) != type(u''):
+        bytes = bytes.decode('UTF-16LE', errors='replace')
+    return bytes.encode('UTF-8')
 
 class StreamWrap(object):
     def __init__ (self,printer):
@@ -510,7 +604,7 @@ class StreamWrap(object):
 
 def outputZipContent (bytes, printer, width=80):
     printer("Zipped content:")
-    rawFile = StringIO.StringIO(bytes)
+    rawFile = io.BytesIO(bytes)
     zipFile = zipfile.ZipFile(rawFile)
     i = 0
     # TODO: when 2.6/3.0 is in widespread use, change to infolist
@@ -524,7 +618,7 @@ def outputZipContent (bytes, printer, width=80):
         printer('-'*width)
 
         contents = zipFile.read(filename)
-        if filename.endswith(".xml") or contents.startswith("<?xml"):
+        if filename.endswith(".xml") or contents.startswith(b"<?xml"):
             wrapper = StreamWrap(printer)
             xmlpp.pprint(contents,wrapper,1,80)
             wrapper.flush()

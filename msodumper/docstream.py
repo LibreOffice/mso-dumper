@@ -5,16 +5,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-import ole
+from . import ole
 import ctypes
-from binarystream import BinaryStream
-import docrecord
-import globals
+from .binarystream import BinaryStream
+from . import docrecord
+from . import globals
 import sys
 import os
 import bisect
-from msometa import SummaryInformationStream
-from msometa import DocumentSummaryInformationStream
+from .msometa import SummaryInformationStream
+from .msometa import DocumentSummaryInformationStream
 
 
 class DOCFile:
@@ -25,14 +25,14 @@ class DOCFile:
         self.params = params
         self.error = None
 
-        if ord(self.chars[0]) == 0xD0 and ord(self.chars[1]) == 0xCF and ord(self.chars[2]) == 0x11 and ord(self.chars[3]) == 0xE0:
+        if globals.indexbytes(self.chars,0) == 0xD0 and globals.indexbytes(self.chars,1) == 0xCF and globals.indexbytes(self.chars,2) == 0x11 and globals.indexbytes(self.chars,3) == 0xE0:
             self.initWW8()
         else:
-            print '<?xml version="1.0"?>'
-            if ord(self.chars[0]) == 0xDB and ord(self.chars[1]) == 0xA5:
-                print '<todo what="handle v6 of the doc format"/>'
+            print('<?xml version="1.0"?>')
+            if globals.indexbytes(self.chars,0) == 0xDB and globals.indexbytes(self.chars,1) == 0xA5:
+                print('<todo what="handle v6 of the doc format"/>')
             else:
-                print '<todo what="unhandled magic"/>'
+                print('<todo what="unhandled magic"/>')
             sys.exit(0)
 
     def initWW8(self):
@@ -53,13 +53,13 @@ class DOCFile:
         return self.getStreamFromBytes(name, bytes)
 
     def getStreamFromBytes(self, name, bytes):
-        if name == "WordDocument":
+        if name == b"WordDocument":
             return WordDocumentStream(bytes, self.params, doc=self)
-        elif name in ("0Table", "1Table"):
+        elif name in (b"0Table", b"1Table"):
             return TableStream(bytes, self.params, name, doc=self)
-        elif name == "\x05SummaryInformation":
+        elif name == b"\x05SummaryInformation":
             return SummaryInformationStream(bytes, self.params, doc=self)
-        elif name == "\x05DocumentSummaryInformation":
+        elif name == b"\x05DocumentSummaryInformation":
             return DocumentSummaryInformationStream(bytes, self.params, doc=self)
         else:
             return BinaryStream(bytes, self.params, name, doc=self)
@@ -137,7 +137,7 @@ class TableStream(BinaryStream):
         BinaryStream.__init__(self, bytes, params, name, doc=doc)
 
     def dump(self):
-        print '<stream name="%s" size="%s"/>' % (self.name, self.size)
+        print('<stream name="%s" size="%s"/>' % (self.name, self.size))
 
 
 class WordDocumentStream(BinaryStream):
@@ -145,14 +145,14 @@ class WordDocumentStream(BinaryStream):
         BinaryStream.__init__(self, bytes, params, "WordDocument", doc=doc)
 
     def dump(self):
-        print '<stream name="WordDocument" size="%d">' % self.size
+        print('<stream name="WordDocument" size="%d">' % self.size)
         self.dumpFib()
-        print '</stream>'
+        print('</stream>')
 
     def dumpFib(self):
-        print '<fib>'
+        print('<fib>')
         if not self.dumpFibBase("base"):
-            print '</fib>'
+            print('</fib>')
             return
         self.printAndSet("csw", self.readuInt16())
         self.dumpFibRgW97("fibRgW")
@@ -162,7 +162,7 @@ class WordDocumentStream(BinaryStream):
 
         self.blobOffset = self.pos
         cswNew = self.getuInt16(pos=self.__getCswNewOffset())
-        print '<debug what="cswNew is %s"/>' % cswNew
+        print('<debug what="cswNew is %s"/>' % cswNew)
 
         if cswNew != 0:
             self.nFibNew = self.getuInt16(pos=self.__getCswNewOffset() + 2)
@@ -176,53 +176,53 @@ class WordDocumentStream(BinaryStream):
         self.printAndSet("cswNew", self.readuInt16(), offset=True)
         if self.cswNew != 0:
             self.dumpFibRgCswNew("fibRgCswNew")
-        print '</fib>'
+        print('</fib>')
 
     def __getCswNewOffset(self):
-        print '<debug what="cswnew offset is %s as self.cbRgFcLcb is %s, blob offset is %s"/>' % (self.blobOffset + (8 * self.cbRgFcLcb), self.cbRgFcLcb, self.blobOffset)
+        print('<debug what="cswnew offset is %s as self.cbRgFcLcb is %s, blob offset is %s"/>' % (self.blobOffset + (8 * self.cbRgFcLcb), self.cbRgFcLcb, self.blobOffset))
         return self.blobOffset + (8 * self.cbRgFcLcb)
 
     def dumpFibRgCswNew(self, name):
-        print '<%s type="FibRgCswNew" size="%d bytes">' % (name, self.cswNew)
+        print('<%s type="FibRgCswNew" size="%d bytes">' % (name, self.cswNew))
         self.printAndSet("nFibNew", self.readuInt16())
         if self.nFibNew == 0x0112:
             self.dumpFibRgCswNewData2007("fibRgCswNewData2007")
         elif self.nFibNew == 0x00D9:
             self.dumpFibRgCswNewData2000("fibRgCswNewData2000")
         else:
-            print """<todo what="dumpFibRgCswNew() doesn't know how to handle nFibNew = %s"/>""" % hex(self.nFibNew)
-        print '</%s>' % name
+            print("""<todo what="dumpFibRgCswNew() doesn't know how to handle nFibNew = %s"/>""" % hex(self.nFibNew))
+        print('</%s>' % name)
 
     def __dumpFibRgCswNewData2000(self):
         self.printAndSet("cQuickSavesNew", self.readuInt16())
 
     def dumpFibRgCswNewData2000(self, name):
-        print '<%s type="FibRgCswNewData2000" size="%d bytes">' % (name, 8)
+        print('<%s type="FibRgCswNewData2000" size="%d bytes">' % (name, 8))
         self.__dumpFibRgCswNewData2000()
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def dumpFibRgCswNewData2007(self, name):
-        print '<%s type="FibRgCswNewData2007" size="%d bytes">' % (name, 8)
+        print('<%s type="FibRgCswNewData2007" size="%d bytes">' % (name, 8))
         self.__dumpFibRgCswNewData2000()
         self.printAndSet("lidThemeOther", self.readuInt16())
         self.printAndSet("lidThemeFE", self.readuInt16())
         self.printAndSet("lidThemeCS", self.readuInt16())
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def getTableStream(self):
         if self.fWhichTblStm:
-            return self.doc.getDirectoryStreamByName("1Table")
+            return self.doc.getDirectoryStreamByName(b"1Table")
         else:
-            return self.doc.getDirectoryStreamByName("0Table")
+            return self.doc.getDirectoryStreamByName(b"0Table")
 
     def dumpFibBase(self, name):
         ret = True
-        print '<%s type="FibBase" size="32 bytes">' % name
+        print('<%s type="FibBase" size="32 bytes">' % name)
 
         self.printAndSet("wIdent", self.readuInt16())
         self.printAndSet("nFib", self.readuInt16())
         if self.nFib >= 0x65 and self.nFib <= 0x69:
-            print '<todo what="handle nFib 0x65..0x69: ww6 syntax"/>'
+            print('<todo what="handle nFib 0x65..0x69: ww6 syntax"/>')
             ret = False
         self.printAndSet("unused", self.readuInt16())
         self.printAndSet("lid", self.readuInt16())
@@ -250,19 +250,19 @@ class WordDocumentStream(BinaryStream):
 
         if self.fEncrypted == 1 and self.fObfuscated == 0:
             self.printAndSet("lKey", self.readuInt32(), end=False)
-            print '<EncryptionVersionInfo>'
+            print('<EncryptionVersionInfo>')
             tableStream = self.getTableStream()
             self.printAndSet("vMajor", tableStream.readuInt16())
             self.printAndSet("vMinor", tableStream.readuInt16())
-            print '</EncryptionVersionInfo>'
+            print('</EncryptionVersionInfo>')
             if self.vMajor == 0x0001 and self.vMinor == 0x0001:
                 docrecord.RC4EncryptionHeader(self, tableStream.pos, self.lKey).dump()
-                print '<todo what="handle RC4 encryption"/>'
+                print('<todo what="handle RC4 encryption"/>')
             elif self.vMajor in (0x0002, 0x0003, 0x0004) and self.vMinor == 0x0002:
-                print '<todo what="handle RC4CryptoApiEncryptionHeader"/>'
+                print('<todo what="handle RC4CryptoApiEncryptionHeader"/>')
             else:
-                print '<todo what="unexpected vMajor %d and vMinor %d"/>' % (self.vMajor, self.vMinor)
-            print '</lKey>'
+                print('<todo what="unexpected vMajor %d and vMinor %d"/>' % (self.vMajor, self.vMinor))
+            print('</lKey>')
             ret = False
         else:
             self.printAndSet("lKey", self.readuInt32())
@@ -283,20 +283,20 @@ class WordDocumentStream(BinaryStream):
         self.printAndSet("reserved5", self.readuInt32())
         self.printAndSet("reserved6", self.readuInt32())
 
-        print '</%s>' % name
+        print('</%s>' % name)
         return ret
 
     def dumpFibRgW97(self, name):
-        print '<%s type="FibRgW97" size="28 bytes">' % name
+        print('<%s type="FibRgW97" size="28 bytes">' % name)
 
         for i in range(13):
             self.printAndSet("reserved%d" % (i + 1), self.readuInt16())
         self.printAndSet("lidFE", self.readuInt16())
 
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def dumpFibRgLw97(self, name):
-        print '<%s type="FibRgLw97" size="88 bytes">' % name
+        print('<%s type="FibRgLw97" size="88 bytes">' % name)
 
         fields = [
             "cbMac",
@@ -324,9 +324,9 @@ class WordDocumentStream(BinaryStream):
         ]
         for i in fields:
             self.printAndSet(i, self.readuInt32())
-            print '<debug what="offset is now %s"/>' % self.pos
+            print('<debug what="offset is now %s"/>' % self.pos)
 
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def dumpFibRgFcLcb(self, name):
         if self.nFib == 0x00c1:
@@ -340,7 +340,7 @@ class WordDocumentStream(BinaryStream):
         elif self.nFib == 0x0112:
             self.dumpFibRgFcLcb2007(name)
         else:
-            print """<todo what="dumpFibRgFcLcb() doesn't know how to handle nFib = %s">""" % hex(self.nFib)
+            print("""<todo what="dumpFibRgFcLcb() doesn't know how to handle nFib = %s">""" % hex(self.nFib))
 
     def __dumpFibRgFcLcb97(self):
         # should be 186
@@ -557,8 +557,8 @@ class WordDocumentStream(BinaryStream):
                     if hasHandler:
                         i[1]()
                     else:
-                        print '<todo what="value is non-zero and unhandled"/>'
-                print '</%s>' % i[0]
+                        print('<todo what="value is non-zero and unhandled"/>')
+                print('</%s>' % i[0])
 
     def handleDop(self):
         docrecord.Dop(self).dump()
@@ -722,29 +722,29 @@ class WordDocumentStream(BinaryStream):
         docrecord.PlcftxbxBkd(self).dump()
 
     def dumpFibRgFcLcb97(self, name):
-        print '<%s type="FibRgFcLcb97" size="744 bytes">' % name
+        print('<%s type="FibRgFcLcb97" size="744 bytes">' % name)
         self.__dumpFibRgFcLcb97()
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def dumpFibRgFcLcb2000(self, name):
-        print '<%s type="FibRgFcLcb2000" size="864 bytes">' % name
+        print('<%s type="FibRgFcLcb2000" size="864 bytes">' % name)
         self.__dumpFibRgFcLcb2000()
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def dumpFibRgFcLcb2002(self, name):
-        print '<%s type="FibRgFcLcb2002" size="1088 bytes">' % name
+        print('<%s type="FibRgFcLcb2002" size="1088 bytes">' % name)
         self.__dumpFibRgFcLcb2002()
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def dumpFibRgFcLcb2003(self, name):
-        print '<%s type="FibRgFcLcb2003" size="1312 bytes">' % name
+        print('<%s type="FibRgFcLcb2003" size="1312 bytes">' % name)
         self.__dumpFibRgFcLcb2003()
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def dumpFibRgFcLcb2007(self, name):
-        print '<%s type="FibRgFcLcb2007" size="1464 bytes">' % name
+        print('<%s type="FibRgFcLcb2007" size="1464 bytes">' % name)
         self.__dumpFibRgFcLcb2007()
-        print '</%s>' % name
+        print('</%s>' % name)
 
     def __dumpFibRgFcLcb2000(self):
         self.__dumpFibRgFcLcb97()
@@ -856,8 +856,8 @@ class WordDocumentStream(BinaryStream):
                     if hasHandler:
                         i[1]()
                     else:
-                        print '<todo what="value is non-zero and unhandled"/>'
-                print '</%s>' % i[0]
+                        print('<todo what="value is non-zero and unhandled"/>')
+                print('</%s>' % i[0])
 
     def __dumpFibRgFcLcb2003(self):
         self.__dumpFibRgFcLcb2002()
@@ -989,7 +989,7 @@ class WordDocumentStream(BinaryStream):
                     divider = 1
                 else:
                     divider = 2
-                return (start + ((offset - startOffset) / divider))
+                return (start + ((offset - startOffset) // divider))
 
     def __cpToOffset(self, cp):
         """Implements 2.4.1 Retrieving Text."""
@@ -998,7 +998,7 @@ class WordDocumentStream(BinaryStream):
         aPcd = plcPcd.aPcd[index]
         fcCompressed = aPcd.fc
         if fcCompressed.fCompressed == 1:
-            pos = (fcCompressed.fc / 2) + (cp - plcPcd.aCp[index])
+            pos = (fcCompressed.fc // 2) + (cp - plcPcd.aCp[index])
             return pos, True
         else:
             pos = fcCompressed.fc + 2 * (cp - plcPcd.aCp[index])
@@ -1007,19 +1007,19 @@ class WordDocumentStream(BinaryStream):
     def retrieveCP(self, cp):
         pos, compressed = self.__cpToOffset(cp)
         if compressed:
-            return globals.encodeName(self.bytes[pos])
+            return globals.encodeName(globals.indexedbytetobyte(self.bytes[int(pos)]))
         else:
             try:
                 return globals.encodeName(self.bytes[pos:pos + 2].decode('utf-16'), lowOnly=True)
             except UnicodeDecodeError:
-                reason = 'could not decode bytes in position %d-%d (%s-%s)' % (pos, pos + 1, hex(ord(self.bytes[pos])), hex(ord(self.bytes[pos + 1])))
-                print '<todo what="WordDocumentStream::retrieveCP(): %s"/>' % reason
+                reason = 'could not decode bytes in position %d-%d (%s-%s)' % (pos, pos + 1, hex(globals.indexbytes(self.bytes,pos)), hex(globals.indexbytes(self.bytes,pos+ 1)))
+                print('<todo what="WordDocumentStream::retrieveCP(): %s"/>' % reason)
                 return globals.encodeName(self.bytes[pos:pos + 2].decode('utf-16', errors="replace"), lowOnly=True)
 
     def retrieveCPs(self, start, end):
         """Retrieves a range of characters."""
         if not len(self.clx.pcdt.plcPcd.aPcd):
-            print '<info what="clx.pcdt.plcPcd.aPcd is empty, probably corrupted document"/>'
+            print('<info what="clx.pcdt.plcPcd.aPcd is empty, probably corrupted document"/>')
             return ""
         ret = []
         i = start
