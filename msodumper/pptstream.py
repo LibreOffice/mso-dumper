@@ -4,10 +4,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-
+from builtins import range
 import sys
-import ole, globals, pptrecord
-from globals import output
+from . import ole, globals, pptrecord
+from .globals import output
 
 class EndOfStream(Exception): pass
 
@@ -134,10 +134,10 @@ class PPTDirStream(object):
             return
         size = len(bytes)
         self.__printSep('-', 61, "%4.4Xh: "%recordType, recordType = recordType)
-        for i in xrange(0, size):
+        for i in range(0, size):
             if (i+1) % 16 == 1:
                 output(self.prefix + "%4.4Xh: "%recordType, recordType = recordType)
-            output("%2.2X "%ord(bytes[i]), recordType = recordType)
+            output("%2.2X "%globals.indexbytes(bytes, i), recordType = recordType)
             if (i+1) % 16 == 0 and i != size-1:
                 globals.outputln("", recordType = recordType)
         if size > 0:
@@ -188,7 +188,7 @@ class PPTDirStream(object):
         properties["CString"] = ''
 
     def isPPT10SpecialData (self):
-        return "CString" in self.properties and self.properties["CString"] == "___PPT10"
+        return "CString" in self.properties and self.properties["CString"] == b"___PPT10"
 
     def handlePPT10BinaryTags (self, bytes, recordInfo):
         subSubStrm = PPTDirStream(bytes, self.params, self.prefix+" ", recordInfo)
