@@ -20,7 +20,7 @@ Options:
   --no-raw-dumps suppress raw hex dumps of uninterpreted areas
   --id-select=id1[,id2 ...] limit output to selected record Ids
 """ % exname
-    print msg
+    print(msg)
 
 
 class PPTDumper(object):
@@ -46,25 +46,26 @@ class PPTDumper(object):
         dirnames = strm.getDirectoryNames()
         result = True
         for dirname in dirnames:
-            if len(dirname) == 0 or dirname == 'Root Entry':
+            sdirname = globals.nulltrunc(dirname)
+            if len(sdirname) == 0 or sdirname == b"Root Entry":
                 continue
 
             try:
                 dirstrm = strm.getDirectoryStreamByName(dirname)
-            except Exception, err:
+            except Exception as err:
                 error("getDirectoryStreamByName(%s): %s\n" % (dirname,str(err)))
                 # The previous version was killed by the exception
                 # here, so the equivalent is to break, but maybe there
                 # is no reason to do so.
                 break
             self.__printDirHeader(dirname, len(dirstrm.bytes))
-            if  dirname == "PowerPoint Document":
+            if  sdirname == b"PowerPoint Document":
                 if not self.__readSubStream(dirstrm):
                     result = False
-            elif  dirname == "Current User":
+            elif  sdirname == b"Current User":
                 if not self.__readSubStream(dirstrm):
                     result = False
-            elif  dirname == "\x05DocumentSummaryInformation":
+            elif  sdirname == b"\x05DocumentSummaryInformation":
                 strm = olestream.PropertySetStream(dirstrm.bytes)
                 strm.read()
             else:
@@ -119,7 +120,7 @@ def main (args):
     if not dumper.dump():
         error("FAILURE\n")
     if globals.params.dumpText:
-        print(globals.textdump.replace("\r", "\n"))
+        globals.dumptext()
 
 if __name__ == '__main__':
     main(sys.argv)

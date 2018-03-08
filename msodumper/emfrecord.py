@@ -5,8 +5,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from binarystream import BinaryStream
-import wmfrecord
+from .binarystream import BinaryStream
+from . import wmfrecord
 import base64
 
 
@@ -60,7 +60,7 @@ class EMFStream(BinaryStream):
         BinaryStream.__init__(self, bytes)
 
     def dump(self):
-        print '<stream type="EMF" size="%d">' % self.size
+        print('<stream type="EMF" size="%d">' % self.size)
         emrHeader = EmrHeader(self)
         emrHeader.dump()
         for i in range(emrHeader.header.Records):
@@ -70,15 +70,15 @@ class EMFStream(BinaryStream):
             size = self.getuInt32(pos=self.pos + 4)
             # EmrHeader is already dumped
             if i:
-                print '<record index="%s" type="%s">' % (i, type)
+                print('<record index="%s" type="%s">' % (i, type))
                 if len(record) > 1:
                     handler = record[1](self)
                     handler.dump()
                 else:
-                    print '<todo/>'
-                print '</record>'
+                    print('<todo/>')
+                print('</record>')
             self.pos += size
-        print '</stream>'
+        print('</stream>')
 
 
 class EMFRecord(BinaryStream):
@@ -146,11 +146,11 @@ class LogBrushEx(EMFRecord):
         self.name = name
 
     def dump(self):
-        print '<%s>' % self.name
+        print('<%s>' % self.name)
         self.printAndSet("BrushStyle", self.readuInt32(), dict=wmfrecord.BrushStyle)
         wmfrecord.ColorRef(self, "Color").dump()
         self.printAndSet("BrushHatch", self.readuInt32(), dict=HatchStyle)
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -184,14 +184,14 @@ class XForm(EMFRecord):
         self.name = name
 
     def dump(self):
-        print '<%s>' % self.name
+        print('<%s>' % self.name)
         self.printAndSet("M11", self.readFloat32())
         self.printAndSet("M12", self.readFloat32())
         self.printAndSet("M21", self.readFloat32())
         self.printAndSet("M22", self.readFloat32())
         self.printAndSet("Dx", self.readFloat32())
         self.printAndSet("Dy", self.readFloat32())
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -228,13 +228,13 @@ class EmrComment(EMFRecord):
         self.printAndSet("DataSize", self.readuInt32(), hexdump=False)
         commentIdentifier = self.getuInt32()
         if commentIdentifier == 0x00000000:  # EMR_COMMENT_EMFSPOOL
-            print '<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFSPOOL"/>'
+            print('<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFSPOOL"/>')
         elif commentIdentifier == 0x2B464D45:  # EMR_COMMENT_EMFPLUS
-            print '<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFPLUS"/>'
+            print('<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFPLUS"/>')
         elif commentIdentifier == 0x43494447:  # EMR_COMMENT_PUBLIC
-            print '<todo what="EmrComment::dump(): handle EMR_COMMENT_PUBLIC"/>'
+            print('<todo what="EmrComment::dump(): handle EMR_COMMENT_PUBLIC"/>')
         else:
-            print '<todo what="EmrComment::dump(): handle EMR_COMMENT: %s"/>' % hex(commentIdentifier)
+            print('<todo what="EmrComment::dump(): handle EMR_COMMENT: %s"/>' % hex(commentIdentifier))
 
 
 class EmrSetviewportorgex(EMFRecord):
@@ -378,10 +378,10 @@ class EmrPolygon16(EMFRecord):
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         wmfrecord.RectL(self, "Bounds").dump()
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
-        print '<aPoints>'
+        print('<aPoints>')
         for i in range(self.Count):
             wmfrecord.PointS(self, "aPoint%d" % i).dump()
-        print '</aPoints>'
+        print('</aPoints>')
         assert self.pos - posOrig == self.Size
 
 
@@ -397,14 +397,14 @@ class EmrPolypolygon16(EMFRecord):
         wmfrecord.RectL(self, "Bounds").dump()
         self.printAndSet("NumberOfPolygons", self.readuInt32(), hexdump=False)
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
-        print '<PolygonPointCounts>'
+        print('<PolygonPointCounts>')
         for i in range(self.NumberOfPolygons):
             self.printAndSet("PolygonPointCount%d" % i, self.readuInt32(), hexdump=False)
-        print '</PolygonPointCounts>'
-        print '<aPoints>'
+        print('</PolygonPointCounts>')
+        print('<aPoints>')
         for i in range(self.Count):
             wmfrecord.PointS(self, "aPoint").dump()
-        print '</aPoints>'
+        print('</aPoints>')
         assert self.pos - posOrig == self.Size
 
 
@@ -419,10 +419,10 @@ class EmrPolylineto16(EMFRecord):
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         wmfrecord.RectL(self, "Bounds").dump()
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
-        print '<aPoints>'
+        print('<aPoints>')
         for i in range(self.Count):
             wmfrecord.PointS(self, "aPoint%d" % i).dump()
-        print '</aPoints>'
+        print('</aPoints>')
         assert self.pos - posOrig == self.Size
 
 
@@ -437,10 +437,10 @@ class EmrPolybezierto16(EMFRecord):
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         wmfrecord.RectL(self, "Bounds").dump()
         self.printAndSet("Count", self.readuInt32(), hexdump=False)
-        print '<aPoints>'
+        print('<aPoints>')
         for i in range(self.Count):
             wmfrecord.PointS(self, "aPoint%d" % i).dump()
-        print '</aPoints>'
+        print('</aPoints>')
         assert self.pos - posOrig == self.Size
 
 
@@ -585,7 +585,7 @@ class LogPenEx(EMFRecord):
         self.name = name
 
     def dump(self):
-        print '<%s type="LogPenEx">' % self.name
+        print('<%s type="LogPenEx">' % self.name)
         self.printAndSet("PenStyle", self.readuInt32(), dict=PenStyle)
         self.printAndSet("Width", self.readuInt32())
         self.printAndSet("BrushStyle", self.readuInt32(), dict=wmfrecord.BrushStyle)
@@ -596,8 +596,8 @@ class LogPenEx(EMFRecord):
             self.printAndSet("BrushHatch", self.readuInt32())
         self.printAndSet("NumStyleEntries", self.readuInt32())
         if self.NumStyleEntries > 0:
-            print '<todo what="LogPenEx::dump(): self.NumStyleEntries != 0"/>'
-        print '</%s>' % self.name
+            print('<todo what="LogPenEx::dump(): self.NumStyleEntries != 0"/>')
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -616,9 +616,9 @@ class EmrExtcreatepen(EMFRecord):
         self.printAndSet("cbBits", self.readuInt32(), hexdump=False)
         LogPenEx(self, "elp").dump()
         if self.cbBmi:
-            print '<todo what="LogPenEx::dump(): self.cbBmi != 0"/>'
+            print('<todo what="LogPenEx::dump(): self.cbBmi != 0"/>')
         if self.cbBits:
-            print '<todo what="LogPenEx::dump(): self.cbBits != 0"/>'
+            print('<todo what="LogPenEx::dump(): self.cbBits != 0"/>')
 
 
 class EmrStretchdibits(EMFRecord):
@@ -646,16 +646,16 @@ class EmrStretchdibits(EMFRecord):
         self.printAndSet("BitBltRasterOperation", self.readuInt32(), dict=wmfrecord.RasterPolishMap)
         self.printAndSet("cxDest", self.readInt32(), hexdump=False)
         self.printAndSet("cyDest", self.readInt32(), hexdump=False)
-        print '<BitmapBuffer>'
+        print('<BitmapBuffer>')
         if self.cbBmiSrc:
             self.pos = posOrig + self.offBmiSrc
             self.BmiSrc = self.readBytes(self.cbBmiSrc)
-            print '<BmiSrc value="%s"/>' % base64.b64encode(self.BmiSrc)
+            print('<BmiSrc value="%s"/>' % base64.b64encode(self.BmiSrc))
         if self.cbBitsSrc:
             self.pos = posOrig + self.offBitsSrc
             self.BitsSrc = self.readBytes(self.cbBitsSrc)
-            print '<BitsSrc value="%s"/>' % base64.b64encode(self.BitsSrc)
-        print '</BitmapBuffer>'
+            print('<BitsSrc value="%s"/>' % base64.b64encode(self.BitsSrc))
+        print('</BitmapBuffer>')
         assert self.pos - posOrig == self.Size
 
 
@@ -671,7 +671,7 @@ class EmrEof(EMFRecord):
         self.printAndSet("nPalEntries", self.readuInt32(), hexdump=False)
         self.printAndSet("offPalEntries", self.readuInt32(), hexdump=False)
         if self.nPalEntries > 0:
-            print '<todo what="EmrEof::dump(): handle nPalEntries > 0"/>'
+            print('<todo what="EmrEof::dump(): handle nPalEntries > 0"/>')
         self.printAndSet("SizeLast", self.readuInt32(), hexdump=False)
         assert self.pos - posOrig == self.Size
 
@@ -684,12 +684,12 @@ class RegionData(EMFRecord):
         self.size = size
 
     def dump(self):
-        print '<%s>' % self.name
+        print('<%s>' % self.name)
         header = RegionDataHeader(self)
         header.dump()
         for i in range(header.CountRects):
             wmfrecord.RectL(self, "Data%d" % i).dump()
-        print '</%s>' % self.name
+        print('</%s>' % self.name)
         self.parent.pos = self.pos
 
 
@@ -713,7 +713,7 @@ class EmrHeader(EMFRecord):
         EMFRecord.__init__(self, parent)
 
     def dump(self):
-        print '<emrHeader>'
+        print('<emrHeader>')
         self.printAndSet("Type", self.readuInt32())
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         self.header = Header(self)
@@ -722,7 +722,7 @@ class EmrHeader(EMFRecord):
             HeaderExtension1(self).dump()
         if self.Size >= 108:
             HeaderExtension2(self).dump()
-        print '</emrHeader>'
+        print('</emrHeader>')
 
 
 class Header(EMFRecord):

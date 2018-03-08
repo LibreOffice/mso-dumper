@@ -9,6 +9,7 @@
 # to avoid making duplicate copies in each of my projects.
 
 import sys
+from . import globals
 
 class NodeType:
     # unknown node type.
@@ -101,7 +102,7 @@ class Element(NodeBase):
         return text
 
     def getAttr (self, name):
-        if not self.attrs.has_key(name):
+        if not name in self.attrs:
             return None
         return self.attrs[name]
 
@@ -109,54 +110,62 @@ class Element(NodeBase):
         self.attrs[name] = val
 
     def hasAttr (self, name):
-        return self.attrs.has_key(name)
+        return name in self.attrs
 
 encodeTable = {
-    '>': 'gt',
-    '<': 'lt',
-    '&': 'amp',
-    '"': 'quot',
-    '\'': 'apos'
+    b'>': b'gt',
+    b'<': b'lt',
+    b'&': b'amp',
+    b'"': b'quot',
+    b'\'': b'apos'
 }
 
 # If utf8 is set, the input is either utf-8 bytes or Python
 # Unicode. Output utf-8 instead of hex-dump.
 def encodeString (sin, utf8 = False):
-    sout = ''
+    sout = b''
+    if type(sin) == type(u""):
+        sin = sin.encode('UTF-8')
     if utf8:
-        if isinstance(sin, unicode):
-            sout1 = sin.encode('UTF-8')
-        else:
-            sout1 = sin
         # Escape special characters as entities. Can't keep zero bytes either
         # (bad XML). They can only arrive here if there is a bug somewhere.
-        for c in sout1:
-            if ord(c) == 0:
-                sout += '(nullbyte)'
-            elif c in encodeTable:
-                sout += '&' + encodeTable[c] + ';'
+        for c in sin:
+            cc = globals.indexedbytetobyte(c)
+            if c == b'\0'[0]:
+                sout += b'(nullbyte)'
+            elif cc in encodeTable:
+                sout += b'&' + encodeTable[cc] + b';'
             else:
-                sout += c
+                sout += cc
     else:
         for c in sin:
-            if ord(c) >= 128 or ord(c) == 0:
+            ic = globals.indexedbytetoint(c)
+            cc = globals.indexedbytetobyte(c)
+            if ic >= 128 or ic == 0:
                 # encode non-ascii ranges.
-                sout += "\\x%2.2x"%ord(c)
-            elif encodeTable.has_key(c):
+                sout += b"\\x%2.2x"%ic
+            elif cc in encodeTable:
                 # encode html symbols.
-                sout += '&' + encodeTable[c] + ';'
+                sout += b'&' + encodeTable[cc] + b';'
             else:
-                sout += c
+                sout += cc
 
-    return sout
+    return sout.decode('UTF-8')
 
+if globals.PY3:
+    def isintegertype(val):
+        return type(val) == int
+else:
+    def isintegertype(val):
+        return type(val) == type(0) or type(val) == long
+    
 def convertAttrValue (val):
     if type(val) == type(True):
         if val:
             val = "true"
         else:
             val = "false"
-    elif type(val) == type(0) or type(val) == type(0L):
+    elif isintegertype(val):
         val = "%d"%val
     elif type(val) == type(0.0):
         val = "%g"%val
@@ -185,8 +194,7 @@ def printNode (fd, node, level, breakLine, utf8 = False):
         # encoded.
         line = node.name
         if len(node.attrs) > 0:
-            keys = node.attrs.keys()
-            keys.sort()
+            keys = sorted(node.attrs.keys())
             for key in keys:
                 val = node.attrs[key]
                 if val == None:
