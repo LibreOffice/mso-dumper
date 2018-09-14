@@ -14,13 +14,16 @@ class SwLayCacheStream(BinaryStream):
 
     def dump(self):
         print('<stream type="SwLayCache" size="%d">' % self.size)
-        posOrig = self.pos
         header = Header(self)
         header.dump()
 
-        while posOrig + self.size > self.pos:
-            record = CacheRecord(self)
-            record.dump()
+        pos = self.pos
+        firstRecord = CacheRecord(self)
+        firstRecord.dump()
+        endPos = pos + firstRecord.nSize
+
+        while endPos > self.pos:
+            CacheRecord(self).dump()
         print('</stream>')
 
 
