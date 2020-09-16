@@ -217,6 +217,46 @@ class EmrSeticmmode(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+# The FormatSignature enumeration defines values that are used to identify the format of embedded
+# data in EMF records.
+FormatSignature = {
+    0x464D4520: "ENHMETA_SIGNATURE",
+    0x46535045: "EPS_SIGNATURE",
+    0x50444620: "PDF ", # not in [MS-EMF]
+}
+
+class EmrFormat(EMFRecord):
+    """
+    The EmrFormat object contains information that identifies the format of image data in an
+    EMR_COMMENT_MULTIFORMATS record.
+    """
+    def __init__(self, parent, index):
+        EMFRecord.__init__(self, parent)
+        self.index = index
+
+    def dump(self):
+        print("<emrFormat index='%s'>" % self.index)
+        self.printAndSet("Signature", self.readuInt32(), dict=FormatSignature)
+        self.printAndSet("Version", self.readuInt32())
+        self.printAndSet("SizeData", self.readuInt32(), hexdump=False)
+        self.printAndSet("offData", self.readuInt32(), hexdump=False)
+        print("</emrFormat>")
+
+
+class EmrCommentMultiformats(EMFRecord):
+    """The EMR_COMMENT_MULTIFORMATS record specifies an image in multiple graphics formats."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<emrCommentMultiFormats>")
+        wmfrecord.RectL(self, "OutputRect").dump()
+        self.printAndSet("CountFormats", self.readuInt32())
+        for formatIndex in range(self.CountFormats):
+            EmrFormat(self, formatIndex).dump()
+        print("</emrCommentMultiFormats>")
+
+
 # Defines the types of data that a public comment record can contain.
 EmrCommentEnum = {
     0x80000001: "EMR_COMMENT_WINDOWS_METAFILE",
@@ -236,6 +276,8 @@ class EmrCommentPublic(EMFRecord):
     def dump(self):
         print("<emrCommentPublic>")
         self.printAndSet("PublicCommentIdentifier", self.readuInt32(), dict=EmrCommentEnum)
+        if self.PublicCommentIdentifier == 0x40000004: # EMR_COMMENT_MULTIFORMATS
+            EmrCommentMultiformats(self).dump()
         print("</emrCommentPublic>")
 
 
