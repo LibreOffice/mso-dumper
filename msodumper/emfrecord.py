@@ -297,7 +297,7 @@ class EmrComment(EMFRecord):
         self.printAndSet("Type", self.readuInt32())
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         self.printAndSet("DataSize", self.readuInt32(), hexdump=False)
-        self.printAndSet("CommentIdentifier", self.readuInt32(), dict=CommentIdentifier)
+        self.printAndSet("CommentIdentifier", self.readuInt32(), dict=CommentIdentifier, default="")
         if self.CommentIdentifier == 0x00000000:  # EMR_COMMENT_EMFSPOOL
             print('<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFSPOOL"/>')
         elif self.CommentIdentifier == 0x2B464D45:  # EMR_COMMENT_EMFPLUS
@@ -305,7 +305,7 @@ class EmrComment(EMFRecord):
         elif self.CommentIdentifier == 0x43494447:  # EMR_COMMENT_PUBLIC
             EmrCommentPublic(self).dump()
         else:
-            print('<todo what="EmrComment::dump(): handle EMR_COMMENT: %s"/>' % hex(commentIdentifier))
+            print('<todo what="EmrComment::dump(): handle EMR_COMMENT: %s"/>' % hex(self.CommentIdentifier))
 
 
 class EmrSetviewportorgex(EMFRecord):

@@ -28,7 +28,7 @@ class BinaryStream:
             return
         attrs = ""
         if dict:
-            if value in dict or not default:
+            if value in dict or default is None:
                 attrs += ' name="%s"' % dict[value]
             else:
                 attrs += ' name="%s"' % default
