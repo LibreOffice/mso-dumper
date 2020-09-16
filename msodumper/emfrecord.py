@@ -217,6 +217,35 @@ class EmrSeticmmode(EMFRecord):
         assert self.pos - posOrig == self.Size
 
 
+# Defines the types of data that a public comment record can contain.
+EmrCommentEnum = {
+    0x80000001: "EMR_COMMENT_WINDOWS_METAFILE",
+    0x00000002: "EMR_COMMENT_BEGINGROUP",
+    0x00000003: "EMR_COMMENT_ENDGROUP",
+    0x40000004: "EMR_COMMENT_MULTIFORMATS",
+    0x00000040: "EMR_COMMENT_UNICODE_STRING",
+    0x00000080: "EMR_COMMENT_UNICODE_END",
+}
+
+
+class EmrCommentPublic(EMFRecord):
+    """The EMR_COMMENT_PUBLIC record types specify extensions to EMF processing."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<emrCommentPublic>")
+        self.printAndSet("PublicCommentIdentifier", self.readuInt32(), dict=EmrCommentEnum)
+        print("</emrCommentPublic>")
+
+
+CommentIdentifier = {
+    0x00000000: "EMR_COMMENT_EMFSPOOL",
+    0x2B464D45: "EMR_COMMENT_EMFPLUS",
+    0x43494447: "EMR_COMMENT_PUBLIC",
+}
+
+
 class EmrComment(EMFRecord):
     """The EMR_COMMENT record contains arbitrary private data."""
     def __init__(self, parent):
@@ -226,13 +255,13 @@ class EmrComment(EMFRecord):
         self.printAndSet("Type", self.readuInt32())
         self.printAndSet("Size", self.readuInt32(), hexdump=False)
         self.printAndSet("DataSize", self.readuInt32(), hexdump=False)
-        commentIdentifier = self.getuInt32()
-        if commentIdentifier == 0x00000000:  # EMR_COMMENT_EMFSPOOL
+        self.printAndSet("CommentIdentifier", self.readuInt32(), dict=CommentIdentifier)
+        if self.CommentIdentifier == 0x00000000:  # EMR_COMMENT_EMFSPOOL
             print('<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFSPOOL"/>')
-        elif commentIdentifier == 0x2B464D45:  # EMR_COMMENT_EMFPLUS
+        elif self.CommentIdentifier == 0x2B464D45:  # EMR_COMMENT_EMFPLUS
             print('<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFPLUS"/>')
-        elif commentIdentifier == 0x43494447:  # EMR_COMMENT_PUBLIC
-            print('<todo what="EmrComment::dump(): handle EMR_COMMENT_PUBLIC"/>')
+        elif self.CommentIdentifier == 0x43494447:  # EMR_COMMENT_PUBLIC
+            EmrCommentPublic(self).dump()
         else:
             print('<todo what="EmrComment::dump(): handle EMR_COMMENT: %s"/>' % hex(commentIdentifier))
 
