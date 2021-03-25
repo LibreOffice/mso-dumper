@@ -5,25 +5,25 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from msodumper import ole1previewrecord
+from msodumper import ole1record
 import sys
 
 
-# Dumps the OLE1 preview: see [MS-OLEDS] 2.2.5.
-class Ole1PreviewDumper:
+# Dumps the OLE1 embedded object: see [MS-OLEDS] 2.2.5.
+class Ole1Dumper:
     def __init__(self, filepath):
         self.filepath = filepath
 
     def dump(self):
         file = open(self.filepath, 'rb')
-        strm = ole1previewrecord.Ole1PreviewStream(file.read())
+        strm = ole1record.Ole1Stream(file.read())
         file.close()
         print('<?xml version="1.0"?>')
         strm.dump()
 
 
 def main(args):
-    dumper = Ole1PreviewDumper(args[1])
+    dumper = Ole1Dumper(args[1])
     dumper.dump()
 
 
