@@ -123,7 +123,8 @@ def createDOCFile(chars, params):
     try:
         gsf = ctypes.cdll.LoadLibrary('libgsf-1.so')
         gsf.gsf_input_read.restype = ctypes.c_void_p
-    except:
+    # pylint: disable=broad-except
+    except Exception:
         hasGsf = False
 
     if hasGsf:

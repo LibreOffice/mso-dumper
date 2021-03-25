@@ -222,8 +222,9 @@ class EmrSeticmmode(EMFRecord):
 FormatSignature = {
     0x464D4520: "ENHMETA_SIGNATURE",
     0x46535045: "EPS_SIGNATURE",
-    0x50444620: "PDF ", # not in [MS-EMF]
+    0x50444620: "PDF ",  # not in [MS-EMF]
 }
+
 
 class EmrFormat(EMFRecord):
     """
@@ -276,7 +277,7 @@ class EmrCommentPublic(EMFRecord):
     def dump(self):
         print("<emrCommentPublic>")
         self.printAndSet("PublicCommentIdentifier", self.readuInt32(), dict=EmrCommentEnum)
-        if self.PublicCommentIdentifier == 0x40000004: # EMR_COMMENT_MULTIFORMATS
+        if self.PublicCommentIdentifier == 0x40000004:  # EMR_COMMENT_MULTIFORMATS
             EmrCommentMultiformats(self).dump()
         print("</emrCommentPublic>")
 
