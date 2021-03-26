@@ -282,6 +282,64 @@ class EmrCommentPublic(EMFRecord):
         print("</emrCommentPublic>")
 
 
+class EMFPlusRecordHeader(EMFRecord):
+    """The common start of EmfPlus* records."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def peek(self):
+        print("<emfPlusRecordHeader>")
+        id = self.readuInt16()
+        record = RecordType[id]
+        type = record[0]
+        print('<Type value="%s" name="%s"/>' % (hex(id), type))
+        self.Type = id
+        self.printAndSet("Flags", self.readuInt16())
+        self.printAndSet("Size", self.readuInt32())
+        self.printAndSet("DataSize", self.readuInt32())
+        print("</emfPlusRecordHeader>")
+
+
+class EmfPlusHeader(EMFRecord):
+    """The EmfPlusHeader record specifies the start of EMF+ data in the metafile."""
+    def __init__(self, parent, header):
+        EMFRecord.__init__(self, parent)
+        self.header = header
+
+    def dump(self):
+        print("<emfPlusHeader>")
+        pos = self.pos
+        self.pos += 12  # header size
+        dataPos = self.pos
+        self.printAndSet("Version", self.readuInt32())
+        self.printAndSet("EmfPlusFlags", self.readuInt32())
+        self.printAndSet("LogicalDpiX", self.readuInt32())
+        self.printAndSet("LogicalDpiY", self.readuInt32())
+        assert self.pos == dataPos + self.header.DataSize
+        self.parent.pos = pos + self.header.Size
+        print("</emfPlusHeader>")
+
+
+class EmrCommentEmfplus(EMFRecord):
+    """The EMR_COMMENT_EMFPLUS record contains embedded EMF+ records."""
+    def __init__(self, parent):
+        EMFRecord.__init__(self, parent)
+
+    def dump(self):
+        size = self.parent.DataSize - 4  # CommentIdentifier doesn't count
+        print("<emrCommentEmfplus size='%s'>" % size)
+        end = self.pos + size
+        while self.pos < end:
+            header = EMFPlusRecordHeader(self)
+            header.peek()
+            if header.Type == 0x4001:  # EmfPlusHeader
+                EmfPlusHeader(self, header).dump()
+            else:
+                print('<todo what="EmrCommentEmfplus::dump(): handle %s"/>' % RecordType[header.Type][0])
+                self.pos += header.Size
+        print("</emrCommentEmfplus>")
+
+
 CommentIdentifier = {
     0x00000000: "EMR_COMMENT_EMFSPOOL",
     0x2B464D45: "EMR_COMMENT_EMFPLUS",
@@ -302,7 +360,7 @@ class EmrComment(EMFRecord):
         if self.CommentIdentifier == 0x00000000:  # EMR_COMMENT_EMFSPOOL
             print('<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFSPOOL"/>')
         elif self.CommentIdentifier == 0x2B464D45:  # EMR_COMMENT_EMFPLUS
-            print('<todo what="EmrComment::dump(): handle EMR_COMMENT_EMFPLUS"/>')
+            EmrCommentEmfplus(self).dump()
         elif self.CommentIdentifier == 0x43494447:  # EMR_COMMENT_PUBLIC
             EmrCommentPublic(self).dump()
         else:
@@ -974,7 +1032,66 @@ RecordType = {
     0x00000077: ['EMR_SETLINKEDUFIS'],
     0x00000078: ['EMR_SETTEXTJUSTIFICATION'],
     0x00000079: ['EMR_COLORMATCHTOTARGETW'],
-    0x0000007A: ['EMR_CREATECOLORSPACEW']
+    0x0000007A: ['EMR_CREATECOLORSPACEW'],
+    # EmfPlus
+    0x4001: ['EmfPlusHeader'],
+    0x4002: ['EmfPlusEndOfFile'],
+    0x4003: ['EmfPlusComment'],
+    0x4004: ['EmfPlusGetDC'],
+    0x4005: ['EmfPlusMultiFormatStart'],
+    0x4006: ['EmfPlusMultiFormatSection'],
+    0x4007: ['EmfPlusMultiFormatEnd'],
+    0x4008: ['EmfPlusObject'],
+    0x4009: ['EmfPlusClear'],
+    0x400A: ['EmfPlusFillRects'],
+    0x400B: ['EmfPlusDrawRects'],
+    0x400C: ['EmfPlusFillPolygon'],
+    0x400D: ['EmfPlusDrawLines'],
+    0x400E: ['EmfPlusFillEllipse'],
+    0x400F: ['EmfPlusDrawEllipse'],
+    0x4010: ['EmfPlusFillPie'],
+    0x4011: ['EmfPlusDrawPie'],
+    0x4012: ['EmfPlusDrawArc'],
+    0x4013: ['EmfPlusFillRegion'],
+    0x4014: ['EmfPlusFillPath'],
+    0x4015: ['EmfPlusDrawPath'],
+    0x4016: ['EmfPlusFillClosedCurve'],
+    0x4017: ['EmfPlusDrawClosedCurve'],
+    0x4018: ['EmfPlusDrawCurve'],
+    0x4019: ['EmfPlusDrawBeziers'],
+    0x401A: ['EmfPlusDrawImage'],
+    0x401B: ['EmfPlusDrawImagePoints'],
+    0x401C: ['EmfPlusDrawString'],
+    0x401D: ['EmfPlusSetRenderingOrigin'],
+    0x401E: ['EmfPlusSetAntiAliasMode'],
+    0x401F: ['EmfPlusSetTextRenderingHint'],
+    0x4020: ['EmfPlusSetTextContrast'],
+    0x4021: ['EmfPlusSetInterpolationMode'],
+    0x4022: ['EmfPlusSetPixelOffsetMode'],
+    0x4023: ['EmfPlusSetCompositingMode'],
+    0x4024: ['EmfPlusSetCompositingQuality'],
+    0x4025: ['EmfPlusSave'],
+    0x4026: ['EmfPlusRestore'],
+    0x4027: ['EmfPlusBeginContainer'],
+    0x4028: ['EmfPlusBeginContainerNoParams'],
+    0x4029: ['EmfPlusEndContainer'],
+    0x402A: ['EmfPlusSetWorldTransform'],
+    0x402B: ['EmfPlusResetWorldTransform'],
+    0x402C: ['EmfPlusMultiplyWorldTransform'],
+    0x402D: ['EmfPlusTranslateWorldTransform'],
+    0x402E: ['EmfPlusScaleWorldTransform'],
+    0x402F: ['EmfPlusRotateWorldTransform'],
+    0x4030: ['EmfPlusSetPageTransform'],
+    0x4031: ['EmfPlusResetClip'],
+    0x4032: ['EmfPlusSetClipRect'],
+    0x4033: ['EmfPlusSetClipPath'],
+    0x4034: ['EmfPlusSetClipRegion'],
+    0x4035: ['EmfPlusOffsetClip'],
+    0x4036: ['EmfPlusDrawDriverstring'],
+    0x4037: ['EmfPlusStrokeFillPath'],
+    0x4038: ['EmfPlusSerializableObject'],
+    0x4039: ['EmfPlusSetTSGraphics'],
+    0x403A: ['EmfPlusSetTSClip'],
 }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
