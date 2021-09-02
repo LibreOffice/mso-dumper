@@ -7,9 +7,6 @@
 
 from msodumper import emfrecord
 import sys
-sys = reload(sys)
-sys.setdefaultencoding("utf-8")
-
 
 class EMFDumper:
     def __init__(self, filepath):

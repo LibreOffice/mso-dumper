@@ -136,7 +136,8 @@ EmfHatchStyle = {
     0x000A: "HS_SOLIDBKCLR",
     0x000B: "HS_DITHEREDBKCLR"
 }
-HatchStyle = dict(wmfrecord.HatchStyle.items() + EmfHatchStyle.items())
+HatchStyle = dict(wmfrecord.HatchStyle.items())
+HatchStyle.update(dict(EmfHatchStyle.items()))
 
 
 class LogBrushEx(EMFRecord):
