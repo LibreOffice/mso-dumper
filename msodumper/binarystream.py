@@ -29,7 +29,7 @@ class BinaryStream:
         attrs = ""
         if dict:
             if value in dict or default is None:
-                attrs += ' name="%s"' % dict[value]
+                attrs += ' name="%s"' % dict.get(value, "INVALID")
             else:
                 attrs += ' name="%s"' % default
         if hexdump and type(value) != float:
