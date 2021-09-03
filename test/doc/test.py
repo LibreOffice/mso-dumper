@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- encoding: UTF-8 -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -36,6 +36,7 @@ class Test(unittest.TestCase):
         for i in fonts:
             if len(i.findall('ffn/xszFfn[@value="%s"]' % name)) == 1:
                 return int(i.attrib['index'])
+        return 0
 
     def getRuns(self):
         return self.root.findall('stream[@name="WordDocument"]/fib/fibRgFcLcbBlob/lcbPlcfBteChpx/plcBteChpx/aFC/aPnBteChpx/chpxFkp/rgfc')
@@ -161,7 +162,7 @@ class Test(unittest.TestCase):
         propertyIdentifier = self.root.findall('stream[@name="\\x05SummaryInformation"]/propertySetStream/propertySet/propertyIdentifierAndOffset3/PropertyIdentifier')[0]
         self.assertEqual('PIDSI_AUTHOR', propertyIdentifier.attrib["name"])
         typedPropertyValue = self.root.findall('stream[@name="\\x05SummaryInformation"]/propertySetStream/propertySet/typedPropertyValue3/Value/Characters')[0]
-        self.assertEqual('vmiklos', typedPropertyValue.attrib["value"])
+        self.assertEqual("b'vmiklos'", typedPropertyValue.attrib["value"])
 
     def test_nofibnew(self):
         self.dump('nofibnew')

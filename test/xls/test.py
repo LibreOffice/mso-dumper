@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- tab-width: 4; indent-tabs-mode: nil -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
