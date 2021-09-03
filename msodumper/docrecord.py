@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -792,7 +792,7 @@ class DefTableShd80Operand(BinaryStream):
     def dump(self):
         print('<defTableShd80Operand type="DefTableShd80Operand" offset="%d">' % self.pos)
         self.printAndSet("cb", self.readuInt8())
-        for i in range(self.cb / Shd80.size):
+        for i in range(round(self.cb / Shd80.size)):
             Shd80(self, i).dump()
         print('</defTableShd80Operand>')
 
@@ -2992,7 +2992,7 @@ class FFN(BinaryStream):
         self.pos += 10
         FontSignature(self.bytes, self.pos).dump()
         self.pos += 24
-        print('<xszFfn value="%s"/>' % self.readString())
+        print('<xszFfn value="%s"/>' % self.readString().replace('\\x00', ''))
         print('</ffn>')
 
 
