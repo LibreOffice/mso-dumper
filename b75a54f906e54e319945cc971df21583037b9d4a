@@ -34,6 +34,24 @@
       "parentUuid": "3948b151_fe9ad5ac",
       "revId": "b75a54f906e54e319945cc971df21583037b9d4a",
       "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "110590ae_6cc9f635",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000013
+      },
+      "writtenOn": "2021-09-03T11:59:30Z",
+      "side": 1,
+      "message": "Any python3 is meant to work, I happen to have 3.6 (what opensuse stable provides).",
+      "parentUuid": "11d05ff8_c78a24b5",
+      "revId": "b75a54f906e54e319945cc971df21583037b9d4a",
+      "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
     }
   ]
 }

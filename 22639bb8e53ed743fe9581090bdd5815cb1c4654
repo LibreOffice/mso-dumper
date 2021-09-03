@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca39e42d_dbcd2405",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000013
+      },
+      "writtenOn": "2021-09-03T11:59:30Z",
+      "side": 1,
+      "message": "Looks good now, thanks. Feel free to self-approve mso-dumper changes in the future, once \u0027make check\u0027 is working for you. It\u0027s just a debug tool after all. :-)",
+      "revId": "22639bb8e53ed743fe9581090bdd5815cb1c4654",
+      "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
+    }
+  ]
+}
