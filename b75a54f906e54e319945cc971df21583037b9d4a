@@ -16,6 +16,24 @@
       "message": " make check\n\nfails for me with:\n\n msodumper/binarystream.py:32:55: E231 missing whitespace after \u0027,\u0027\n\notherwise looks sensible to me. :-)",
       "revId": "b75a54f906e54e319945cc971df21583037b9d4a",
       "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11d05ff8_c78a24b5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002951
+      },
+      "writtenOn": "2021-09-03T10:25:44Z",
+      "side": 1,
+      "message": "Done.\nBtw, which version of Python do you use for this?",
+      "parentUuid": "3948b151_fe9ad5ac",
+      "revId": "b75a54f906e54e319945cc971df21583037b9d4a",
+      "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
     }
   ]
 }
