@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e734b78_9323f950",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002951
+      },
+      "writtenOn": "2021-09-03T22:48:52Z",
+      "side": 1,
+      "message": "I want to make sure that the output format is acceptable, having binary values like b\u0027vmiklos\u0027.\nAlso, I get different results for \u0027tests/doc/fonts.doc\u0027 on different Linux systems:\n\n$ python ./doc-dump.py test/doc/fonts.doc\n\nOutput on Ubuntu 20.04 LTS with distro-provided python 3.8\n\n\u003c?xml version\u003d\"1.0\"?\u003e\n\u003cstreams ole-type\u003d\"gsf\"\u003e\n\u003cstream name\u003d\"b\u00271Table\u0027\" size\u003d\"6348\"/\u003e\n\u003cstream name\u003d\"\\x01CompObj\" size\u003d\"98\"/\u003e\n\u003cstream name\u003d\"WordDocument\" size\u003d\"4096\"\u003e\n\u003cfib\u003e\n\nOR\n\nOutput on CentOS 7.9 with rh-python 3.8\n\n\u003c?xml version\u003d\"1.0\"?\u003e\n\u003cstreams ole-type\u003d\"native\"\u003e\n\u003cstream name\u003d\"WordDocument\" size\u003d\"4096\"\u003e\n\u003cfib\u003e",
+      "revId": "c1545620a6266cd2f7fabecdce11a023e8f090ec",
+      "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
+    }
+  ]
+}
