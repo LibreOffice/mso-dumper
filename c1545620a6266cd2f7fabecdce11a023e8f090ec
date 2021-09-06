@@ -16,6 +16,41 @@
       "message": "I want to make sure that the output format is acceptable, having binary values like b\u0027vmiklos\u0027.\nAlso, I get different results for \u0027tests/doc/fonts.doc\u0027 on different Linux systems:\n\n$ python ./doc-dump.py test/doc/fonts.doc\n\nOutput on Ubuntu 20.04 LTS with distro-provided python 3.8\n\n\u003c?xml version\u003d\"1.0\"?\u003e\n\u003cstreams ole-type\u003d\"gsf\"\u003e\n\u003cstream name\u003d\"b\u00271Table\u0027\" size\u003d\"6348\"/\u003e\n\u003cstream name\u003d\"\\x01CompObj\" size\u003d\"98\"/\u003e\n\u003cstream name\u003d\"WordDocument\" size\u003d\"4096\"\u003e\n\u003cfib\u003e\n\nOR\n\nOutput on CentOS 7.9 with rh-python 3.8\n\n\u003c?xml version\u003d\"1.0\"?\u003e\n\u003cstreams ole-type\u003d\"native\"\u003e\n\u003cstream name\u003d\"WordDocument\" size\u003d\"4096\"\u003e\n\u003cfib\u003e",
       "revId": "c1545620a6266cd2f7fabecdce11a023e8f090ec",
       "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d21904b_27f7431d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000013
+      },
+      "writtenOn": "2021-09-06T06:58:32Z",
+      "side": 1,
+      "message": "gsf vs native depends on if you have libgsf-1.so installed. native means an OLE2 parser (from Kohei) written in Python. This helps debugging when OLE2 itself is problematic, but there are tests where the native parser fails. gsf means we use libgsf for OLE2 parsing, which works in more cases, but then you don\u0027t see the OLE2 binary structure.\n\nPerhaps we should drop the gsf one, if you have time to look why it was added and fix up the own OLE2 parser to handle that specific document (see git history).\n\n\u0027make check\u0027 passes for me with the native parser.",
+      "parentUuid": "9e734b78_9323f950",
+      "revId": "c1545620a6266cd2f7fabecdce11a023e8f090ec",
+      "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2b85aba_a869c077",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000013
+      },
+      "writtenOn": "2021-09-06T06:58:32Z",
+      "side": 1,
+      "message": "This looks reasonable to me, thanks.\n\nAs mentioned before, feel free to self-approve once you have a working \u0027make check\u0027 setup.",
+      "revId": "c1545620a6266cd2f7fabecdce11a023e8f090ec",
+      "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
     }
   ]
 }
