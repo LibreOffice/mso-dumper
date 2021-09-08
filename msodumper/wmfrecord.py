@@ -7,6 +7,14 @@
 
 from .binarystream import BinaryStream
 
+PlaceableKey = {
+    0x9ac6cdd7: "META_PLACEABLE",
+}
+
+FileType = {
+    0x00: "Memory",
+    0x01: "Disk",
+}
 
 # The BrushStyle Enumeration specifies the different possible brush types that can be used in graphics operations.
 BrushStyle = {
@@ -22,7 +30,6 @@ BrushStyle = {
     0x0009: "BS_MONOPATTERN"
 }
 
-
 # The HatchStyle Enumeration specifies the hatch pattern.
 HatchStyle = {
     0x0000: "HS_HORIZONTAL",
@@ -32,7 +39,6 @@ HatchStyle = {
     0x0004: "HS_CROSS",
     0x0005: "HS_DIAGCROSS"
 }
-
 
 # No idea what's the proper name of this thing, see
 # http://msdn.microsoft.com/en-us/library/dd145130%28VS.85%29.aspx
@@ -296,6 +302,41 @@ RasterPolishMap = {
 }
 
 
+class WMFStream(BinaryStream):
+    def __init__(self, bytes):
+        BinaryStream.__init__(self, bytes)
+
+    def dump(self):
+        print('<stream type="WMF" size="%d">' % self.size)
+        wmfHeader = WmfHeader(self)
+        wmfHeader.dump()
+
+        MAXIMUM_RECORDS = 100000
+        for i in range(1, MAXIMUM_RECORDS):
+            size = self.getuInt32()
+            id = self.getuInt16(pos=self.pos + 4)
+            record = RecordType.get(id, ["INVALID"])
+            type = record[0]
+            # WmfHeader is already dumped
+            if i:
+                print('<record index="%s" type="%s">' % (i, type))
+                if len(record) > 1:
+                    handler = record[1](self)
+                    handler.dump()
+                else:
+                    print('<todo/>')
+                print('</record>')
+            # META_EOF
+            if type == "META_EOF":
+                break
+            if self.pos + size * 2 <= self.size:
+                self.pos += size * 2
+            else:
+                print('<Error value="Unexpected end of file" />')
+                break
+        print('</stream>')
+
+
 class WMFRecord(BinaryStream):
     def __init__(self, parent):
         BinaryStream.__init__(self, parent.bytes)
@@ -303,8 +344,28 @@ class WMFRecord(BinaryStream):
         self.pos = parent.pos
 
 
+class Rect(WMFRecord):
+    """The Rect Object defines a rectangle."""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "rect"
+
+    def dump(self):
+        print('<%s type="Rect">' % self.name)
+        self.printAndSet("Left", self.readInt16(), hexdump=False)
+        self.printAndSet("Top", self.readInt16(), hexdump=False)
+        self.printAndSet("Right", self.readInt16(), hexdump=False)
+        self.printAndSet("Bottom", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        self.parent.pos = self.pos
+
+
 class RectL(WMFRecord):
     """The RectL Object defines a rectangle."""
+
     def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
         if name:
@@ -324,6 +385,7 @@ class RectL(WMFRecord):
 
 class SizeL(WMFRecord):
     """The SizeL Object defines a rectangle."""
+
     def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
         if name:
@@ -341,6 +403,7 @@ class SizeL(WMFRecord):
 
 class PointL(WMFRecord):
     """The PointL Object defines the coordinates of a point."""
+
     def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
         if name:
@@ -358,6 +421,7 @@ class PointL(WMFRecord):
 
 class PointS(WMFRecord):
     """The PointS Object defines the x- and y-coordinates of a point."""
+
     def __init__(self, parent, name):
         WMFRecord.__init__(self, parent)
         self.name = name
@@ -372,6 +436,7 @@ class PointS(WMFRecord):
 
 class ColorRef(WMFRecord):
     """The ColorRef Object defines the RGB color."""
+
     def __init__(self, parent, name):
         WMFRecord.__init__(self, parent)
         self.name = name
@@ -384,5 +449,173 @@ class ColorRef(WMFRecord):
         self.printAndSet("Reserved", self.readuInt8(), hexdump=False)
         print('</%s>' % self.name)
         self.parent.pos = self.pos
+
+
+class WMFLineto(WMFRecord):
+    """Draws a line from the current position up to, but not including, the
+    specified point."""
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        PointL(self, "Point").dump()
+
+
+class WmfHeader(WMFRecord):
+    """The HEADER record types define the starting points of WMF metafiles."""
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print('<wmfHeader>')
+        self.header = Header(self)
+        self.header.dump()
+        self.parent.pos = self.pos
+        print('</wmfHeader>')
+
+
+class Header(WMFRecord):
+    """The Header object defines the WMF metafile header."""
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.Size = 18
+        if PlaceableHeader(self).isPlaceable():
+            PlaceableHeader(self).dump()
+            self.Size += 22
+        print("<header>")
+        self.printAndSet("FileType", self.readuInt16(), dict=FileType)
+        self.printAndSet("HeaderSize", self.readuInt16(), hexdump=False)
+        self.printAndSet("Version", self.readuInt16(), hexdump=False)
+        self.printAndSet("FileSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("NumObjects", self.readuInt16(), hexdump=False)
+        self.printAndSet("MaxRecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("NumOfParams", self.readuInt16(), hexdump=False)
+        print("</header>")
+        assert self.pos - posOrig == self.Size
+        self.parent.pos = self.pos
+
+
+class PlaceableHeader(WMFRecord):
+    """The header for the placeable WMF"""
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<placeableHeader>")
+        self.header = Header(self)
+        self.Size = 22
+        pos = self.pos
+        dataPos = self.pos
+        self.printAndSet("Key", self.readuInt32(), dict=PlaceableKey)
+        self.printAndSet("HWmf", self.readuInt16())
+        Rect(self, "BoundingBox").dump()
+        self.printAndSet("Inch", self.readuInt16(), hexdump=False)
+        self.printAndSet("Reserved", self.readuInt32())
+        self.printAndSet("Checksum", self.readuInt16())
+        assert self.pos == dataPos + self.Size
+        self.parent.pos = self.pos
+        print("</placeableHeader>")
+
+    def isPlaceable(self):
+        self.header = Header(self)
+        key = self.readuInt32()
+        if key in PlaceableKey.keys():
+            return True
+        return False
+
+
+class WmfSetviewportorgex(WMFRecord):
+    """Defines the viewport origin."""
+
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        posOrig = self.pos
+        self.printAndSet("Type", self.readuInt32())
+        self.printAndSet("Size", self.readuInt32(), hexdump=False)
+        PointL(self, "Origin").dump()
+        assert self.pos - posOrig == self.Size
+
+
+"""The RecordType enumeration defines values that uniquely identify EMF records."""
+RecordType = {
+    0x0000: ['META_EOF'],
+    0x0035: ['META_REALIZEPALETTE'],
+    0x0037: ['META_SETPALENTRIES'],
+    0x0102: ['META_SETBKMODE'],
+    0x0103: ['META_SETMAPMODE'],
+    0x0104: ['META_SETROP2'],
+    0x0105: ['META_SETRELABS'],
+    0x0106: ['META_SETPOLYFILLMODE'],
+    0x0107: ['META_SETSTRETCHBLTMODE'],
+    0x0108: ['META_SETTEXTCHAREXTRA'],
+    0x0127: ['META_RESTOREDC'],
+    0x0139: ['META_RESIZEPALETTE'],
+    0x0142: ['META_DIBCREATEPATTERNBRUSH'],
+    0x0149: ['META_SETLAYOUT'],
+    0x0201: ['META_SETBKCOLOR'],
+    0x0209: ['META_SETTEXTCOLOR'],
+    0x0211: ['META_OFFSETVIEWPORTORG'],
+    0x0213: ['META_LINETO', WMFLineto],
+    0x0214: ['META_MOVETO'],
+    0x0220: ['META_OFFSETCLIPRGN'],
+    0x0228: ['META_FILLREGION'],
+    0x0231: ['META_SETMAPPERFLAGS'],
+    0x0234: ['META_SELECTPALETTE'],
+    0x0324: ['META_POLYGON'],
+    0x0325: ['META_POLYLINE'],
+    0x020A: ['META_SETTEXTJUSTIFICATION'],
+    0x020B: ['META_SETWINDOWORG'],
+    0x020C: ['META_SETWINDOWEXT'],
+    0x020D: ['META_SETVIEWPORTORG'],
+    0x020E: ['META_SETVIEWPORTEXT'],
+    0x020F: ['META_OFFSETWINDOWORG'],
+    0x0410: ['META_SCALEWINDOWEXT'],
+    0x0412: ['META_SCALEVIEWPORTEXT'],
+    0x0415: ['META_EXCLUDECLIPRECT'],
+    0x0416: ['META_INTERSECTCLIPRECT'],
+    0x0418: ['META_ELLIPSE'],
+    0x0419: ['META_FLOODFILL'],
+    0x0429: ['META_FRAMEREGION'],
+    0x0436: ['META_ANIMATEPALETTE'],
+    0x0521: ['META_TEXTOUT'],
+    0x0538: ['META_POLYPOLYGON'],
+    0x0548: ['META_EXTFLOODFILL'],
+    0x041B: ['META_RECTANGLE'],
+    0x041F: ['META_SETPIXEL'],
+    0x061C: ['META_ROUNDRECT'],
+    0x061D: ['META_PATBLT'],
+    0x001E: ['META_SAVEDC'],
+    0x081A: ['META_PIE'],
+    0x0B23: ['META_STRETCHBLT'],
+    0x0626: ['META_ESCAPE'],
+    0x012A: ['META_INVERTREGION'],
+    0x012B: ['META_PAINTREGION'],
+    0x012C: ['META_SELECTCLIPREGION'],
+    0x012D: ['META_SELECTOBJECT'],
+    0x012E: ['META_SETTEXTALIGN'],
+    0x0817: ['META_ARC'],
+    0x0830: ['META_CHORD'],
+    0x0922: ['META_BITBLT'],
+    0x0a32: ['META_EXTTEXTOUT'],
+    0x0d33: ['META_SETDIBTODEV'],
+    0x0940: ['META_DIBBITBLT'],
+    0x0b41: ['META_DIBSTRETCHBLT'],
+    0x0f43: ['META_STRETCHDIB'],
+    0x01f0: ['META_DELETEOBJECT'],
+    0x00f7: ['META_CREATEPALETTE'],
+    0x01F9: ['META_CREATEPATTERNBRUSH'],
+    0x02FA: ['META_CREATEPENINDIRECT'],
+    0x02FB: ['META_CREATEFONTINDIRECT'],
+    0x02FC: ['META_CREATEBRUSHINDIRECT'],
+    0x06FF: ['META_CREATEREGION'],
+}
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
