@@ -65,7 +65,7 @@ class EMFStream(BinaryStream):
         emrHeader.dump()
         for i in range(emrHeader.header.Records):
             id = self.getuInt32()
-            record = RecordType[id]
+            record = RecordType.get(id, ["INVALID"])
             type = record[0]
             size = self.getuInt32(pos=self.pos + 4)
             # EmrHeader is already dumped
@@ -77,7 +77,14 @@ class EMFStream(BinaryStream):
                 else:
                     print('<todo/>')
                 print('</record>')
-            self.pos += size
+            # EMR_EOF
+            if type == "EMR_EOF":
+                break
+            if self.pos + size <= self.size:
+                self.pos += size
+            else:
+                print('<Error value="Unexpected end of file" />')
+                break
         print('</stream>')
 
 
