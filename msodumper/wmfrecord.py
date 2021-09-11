@@ -594,7 +594,7 @@ class WMFStream(BinaryStream):
             # META_EOF
             if type == "META_EOF":
                 break
-            if self.pos + size * 2 <= self.size:
+            if (self.pos + size * 2) <= self.size:
                 self.pos += size * 2
             else:
                 print('<Error value="Unexpected end of file" />')
@@ -823,12 +823,28 @@ class SetPaletteEntries(WMFRecord):
 
 
 class SetBkMode(WMFRecord):
-    def __init__(self, parent):
+    """The SetBkMode record is used to define the background raster operation
+       mix mode (pens, text, hatched brushes, and inside of filled objects
+       with background colors)"""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "setbkmode"
 
     def dump(self):
-        print("<todo/>")
         pass
+        dataPos = self.pos
+        print('<%s type="SetBkMode">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("BkMode", self.readuInt16(), hexdump=False)
+        # Check optional reserved value if the size shows that it exists
+        if self.RecordSize == 5:
+            self.printAndSet("Reserved", self.readuInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetMapMode(WMFRecord):
@@ -1336,12 +1352,25 @@ class SelectObject(WMFRecord):
 
 
 class SetTextAlign(WMFRecord):
-    def __init__(self, parent):
+    """The SetTextAlign record is used to define the text alignment"""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "settextalign"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SetTextAlign">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("TextAlignmentMode", self.readuInt16(), hexdump=False)
+        # Check optional reserved value if the size shows that it exists
+        if self.RecordSize == 5:
+            self.printAndSet("Reserved", self.readuInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class Arc(WMFRecord):
@@ -1453,12 +1482,63 @@ class CreatePenIndirect(WMFRecord):
 
 
 class CreateFontIndirect(WMFRecord):
-    def __init__(self, parent):
+    """The CreateFontIndirect record is used to create a font object"""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "createfontindirect"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="CreateFontIndirect">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        # Check optional reserved value if the size shows that it exists
+        if self.RecordSize > 3:
+            Font(self, "Font").dump()
+        print('</%s>' % self.name)
+        # RecordSize is described in words, so we should double for bytes
+        assert self.pos == dataPos + self.RecordSize * 2
+
+
+class Font(WMFRecord):
+    """The Font object describes a logical font and its attributes"""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "Font"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="Font">' % self.name)
+        self.printAndSet("Height", self.readInt16(), hexdump=False)
+        self.printAndSet("Width", self.readInt16(), hexdump=False)
+        self.printAndSet("Escapement", self.readInt16(), hexdump=False)
+        self.printAndSet("Orientation", self.readInt16(), hexdump=False)
+        self.printAndSet("Weight", self.readInt16(), hexdump=False)
+        self.printAndSet("Italic", self.readuInt8(), hexdump=False)
+        self.printAndSet("Underline", self.readuInt8(), hexdump=False)
+        self.printAndSet("StrikeOut", self.readuInt8(), hexdump=False)
+        self.printAndSet("CharSet", self.readuInt8(), hexdump=False)
+        self.printAndSet("OutPrecision", self.readuInt8(), hexdump=False)
+        self.printAndSet("ClipPrecision", self.readuInt8(), hexdump=False)
+        self.printAndSet("Quality", self.readuInt8(), hexdump=False)
+        self.printAndSet("PitchAndFamily", self.readuInt8(), hexdump=False)
+        name = self.readBytes(32)
+        self.FaceName = ""
+        # Use characters until null byte
+        for i in range(32):
+            if name[i] == 0:
+                break
+            self.FaceName += chr(name[i])
+        print('<FaceName value="%s"/>' % self.FaceName)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + 50
+        self.parent.pos = self.pos
 
 
 class CreateBrushIndirect(WMFRecord):
