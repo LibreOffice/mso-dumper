@@ -11,9 +11,33 @@ PlaceableKey = {
     0x9ac6cdd7: "META_PLACEABLE",
 }
 
-FileType = {
-    0x00: "Memory",
-    0x01: "Disk",
+BinaryRasterOperation = {
+    0x0001: "R2_BLACK",
+    0x0002: "R2_NOTMERGEPEN",
+    0x0003: "R2_MASKNOTPEN",
+    0x0004: "R2_NOTCOPYPEN",
+    0x0005: "R2_MASKPENNOT",
+    0x0006: "R2_NOT",
+    0x0007: "R2_XORPEN",
+    0x0008: "R2_NOTMASKPEN",
+    0x0009: "R2_MASKPEN",
+    0x000A: "R2_NOTXORPEN",
+    0x000B: "R2_NOP",
+    0x000C: "R2_MERGENOTPEN",
+    0x000D: "R2_COPYPEN",
+    0x000E: "R2_MERGEPENNOT",
+    0x000F: "R2_MERGEPEN",
+    0x0010: "R2_WHITE",
+}
+
+BitCount = {
+    0x0000: "BI_BITCOUNT_0",
+    0x0001: "BI_BITCOUNT_1",
+    0x0004: "BI_BITCOUNT_2",
+    0x0008: "BI_BITCOUNT_3",
+    0x0010: "BI_BITCOUNT_4",
+    0x0018: "BI_BITCOUNT_5",
+    0x0020: "BI_BITCOUNT_6",
 }
 
 # The BrushStyle Enumeration specifies the different possible brush types that can be used in graphics operations.
@@ -30,6 +54,81 @@ BrushStyle = {
     0x0009: "BS_MONOPATTERN"
 }
 
+CharacterSet = {
+    0x00000001: "DEFAULT_CHARSET",
+    0x00000002: "SYMBOL_CHARSET",
+    0x0000004D: "MAC_CHARSET",
+    0x00000080: "SHIFTJIS_CHARSET",
+    0x00000081: "HANGUL_CHARSET",
+    0x00000082: "JOHAB_CHARSET",
+    0x00000086: "GB2312_CHARSET",
+    0x00000088: "CHINESEBIG5_CHARSET",
+    0x000000A1: "GREEK_CHARSET",
+    0x000000A2: "TURKISH_CHARSET",
+    0x000000A3: "VIETNAMESE_CHARSET",
+    0x000000B1: "HEBREW_CHARSET",
+    0x000000B2: "ARABIC_CHARSET",
+    0x000000BA: "BALTIC_CHARSET",
+    0x000000CC: "RUSSIAN_CHARSET",
+    0x000000DE: "THAI_CHARSET",
+    0x000000EE: "EASTEUROPE_CHARSET",
+    0x000000FF: "OEM_CHARSET",
+}
+
+ColorUsage = {
+    0x0000: "DIB_RGB_COLORS",
+    0x0001: "DIB_PAL_COLORS",
+    0x0002: "DIB_PAL_INDICES",
+}
+
+Compression = {
+    0x0000: "BI_RGB",
+    0x0001: "BI_RLE8",
+    0x0002: "BI_RLE4",
+    0x0003: "BI_BITFIELDS",
+    0x0004: "BI_JPEG",
+    0x0005: "BI_PNG",
+    0x000B: "BI_CMYK",
+    0x000C: "BI_CMYKRLE8",
+    0x000D: "BI_CMYKRLE4",
+}
+
+FamilyFont = {
+    0x00: "FF_DONTCARE",
+    0x01: "FF_ROMAN",
+    0x02: "FF_SWISS",
+    0x03: "FF_MODERN",
+    0x04: "FF_SCRIPT",
+    0x05: "FF_DECORATIVE",
+}
+
+FloodFill = {
+    0x0000: "FLOODFILLBORDER",
+    0x0001: "FLOODFILLSURFACE",
+}
+
+FontQuality = {
+    0x00: "DEFAULT_QUALITY",
+    0x01: "DRAFT_QUALITY",
+    0x02: "PROOF_QUALITY",
+    0x03: "NONANTIALIASED_QUALITY",
+    0x04: "ANTIALIASED_QUALITY",
+    0x05: "CLEARTYPE_QUALITY",
+}
+
+GamutMappingIntent = {
+    0x00000008: "LCS_GM_ABS_COLORIMETRIC",
+    0x00000001: "LCS_GM_BUSINESS",
+    0x00000002: "LCS_GM_GRAPHICS",
+    0x00000004: "LCS_GM_IMAGES",
+}
+
+ColorUsage = {
+    0x0000: "DIB_RGB_COLORS",
+    0x0001: "DIB_PAL_COLORS",
+    0x0002: "DIB_PAL_INDICES",
+}
+
 # The HatchStyle Enumeration specifies the hatch pattern.
 HatchStyle = {
     0x0000: "HS_HORIZONTAL",
@@ -39,6 +138,171 @@ HatchStyle = {
     0x0004: "HS_CROSS",
     0x0005: "HS_DIAGCROSS"
 }
+
+Layout = {
+    0x0000: "LAYOUT_LTR",
+    0x0001: "LAYOUT_RTL",
+    0x0008: "LAYOUT_BITMAPORIENTATIONPRESERVED",
+}
+
+LogicalColorSpace = {
+    0x00000000: "LCS_CALIBRATED_RGB",
+    0x73524742: "LCS_sRGB",
+    0x57696E20: "LCS_WINDOWS_COLOR_SPACE",
+}
+
+LogicalColorSpaceV5 = {
+    0x4C494E4B: "LCS_PROFILE_LINKED",
+    0x4D424544: "LCS_PROFILE_EMBEDDED",
+}
+
+MapMode = {
+    0x0001: "MM_TEXT",
+    0x0002: "MM_LOMETRIC",
+    0x0003: "MM_HIMETRIC",
+    0x0004: "MM_LOENGLISH",
+    0x0005: "MM_HIENGLISH",
+    0x0006: "MM_TWIPS",
+    0x0007: "MM_ISOTROPIC",
+    0x0008: "MM_ANISOTROPIC",
+}
+
+MetafileEscapes = {
+    0x0001: "NEWFRAME",
+    0x0002: "ABORTDOC",
+    0x0003: "NEXTBAND",
+    0x0004: "SETCOLORTABLE",
+    0x0005: "GETCOLORTABLE",
+    0x0006: "FLUSHOUT",
+    0x0007: "DRAFTMODE",
+    0x0008: "QUERYESCSUPPORT",
+    0x0009: "SETABORTPROC",
+    0x000A: "STARTDOC",
+    0x000B: "ENDDOC",
+    0x000C: "GETPHYSPAGESIZE",
+    0x000D: "GETPRINTINGOFFSET",
+    0x000E: "GETSCALINGFACTOR",
+    0x000F: "META_ESCAPE_ENHANCED_METAFILE",
+    0x0010: "SETPENWIDTH",
+    0x0011: "SETCOPYCOUNT",
+    0x0012: "SETPAPERSOURCE",
+    0x0013: "PASSTHROUGH",
+    0x0014: "GETTECHNOLOGY",
+    0x0015: "SETLINECAP",
+    0x0016: "SETLINEJOIN",
+    0x0017: "SETMITERLIMIT",
+    0x0018: "BANDINFO",
+    0x0019: "DRAWPATTERNRECT",
+    0x001A: "GETVECTORPENSIZE",
+    0x001B: "GETVECTORBRUSHSIZE",
+    0x001C: "ENABLEDUPLEX",
+    0x001D: "GETSETPAPERBINS",
+    0x001E: "GETSETPRINTORIENT",
+    0x001F: "ENUMPAPERBINS",
+    0x0020: "SETDIBSCALING",
+    0x0021: "EPSPRINTING",
+    0x0022: "ENUMPAPERMETRICS",
+    0x0023: "GETSETPAPERMETRICS",
+    0x0025: "POSTSCRIPT_DATA",
+    0x0026: "POSTSCRIPT_IGNORE",
+    0x002A: "GETDEVICEUNITS",
+    0x0100: "GETEXTENDEDTEXTMETRICS",
+    0x0102: "GETPAIRKERNTABLE",
+    0x0200: "EXTTEXTOUT",
+    0x0201: "GETFACENAME",
+    0x0202: "DOWNLOADFACE",
+    0x0801: "METAFILE_DRIVER",
+    0x0C01: "QUERYDIBSUPPORT",
+    0x1000: "BEGIN_PATH",
+    0x1001: "CLIP_TO_PATH",
+    0x1002: "END_PATH",
+    0x100E: "OPENCHANNEL",
+    0x100F: "DOWNLOADHEADER",
+    0x1010: "CLOSECHANNEL",
+    0x1013: "POSTSCRIPT_PASSTHROUGH",
+    0x1014: "ENCAPSULATED_POSTSCRIPT",
+    0x1015: "POSTSCRIPT_IDENTIFY",
+    0x1016: "POSTSCRIPT_INJECTION",
+    0x1017: "CHECKJPEGFORMAT",
+    0x1018: "CHECKPNGFORMAT",
+    0x1019: "GET_PS_FEATURESETTING",
+    0x101A: "MXDC_ESCAPE",
+    0x11D8: "SPCLPASSTHROUGH2",
+}
+
+MetafileType = {
+    0x0001: "MEMORYMETAFILE",
+    0x0002: "DISKMETAFILE",
+}
+
+MetafileVersion = {
+    0x0100: "METAVERSION100",
+    0x0300: "METAVERSION300",
+}
+
+MixMode = {
+    0x0001: "TRANSPARENT",
+    0x0002: "OPAQUE",
+}
+
+OutPrecision = {
+    0x00000000: "OUT_DEFAULT_PRECIS",
+    0x00000001: "OUT_STRING_PRECIS",
+    0x00000003: "OUT_STROKE_PRECIS",
+    0x00000004: "OUT_TT_PRECIS",
+    0x00000005: "OUT_DEVICE_PRECIS",
+    0x00000006: "OUT_RASTER_PRECIS",
+    0x00000007: "OUT_TT_ONLY_PRECIS",
+    0x00000008: "OUT_OUTLINE_PRECIS",
+    0x00000009: "OUT_SCREEN_OUTLINE_PRECIS",
+    0x0000000A: "OUT_PS_ONLY_PRECIS",
+}
+
+PaletteEntryFlag = {
+    0x01: "PC_RESERVED",
+    0x02: "PC_EXPLICIT",
+    0x04: "PC_NOCOLLAPSE",
+}
+
+PostScriptCap = {
+    -2: "PostScriptNotSet",
+    0: "PostScriptFlatCap",
+    1: "PostScriptRoundCap",
+    2: "PostScriptSquareCap",
+}
+
+PostScriptClipping = {
+    0x0000: "CLIP_SAVE",
+    0x0001: "CLIP_RESTORE",
+    0x0002: "CLIP_INCLUSIVE",
+}
+
+PostScriptFeatureSetting = {
+    0x00000000: "FEATURESETTING_NUP",
+    0x00000001: "FEATURESETTING_OUTPUT",
+    0x00000002: "FEATURESETTING_PSLEVEL",
+    0x00000003: "FEATURESETTING_CUSTPAPER",
+    0x00000004: "FEATURESETTING_MIRROR",
+    0x00000005: "FEATURESETTING_NEGATIVE",
+    0x00000006: "FEATURESETTING_PROTOCOL",
+    0x00001000: "FEATURESETTING_PRIVATE_BEGIN",
+    0x00001FFF: "FEATURESETTING_PRIVATE_END",
+}
+
+PostScriptJoin = {
+    -2: "PostScriptNotSet",
+    0: "PostScriptMiterJoin",
+    1: "PostScriptRoundJoin",
+    2: "PostScriptBevelJoin",
+}
+
+StretchMode = {
+    0x0001: "BLACKONWHITE",
+    0x0002: "WHITEONBLACK",
+    0x0003: "COLORONCOLOR",
+    0x0004: "HALFTONE",
+}
+
 
 # No idea what's the proper name of this thing, see
 # http://msdn.microsoft.com/en-us/library/dd145130%28VS.85%29.aspx
@@ -489,7 +753,7 @@ class Header(WMFRecord):
             PlaceableHeader(self).dump()
             self.Size += 22
         print("<header>")
-        self.printAndSet("FileType", self.readuInt16(), dict=FileType)
+        self.printAndSet("FileType", self.readuInt16(), dict=MetafileType)
         self.printAndSet("HeaderSize", self.readuInt16(), hexdump=False)
         self.printAndSet("Version", self.readuInt16(), hexdump=False)
         self.printAndSet("FileSize", self.readuInt32(), hexdump=False)
