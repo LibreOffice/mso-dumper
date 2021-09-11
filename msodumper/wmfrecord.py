@@ -6,6 +6,7 @@
 #
 
 from .binarystream import BinaryStream
+import base64
 
 PlaceableKey = {
     0x9ac6cdd7: "META_PLACEABLE",
@@ -608,6 +609,115 @@ class WMFRecord(BinaryStream):
         self.pos = parent.pos
 
 
+class Font(WMFRecord):
+    """The Font object describes a logical font and its attributes"""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "Font"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="Font">' % self.name)
+        self.printAndSet("Height", self.readuInt16(), hexdump=False)
+        self.printAndSet("Width", self.readuInt16(), hexdump=False)
+        self.printAndSet("Escapement", self.readuInt16(), hexdump=False)
+        self.printAndSet("Orientation", self.readuInt16(), hexdump=False)
+        self.printAndSet("Weight", self.readuInt16(), hexdump=False)
+        self.printAndSet("Italic", self.readuInt8(), hexdump=False)
+        self.printAndSet("Underline", self.readuInt8(), hexdump=False)
+        self.printAndSet("StrikeOut", self.readuInt8(), hexdump=False)
+        self.printAndSet("CharSet", self.readuInt8(), hexdump=False)
+        self.printAndSet("OutPrecision", self.readuInt8(), hexdump=False)
+        self.printAndSet("ClipPrecision", self.readuInt8(), hexdump=False)
+        self.printAndSet("Quality", self.readuInt8(), hexdump=False)
+        self.printAndSet("PitchAndFamily", self.readuInt8(), hexdump=False)
+        name = self.readBytes(32)
+        self.FaceName = ""
+        # Use characters until null byte
+        for i in range(32):
+            if name[i] == 0:
+                break
+            self.FaceName += chr(name[i])
+        print('<FaceName value="%s"/>' % self.FaceName)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + 50
+        self.parent.pos = self.pos
+
+
+class CreateFontIndirect(WMFRecord):
+    """The CreateFontIndirect record is used to create a font object"""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "createfontindirect"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="CreateFontIndirect">' % self.name)
+        self.printAndSet("RecordSize", self.readInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readInt16(), hexdump=False)
+        # Check optional reserved value if the size shows that it exists
+        if self.RecordSize > 3:
+            Font(self, "Font").dump()
+        print('</%s>' % self.name)
+        # RecordSize is described in words, so we should double for bytes
+        assert self.pos == dataPos + self.RecordSize * 2
+        self.parent.pos = self.pos
+
+
+class SetBkMode(WMFRecord):
+    """The SetBkMode record is used to define the background raster operation
+       mix mode (pens, text, hatched brushes, and inside of filled objects
+       with background colors)"""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "setbkmode"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="SetBkMode">' % self.name)
+        self.printAndSet("RecordSize", self.readInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readInt16(), hexdump=False)
+        self.printAndSet("BkMode", self.readInt16(), hexdump=False)
+        # Check optional reserved value if the size shows that it exists
+        if self.RecordSize == 5:
+            self.printAndSet("Reserved", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
+        self.parent.pos = self.pos
+
+
+class SetTextAlign(WMFRecord):
+    """The SetTextAlign record is used to define the text alignment"""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "settextalign"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="SetTextAlign">' % self.name)
+        self.printAndSet("RecordSize", self.readInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readInt16(), hexdump=False)
+        self.printAndSet("TextAlignmentMode", self.readInt16(), hexdump=False)
+        # Check optional reserved value if the size shows that it exists
+        if self.RecordSize == 5:
+            self.printAndSet("Reserved", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
+        self.parent.pos = self.pos
+
+
 class Rect(WMFRecord):
     """The Rect Object defines a rectangle."""
     def __init__(self, parent, name=None):
@@ -629,7 +739,6 @@ class Rect(WMFRecord):
 
 class RectL(WMFRecord):
     """The RectL Object defines a rectangle."""
-
     def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
         if name:
@@ -649,7 +758,6 @@ class RectL(WMFRecord):
 
 class SizeL(WMFRecord):
     """The SizeL Object defines a rectangle."""
-
     def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
         if name:
@@ -667,7 +775,6 @@ class SizeL(WMFRecord):
 
 class PointL(WMFRecord):
     """The PointL Object defines the coordinates of a point."""
-
     def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
         if name:
@@ -685,7 +792,6 @@ class PointL(WMFRecord):
 
 class PointS(WMFRecord):
     """The PointS Object defines the x- and y-coordinates of a point."""
-
     def __init__(self, parent, name):
         WMFRecord.__init__(self, parent)
         self.name = name
@@ -700,7 +806,6 @@ class PointS(WMFRecord):
 
 class ColorRef(WMFRecord):
     """The ColorRef Object defines the RGB color."""
-
     def __init__(self, parent, name):
         WMFRecord.__init__(self, parent)
         self.name = name
@@ -715,7 +820,7 @@ class ColorRef(WMFRecord):
         self.parent.pos = self.pos
 
 
-class WMFLineto(WMFRecord):
+class Lineto(WMFRecord):
     """Draws a line from the current position up to, but not including, the
     specified point."""
     def __init__(self, parent):
@@ -794,7 +899,7 @@ class PlaceableHeader(WMFRecord):
         return False
 
 
-class WmfSetviewportorgex(WMFRecord):
+class Setviewportorgex(WMFRecord):
     """Defines the viewport origin."""
 
     def __init__(self, parent):
@@ -808,78 +913,737 @@ class WmfSetviewportorgex(WMFRecord):
         assert self.pos - posOrig == self.Size
 
 
-"""The RecordType enumeration defines values that uniquely identify EMF records."""
+class RealizePalette(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetPaletteEntries(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetMapMode(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetROP2(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetRelAbs(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetPolyFillMode(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetStretchBltMode(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetTextCharacterExtra(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class RestoreDC:
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class ResizePalette(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class CreateDIBPatternBrush(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetLayout(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetTextColor(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetBkColor(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetTextColor(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class MoveTo(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class OffsetClipRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class FillRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetMapperFlags(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SelectPalette(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Polygon(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Polyline(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetTextJustification(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetWindowOrg(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetWindowExt:
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetViewportOrg(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetViewportExt(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class OffsetWindowOrg(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class ScaleWindowExt(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class ScaleViewportExt(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class ExcludeClipRect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class IntersectClipRect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Ellipse(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class FrameRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class AnimatePalette(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class TextOut(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class PolyPolygon(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class ExtFloodFill(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Rectangle(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetPixel(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class RoundRect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetPixel(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetPixel(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetPixel(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class RoundRect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetPixel(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class PatBlt(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class RoundRect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SaveDC(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SaveDC(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Pie(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class StretchBlt(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Escape(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class InvertRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class PaintRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SelectClipRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SelectClipRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SelectObject(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Arc(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class Chord(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class BitBlt(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class ExtTextOut(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class SetDIBitsToDevice(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class StretchDIBits(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class StretchDIBits(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class StretchDIBits(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class DeleteObject(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class CreatePalette(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class CreatePatternBrush(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class CreatePenIndirect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class CreateFontIndirect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class CreateBrushIndirect(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+class CreateRectRgn(WMFRecord):
+    def __init__(self, parent):
+        WMFRecord.__init__(self, parent)
+
+    def dump(self):
+        print("<todo/>")
+        pass
+
+
+# GDI Functions: https://docs.microsoft.com/en-us/windows/win32/api/_gdi/
+# Wine API / GDI: https://source.winehq.org/WineAPI/gdi.html
+"""The RecordType enumeration defines values that uniquely identify WMF records."""
 RecordType = {
     0x0000: ['META_EOF'],
-    0x0035: ['META_REALIZEPALETTE'],
-    0x0037: ['META_SETPALENTRIES'],
-    0x0102: ['META_SETBKMODE'],
-    0x0103: ['META_SETMAPMODE'],
-    0x0104: ['META_SETROP2'],
-    0x0105: ['META_SETRELABS'],
-    0x0106: ['META_SETPOLYFILLMODE'],
-    0x0107: ['META_SETSTRETCHBLTMODE'],
-    0x0108: ['META_SETTEXTCHAREXTRA'],
-    0x0127: ['META_RESTOREDC'],
-    0x0139: ['META_RESIZEPALETTE'],
-    0x0142: ['META_DIBCREATEPATTERNBRUSH'],
-    0x0149: ['META_SETLAYOUT'],
-    0x0201: ['META_SETBKCOLOR'],
-    0x0209: ['META_SETTEXTCOLOR'],
-    0x0211: ['META_OFFSETVIEWPORTORG'],
-    0x0213: ['META_LINETO', WMFLineto],
-    0x0214: ['META_MOVETO'],
-    0x0220: ['META_OFFSETCLIPRGN'],
-    0x0228: ['META_FILLREGION'],
-    0x0231: ['META_SETMAPPERFLAGS'],
-    0x0234: ['META_SELECTPALETTE'],
-    0x0324: ['META_POLYGON'],
-    0x0325: ['META_POLYLINE'],
-    0x020A: ['META_SETTEXTJUSTIFICATION'],
-    0x020B: ['META_SETWINDOWORG'],
-    0x020C: ['META_SETWINDOWEXT'],
-    0x020D: ['META_SETVIEWPORTORG'],
-    0x020E: ['META_SETVIEWPORTEXT'],
-    0x020F: ['META_OFFSETWINDOWORG'],
-    0x0410: ['META_SCALEWINDOWEXT'],
-    0x0412: ['META_SCALEVIEWPORTEXT'],
-    0x0415: ['META_EXCLUDECLIPRECT'],
-    0x0416: ['META_INTERSECTCLIPRECT'],
-    0x0418: ['META_ELLIPSE'],
-    0x0419: ['META_FLOODFILL'],
-    0x0429: ['META_FRAMEREGION'],
-    0x0436: ['META_ANIMATEPALETTE'],
-    0x0521: ['META_TEXTOUT'],
-    0x0538: ['META_POLYPOLYGON'],
-    0x0548: ['META_EXTFLOODFILL'],
-    0x041B: ['META_RECTANGLE'],
-    0x041F: ['META_SETPIXEL'],
-    0x061C: ['META_ROUNDRECT'],
-    0x061D: ['META_PATBLT'],
-    0x001E: ['META_SAVEDC'],
-    0x081A: ['META_PIE'],
-    0x0B23: ['META_STRETCHBLT'],
-    0x0626: ['META_ESCAPE'],
-    0x012A: ['META_INVERTREGION'],
-    0x012B: ['META_PAINTREGION'],
-    0x012C: ['META_SELECTCLIPREGION'],
-    0x012D: ['META_SELECTOBJECT'],
-    0x012E: ['META_SETTEXTALIGN'],
-    0x0817: ['META_ARC'],
-    0x0830: ['META_CHORD'],
-    0x0922: ['META_BITBLT'],
-    0x0a32: ['META_EXTTEXTOUT'],
-    0x0d33: ['META_SETDIBTODEV'],
-    0x0940: ['META_DIBBITBLT'],
-    0x0b41: ['META_DIBSTRETCHBLT'],
-    0x0f43: ['META_STRETCHDIB'],
-    0x01f0: ['META_DELETEOBJECT'],
-    0x00f7: ['META_CREATEPALETTE'],
-    0x01F9: ['META_CREATEPATTERNBRUSH'],
-    0x02FA: ['META_CREATEPENINDIRECT'],
-    0x02FB: ['META_CREATEFONTINDIRECT'],
-    0x02FC: ['META_CREATEBRUSHINDIRECT'],
-    0x06FF: ['META_CREATEREGION'],
+    0x0035: ['META_REALIZEPALETTE', RealizePalette],
+    0x0037: ['META_SETPALENTRIES', SetPaletteEntries],
+    0x0102: ['META_SETBKMODE', SetBkMode],
+    0x0103: ['META_SETMAPMODE', SetMapMode],
+    0x0104: ['META_SETROP2', SetROP2],
+    0x0105: ['META_SETRELABS', SetRelAbs],
+    0x0106: ['META_SETPOLYFILLMODE', SetPolyFillMode],
+    0x0107: ['META_SETSTRETCHBLTMODE', SetStretchBltMode],
+    0x0108: ['META_SETTEXTCHAREXTRA', SetTextCharacterExtra],
+    0x0127: ['META_RESTOREDC', RestoreDC],
+    0x0139: ['META_RESIZEPALETTE', ResizePalette],
+    0x0142: ['META_DIBCREATEPATTERNBRUSH', CreateDIBPatternBrush],
+    0x0149: ['META_SETLAYOUT', SetLayout],
+    0x0201: ['META_SETBKCOLOR', SetBkColor],
+    0x0209: ['META_SETTEXTCOLOR', SetTextColor],
+    0x0211: ['META_OFFSETVIEWPORTORG', Setviewportorgex],
+    0x0213: ['META_LINETO', Lineto],
+    0x0214: ['META_MOVETO', MoveTo],
+    0x0220: ['META_OFFSETCLIPRGN', OffsetClipRgn],
+    0x0228: ['META_FILLREGION', FillRgn],
+    0x0231: ['META_SETMAPPERFLAGS', SetMapperFlags],
+    0x0234: ['META_SELECTPALETTE', SelectPalette],
+    0x0324: ['META_POLYGON', Polygon],
+    0x0325: ['META_POLYLINE', Polyline],
+    0x020A: ['META_SETTEXTJUSTIFICATION', SetTextJustification],
+    0x020B: ['META_SETWINDOWORG', SetWindowOrg],
+    0x020C: ['META_SETWINDOWEXT', SetWindowExt],
+    0x020D: ['META_SETVIEWPORTORG', SetViewportOrg],
+    0x020E: ['META_SETVIEWPORTEXT', SetViewportExt],
+    0x020F: ['META_OFFSETWINDOWORG', OffsetWindowOrg],
+    0x0410: ['META_SCALEWINDOWEXT', ScaleWindowExt],
+    0x0412: ['META_SCALEVIEWPORTEXT', ScaleViewportExt],
+    0x0415: ['META_EXCLUDECLIPRECT', ExcludeClipRect],
+    0x0416: ['META_INTERSECTCLIPRECT', IntersectClipRect],
+    0x0418: ['META_ELLIPSE', Ellipse],
+    0x0419: ['META_FLOODFILL', FloodFill],
+    0x0429: ['META_FRAMEREGION', FrameRgn],
+    0x0436: ['META_ANIMATEPALETTE', AnimatePalette],
+    0x0521: ['META_TEXTOUT', TextOut],
+    0x0538: ['META_POLYPOLYGON', PolyPolygon],
+    0x0548: ['META_EXTFLOODFILL', ExtFloodFill],
+    0x041B: ['META_RECTANGLE', Rectangle],
+    0x041F: ['META_SETPIXEL', SetPixel],
+    0x061C: ['META_ROUNDRECT', RoundRect],
+    0x061D: ['META_PATBLT', PatBlt],
+    0x001E: ['META_SAVEDC', SaveDC],
+    0x081A: ['META_PIE', Pie],
+    0x0B23: ['META_STRETCHBLT', StretchBlt],
+    0x0626: ['META_ESCAPE', Escape],
+    0x012A: ['META_INVERTREGION', InvertRgn],
+    0x012B: ['META_PAINTREGION', PaintRgn],
+    0x012C: ['META_SELECTCLIPREGION', SelectClipRgn],
+    0x012D: ['META_SELECTOBJECT', SelectObject],
+    0x012E: ['META_SETTEXTALIGN', SetTextAlign],
+    0x0817: ['META_ARC', Arc],
+    0x0830: ['META_CHORD', Chord],
+    0x0922: ['META_BITBLT', BitBlt],
+    0x0a32: ['META_EXTTEXTOUT', ExtTextOut],
+    0x0d33: ['META_SETDIBTODEV', SetDIBitsToDevice],
+    0x0940: ['META_DIBBITBLT', BitBlt],
+    0x0b41: ['META_DIBSTRETCHBLT', StretchBlt],
+    0x0f43: ['META_STRETCHDIB', StretchDIBits],
+    0x01f0: ['META_DELETEOBJECT', DeleteObject],
+    0x00f7: ['META_CREATEPALETTE', CreatePalette],
+    0x01F9: ['META_CREATEPATTERNBRUSH', CreatePatternBrush],
+    0x02FA: ['META_CREATEPENINDIRECT', CreatePenIndirect],
+    0x02FB: ['META_CREATEFONTINDIRECT', CreateFontIndirect],
+    0x02FC: ['META_CREATEBRUSHINDIRECT', CreateBrushIndirect],
+    0x06FF: ['META_CREATEREGION', CreateRectRgn],
 }
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
