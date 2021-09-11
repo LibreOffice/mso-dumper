@@ -9,3 +9,4 @@ check:
 	pycodestyle --ignore=E501 swlaycache-dump.py msodumper/swlaycacherecord.py
 	pycodestyle --ignore=E501 ole1-dump.py msodumper/ole1record.py
 	pycodestyle --ignore=E501 ole2preview-dump.py msodumper/ole2previewrecord.py
+	pycodestyle --ignore=E501 convert-enum.py
