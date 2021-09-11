@@ -1,6 +1,7 @@
 check:
 	cd test/doc && ./test.py
 	cd test/emf && ./test.py
+	cd test/wmf && ./test.py
 	pycodestyle --ignore=E501 msodumper/binarystream.py
 	pycodestyle --ignore=E501 msodumper/msometa.py
 	pycodestyle --ignore=E501 doc-dump.py msodumper/doc*.py test/doc/test.py
