@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5b548d25_d9d0335c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002951
+      },
+      "writtenOn": "2021-09-19T23:25:34Z",
+      "side": 1,
+      "message": "Result of \u0027make check\u0027 is OK.\nFormatting is OK.\nManually verified with the wmf/emf files inside core repository, and it seemed OK.",
+      "revId": "e06413d415e60e09e7ec46b73b14c8a6edbc108e",
+      "serverId": "6622c302-437a-49ad-a91d-55ba7dcf1615"
+    }
+  ]
+}
