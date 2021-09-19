@@ -265,6 +265,17 @@ PaletteEntryFlag = {
     0x04: "PC_NOCOLLAPSE",
 }
 
+PitchFont = {
+    0: "DEFAULT_PITCH",
+    1: "FIXED_PITCH",
+    2: "VARIABLE_PITCH",
+}
+
+PolyFillMode = {
+    0x0001: "ALTERNATE",
+    0x0002: "WINDING",
+}
+
 PostScriptCap = {
     -2: "PostScriptNotSet",
     0: "PostScriptFlatCap",
@@ -567,6 +578,26 @@ RasterPolishMap = {
 }
 
 
+PenStyle = {
+    0x0000: "PS_COSMETIC",
+    0x0000: "PS_ENDCAP_ROUND",
+    0x0000: "PS_JOIN_ROUND",
+    0x0000: "PS_SOLID",
+    0x0001: "PS_DASH",
+    0x0002: "PS_DOT",
+    0x0003: "PS_DASHDOT",
+    0x0004: "PS_DASHDOTDOT",
+    0x0005: "PS_NULL",
+    0x0006: "PS_INSIDEFRAME",
+    0x0007: "PS_USERSTYLE",
+    0x0008: "PS_ALTERNATE",
+    0x0100: "PS_ENDCAP_SQUARE",
+    0x0200: "PS_ENDCAP_FLAT",
+    0x1000: "PS_JOIN_BEVEL",
+    0x2000: "PS_JOIN_MITER",
+}
+
+
 class WMFStream(BinaryStream):
     def __init__(self, bytes):
         BinaryStream.__init__(self, bytes)
@@ -776,7 +807,7 @@ class PlaceableHeader(WMFRecord):
         self.printAndSet("HWmf", self.readuInt16())
         Rect(self, "BoundingBox").dump()
         self.printAndSet("Inch", self.readuInt16(), hexdump=False)
-        self.printAndSet("Reserved", self.readuInt32())
+        self.printAndSet("Reserved", self.readuInt32(), hexdump=False)
         self.printAndSet("Checksum", self.readuInt16())
         assert self.pos == dataPos + self.Size
         self.parent.pos = self.pos
@@ -834,7 +865,6 @@ class SetBkMode(WMFRecord):
             self.name = "setbkmode"
 
     def dump(self):
-        pass
         dataPos = self.pos
         print('<%s type="SetBkMode">' % self.name)
         self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
@@ -848,12 +878,22 @@ class SetBkMode(WMFRecord):
 
 
 class SetMapMode(WMFRecord):
-    def __init__(self, parent):
+    """The META_SETMAPMODE record is used to define the mapping mode in the playback device context."""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "selectobject"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SetTextAlign">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("MapMode", self.readuInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetROP2(WMFRecord):
@@ -875,12 +915,24 @@ class SetRelAbs(WMFRecord):
 
 
 class SetPolyFillMode(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "setpolyfillmode"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SetPolyFillMode">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("PolyFillMode", self.readuInt16(), dict=PolyFillMode)
+        # Check optional reserved value if the size shows that it exists
+        if self.RecordSize == 5:
+            self.printAndSet("Reserved", self.readuInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetStretchBltMode(WMFRecord):
@@ -937,40 +989,62 @@ class SetLayout(WMFRecord):
         pass
 
 
-class SetTextColor(WMFRecord):
-    def __init__(self, parent):
-        WMFRecord.__init__(self, parent)
-
-    def dump(self):
-        print("<todo/>")
-        pass
-
-
 class SetBkColor(WMFRecord):
-    def __init__(self, parent):
+    """The META_SETBKCOLOR record is used to set the background color. If the specified color
+    is not possible in the device, the nearest physical color is used."""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "setbkcolor"
 
     def dump(self):
-        print("<todo/>")
         pass
+        dataPos = self.pos
+        print('<%s type="SetBkColor">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        ColorRef(self, "ColorRef").dump()
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetTextColor(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "settextcolor"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SetTextColor">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        ColorRef(self, "ColorRef").dump()
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class MoveTo(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "moveto"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="MoveTo">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("Y", self.readInt16(), hexdump=False)
+        self.printAndSet("X", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class OffsetClipRgn(WMFRecord):
@@ -1010,12 +1084,23 @@ class SelectPalette(WMFRecord):
 
 
 class Polygon(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "polygon"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="Polygon">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("NumberOfPoints", self.readInt16(), hexdump=False)
+        for i in range(self.NumberOfPoints):
+            PointS(self, "aPoint%d" % i).dump()
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class Polyline(WMFRecord):
@@ -1037,21 +1122,44 @@ class SetTextJustification(WMFRecord):
 
 
 class SetWindowOrg(WMFRecord):
-    def __init__(self, parent):
+    """The META_SETWINDOWORG record is used to define the output window origin."""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "setwindoworg"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SetWindowOrg">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("Y", self.readInt16(), hexdump=False)
+        self.printAndSet("X", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
-class SetWindowExt:
-    def __init__(self, parent):
+class SetWindowExt(WMFRecord):
+    """The META_SETWINDOWEXT Record is used to define the extents of the output
+    window, both for the horizontal and vertical dimensions."""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "setwindoworg"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SetWindowExt">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("Y", self.readInt16(), hexdump=False)
+        self.printAndSet("X", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetViewportOrg(WMFRecord):
@@ -1145,21 +1253,63 @@ class AnimatePalette(WMFRecord):
 
 
 class TextOut(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "textout"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="TextOut">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("StringLength", self.readInt16(), hexdump=False)
+        size = self.StringLength + self.StringLength % 2
+        StringByte = self.readBytes(size)
+        # Use bytes until chr(0) (null byte)
+        self.String = ""
+        for i in range(self.StringLength):
+            if StringByte[i] == 0:
+                break
+            self.String += chr(StringByte[i])
+
+        print('<String value="%s"/>' % (self.String))
+        self.printAndSet("YStart", self.readInt16(), hexdump=False)
+        self.printAndSet("XStart", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class PolyPolygon(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "polypolygon"
 
     def dump(self):
-        print("<todo/>")
         pass
+        dataPos = self.pos
+        print('<%s type="PolyPolygon">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("NumberOfPolygons", self.readuInt16(), hexdump=False)
+        print('<PolygonPointCounts>')
+        self.allPoints = 0
+        for i in range(self.NumberOfPolygons):
+            self.printAndSet("aPointsPerPolygon%d" % i, self.readuInt16(), hexdump=False)
+        print('</PolygonPointCounts>')
+        for i in range(self.NumberOfPolygons):
+            points = getattr(self, "aPointsPerPolygon%d" % i)
+            print('<Polygon%d>' % i)
+            for j in range(points):
+                PointS(self, "aPoint%d" % j).dump()
+            print('</Polygon%d>' % i)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class ExtFloodFill(WMFRecord):
@@ -1343,16 +1493,26 @@ class SelectClipRgn(WMFRecord):
 
 
 class SelectObject(WMFRecord):
-    def __init__(self, parent):
+    """The META_SELECTOBJECT record is used to specify a graphics object for the playback device context."""
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "selectobject"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SelectObject">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("ObjectIndex", self.readuInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetTextAlign(WMFRecord):
-    """The SetTextAlign record is used to define the text alignment"""
+    """The META_SETTEXTALIGN record is used to define the text alignment"""
     def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
         if name:
@@ -1446,12 +1606,21 @@ class StretchDIBits(WMFRecord):
 
 
 class DeleteObject(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "deleteobject"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SelectObject">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("ObjectIndex", self.readuInt16(), hexdump=False)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class CreatePalette(WMFRecord):
@@ -1472,13 +1641,40 @@ class CreatePatternBrush(WMFRecord):
         pass
 
 
-class CreatePenIndirect(WMFRecord):
-    def __init__(self, parent):
+class PenRecord(WMFRecord):
+    """The Pen object specifies the style, width, and color of an logical pen."""
+    def __init__(self, parent, name):
         WMFRecord.__init__(self, parent)
+        self.name = name
 
     def dump(self):
-        print("<todo/>")
-        pass
+        print('<%s type="Pen">' % self.name)
+        self.printAndSet("PenStyle", self.readuInt16(), dict=PenStyle)
+        self.printAndSet("Width", self.readuInt32())
+        ColorRef(self, "ColorRef").dump()
+        print('</%s>' % self.name)
+        self.parent.pos = self.pos
+
+
+class CreatePenIndirect(WMFRecord):
+    """The META_CREATEPENINDIRECT record is used to create a Pen object"""
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "createpenindirect"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="CreatePenIndirect">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        # Check optional reserved value if the size shows that it exists
+        PenRecord(self, "Pen").dump()
+        print('</%s>' % self.name)
+        # RecordSize is described in words, so we should double for bytes
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class CreateFontIndirect(WMFRecord):
@@ -1541,13 +1737,37 @@ class Font(WMFRecord):
         self.parent.pos = self.pos
 
 
-class CreateBrushIndirect(WMFRecord):
-    def __init__(self, parent):
+class LogBrush(WMFRecord):
+    """The Brush object defines the style, color, and pattern of a device-independent brush."""
+    def __init__(self, parent, name):
         WMFRecord.__init__(self, parent)
+        self.name = name
 
     def dump(self):
-        print("<todo/>")
-        pass
+        print('<%s>' % self.name)
+        self.printAndSet("BrushStyle", self.readuInt16(), dict=BrushStyle)
+        ColorRef(self, "ColorRef").dump()
+        self.printAndSet("BrushHatch", self.readuInt16(), dict=HatchStyle)
+        print('</%s>' % self.name)
+        self.parent.pos = self.pos
+
+
+class CreateBrushIndirect(WMFRecord):
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "createbrushindirect"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="CreateBrushIndirect">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        LogBrush(self, "LogBrush").dump()
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class CreateRectRgn(WMFRecord):
@@ -1559,11 +1779,28 @@ class CreateRectRgn(WMFRecord):
         pass
 
 
+class EndOfFile(WMFRecord):
+    def __init__(self, parent, name=None):
+        WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "eof"
+
+    def dump(self):
+        dataPos = self.pos
+        print('<%s type="EndOfFile">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
+
+
 # GDI Functions: https://docs.microsoft.com/en-us/windows/win32/api/_gdi/
 # Wine API / GDI: https://source.winehq.org/WineAPI/gdi.html
 """The RecordType enumeration defines values that uniquely identify WMF records."""
 RecordType = {
-    0x0000: ['META_EOF'],
+    0x0000: ['META_EOF', EndOfFile],
     0x0035: ['META_REALIZEPALETTE', RealizePalette],
     0x0037: ['META_SETPALENTRIES', SetPaletteEntries],
     0x0102: ['META_SETBKMODE', SetBkMode],
