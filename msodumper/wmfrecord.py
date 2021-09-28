@@ -1103,13 +1103,24 @@ class Polygon(WMFRecord):
         assert self.pos == dataPos + self.RecordSize * 2
 
 
-class Polyline(WMFRecord):
-    def __init__(self, parent):
+class PolyLine(WMFRecord):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "polyline"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="PolyLine">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("NumberOfPoints", self.readInt16(), hexdump=False)
+        for i in range(self.NumberOfPoints):
+            PointS(self, "aPoint%d" % i).dump()
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetTextJustification(WMFRecord):
@@ -1824,7 +1835,7 @@ RecordType = {
     0x0231: ['META_SETMAPPERFLAGS', SetMapperFlags],
     0x0234: ['META_SELECTPALETTE', SelectPalette],
     0x0324: ['META_POLYGON', Polygon],
-    0x0325: ['META_POLYLINE', Polyline],
+    0x0325: ['META_POLYLINE', PolyLine],
     0x020A: ['META_SETTEXTJUSTIFICATION', SetTextJustification],
     0x020B: ['META_SETWINDOWORG', SetWindowOrg],
     0x020C: ['META_SETWINDOWEXT', SetWindowExt],
