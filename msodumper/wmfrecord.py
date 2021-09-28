@@ -953,13 +953,22 @@ class SetTextCharacterExtra(WMFRecord):
         pass
 
 
-class RestoreDC:
-    def __init__(self, parent):
+class RestoreDC(WMFRecord):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "restoredc"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="RestoreDC">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("nSavedDC", self.readInt16(), hexdump=False)
+        # RecordSize is described in words, so we should double for bytes
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class ResizePalette(WMFRecord):
@@ -1423,21 +1432,20 @@ class RoundRect(WMFRecord):
 
 
 class SaveDC(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "savedc"
 
     def dump(self):
-        print("<todo/>")
-        pass
-
-
-class SaveDC(WMFRecord):
-    def __init__(self, parent):
-        WMFRecord.__init__(self, parent)
-
-    def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="SaveDC">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        # RecordSize is described in words, so we should double for bytes
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class Pie(WMFRecord):
