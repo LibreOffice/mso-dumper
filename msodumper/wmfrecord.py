@@ -1104,12 +1104,23 @@ class Polygon(WMFRecord):
 
 
 class Polyline(WMFRecord):
-    def __init__(self, parent):
+    def __init__(self, parent, name=None):
         WMFRecord.__init__(self, parent)
+        if name:
+            self.name = name
+        else:
+            self.name = "polyline"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="Polyline">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("NumberOfPoints", self.readInt16(), hexdump=False)
+        for i in range(self.NumberOfPoints):
+            PointS(self, "aPoint%d" % i).dump()
+        print('</%s>' % self.name)
+        assert self.pos == dataPos + self.RecordSize * 2
 
 
 class SetTextJustification(WMFRecord):
