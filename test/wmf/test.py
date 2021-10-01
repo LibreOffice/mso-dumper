@@ -23,7 +23,8 @@ class Test(unittest.TestCase):
         sock = open("%s.wmf.xml" % name, "w")
         saved = sys.stdout
         sys.stdout = sock
-        wmf_dumper.main(["wmf-dumper", "%s.wmf" % name])
+        dumper = wmf_dumper.WMFDumper("%s.wmf" % name)
+        dumper.dump()
         sys.stdout = saved
         sock.close()
         tree = ElementTree.parse('%s.wmf.xml' % name)
