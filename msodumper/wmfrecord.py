@@ -967,6 +967,7 @@ class RestoreDC(WMFRecord):
         self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
         self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
         self.printAndSet("nSavedDC", self.readInt16(), hexdump=False)
+        print('</%s>' % self.name)
         # RecordSize is described in words, so we should double for bytes
         assert self.pos == dataPos + self.RecordSize * 2
 
@@ -1444,6 +1445,7 @@ class SaveDC(WMFRecord):
         print('<%s type="SaveDC">' % self.name)
         self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
         self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        print('</%s>' % self.name)
         # RecordSize is described in words, so we should double for bytes
         assert self.pos == dataPos + self.RecordSize * 2
 
