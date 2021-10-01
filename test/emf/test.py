@@ -23,7 +23,8 @@ class Test(unittest.TestCase):
         sock = open("%s.emf.xml" % name, "w")
         saved = sys.stdout
         sys.stdout = sock
-        emf_dumper.main(["emf-dumper", "%s.emf" % name])
+        dumper = emf_dumper.EMFDumper("%s.emf" % name)
+        dumper.dump()
         sys.stdout = saved
         sock.close()
         tree = ElementTree.parse('%s.emf.xml' % name)
