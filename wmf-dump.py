@@ -5,8 +5,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from msodumper import wmfrecord
+from msodumper import wmfrecord, globals
 import sys
+import optparse
 
 class WMFDumper:
     def __init__(self, filepath):
@@ -20,12 +21,20 @@ class WMFDumper:
         strm.dump()
 
 
-def main(args):
-    dumper = WMFDumper(args[1])
+def main():
+    parser = optparse.OptionParser()
+    options, args = parser.parse_args()
+
+    if len(args) < 1:
+        globals.error("takes at least one argument\n")
+        parser.print_help()
+        sys.exit(1)
+
+    dumper = WMFDumper(args[0])
     dumper.dump()
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
 
 # vim:set filetype=python shiftwidth=4 softtabstop=4 expandtab:
