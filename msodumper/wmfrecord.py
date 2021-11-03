@@ -779,7 +779,7 @@ class Header(WMFRecord):
         if PlaceableHeader(self).isPlaceable():
             PlaceableHeader(self).dump()
             self.Size += 22
-        print("<header>")
+        print('<header type="META_HEADER">')
         self.printAndSet("FileType", self.readuInt16(), dict=MetafileType)
         self.printAndSet("HeaderSize", self.readuInt16(), hexdump=False)
         self.printAndSet("Version", self.readuInt16(), hexdump=False)
@@ -798,7 +798,7 @@ class PlaceableHeader(WMFRecord):
         WMFRecord.__init__(self, parent)
 
     def dump(self):
-        print("<placeableHeader>")
+        print('<placeableHeader type="META_PLACEABLE">')
         self.header = Header(self)
         self.Size = 22
         pos = self.pos
@@ -1460,12 +1460,31 @@ class Pie(WMFRecord):
 
 
 class StretchBlt(WMFRecord):
+    """2.3.1.3 META_DIBSTRETCHBLT Record"""
     def __init__(self, parent):
         WMFRecord.__init__(self, parent)
+        self.name = "stretchblt"
 
     def dump(self):
-        print("<todo/>")
-        pass
+        dataPos = self.pos
+        print('<%s type="StretchBlt">' % self.name)
+        self.printAndSet("RecordSize", self.readuInt32(), hexdump=False)
+        self.printAndSet("RecordFunction", self.readuInt16(), hexdump=True)
+        self.printAndSet("SrcHeight", self.readInt16(), hexdump=False)
+        self.printAndSet("SrcWidth", self.readInt16(), hexdump=False)
+        self.printAndSet("YSrc", self.readInt16(), hexdump=False)
+        self.printAndSet("XSrc", self.readInt16(), hexdump=False)
+        self.printAndSet("DestHeight", self.readInt16(), hexdump=False)
+        self.printAndSet("DestWidth", self.readInt16(), hexdump=False)
+        self.printAndSet("YDest", self.readInt16(), hexdump=False)
+        self.printAndSet("XDest", self.readInt16(), hexdump=False)
+        # RecordSize is described in words, so we should double for bytes
+        end = dataPos + self.RecordSize * 2
+        targetSize = end - self.pos
+        print('<Target size="%s"/>' % targetSize)
+        self.pos += targetSize
+        print('</%s>' % self.name)
+        assert self.pos == end
 
 
 class Escape(WMFRecord):
