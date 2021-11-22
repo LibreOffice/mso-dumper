@@ -8,7 +8,7 @@
 
 import sys
 sys.path.append(sys.path[0] + "/../..")
-emf_dumper = __import__('emf-dump')
+wmf_dumper = __import__('wmf-dump')
 from xml.etree import ElementTree
 import unittest
 import os
@@ -17,17 +17,17 @@ import os
 class Test(unittest.TestCase):
     def dump(self, name):
         try:
-            os.unlink("%s.emf.xml" % name)
+            os.unlink("%s.wmf.xml" % name)
         except OSError:
             pass
-        sock = open("%s.emf.xml" % name, "w")
+        sock = open("%s.wmf.xml" % name, "w")
         saved = sys.stdout
         sys.stdout = sock
-        dumper = emf_dumper.EMFDumper("%s.emf" % name)
+        dumper = wmf_dumper.WMFDumper("%s.wmf" % name)
         dumper.dump()
         sys.stdout = saved
         sock.close()
-        tree = ElementTree.parse('%s.emf.xml' % name)
+        tree = ElementTree.parse('%s.wmf.xml' % name)
         self.root = tree.getroot()
         # Make sure everything is dumped - so it can't happen that dump(a) == dump(b), but a != b.
         self.assertEqual(0, len(self.root.findall('todo')))
@@ -38,8 +38,8 @@ class Test(unittest.TestCase):
 
         for dirname, dirnames, filenames in os.walk('pass'):
             for filename in filenames:
-                if filename.endswith(".emf"):
-                    self.dump(os.path.join(dirname, filename).replace('.emf', ''))
+                if filename.endswith(".wmf"):
+                    self.dump(os.path.join(dirname, filename).replace('.wmf', ''))
 
 if __name__ == '__main__':
     unittest.main()

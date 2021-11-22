@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -96,7 +96,7 @@ class GsfDOCFile(DOCFile):
             child = self.gsf.gsf_infile_child_by_index(gsfInfile, i)
             childName = ctypes.string_at(self.gsf.gsf_infile_name_by_index(gsfInfile, i))
             childSize = self.gsf.gsf_input_size(child)
-            childData = ""
+            childData = bytes()
             while True:
                 bufSize = 1024
                 pos = self.gsf.gsf_input_tell(child)
@@ -123,7 +123,8 @@ def createDOCFile(chars, params):
     try:
         gsf = ctypes.cdll.LoadLibrary('libgsf-1.so')
         gsf.gsf_input_read.restype = ctypes.c_void_p
-    except:
+    # pylint: disable=broad-except
+    except Exception:
         hasGsf = False
 
     if hasGsf:

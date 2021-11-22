@@ -5,18 +5,17 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-from msodumper import emfrecord, globals
-import optparse
+from msodumper import wmfrecord, globals
 import sys
+import optparse
 
-
-class EMFDumper:
+class WMFDumper:
     def __init__(self, filepath):
         self.filepath = filepath
 
     def dump(self):
         file = open(self.filepath, 'rb')
-        strm = emfrecord.EMFStream(file.read())
+        strm = wmfrecord.WMFStream(file.read())
         file.close()
         print('<?xml version="1.0"?>')
         strm.dump()
@@ -31,7 +30,7 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    dumper = EMFDumper(args[0])
+    dumper = WMFDumper(args[0])
     dumper.dump()
 
 
