@@ -37,7 +37,7 @@ def hexdump(value):
     return "".join(ret)
 
 def inflate(bytes):
-    return textwrap.fill(base64.b64encode(zlib.decompress(bytes)), width=160)
+    return textwrap.fill(base64.b64encode(zlib.decompress(bytes)).decode(), width=160)
 
 class RecordHeader:
 
