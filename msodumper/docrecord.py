@@ -818,6 +818,23 @@ class CMajorityOperand(BinaryStream):
         print('</cMajorityOperand>')
 
 
+class BrcCvOperand(BinaryStream):
+    """The BrcCvOperand structure specifies border colors."""
+    def __init__(self, parent):
+        BinaryStream.__init__(self, parent.bytes)
+        self.pos = parent.pos
+
+    def dump(self):
+        print('<bcrCvOperand type="BrcCvOperand" offset="%d">' % self.pos)
+        self.printAndSet("cb", self.readuInt8())
+        pos = self.pos
+        print('<rgcv offset="%d" size="%d bytes">' % (self.pos, self.cb))
+        while self.pos - pos < self.cb:
+            COLORREF(self).dump("cv")
+        print('</rgcv>')
+        print('</bcrCvOperand>')
+
+
 # The PgbApplyTo enumeration is used to specify the pages to which a page border applies.
 PgbApplyTo = {
     0x0: "pgbAllPages",
@@ -1596,6 +1613,8 @@ class Sprm(BinaryStream):
                 self.ct = DefTableShd80Operand(self)
             elif self.sprm == 0xca47:
                 self.ct = CMajorityOperand(self)
+            elif self.sprm in (0xD61A, 0xD61B, 0xD61C, 0xD61D):
+                self.ct = BrcCvOperand(self)
             else:
                 print('<todo what="Sprm::__init__() unhandled sprm of size 9: %s"/>' % hex(self.sprm))
         else:
