@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 from builtins import range
-import sys, struct, math, zipfile, io
+import sys, struct, math, zipfile, io, os
 from . import xmlpp
 
 PY3 = sys.version > '3'
