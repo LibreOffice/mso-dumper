@@ -478,7 +478,7 @@ class XLDirStream(object):
         # Records boundaries/offset list (only useful if there are
         # CONTINUE records)
         roflist = [size]
-        
+
         # Read possible CONTINUE records, and concatenate the data
         while self.peekNext() == 0x3c:
             cpos, cheader, csize, cbytes = self.__readRecordBytes()
@@ -490,7 +490,7 @@ class XLDirStream(object):
 
     def peekNext (self):
         '''Check type of next record without changing stream state'''
-        
+
         if self.size - self.pos < 4:
             raise EndOfStream
 
@@ -500,7 +500,7 @@ class XLDirStream(object):
             raise EndOfStream
         self.pos = pos
         return header
-        
+
     def __getRecordHandler (self, header, size, bytes, roflist):
         # record handler that parses the raw bytes and displays more
         # meaningful information.

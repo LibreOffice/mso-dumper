@@ -158,7 +158,7 @@ if globals.PY3:
 else:
     def isintegertype(val):
         return type(val) == type(0) or type(val) == long
-    
+
 def convertAttrValue (val):
     if type(val) == type(True):
         if val:

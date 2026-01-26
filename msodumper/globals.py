@@ -17,13 +17,13 @@ PY3 = sys.version > '3'
 # - indexedbytetobyte: convert a value obtained by indexing into a bytes list
 #   (or from 'for x in somebytes') to a bytes list of len 1
 # - indexedbytetoint() return the same as an int (uses ord() for python2)
-#   
+#
 if PY3:
 
     def indexbytes(data, i):
         return data[i]
     def indexedbytetobyte(i):
-        return i.to_bytes(1, byteorder='big')        
+        return i.to_bytes(1, byteorder='big')
     def indexedbytetoint(i):
         return i
     nullchar = 0
@@ -66,7 +66,7 @@ class Params(object):
         self.noRawDump = False
         self.catchExceptions = False
         self.utf8 = False
-        
+
 # Global parameters / run configuration, to be set up by the main
 # program during initialization
 params = Params()
@@ -211,14 +211,14 @@ def nulltrunc(bytes):
     return bytes
 
 
-# This is syntaxically identical for python2 and python3 if the input is str 
+# This is syntaxically identical for python2 and python3 if the input is str
 def encodeName (name, lowOnly = False, lowLimit = 0x20):
     """Encode name that contains unprintable characters."""
 
     n = len(name)
     if n == 0:
         return name
-    
+
     if PY3 and (type(name) == type(b'')):
         return _encodeNameBytes(name, n, lowOnly, lowLimit)
 
@@ -234,7 +234,7 @@ def encodeName (name, lowOnly = False, lowLimit = 0x20):
             newname += "\\x%2.2X"%ord(name[i])
         else:
             newname += name[i]
-    
+
     return newname
 
 # Python3 only. Same as above but accept bytes as input.
@@ -255,7 +255,7 @@ def _encodeNameBytes (name, n, lowOnly = False, lowLimit = 0x20):
             newname += chr(name[i])
 
     return newname
-    
+
 # Uncompress "compressed" UTF-16. This compression strips high bytes
 # from a string when they are all 0. Just restore them.
 def uncompCompUnicode(bytes):
@@ -331,7 +331,7 @@ def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
                 # Just try to read and let the stream raise an exception
                 strm.readBytes(bytesToRead)
                 return
-            
+
             bytesToRead = min(bytesToRead, \
                               rofflist[ibound]- strm.getCurrentPos())
             newdata = strm.readBytes(bytesToRead)
@@ -341,7 +341,7 @@ def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
             ret.baseText +=  newdata.decode('UTF-16LE', errors='replace')
 
             textLen -= bytesToRead // bytesPerChar
-            
+
             # If there is still data to read, we hit a record boundary. Read
             # the grbit byte for detecting possible compression switch
             if textLen > 0:
@@ -350,7 +350,7 @@ def getUnicodeRichExtText (bytes, offset = 0, rofflist = []):
                     bytesPerChar = 2
                 else:
                     bytesPerChar = 1
-                
+
         if isRichStr:
             for i in range(0, numElem):
                 posChar = strm.readUnsignedInt(2)

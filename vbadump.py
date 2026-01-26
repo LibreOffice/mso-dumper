@@ -86,7 +86,7 @@ class StdReader:
     def __init__ (self, reader ):
         self.reader = reader
     # subclass needs to implement this
-    def parse(self): 
+    def parse(self):
         pass
 
 class ProjectVersionReader( StdReader ):
@@ -182,7 +182,7 @@ class ProjectModulesReader(StdReader):
         size = self.reader.readUnsignedInt( 4 )
         count = self.reader.readUnsignedInt( size )
         self.reader.CurrentModule = ModuleInfo()
-        print("  Num Modules: %i"%count) 
+        print("  Num Modules: %i"%count)
 
 class ModuleNameReader(StdReader):
     def parse(self):

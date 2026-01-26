@@ -219,7 +219,7 @@ def main ():
     params.showStreamPos = options.show_stream_pos
     params.catchExceptions = options.catch_exceptions
     params.utf8 = options.utf8
-    
+
     if len(args) < 1:
         globals.error("takes at least one argument\n")
         parser.print_help()
