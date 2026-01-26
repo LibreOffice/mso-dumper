@@ -9,5 +9,5 @@ setup(
     author_email = "libreoffice@lists.freedesktop.org",
     description = "A package for analysing and dumping MS office formats",
     license = "MPL",
-    url = "http://cgit.freedesktop.org/libreoffice/contrib/mso-dumper/"
+    url = "https://git.libreoffice.org/mso-dumper"
 )
