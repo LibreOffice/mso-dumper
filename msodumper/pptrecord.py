@@ -4,6 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
+import os.path
 from builtins import range
 from . import globals
 
@@ -1074,7 +1075,16 @@ class ZipStoragePropertyHandler(BasePropertyHandler):
     """zip storage."""
 
     def output (self):
-        globals.outputZipContent(self.bytes, self.printer, 61)
+        if globals.params.extractMetroBlob is not None:
+            base, ext = os.path.splitext(globals.params.extractMetroBlob)
+            idx = globals.params.metroBlobCount
+            globals.params.metroBlobCount += 1
+            outpath = "%s-%d%s" % (base, idx, ext)
+            with open(outpath, 'wb') as f:
+                f.write(self.bytes)
+            self.printer("metroBlob written to %s (%d bytes)" % (outpath, len(self.bytes)))
+        else:
+            globals.outputZipContent(self.bytes, self.printer, 61)
 
 # -------------------------------------------------------------------
 # special record handler: properties

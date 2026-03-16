@@ -66,6 +66,8 @@ class Params(object):
         self.noRawDump = False
         self.catchExceptions = False
         self.utf8 = False
+        self.extractMetroBlob = None
+        self.metroBlobCount = 0
 
 # Global parameters / run configuration, to be set up by the main
 # program during initialization

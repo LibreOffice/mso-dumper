@@ -19,6 +19,7 @@ Options:
   --dump-text   extract and print the textual content
   --no-raw-dumps suppress raw hex dumps of uninterpreted areas
   --id-select=id1[,id2 ...] limit output to selected record Ids
+  --extract-metro-blobss=FILE  extract metroBlob ZIPs to FILE-0.zip, FILE-1.zip, ...
 """ % exname
     print(msg)
 
@@ -88,7 +89,8 @@ def main (args):
         opts, args = getopt.getopt(args, "h",
                                    ["help", "debug", "show-sector-chain",
                                     "no-struct-output", "dump-text",
-                                    "id-select=", "no-raw-dumps"])
+                                    "id-select=", "no-raw-dumps",
+                                    "extract-metro-blobs="])
         for opt, arg in opts:
             if opt in ['-h', '--help']:
                 usage(exname)
@@ -107,6 +109,8 @@ def main (args):
                 globals.params.dumpedIds = arg.split(",")
                 globals.params.dumpedIds = \
                     set([int(val) for val in globals.params.dumpedIds if val])
+            elif opt in ['--extract-metro-blobs']:
+                globals.params.extractMetroBlob = arg
             else:
                 error("unknown option %s\n"%opt)
                 usage()
